@@ -1,0 +1,298 @@
+[gd_scene format=3 uid="uid://c0yqdomrk8vxl"]
+
+[ext_resource type="Script" path="res://scripts/ui/card_board.gd" id="1_3qw7h"]
+[ext_resource type="PackedScene" uid="uid://bxlr6ct7knhp6" path="res://scenes/card.tscn" id="2_x70ft"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_board"]
+bg_color = Color(0, 0, 0, 0.25)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(1, 1, 1, 0.08)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.28)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="CardBoard" type="PanelContainer" unique_id=1995309183]
+custom_minimum_size = Vector2(652.3582, 892)
+offset_right = 994.0
+offset_bottom = 1354.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_board")
+script = ExtResource("1_3qw7h")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1110519410]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer" unique_id=1991940357]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 5
+
+[node name="CardSlot01" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=831876095]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot01" unique_id=248665464 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot02" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=778227469]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot02" unique_id=255538192 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot03" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1715378085]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot03" unique_id=2145577544 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot04" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1557156398]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot04" unique_id=340831851 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot05" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=726359216]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot05" unique_id=67271722 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot06" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=860768488]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot06" unique_id=749109687 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot07" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1873824792]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot07" unique_id=2016594507 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot08" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=656378594]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot08" unique_id=74241695 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot09" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1920592938]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot09" unique_id=1487187938 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot10" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=663416668]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot10" unique_id=932920334 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot11" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=315414188]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot11" unique_id=1693223862 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot12" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=914014377]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot12" unique_id=2070014417 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot13" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1815990214]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot13" unique_id=622001414 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot14" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1621345924]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot14" unique_id=1421816897 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot15" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1639414529]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot15" unique_id=1602192857 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot16" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=587043545]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot16" unique_id=798571789 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot17" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1952589249]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot17" unique_id=1650399003 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot18" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=640561392]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot18" unique_id=1338822967 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot19" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=297403325]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot19" unique_id=229729964 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot20" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=610385829]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot20" unique_id=1301303625 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot21" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=519228265]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot21" unique_id=577683608 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot22" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=2094946952]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot22" unique_id=19431218 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot23" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=44202146]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot23" unique_id=401833720 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot24" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1537291156]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot24" unique_id=113818336 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)
+
+[node name="CardSlot25" type="PanelContainer" parent="MarginContainer/GridContainer" unique_id=1931343609]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Card" parent="MarginContainer/GridContainer/CardSlot25" unique_id=1965149057 instance=ExtResource("2_x70ft")]
+custom_minimum_size = Vector2(114.47164, 160.2603)
+layout_mode = 2
+card_size = Vector2(114.47164, 160.2603)

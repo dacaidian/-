@@ -1,0 +1,13 @@
+# Godot 4+
+.godot/
+.import/
+/android/
+*.translation
+
+# Imported resources
+*.import
+
+# Exported builds
+build/
+export/
+

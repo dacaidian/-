@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://bxlr6ct7knhp6"]
+
+[ext_resource type="Script" path="res://scripts/ui/card.gd" id="1_6u4wf"]
+[ext_resource type="Texture2D" uid="uid://cccipnd37wn1l" path="res://assets/img/1.png" id="1_d81rb"]
+[ext_resource type="Texture2D" uid="uid://doaftw1thwn4w" path="res://assets/img/乌瑟尔.png" id="2_ktuci"]
+[ext_resource type="Script" path="res://scripts/interactions/card_hover_preview.gd" id="4_g2u7p"]
+
+[node name="Card" type="Control" unique_id=637541742]
+custom_minimum_size = Vector2(180, 252)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 180.0
+offset_bottom = 252.0
+script = ExtResource("1_6u4wf")
+front_texture = ExtResource("2_ktuci")
+back_texture = ExtResource("1_d81rb")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1145962133]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_d81rb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HoverPreview" type="Node" parent="." unique_id=1465629229]
+script = ExtResource("4_g2u7p")
