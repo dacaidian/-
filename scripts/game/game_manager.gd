@@ -260,10 +260,18 @@ func load_static_card_data() -> bool:
 		return false
 
 	card_database.load_test_config("res://data/test_config.json")
+	_apply_test_game_params()
 
 	# 卡背暂时作为统一运行时资源，由 GameManager 注入到每个 CardState。
 	default_back_texture = load(default_back_texture_path) as Texture2D
 	return true
+
+
+func _apply_test_game_params() -> void:
+	if not card_database.is_test_mode:
+		return
+	spell_turn_mana_cost = card_database.get_test_game_param("spell_turn_mana_cost", spell_turn_mana_cost)
+	victory_resource_score = card_database.get_test_game_param("victory_resource_score", victory_resource_score)
 
 
 func create_initial_card_pool() -> CardPool:

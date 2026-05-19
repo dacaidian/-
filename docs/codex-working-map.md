@@ -52,7 +52,7 @@
 - 新增卡牌、类型、关键词、法术动作、效果配置。
 - 衍生牌（token）定义在对应种族的 `tokens[]` 字段下，结构同普通卡牌。
 - 扩展 `CardData.is_*()` 或静态字段解析。
-- 测试模式：编辑 `data/test_config.json` 配置白名单和数量覆盖；`"enabled": true` 时 `CardDatabase` 在构建牌池时自动过滤。关闭只需 `"enabled": false`，不修改 `cards.json`。
+- 测试模式：编辑 `data/test_config.json` 配置白名单、数量覆盖和游戏参数（`game_params` 节：`spell_turn_mana_cost`、`victory_resource_score`）。`CardDatabase` 提供通用 `get_test_game_param()` 读取，`GameManager._apply_test_game_params()` 应用覆盖。关闭只需 `"enabled": false`。
 
 验证：
 

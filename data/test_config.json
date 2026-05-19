@@ -7,5 +7,9 @@
   "include_neutral_pool": false,
   "override_counts": {
     "_default": 3
+  },
+  "game_params": {
+    "spell_turn_mana_cost": 1,
+    "victory_resource_score": 20
   }
 }

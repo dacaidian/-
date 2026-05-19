@@ -44,6 +44,10 @@ func _should_include_neutral_pool() -> bool:
 	return test_config.get("include_neutral_pool", true)
 
 
+func get_test_game_param(param_name: String, default_value):
+	return test_config.get("game_params", {}).get(param_name, default_value)
+
+
 func load_from_json(path: String) -> bool:
 	# 入口方法：读取 JSON 文件，并把内容缓存到几个 Dictionary 中。
 	if not FileAccess.file_exists(path):

@@ -12,7 +12,7 @@
 - `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。`has_status_with_tag(tag)` 提供 tag 驱动的通用状态门控，不绑定特定 status_id；`is_area_preview` / `set_area_preview()` 用于 AOE 范围预览标记。
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
-- `CardDatabase`：读取并缓存 JSON 静态数据。支持测试模式：通过 `data/test_config.json` 配置白名单卡牌和数量覆盖，`build_weighted_pool()` / `build_weighted_pool_for_selection()` / `append_card_copies_to_pool()` 三处统一过滤，无需修改 `cards.json`。
+- `CardDatabase`：读取并缓存 JSON 静态数据。支持测试模式：通过 `data/test_config.json` 配置白名单卡牌、数量覆盖和游戏参数（`game_params` 节），提供 `get_test_game_param()` 通用参数查询；游戏参数由 `GameManager._apply_test_game_params()` 在初始化时读取并覆盖 `@export` 默认值。
 - `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。`count <= 0` 的卡不会被展开进牌池，便于未来保留“可被查表但不自然出现”的卡。
 - 衍生牌（Token）：不进入牌池、仅由卡牌效果生成的卡牌。在 `cards.json` 中定义在对应种族的 `tokens[]` 字段下，结构和普通卡牌一致。`CardDatabase.load_faction()` 会把 token 注册到 `cards_by_id`（全局可查），但不加入 `cards_by_faction_id`，因此牌池构造链路天然跳过。
 - 入口选择会从 `CardDatabase.get_playable_faction_ids()` 读取可选种族，排除 `kind: "neutral_pool"` 的中立牌库；该列表保持 `cards.json` 中的加载顺序，避免默认种族选择被字典排序打乱。英雄列表优先读取种族层级 `heroes` 字段。
