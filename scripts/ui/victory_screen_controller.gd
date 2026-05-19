@@ -342,7 +342,7 @@ func _spawn_victory_particles(owner: Node, origin: Vector2) -> void:
 		particle.global_position = origin
 		var p_style := StyleBoxFlat.new()
 		p_style.bg_color = gold_colors[i % gold_colors.size()]
-		p_style.corner_radius_all = 2
+		p_style.set_corner_radius_all(2)
 		particle.add_theme_stylebox_override("panel", p_style)
 		_effect_root.add_child(particle)
 		_pending_particles.append(particle)
@@ -389,7 +389,7 @@ func _create_banner_style() -> StyleBoxFlat:
 	style.border_width_top = 3
 	style.border_width_bottom = 3
 	style.border_color = Color(0.93, 0.68, 0.30, 0.9)
-	style.corner_radius_all = 12
+	style.set_corner_radius_all(12)
 	style.shadow_size = 18
 	style.shadow_offset = Vector2(0, 6)
 	style.shadow_color = Color(0, 0, 0, 0.58)
@@ -404,7 +404,7 @@ func _create_stats_panel_style() -> StyleBoxFlat:
 	style.border_width_top = 2
 	style.border_width_bottom = 2
 	style.border_color = Color(0.93, 0.68, 0.30, 0.82)
-	style.corner_radius_all = 10
+	style.set_corner_radius_all(10)
 	style.shadow_size = 16
 	style.shadow_offset = Vector2(0, 6)
 	style.shadow_color = Color(0, 0, 0, 0.52)
@@ -423,7 +423,7 @@ func _create_button_style(is_hover: bool) -> StyleBoxFlat:
 	style.border_width_right = 2
 	style.border_width_top = 2
 	style.border_width_bottom = 2
-	style.corner_radius_all = 8
+	style.set_corner_radius_all(8)
 	style.shadow_size = 10
 	style.shadow_offset = Vector2(0, 4)
 	style.shadow_color = Color(0, 0, 0, 0.45)
@@ -438,5 +438,5 @@ func _create_button_disabled_style() -> StyleBoxFlat:
 	style.border_width_right = 2
 	style.border_width_top = 2
 	style.border_width_bottom = 2
-	style.corner_radius_all = 8
+	style.set_corner_radius_all(8)
 	return style
