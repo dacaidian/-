@@ -917,7 +917,7 @@ func play_status_apply_animation(target_state: CardState, status_id: String) -> 
 	if target_state == null or status_id == "":
 		return
 
-	var target_card := get_card_node_for_state(target_state)
+	var target_card: Card = get_card_by_slot(target_state.slot_index)
 	if target_card == null:
 		return
 
