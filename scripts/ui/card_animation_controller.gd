@@ -307,6 +307,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_shield_spell(owner, effect_root, target_card)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell(owner, effect_root, target_card)
+		"arcane_aura":
+			await play_arcane_aura_spell(owner, effect_root, target_card)
 		"baptism":
 			await play_baptism_spell(owner, effect_root, target_card)
 		"fireball":
@@ -335,6 +337,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
 		"summon":
 			await play_summon_spell_at_rect(owner, effect_root, target_rect)
+		"arcane_aura":
+			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
 		"baptism":
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		_:
@@ -573,6 +577,53 @@ func play_arcane_spell_at_rect(owner: Node, effect_root: Control, target_rect: R
 	await recover_tween.finished
 
 	arcane_effect.queue_free()
+
+
+func play_arcane_aura_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
+	if owner == null or effect_root == null or target_card == null:
+		return
+
+	target_card.is_animating = true
+	var start_scale: Vector2 = target_card.scale
+	var target_rect := target_card.get_global_rect()
+	await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
+	target_card.scale = start_scale
+	target_card.is_animating = false
+
+
+func play_arcane_aura_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var aura_effect := create_arcane_aura_effect_for_rect(target_rect)
+	var pulse_effect := create_rect_spell_effect(target_rect, "ArcaneAuraPulseEffect", create_arcane_spell_effect_style(), 1.06)
+	effect_root.add_child(pulse_effect)
+	effect_root.add_child(aura_effect)
+
+	var bloom_tween := owner.create_tween()
+	bloom_tween.set_parallel(true)
+	bloom_tween.set_trans(Tween.TRANS_SINE)
+	bloom_tween.set_ease(Tween.EASE_OUT)
+	bloom_tween.tween_property(aura_effect, "rotation", 0.32, spell_animation_duration * 0.45)
+	bloom_tween.tween_property(aura_effect, "scale", Vector2(1.20, 1.20), spell_animation_duration * 0.45)
+	bloom_tween.tween_property(aura_effect, "modulate:a", 0.92, spell_animation_duration * 0.45)
+	bloom_tween.tween_property(pulse_effect, "scale", Vector2(1.26, 1.26), spell_animation_duration * 0.45)
+	bloom_tween.tween_property(pulse_effect, "modulate:a", 0.72, spell_animation_duration * 0.45)
+	await bloom_tween.finished
+
+	var settle_tween := owner.create_tween()
+	settle_tween.set_parallel(true)
+	settle_tween.set_trans(Tween.TRANS_CUBIC)
+	settle_tween.set_ease(Tween.EASE_OUT)
+	settle_tween.tween_property(aura_effect, "rotation", 0.88, spell_animation_duration * 0.72)
+	settle_tween.tween_property(aura_effect, "scale", Vector2(1.75, 1.75), spell_animation_duration * 0.72)
+	settle_tween.tween_property(aura_effect, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	settle_tween.tween_property(pulse_effect, "scale", Vector2(2.10, 2.10), spell_animation_duration * 0.72)
+	settle_tween.tween_property(pulse_effect, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await settle_tween.finished
+
+	aura_effect.queue_free()
+	pulse_effect.queue_free()
 
 
 func play_baptism_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
@@ -916,6 +967,10 @@ func create_arcane_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "ArcaneSpellEffect", create_arcane_spell_effect_style(), 1.22)
 
 
+func create_arcane_aura_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "ArcaneAuraEffect", create_arcane_aura_effect_style(), 1.30)
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -996,6 +1051,17 @@ func create_arcane_spell_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(18)
 	style.shadow_color = arcane_spell_effect_glow_color
 	style.shadow_size = 30
+	return style
+
+
+func create_arcane_aura_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.30, 0.24, 1.0, 0.20)
+	style.border_color = Color(0.72, 0.92, 1.0, 0.78)
+	style.set_border_width_all(9)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.46, 0.72, 1.0, 0.54)
+	style.shadow_size = 38
 	return style
 
 

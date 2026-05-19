@@ -23,12 +23,16 @@ const KEY_STATUS_PERMANENT := "permanent"
 const KEY_STATUS_DURATION_TURNS := "duration_turns"
 const KEY_STATUS_DURATION_SCOPE := "duration_scope"
 const KEY_STATUS_EXPIRES_ON_TRIGGER := "expires_on_trigger"
+const KEY_STATUS_PERSISTS_AFTER_DEATH := "persists_after_death"
 const KEY_STATUS_PAYLOAD := "payload"
+const KEY_STATUS_TURN_EFFECTS := "turn_effects"
 const KEY_FILTER_TYPE := "filter_type"
 const KEY_FILTER_OWNER := "filter_owner"
 const KEY_TARGET_ZONE := "target_zone"
 const KEY_AMOUNT_SOURCE := "amount_source"
 const KEY_CARD_ID := "card_id"
+const KEY_TARGET_CARD_ID := "target_card_id"
+const KEY_TRIGGER_PLAYER := "trigger_player"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -58,6 +62,10 @@ const TARGET_CURRENT_PLAYER := "current_player"
 const TARGET_ADJACENT_TURN_PLAYER_MINIONS := "adjacent_turn_player_minions"
 const TARGET_TURN_PLAYER_MINIONS_BY_CARD_IDS := "turn_player_minions_by_card_ids"
 const TARGET_SELECTED_ADJACENT_ENEMY_MINIONS := "selected_adjacent_enemy_minions"
+const TARGET_OWNER_CARD_BY_ID := "owner_card_by_id"
+
+const TRIGGER_PLAYER_ANY := "any"
+const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
 
 const DEATH_REASON_EFFECT := "effect"
 const DEATH_REASON_SPELL := "spell"
@@ -128,6 +136,10 @@ static func get_card_ids(effect_data: Dictionary) -> Array[String]:
 
 static func get_card_id(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_CARD_ID, ""))
+
+
+static func get_target_card_id(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_TARGET_CARD_ID, ""))
 
 
 static func get_spell_actions(effect_data: Dictionary) -> Array[Dictionary]:
@@ -218,6 +230,28 @@ static func get_status_payload(effect_data: Dictionary) -> Dictionary:
 		return raw_payload.duplicate(true)
 
 	return {}
+
+
+static func get_status_turn_effects(status: CardStatus) -> Array[Dictionary]:
+	var turn_effects: Array[Dictionary] = []
+	if status == null:
+		return turn_effects
+
+	var raw_turn_effects: Variant = status.payload.get(KEY_STATUS_TURN_EFFECTS, [])
+	if raw_turn_effects is Array:
+		for effect_data in raw_turn_effects:
+			if effect_data is Dictionary:
+				turn_effects.append(effect_data)
+
+	return turn_effects
+
+
+static func get_trigger_player(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_TRIGGER_PLAYER, TRIGGER_PLAYER_ANY))
+
+
+static func status_persists_after_death(effect_data: Dictionary) -> bool:
+	return bool(effect_data.get(KEY_STATUS_PERSISTS_AFTER_DEATH, false))
 
 
 static func get_filter_type(effect_data: Dictionary) -> String:

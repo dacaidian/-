@@ -10,7 +10,9 @@ const DURATION_SCOPE_GLOBAL := "global"
 
 const DEFAULT_EXPIRES_ON_TRIGGER := EventContext.TRIGGER_AFTER_TURN_END
 const STATUS_DIVINE_SHIELD := "divine_shield"
+const STATUS_ARCANE_AURA := "arcane_aura"
 const TAG_DAMAGE_PREVENTION := "damage_prevention"
+const TAG_AURA := "aura"
 
 var status_id := ""
 var display_name := ""
@@ -21,6 +23,7 @@ var is_permanent := true
 var remaining_turns := -1
 var duration_scope := DURATION_SCOPE_TARGET_OWNER
 var expires_on_trigger := DEFAULT_EXPIRES_ON_TRIGGER
+var persists_after_death := false
 var source_card_id := ""
 var source_owner_id := ""
 var duration_owner_id := ""
@@ -38,6 +41,7 @@ static func from_effect_data(effect_data: Dictionary, target_state: CardState, s
 	status.remaining_turns = EffectData.get_status_duration_turns(effect_data)
 	status.duration_scope = EffectData.get_status_duration_scope(effect_data)
 	status.expires_on_trigger = EffectData.get_status_expires_on_trigger(effect_data)
+	status.persists_after_death = EffectData.status_persists_after_death(effect_data)
 	status.payload = EffectData.get_status_payload(effect_data)
 
 	if source_state != null:
@@ -115,6 +119,7 @@ func to_snapshot() -> Dictionary:
 		"remaining_turns": remaining_turns,
 		"duration_scope": duration_scope,
 		"expires_on_trigger": expires_on_trigger,
+		"persists_after_death": persists_after_death,
 		"source_card_id": source_card_id,
 		"source_owner_id": source_owner_id,
 		"duration_owner_id": duration_owner_id,
@@ -132,6 +137,7 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	remaining_turns = int(snapshot.get("remaining_turns", -1))
 	duration_scope = str(snapshot.get("duration_scope", DURATION_SCOPE_TARGET_OWNER))
 	expires_on_trigger = str(snapshot.get("expires_on_trigger", DEFAULT_EXPIRES_ON_TRIGGER))
+	persists_after_death = bool(snapshot.get("persists_after_death", false))
 	source_card_id = str(snapshot.get("source_card_id", ""))
 	source_owner_id = str(snapshot.get("source_owner_id", ""))
 	duration_owner_id = str(snapshot.get("duration_owner_id", ""))

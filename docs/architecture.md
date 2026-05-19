@@ -31,7 +31,7 @@
 - `TriggerResolver`：触发队列协作者。当前负责排队并结算 `on_reveal`、`on_destroyed`、`on_effective_heal`；后续亡语、受伤、召唤、施法等触发都应优先接入这里。
 - `StatusResolver`：状态生命周期协作者。当前负责在回合时点推进临时状态的剩余回合；状态本身保存在 `CardState.statuses`，具体中毒伤害、圣盾抵挡等规则后续通过状态 id/tag 接入。
 - `EventContext`：触发名和运行时上下文 key 的常量集合，例如 `TRIGGER_ON_DESTROYED`、`DESTROYER_PLAYER_ID`。规则层和效果层跨模块传上下文时优先使用这里的常量，避免字符串散落。
-- `EffectData`：卡牌效果 JSON 的字段名和基础读取工具，例如 `id`、`trigger`、`active_zone`、`card_ids`、`spell_actions`、`target`、`death_reason`、`filter_type`、`filter_owner`、`target_zone`、`amount_source`、`card_id`。它只定义配置语言，不执行效果；解析升级牌、时点触发、目标过滤、复活坟场筛选、上下文数值来源和运行时目标注入时优先使用这里，避免字符串散落。
+- `EffectData`：卡牌效果 JSON 的字段名和基础读取工具，例如 `id`、`trigger`、`active_zone`、`card_ids`、`spell_actions`、`target`、`target_card_id`、`death_reason`、`filter_type`、`filter_owner`、`target_zone`、`amount_source`、`card_id`、`trigger_player`。它只定义配置语言，不执行效果；解析升级牌、时点触发、目标过滤、复活坟场筛选、状态内回合效果、上下文数值来源和运行时目标注入时优先使用这里，避免字符串散落。
 - `BoardQuery`：棋盘几何和常用目标过滤工具，例如八方向相邻、正面单位、正面随从集合、指定玩家英雄是否正面在场。攻击范围、法术目标、英雄配套牌使用限制、时点光环等规则需要扫描棋盘时优先复用这里，避免每个规则自己计算格子坐标。
 - `HandInteractionController`：手牌 UI 与手牌规则之间的交互编排层，负责手牌焦点、可用提示、动作菜单锚点和手牌点击后的动作流转。
 - `HandCardState`：手牌运行时状态。旧手牌仍可直接保存 `CardData`，但需要冷却、来源、标签等运行时字段的手牌应保存为 `HandCardState`。当前英雄死亡复活会生成带 `cooldown_turns` 的英雄手牌。
@@ -173,7 +173,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、光明使者之锤、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、光明使者之锤、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -235,12 +235,14 @@
 ## 状态约定
 
 - `CardState.statuses` 保存当前附着在这张棋盘单位上的 `CardStatus` 列表。状态会随棋盘状态快照一起交换、入坟和恢复；卡牌离开棋盘或格子被清空时状态也会清空。
-- `CardStatus` 的核心字段包括：`status_id`、`display_name`、`tags`、`stacks`、`is_permanent`、`remaining_turns`、`duration_scope`、`expires_on_trigger`、`source_card_id`、`source_owner_id`、`duration_owner_id` 和 `payload`。
+- `CardStatus` 的核心字段包括：`status_id`、`display_name`、`tags`、`stacks`、`is_permanent`、`remaining_turns`、`duration_scope`、`expires_on_trigger`、`persists_after_death`、`source_card_id`、`source_owner_id`、`duration_owner_id` 和 `payload`。
+- `is_permanent` 只表示“不按回合倒计时”，不表示死亡后保留。死亡、英雄进入复活冷却、离开棋盘时仍会清空状态。若未来需要真正跨死亡/跨区域保留的状态，使用 `persists_after_death` 表达，并在区域迁移流程中显式处理。
 - 永久状态使用 `permanent: true` 或不配置 `duration_turns`；临时状态配置 `duration_turns`。当前默认在 `after_turn_end` 时点减少持续回合。
 - `duration_scope` 决定临时状态按谁的回合倒计时：默认 `target_owner`，也支持 `source_owner` 和 `global`。`target_owner` 会在状态施加时记录目标当时的 owner，避免后续归属变化导致倒计时漂移。
 - `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
-- 圣盾的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾。一次性施法动画仍由 `CardAnimationController` 管理。
+- `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
+- 圣盾和辉煌光环的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾或奥术光环。一次性施法动画仍由 `CardAnimationController` 管理。
 - 同一来源、同一 `status_id` 的状态会合并层数；永久状态合并后保持永久，临时状态合并后保留更长剩余回合。未来如果需要“同名不同来源互斥”“刷新不叠层”等规则，应在 `CardStatus.is_same_stack_key()` 或状态定义中扩展。
 - `StatusResolver` 会在 `GameManager.resolve_turn_timing_triggers()` 的时点触发结算之后推进状态生命周期。这样到期前的状态仍可参与该时点触发，随后再过期。
 
@@ -319,7 +321,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 

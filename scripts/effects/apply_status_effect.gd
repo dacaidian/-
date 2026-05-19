@@ -15,3 +15,5 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 		var status := CardStatus.from_effect_data(effect_data, target_state, source_state)
 		target_state.add_status(status)
+		if game_manager != null and game_manager.has_method("play_status_apply_animation"):
+			await game_manager.play_status_apply_animation(target_state, status.status_id)

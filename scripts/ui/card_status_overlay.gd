@@ -8,6 +8,9 @@ var state: CardState
 var divine_shield_color := Color(1.0, 0.84, 0.24, 0.26)
 var divine_shield_edge_color := Color(1.0, 0.92, 0.48, 0.82)
 var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
+var arcane_aura_color := Color(0.45, 0.35, 1.0, 0.18)
+var arcane_aura_edge_color := Color(0.72, 0.66, 1.0, 0.72)
+var arcane_aura_glow_color := Color(0.40, 0.72, 1.0, 0.28)
 
 
 func _ready() -> void:
@@ -26,7 +29,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield()
+	return should_show_divine_shield() or should_show_arcane_aura()
 
 
 func should_show_divine_shield() -> bool:
@@ -36,9 +39,40 @@ func should_show_divine_shield() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_DIVINE_SHIELD)
 
 
+func should_show_arcane_aura() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ARCANE_AURA)
+
+
 func _draw() -> void:
+	if should_show_arcane_aura():
+		draw_arcane_aura()
 	if should_show_divine_shield():
 		draw_divine_shield()
+
+
+func draw_arcane_aura() -> void:
+	var aura_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.04)
+	var center := aura_rect.get_center()
+	var radius := minf(aura_rect.size.x, aura_rect.size.y) * 0.44
+	var status := state.get_status(CardStatus.STATUS_ARCANE_AURA) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 4)
+
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 5.0
+		var alpha := arcane_aura_edge_color.a * (1.0 - float(index) * 0.13)
+		draw_arc(center, ring_radius, 0.0, TAU, 96, Color(arcane_aura_edge_color.r, arcane_aura_edge_color.g, arcane_aura_edge_color.b, alpha), 2.4, true)
+
+	for index in range(8):
+		var angle := TAU * float(index) / 8.0 + 0.18
+		var from_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.72
+		var to_point := center + Vector2(cos(angle), sin(angle)) * radius * 1.08
+		draw_line(from_point, to_point, arcane_aura_glow_color, 2.0)
+
+	draw_circle(center, radius * 0.74, arcane_aura_color)
 
 
 func draw_divine_shield() -> void:

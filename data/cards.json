@@ -315,7 +315,8 @@
 			{
 				"card_id": "antonidas",
 				"attached_cards": [
-					"summon_water_elemental"
+					"summon_water_elemental",
+					"brilliant_aura"
 				]
 			}
 		],
@@ -576,6 +577,45 @@
 					{
 						"id": "add_card_to_hand",
 						"card_id": "water_elemental"
+					}
+				]
+			},
+			{
+				"id": "brilliant_aura",
+				"name": "辉煌光环",
+				"description": "安东尼达斯散发出奥术光环，己方每回合额外获得1点法力。可叠加。",
+				"url": "res://assets/img/达拉然议会/辉煌光环.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "arcane_aura",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "antonidas",
+						"status_id": "arcane_aura",
+						"status_name": "辉煌光环",
+						"status_description": "每个自己的回合开始前，获得1点额外法力。可叠加。",
+						"status_tags": [
+							"aura",
+							"mana_generation"
+						],
+						"permanent": true,
+						"persists_after_death": false,
+						"payload": {
+							"turn_effects": [
+								{
+									"id": "gain_mana",
+									"trigger": "before_turn_start",
+									"trigger_player": "source_owner",
+									"target": "owner",
+									"amount": 1
+								}
+							]
+						}
 					}
 				]
 			}

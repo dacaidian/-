@@ -75,6 +75,7 @@
 - 新增棋盘单位运行时字段。
 - 新增中毒、圣盾、冻结、临时增益等状态及其持续回合。
 - 圣盾当前是 `divine_shield` 永久可消耗状态；伤害入口在 `CardState.take_damage()`，它会先消耗一层圣盾并抵消本次伤害，再进入数值护盾/生命结算。
+- 辉煌光环当前是 `arcane_aura` 状态；状态的 `payload.turn_effects` 可在回合时点触发效果，状态层数会乘到效果 `amount` 上。
 - 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态和摆放覆盖层。
 
 ### 翻牌与补牌
@@ -273,6 +274,7 @@
 
 - 移动、近战攻击、远程攻击、法术特效、补牌飞行、入手牌飞行。
 - `summon` 是召唤水元素的水蓝法阵与水滴扩散表现，属于无目标手牌法术的 `play_spell_cast_at_rect()` 分支。
+- `arcane_aura` 是辉煌光环的一次性施法/附着动画，持续视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
 - 动画控制器不直接改规则状态；规则变化由 `GameManager` 在 `await` 后处理。
 

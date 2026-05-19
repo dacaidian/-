@@ -71,6 +71,8 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			return get_turn_player_minions_by_card_ids(effect_data, game_manager)
 		EffectData.TARGET_SELECTED_ADJACENT_ENEMY_MINIONS:
 			return get_selected_adjacent_enemy_minions(source_state, effect_data, game_manager)
+		EffectData.TARGET_OWNER_CARD_BY_ID:
+			return get_owner_cards_by_id(source_state, effect_data, game_manager)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
 			return []
@@ -157,6 +159,26 @@ func get_selected_adjacent_enemy_minions(source_state: CardState, effect_data: D
 			continue
 
 		targets.append(target_state)
+
+	return targets
+
+
+func get_owner_cards_by_id(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if game_manager == null:
+		return targets
+
+	var owner_id := get_effect_owner_id(source_state, effect_data)
+	var target_card_id := EffectData.get_target_card_id(effect_data)
+	if owner_id == "" or target_card_id == "":
+		return targets
+
+	for value in game_manager.board_states:
+		var target_state := value as CardState
+		if not BoardQuery.is_face_up_unit(target_state):
+			continue
+		if target_state.owner_id == owner_id and target_state.card_id == target_card_id:
+			targets.append(target_state)
 
 	return targets
 
