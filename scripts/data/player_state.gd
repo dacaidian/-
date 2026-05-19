@@ -304,6 +304,16 @@ func get_latest_spell_action_for_sources(source_card_ids: Array[String]) -> Dict
 	return latest_spell_data.duplicate(true)
 
 
+func get_spell_power_bonus() -> int:
+	var bonus := 0
+	for card_data in get_equipped_cards():
+		for effect_data in card_data.effects:
+			if EffectData.get_id(effect_data) == EffectData.EFFECT_MODIFY_SPELL_POWER:
+				bonus += EffectData.get_amount(effect_data)
+
+	return bonus
+
+
 func get_equipped_cards() -> Array[CardData]:
 	var equipped_cards: Array[CardData] = []
 	for card_data in equipped_cards_by_type.values():

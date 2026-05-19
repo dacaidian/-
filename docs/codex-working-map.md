@@ -229,6 +229,7 @@
 常见修改：
 
 - 新增治疗、伤害、护盾、翻牌、资源分、复活、卡牌生成等公共效果。
+- 法术强度统一走 `modify_spell_power` 与 `CardEffect.get_spell_scaled_amount()`；只有施法入口打了 `_apply_spell_power` 的运行时效果会吃法强，非施法触发不要手动加成。
 - 复活效果 `resurrect` 通过 `filter_type`/`filter_owner`/`amount`/`target_zone` 配置，可被不同卡牌复用；当前支持复活到 `hand`。选中 UI 委托给 `CardMultiSelectController`。是否有合法坟场候选由 `ResurrectEffect.can_execute()` 判断，手牌施放入口只通过 `EffectRegistry.can_execute_effect()` 询问，不直接依赖具体效果类。
 - 有效治疗联动走 `on_effective_heal` 触发。`HealEffect` 只负责计算实际恢复量并排队触发；按有效治疗量缩放的效果使用 `amount_source: "effective_heal"`，例如战斗牧师的 `gain_attack`。
 - 法术目标规则统一放在 `SpellTargetResolver`。

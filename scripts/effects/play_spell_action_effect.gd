@@ -29,6 +29,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		EffectData.mark_effect_owner(runtime_effect_data, source_state.owner_id)
 		if SpellTargetResolver.requires_target(target_rule):
 			EffectData.mark_selected_target(runtime_effect_data, target_state)
+		EffectData.mark_spell_power_enabled(runtime_effect_data)
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_EFFECT)
 		await game_manager.effect_registry.execute_effect(source_state, runtime_effect_data, game_manager)
 

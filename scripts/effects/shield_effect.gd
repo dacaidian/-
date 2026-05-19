@@ -5,7 +5,7 @@ class_name ShieldEffect
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
-	var amount := get_amount(effect_data)
+	var amount := get_spell_scaled_amount(source_state, effect_data, game_manager)
 
 	for target_state in get_target_states(source_state, effect_data, game_manager):
 		target_state.gain_shield(amount)

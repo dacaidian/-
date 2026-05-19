@@ -66,6 +66,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		var runtime_effect_data := effect_data.duplicate(true)
 		if requires_target():
 			EffectData.mark_selected_target(runtime_effect_data, target)
+		EffectData.mark_spell_power_enabled(runtime_effect_data)
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_SPELL)
 		await game_manager.effect_registry.execute_effect(user, runtime_effect_data, game_manager)
 

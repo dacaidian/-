@@ -317,7 +317,8 @@
 				"attached_cards": [
 					"summon_water_elemental",
 					"brilliant_aura",
-					"academy_summon"
+					"academy_summon",
+					"staff_of_antonidas"
 				]
 			}
 		],
@@ -671,6 +672,23 @@
 								"amount": 3
 							}
 						]
+					}
+				]
+			},
+			{
+				"id": "staff_of_antonidas",
+				"name": "安东尼达斯的圣杖",
+				"description": "英雄装备，武器。法术强度+3。",
+				"url": "res://assets/img/达拉然议会/安东尼达斯的圣杖.png",
+				"type": "equipment",
+				"equipment_type": "weapon",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_spell_power",
+						"amount": 3
 					}
 				]
 			}

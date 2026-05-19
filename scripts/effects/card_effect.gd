@@ -15,6 +15,26 @@ func get_amount(effect_data: Dictionary) -> int:
 	return EffectData.get_amount(effect_data)
 
 
+func get_spell_scaled_amount(
+	source_state: CardState,
+	effect_data: Dictionary,
+	game_manager: Node
+) -> int:
+	var amount := get_amount(effect_data)
+	if amount <= 0 or not EffectData.should_apply_spell_power(effect_data):
+		return amount
+
+	var owner_id := get_effect_owner_id(source_state, effect_data)
+	if owner_id == "" or game_manager == null or not game_manager.has_method("get_player_by_id"):
+		return amount
+
+	var owner := game_manager.get_player_by_id(owner_id) as PlayerState
+	if owner == null:
+		return amount
+
+	return amount + owner.get_spell_power_bonus()
+
+
 func get_target(effect_data: Dictionary) -> String:
 	# target 来自 JSON 或运行时动作注入。常用值包括 self、selected。
 	return EffectData.get_target(effect_data)

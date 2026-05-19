@@ -152,6 +152,7 @@ func execute_hand_card(
 		EffectData.mark_effect_owner(runtime_effect_data, player.id)
 		if requires_target(card_data):
 			EffectData.mark_selected_target(runtime_effect_data, target_state)
+		EffectData.mark_spell_power_enabled(runtime_effect_data)
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_HAND_SPELL)
 		await game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
 

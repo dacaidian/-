@@ -5,7 +5,7 @@ class_name DamageEffect
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	# 从 JSON 效果定义里读取伤害数值。
-	var amount := get_amount(effect_data)
+	var amount := get_spell_scaled_amount(source_state, effect_data, game_manager)
 	var damaged_targets: Array[CardState] = []
 
 	# 对所有目标状态造成伤害。

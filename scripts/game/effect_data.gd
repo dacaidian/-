@@ -15,6 +15,8 @@ const KEY_TARGET := "target"
 const KEY_SELECTED_TARGET_STATE := "_selected_target_state"
 const KEY_EFFECT_OWNER_ID := "_effect_owner_id"
 const KEY_DEATH_REASON := "death_reason"
+const KEY_APPLY_SPELL_POWER := "_apply_spell_power"
+const KEY_SPELL_POWER_SCALING := "spell_power_scaling"
 const KEY_STATUS_ID := "status_id"
 const KEY_STATUS_NAME := "status_name"
 const KEY_STATUS_DESCRIPTION := "status_description"
@@ -47,6 +49,7 @@ const EFFECT_PASSIVE_FLIP_BONUS := "passive_flip_bonus"
 const EFFECT_APPLY_STATUS := "apply_status"
 const EFFECT_SET_UNIT_MOVEMENT := "set_unit_movement"
 const EFFECT_MODIFY_UNIT_ATTACK := "modify_unit_attack"
+const EFFECT_MODIFY_SPELL_POWER := "modify_spell_power"
 const EFFECT_RESURRECT := "resurrect"
 const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
@@ -117,6 +120,10 @@ static func get_effect_owner_id(effect_data: Dictionary) -> String:
 
 static func get_death_reason(effect_data: Dictionary, default_reason := DEATH_REASON_EFFECT) -> String:
 	return str(effect_data.get(KEY_DEATH_REASON, default_reason))
+
+
+static func should_apply_spell_power(effect_data: Dictionary) -> bool:
+	return bool(effect_data.get(KEY_APPLY_SPELL_POWER, false)) and bool(effect_data.get(KEY_SPELL_POWER_SCALING, true))
 
 
 static func is_active_in_hand(effect_data: Dictionary) -> bool:
@@ -202,6 +209,10 @@ static func mark_selected_target(effect_data: Dictionary, target_state: CardStat
 static func mark_effect_owner(effect_data: Dictionary, owner_id: String) -> void:
 	if owner_id != "":
 		effect_data[KEY_EFFECT_OWNER_ID] = owner_id
+
+
+static func mark_spell_power_enabled(effect_data: Dictionary) -> void:
+	effect_data[KEY_APPLY_SPELL_POWER] = true
 
 
 static func ensure_death_reason(effect_data: Dictionary, death_reason: String) -> void:

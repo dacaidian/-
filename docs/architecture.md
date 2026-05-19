@@ -174,7 +174,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -373,3 +373,4 @@
 - 新增衍生牌：在对应种族的 `tokens[]` 字段下添加卡牌定义，由 `CardDatabase` 自动注册到全局查表。生成衍生牌的效果使用通用 `add_card_to_hand` 效果并指定 `card_id`，需要多张时配置 `amount`；需要三选一或多选奖励时使用 `choose_card_to_hand`、`card_ids` 和 `bonus_cards`；不要在效果或行动中手动构造 CardData。
 - 新增手牌法术：在卡牌自身配置 `type: "spell"`、`target_rule`、`animation` 和 `effects`，由 `HandPlayResolver` 解释；不要把手牌法术写成随从的 `spell_actions`。如果它属于某个英雄，把卡牌 id 放入该英雄的 `heroes[].attached_cards`，不要在规则层写死卡牌名。
 - 新增动态授予法术：优先扩展 `GrantedSpellResolver` 和 `PlayerState` 中的施法历史，不要在 `ActionRegistry` 或 UI 层根据卡牌名临时拼动作。像“学习最近一次法术”这种规则使用 `grant_last_spell_action`、`card_ids` 和 `source_card_ids` 配置。
+- 新增法术强度：装备或其他区域效果使用 `modify_spell_power`。法术施放入口通过 `EffectData.mark_spell_power_enabled()` 给运行时效果打标，`CardEffect.get_spell_scaled_amount()` 统一读取玩家装备法强；回合触发、亡语、建筑治疗等非施法效果不会自动吃法强。默认加成 `damage`、`heal`、`shield`、`increase_max_health` 这类直接数值法术效果，如需某个效果不吃法强，可配置 `spell_power_scaling: false`。
