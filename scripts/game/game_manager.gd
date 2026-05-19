@@ -18,6 +18,7 @@ const TriggerResolverScript := preload("res://scripts/game/trigger_resolver.gd")
 const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_resolver.gd")
 const StatusResolverScript := preload("res://scripts/game/status_resolver.gd")
 const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_trigger_resolver.gd")
+const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 
 # GameManager 是战局编排入口。
 # 它持有玩家、棋盘、牌池和交互状态，负责串起回合、行动、死亡、补位等规则流程。
@@ -124,6 +125,7 @@ var trigger_resolver := TriggerResolverScript.new()
 var turn_trigger_resolver := TurnTriggerResolverScript.new()
 var status_resolver := StatusResolverScript.new()
 var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
+var victory_screen_controller: VictoryScreenController
 
 # 当前操作人索引，只由 GameManager 修改。
 var current_player_index := 0
@@ -682,9 +684,34 @@ func check_victory() -> void:
 	update_hand_drawer_view()
 	refresh_debug_panel()
 
+	await _show_victory_screen(winner)
+	_transition_to_start_menu()
+
 
 func get_winner_player() -> PlayerState:
 	return get_player_by_id(winner_player_id)
+
+
+func _show_victory_screen(winner: PlayerState) -> void:
+	victory_screen_controller = VictoryScreenControllerScript.new()
+	await victory_screen_controller.show(
+		get_parent(), winner, players, turn_number, victory_resource_score
+	)
+
+
+func _transition_to_start_menu() -> void:
+	var start_menu_scene := load("res://scenes/start_menu/start_menu.tscn") as PackedScene
+	if start_menu_scene == null:
+		push_error("找不到主菜单场景: res://scenes/start_menu/start_menu.tscn")
+		return
+
+	var start_menu := start_menu_scene.instantiate()
+	get_tree().root.add_child(start_menu)
+	get_tree().current_scene = start_menu
+
+	var main_root := get_parent()
+	if main_root != null:
+		main_root.queue_free()
 
 
 func check_and_destroy_if_dead(state: CardState, reason: String = "damage", source_state: CardState = null) -> bool:
