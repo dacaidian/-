@@ -286,7 +286,7 @@ func get_latest_spell_action_for_sources(source_card_ids: Array[String]) -> Dict
 	var latest_spell_data: Dictionary = {}
 
 	for source_card_id in source_card_ids:
-		var record := last_spell_records_by_source_card_id.get(source_card_id, {})
+		var record: Dictionary = last_spell_records_by_source_card_id.get(source_card_id, {})
 		if not record is Dictionary:
 			continue
 
@@ -294,7 +294,7 @@ func get_latest_spell_action_for_sources(source_card_ids: Array[String]) -> Dict
 		if sequence <= latest_sequence:
 			continue
 
-		var spell_data := record.get("spell_data", {})
+		var spell_data: Dictionary = record.get("spell_data", {})
 		if not spell_data is Dictionary or spell_data.is_empty():
 			continue
 

@@ -913,15 +913,14 @@ func play_effect_heal_animation(target_state: CardState) -> void:
 	)
 
 
-func play_status_apply_animation(target_state: CardState, status_id: String) -> void:
-	if target_state == null or status_id == "":
+func play_status_apply_animation(target_state: CardState, animation_key: String) -> void:
+	if target_state == null or animation_key == "":
 		return
 
 	var target_card: Card = get_card_by_slot(target_state.slot_index)
 	if target_card == null:
 		return
 
-	var animation_key := "arcane_aura" if status_id == CardStatus.STATUS_ARCANE_AURA else "arcane"
 	await card_animation_controller.play_spell_cast(
 		self,
 		get_overlay_animation_root(),

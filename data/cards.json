@@ -623,6 +623,7 @@
 						"target": "owner_card_by_id",
 						"target_card_id": "antonidas",
 						"status_id": "arcane_aura",
+						"apply_animation": "arcane_aura",
 						"status_name": "辉煌光环",
 						"status_description": "每个自己的回合开始前，获得1点额外法力。可叠加。",
 						"status_tags": [

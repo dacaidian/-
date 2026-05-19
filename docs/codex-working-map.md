@@ -76,6 +76,7 @@
 - 新增中毒、圣盾、冻结、临时增益等状态及其持续回合。
 - 圣盾当前是 `divine_shield` 永久可消耗状态；伤害入口在 `CardState.take_damage()`，它会先消耗一层圣盾并抵消本次伤害，再进入数值护盾/生命结算。
 - 辉煌光环当前是 `arcane_aura` 状态；状态的 `payload.turn_effects` 可在回合时点触发效果，状态层数会乘到效果 `amount` 上。
+- `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
 - 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态和摆放覆盖层。
 
 ### 翻牌与补牌
@@ -125,6 +126,7 @@
 
 - 新增装备类型：在 JSON 配置 `type: "equipment"` 和 `equipment_type`。
 - 新增装备触发：优先放到 `EquipmentTriggerResolver`，不要塞进具体行动。
+- 装备法术强度：使用 `modify_spell_power` 效果；法强通过 `CardEffect.get_spell_scaled_amount()` 统一加成伤害/治疗/护盾数值，只有施法入口打了 `_apply_spell_power` 的运行时效果会吃法强。
 - 复用既有法术定义：使用 `play_spell_action` + `card_id`，例如光明使者之锤在 `after_attack` 触发洗礼；自动目标仍必须通过 `SpellTargetResolver` 校验。
 - 装备展示：右侧 `EquipmentDisplayController` 读取当前玩家的 `PlayerState.equipped_cards_by_type` / `get_equipped_cards()`；只改展示时优先碰这个文件，不要把装备规则写进 UI。
 

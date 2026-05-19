@@ -184,7 +184,8 @@
 - 当前支持两个公共时点：`before_turn_start` 和 `after_turn_end`。`after_turn_end` 在刚结束回合玩家执行 `PlayerState.end_turn()` 后触发；`before_turn_start` 在下一名玩家执行 `PlayerState.start_turn()` 前触发。
 - 时点触发上下文会注入 `EventContext.TURN_PLAYER_ID`，表示该时点对应的玩家。效果需要判断“当前回合玩家”时应读取这个上下文，而不是猜测来源牌归属。
 - 回合时点触发源来自战场上所有正面牌，按 `slot_index` 从小到大稳定入队。每张牌是否触发由自身 `effects[].trigger` 决定。
-- 手牌中的升级牌也可以成为回合时点效果来源，但必须显式配置 `active_zone: "hand"`。`TurnTriggerResolver` 会在战场时点触发后，结算当前回合玩家手牌中满足该时点的升级牌效果；具体效果仍交给 `EffectRegistry`。
+- 战场单位上附着的状态也可以成为回合时点效果来源，通过 `payload.turn_effects` 配置效果列表。`TurnTriggerResolver` 会在战场时点触发后，扫描棋盘正面单位的状态并结算满足时点的状态内效果；状态层数（`stacks`）会乘到效果 `amount` 上。当前辉煌光环的 `arcane_aura` 状态使用这套机制在 `before_turn_start` 时点产生额外法力。
+- 手牌中的升级牌也可以成为回合时点效果来源，但必须显式配置 `active_zone: "hand"`。`TurnTriggerResolver` 会在战场时点触发和状态效果后，结算当前回合玩家手牌中满足该时点的升级牌效果；具体效果仍交给 `EffectRegistry`。
 - 生命之泉使用 `after_turn_end`，目标为 `adjacent_turn_player_minions`，表示只治疗与生命之泉 8 邻接且属于刚结束回合玩家的正面随从。触发型 `heal` 效果会先播放治疗特效，再结算恢复。后续毒性、灼烧、眩晕倒计时等也应优先通过时点触发和效果目标规则扩展。
 - 信仰圣光使用 `after_turn_end` + `active_zone: "hand"`，目标为 `turn_player_minions_by_card_ids`，并通过 `card_ids` 限定联动卡牌。这个目标规则表示：选择 `EventContext.TURN_PLAYER_ID` 拥有的、战场正面、类型为随从、且 `card_id` 在白名单内的单位。
 
@@ -240,7 +241,7 @@
 - `is_permanent` 只表示“不按回合倒计时”，不表示死亡后保留。死亡、英雄进入复活冷却、离开棋盘时仍会清空状态。若未来需要真正跨死亡/跨区域保留的状态，使用 `persists_after_death` 表达，并在区域迁移流程中显式处理。
 - 永久状态使用 `permanent: true` 或不配置 `duration_turns`；临时状态配置 `duration_turns`。当前默认在 `after_turn_end` 时点减少持续回合。
 - `duration_scope` 决定临时状态按谁的回合倒计时：默认 `target_owner`，也支持 `source_owner` 和 `global`。`target_owner` 会在状态施加时记录目标当时的 owner，避免后续归属变化导致倒计时漂移。
-- `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。
+- `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。可选字段 `apply_animation` 指定状态施加瞬间的视觉动画 key；没有该字段时不播放额外动画，由施法来源自身的动画负责表现。
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - 圣盾和辉煌光环的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾或奥术光环。一次性施法动画仍由 `CardAnimationController` 管理。
