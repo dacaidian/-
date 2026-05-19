@@ -316,7 +316,8 @@
 				"card_id": "antonidas",
 				"attached_cards": [
 					"summon_water_elemental",
-					"brilliant_aura"
+					"brilliant_aura",
+					"academy_summon"
 				]
 			}
 		],
@@ -616,6 +617,36 @@
 								}
 							]
 						}
+					}
+				]
+			},
+			{
+				"id": "academy_summon",
+				"name": "学院召唤",
+				"description": "选择一名法师置入手牌，并额外获得3个法师学徒。",
+				"url": "res://assets/img/达拉然议会/学院召唤.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "summon",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "choose_card_to_hand",
+						"selection_title": "选择学院召唤的法师",
+						"card_ids": [
+							"arcane_mage",
+							"fire_witch",
+							"frost_witch"
+						],
+						"amount": 1,
+						"bonus_cards": [
+							{
+								"card_id": "mage_apprentice",
+								"amount": 3
+							}
+						]
 					}
 				]
 			}

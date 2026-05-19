@@ -33,6 +33,8 @@ const KEY_AMOUNT_SOURCE := "amount_source"
 const KEY_CARD_ID := "card_id"
 const KEY_TARGET_CARD_ID := "target_card_id"
 const KEY_TRIGGER_PLAYER := "trigger_player"
+const KEY_BONUS_CARDS := "bonus_cards"
+const KEY_SELECTION_TITLE := "selection_title"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -47,6 +49,7 @@ const EFFECT_RESURRECT := "resurrect"
 const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
 const EFFECT_ADD_CARD_TO_HAND := "add_card_to_hand"
+const EFFECT_CHOOSE_CARD_TO_HAND := "choose_card_to_hand"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -140,6 +143,21 @@ static func get_card_id(effect_data: Dictionary) -> String:
 
 static func get_target_card_id(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TARGET_CARD_ID, ""))
+
+
+static func get_selection_title(effect_data: Dictionary, default_title := "选择一张卡牌") -> String:
+	return str(effect_data.get(KEY_SELECTION_TITLE, default_title))
+
+
+static func get_bonus_cards(effect_data: Dictionary) -> Array[Dictionary]:
+	var bonus_cards: Array[Dictionary] = []
+	var raw_bonus_cards: Variant = effect_data.get(KEY_BONUS_CARDS, [])
+	if raw_bonus_cards is Array:
+		for bonus_card in raw_bonus_cards:
+			if bonus_card is Dictionary:
+				bonus_cards.append(bonus_card)
+
+	return bonus_cards
 
 
 static func get_spell_actions(effect_data: Dictionary) -> Array[Dictionary]:

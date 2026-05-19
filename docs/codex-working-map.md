@@ -163,10 +163,12 @@
 - 英雄自身复活不走普通坟场：英雄死亡后由 `DeathResolver` 生成带 `cooldown_turns = 3` 的 `HandCardState` 进入所属玩家手牌。冷却在玩家自己的回合开始时推进，UI 会在手牌右上角显示冷却数字。
 - 坟场移除必须从高索引到低索引删除，避免索引偏移。
 
+### 衍生牌与卡牌生成
 
 优先读：
 
 - `scripts/effects/add_card_to_hand_effect.gd`
+- `scripts/effects/choose_card_to_hand_effect.gd`
 - `scripts/data/card_database.gd` 中 `load_faction()` 对 `tokens[]` 的处理。
 - `scripts/data/card_data.gd`
 - `data/cards.json`
@@ -175,6 +177,7 @@
 
 - 新增衍生牌：在目标种族 `tokens[]` 中定义卡牌（`count: 0`，不入牌池）。
 - 新增生成衍生牌的效果：使用通用效果 `add_card_to_hand` + `card_id`；需要多张时配置 `amount`，省略则默认 1；不要为每种衍生牌写专用效果。
+- 新增三选一或多选获取：使用通用效果 `choose_card_to_hand` + `card_ids`；固定额外奖励用 `bonus_cards` 配置，不要把选择面板逻辑写进具体卡牌。
 - 衍生牌也可用于英雄配套法术生成的随从（如安东尼达斯的召唤水元素），享受完整的英雄关联约束。
 
 ### 行动系统
