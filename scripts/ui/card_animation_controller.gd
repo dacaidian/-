@@ -20,6 +20,8 @@ var shield_spell_effect_color := Color(0.34, 0.78, 1.0, 0.34)
 var shield_spell_effect_glow_color := Color(0.52, 0.92, 1.0, 0.64)
 var arcane_spell_effect_color := Color(0.48, 0.42, 1.0, 0.36)
 var arcane_spell_effect_glow_color := Color(0.72, 0.64, 1.0, 0.62)
+var summon_spell_effect_color := Color(0.20, 0.76, 1.0, 0.34)
+var summon_spell_effect_glow_color := Color(0.62, 0.94, 1.0, 0.70)
 var fireball_projectile_size := Vector2(34, 22)
 var fireball_projectile_color := Color(1.0, 0.34, 0.08, 0.96)
 var fireball_projectile_glow_color := Color(1.0, 0.72, 0.18, 0.58)
@@ -331,6 +333,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
+		"summon":
+			await play_summon_spell_at_rect(owner, effect_root, target_rect)
 		"baptism":
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		_:
@@ -616,6 +620,55 @@ func play_baptism_spell_at_rect(owner: Node, effect_root: Control, target_rect: 
 	wave_effect.queue_free()
 
 
+func play_summon_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var portal_effect := create_summon_spell_effect_for_rect(target_rect)
+	var wave_effect := create_summon_wave_effect_for_rect(target_rect)
+	var droplets: Array[Panel] = create_summon_droplets_for_rect(target_rect)
+	effect_root.add_child(wave_effect)
+	effect_root.add_child(portal_effect)
+	for droplet in droplets:
+		effect_root.add_child(droplet)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_SINE)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(portal_effect, "scale", Vector2(1.14, 1.14), spell_animation_duration * 0.42)
+	rise_tween.tween_property(portal_effect, "rotation", 0.20, spell_animation_duration * 0.42)
+	rise_tween.tween_property(portal_effect, "modulate:a", 0.96, spell_animation_duration * 0.42)
+	rise_tween.tween_property(wave_effect, "scale", Vector2(1.36, 1.36), spell_animation_duration * 0.42)
+	rise_tween.tween_property(wave_effect, "modulate:a", 0.72, spell_animation_duration * 0.42)
+	for droplet in droplets:
+		var offset: Vector2 = droplet.get_meta("summon_offset", Vector2.ZERO)
+		rise_tween.tween_property(droplet, "position", droplet.position + offset * 0.35, spell_animation_duration * 0.42)
+		rise_tween.tween_property(droplet, "modulate:a", 0.92, spell_animation_duration * 0.42)
+	await rise_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(portal_effect, "scale", Vector2(1.66, 1.66), spell_animation_duration * 0.72)
+	burst_tween.tween_property(portal_effect, "rotation", 0.72, spell_animation_duration * 0.72)
+	burst_tween.tween_property(portal_effect, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(wave_effect, "scale", Vector2(2.55, 2.55), spell_animation_duration * 0.72)
+	burst_tween.tween_property(wave_effect, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for droplet in droplets:
+		var offset: Vector2 = droplet.get_meta("summon_offset", Vector2.ZERO)
+		burst_tween.tween_property(droplet, "position", droplet.position + offset, spell_animation_duration * 0.72)
+		burst_tween.tween_property(droplet, "scale", Vector2(0.25, 0.25), spell_animation_duration * 0.72)
+		burst_tween.tween_property(droplet, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await burst_tween.finished
+
+	portal_effect.queue_free()
+	wave_effect.queue_free()
+	for droplet in droplets:
+		droplet.queue_free()
+
+
 func play_fireball_spell(owner: Node, effect_root: Control, caster_card: Card, target_card: Card, size_scale := 1.0) -> void:
 	if owner == null or effect_root == null or caster_card == null or target_card == null:
 		return
@@ -863,6 +916,39 @@ func create_arcane_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "ArcaneSpellEffect", create_arcane_spell_effect_style(), 1.22)
 
 
+func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
+
+
+func create_summon_wave_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "SummonWaveEffect", create_summon_wave_effect_style(), 1.04)
+
+
+func create_summon_droplets_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var droplets: Array[Panel] = []
+	var center: Vector2 = target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.42
+	var droplet_size := Vector2(14.0, 14.0)
+
+	for index in range(6):
+		var angle: float = TAU * float(index) / 6.0 - PI * 0.5
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.34
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * 0.90
+		var droplet := Panel.new()
+		droplet.name = "SummonDroplet_%d" % index
+		droplet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		droplet.size = droplet_size
+		droplet.pivot_offset = droplet_size * 0.5
+		droplet.global_position = center + start_offset - droplet.pivot_offset
+		droplet.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		droplet.z_index = 2320
+		droplet.set_meta("summon_offset", burst_offset)
+		droplet.add_theme_stylebox_override("panel", create_summon_droplet_style())
+		droplets.append(droplet)
+
+	return droplets
+
+
 func create_baptism_wave_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "BaptismWaveEffect", create_baptism_wave_effect_style(), 1.16)
 
@@ -910,6 +996,39 @@ func create_arcane_spell_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(18)
 	style.shadow_color = arcane_spell_effect_glow_color
 	style.shadow_size = 30
+	return style
+
+
+func create_summon_spell_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = summon_spell_effect_color
+	style.border_color = summon_spell_effect_glow_color
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = summon_spell_effect_glow_color
+	style.shadow_size = 34
+	return style
+
+
+func create_summon_wave_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.18, 0.52, 1.0, 0.16)
+	style.border_color = Color(0.72, 0.96, 1.0, 0.74)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.34, 0.78, 1.0, 0.42)
+	style.shadow_size = 30
+	return style
+
+
+func create_summon_droplet_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.62, 0.95, 1.0, 0.92)
+	style.border_color = Color(0.94, 1.0, 1.0, 0.78)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.32, 0.80, 1.0, 0.54)
+	style.shadow_size = 14
 	return style
 
 

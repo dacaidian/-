@@ -319,7 +319,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 
