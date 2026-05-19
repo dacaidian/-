@@ -7,6 +7,10 @@ const CardStatusOverlayScript := preload("res://scripts/ui/card_status_overlay.g
 # Card 不直接修改游戏状态，而是把操作交给 GameManager。
 signal clicked(card: Card)
 
+# 鼠标进入/离开卡牌区域时发出的信号，携带 Card 引用方便外部连接。
+signal mouse_entered_card(card: Card)
+signal mouse_exited_card(card: Card)
+
 # 卡牌正反面状态变化时发出的信号。它来自 CardState 的变化。
 # 其他功能组件，例如悬浮预览，可以监听这个信号。
 signal face_changed(is_face_up: bool)
@@ -40,6 +44,8 @@ signal face_changed(is_face_up: bool)
 @export var valid_target_backlight_color := Color(1.0, 1.0, 1.0, 0.70)
 @export var valid_target_backlight_size := 24
 @export var valid_target_backlight_margin := 12
+@export var area_preview_color := Color(0.26, 0.58, 1.0, 0.52)
+@export var area_preview_edge_color := Color(0.52, 0.85, 1.0, 0.88)
 @export var divine_shield_color := Color(1.0, 0.84, 0.24, 0.26)
 @export var divine_shield_edge_color := Color(1.0, 0.92, 0.48, 0.82)
 @export var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
@@ -79,6 +85,17 @@ func _ready() -> void:
 	setup_shield_texture()
 	setup_attack_texture()
 	update_card_texture()
+
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+
+
+func _on_mouse_entered() -> void:
+	mouse_entered_card.emit(self)
+
+
+func _on_mouse_exited() -> void:
+	mouse_exited_card.emit(self)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -391,6 +408,9 @@ func _draw() -> void:
 		return
 
 	# 焦点态优先显示金色背光；此时不显示当前回合的绿色可操纵提示。
+	if state.is_area_preview:
+		draw_area_preview()
+
 	if state.is_selected:
 		draw_backlight(selected_backlight_color, selected_backlight_size, selected_backlight_margin)
 		return
@@ -428,3 +448,9 @@ func draw_backlight(backlight_color: Color, backlight_size: int, backlight_margi
 		backlight_color.a * 0.10
 	)
 	draw_rect(card_rect.grow(float(backlight_margin) * 0.35), inner_glow_color, true)
+
+
+func draw_area_preview() -> void:
+	var card_rect := Rect2(Vector2.ZERO, size)
+	draw_rect(card_rect, area_preview_color, true)
+	draw_rect(card_rect, area_preview_edge_color, false, 4)

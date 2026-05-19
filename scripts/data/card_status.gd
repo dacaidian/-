@@ -13,6 +13,8 @@ const STATUS_DIVINE_SHIELD := "divine_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
 const TAG_DAMAGE_PREVENTION := "damage_prevention"
 const TAG_AURA := "aura"
+const TAG_ACTION_PREVENTION := "action_prevention"
+const STATUS_FREEZE := "freeze"
 
 var status_id := ""
 var display_name := ""

@@ -312,6 +312,10 @@ func initialize_board() -> void:
 		# 点击事件统一进入 GameManager，Card 自己不改状态。
 		if not card.clicked.is_connected(_on_card_clicked):
 			card.clicked.connect(_on_card_clicked)
+		if not card.mouse_entered_card.is_connected(_on_card_hovered):
+			card.mouse_entered_card.connect(_on_card_hovered)
+		if not card.mouse_exited_card.is_connected(_on_card_unhovered):
+			card.mouse_exited_card.connect(_on_card_unhovered)
 
 	debug_panel = get_node_or_null(debug_panel_path)
 	refresh_action_available_hints()
@@ -456,6 +460,16 @@ func get_board_state(slot_index: int) -> CardState:
 		return null
 
 	return board_states[slot_index]
+
+
+func _on_card_hovered(card: Card) -> void:
+	if interaction_manager.is_area_target_mode:
+		interaction_manager.update_area_preview(card.state, board_states, self)
+
+
+func _on_card_unhovered(_card: Card) -> void:
+	if interaction_manager.is_area_target_mode:
+		interaction_manager.clear_area_preview(board_states)
 
 
 func _on_card_clicked(card: Card) -> void:
@@ -891,6 +905,26 @@ func play_spell_cast_animation(caster_state: CardState, target_state: CardState,
 		get_overlay_animation_root(),
 		caster_card,
 		target_card,
+		spell_data
+	)
+	is_resolving_card_action = false
+
+
+func play_area_spell_animation(caster_state: CardState, center_state: CardState, spell_data: Dictionary) -> void:
+	if caster_state == null or center_state == null:
+		return
+
+	var caster_card: Card = get_card_by_slot(caster_state.slot_index)
+	var center_card: Card = get_card_by_slot(center_state.slot_index)
+	if caster_card == null or center_card == null:
+		return
+
+	is_resolving_card_action = true
+	await card_animation_controller.play_area_spell_cast(
+		self,
+		get_overlay_animation_root(),
+		caster_card,
+		center_card,
 		spell_data
 	)
 	is_resolving_card_action = false

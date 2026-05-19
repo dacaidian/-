@@ -874,6 +874,91 @@ func play_dark_arrow_spell(owner: Node, effect_root: Control, caster_center: Vec
 	target_card.is_animating = false
 
 
+func play_area_spell_cast(owner: Node, effect_root: Control, caster_card: Card, center_card: Card, spell_data: Dictionary) -> void:
+	if owner == null or effect_root == null or caster_card == null or center_card == null:
+		return
+
+	var animation_key := str(spell_data.get("animation", spell_data.get("id", "")))
+	match animation_key:
+		"blizzard":
+			await play_blizzard_area_spell(owner, effect_root, caster_card, center_card, spell_data)
+		_:
+			await play_default_spell(owner, center_card)
+
+
+func play_blizzard_area_spell(owner: Node, effect_root: Control, caster_card: Card, center_card: Card, spell_data: Dictionary) -> void:
+	var area_rows: int = int(spell_data.get("area_rows", 3))
+	var area_cols: int = int(spell_data.get("area_cols", 3))
+
+	caster_card.is_animating = true
+	var caster_start_scale: Vector2 = caster_card.scale
+	var caster_start_z_index: int = caster_card.z_index
+	caster_card.z_index = 1180
+
+	var charge_duration: float = spell_animation_duration * 0.22
+	var charge_tween := owner.create_tween()
+	charge_tween.set_parallel(true)
+	charge_tween.set_trans(Tween.TRANS_SINE)
+	charge_tween.set_ease(Tween.EASE_OUT)
+	charge_tween.tween_property(caster_card, "scale", caster_start_scale * 1.08, charge_duration)
+	await charge_tween.finished
+
+	var center_rect: Rect2 = center_card.get_global_rect()
+	var center_pos: Vector2 = center_rect.get_center()
+	var card_size_ref: Vector2 = center_card.size
+
+	var area_width: float = card_size_ref.x * area_cols
+	var area_height: float = card_size_ref.y * area_rows
+	var area_rect := Rect2(center_pos - Vector2(area_width, area_height) * 0.5, Vector2(area_width, area_height))
+
+	var blizzard_effect := create_blizzard_area_effect(area_rect)
+	effect_root.add_child(blizzard_effect)
+
+	var blizzard_duration: float = spell_animation_duration * 0.70
+	var blizzard_tween := owner.create_tween()
+	blizzard_tween.set_parallel(true)
+	blizzard_tween.set_trans(Tween.TRANS_SINE)
+	blizzard_tween.set_ease(Tween.EASE_IN_OUT)
+	blizzard_tween.tween_property(blizzard_effect, "modulate:a", 0.88, blizzard_duration * 0.3)
+	blizzard_tween.tween_property(blizzard_effect, "scale", Vector2(1.06, 1.06), blizzard_duration * 0.3)
+	await owner.create_tween().tween_interval(blizzard_duration * 0.4).finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(blizzard_effect, "modulate:a", 0.0, blizzard_duration * 0.3)
+	fade_tween.tween_property(blizzard_effect, "scale", Vector2(1.16, 1.16), blizzard_duration * 0.3)
+	fade_tween.tween_property(caster_card, "scale", caster_start_scale, blizzard_duration * 0.3)
+	await fade_tween.finished
+
+	blizzard_effect.queue_free()
+	caster_card.scale = caster_start_scale
+	caster_card.z_index = caster_start_z_index
+	caster_card.is_animating = false
+
+
+func create_blizzard_area_effect(area_rect: Rect2) -> Panel:
+	var effect := Panel.new()
+	effect.name = "BlizzardAreaEffect"
+	effect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	effect.size = area_rect.size
+	effect.pivot_offset = effect.size * 0.5
+	effect.global_position = area_rect.get_center() - effect.pivot_offset
+	effect.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	effect.z_index = 2250
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.28, 0.72, 1.0, 0.24)
+	style.border_color = Color(0.56, 0.92, 1.0, 0.70)
+	style.set_border_width_all(6)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(0.24, 0.68, 1.0, 0.44)
+	style.shadow_size = 32
+	effect.add_theme_stylebox_override("panel", style)
+	return effect
+
+
 func create_fireball_projectile(size_scale := 1.0) -> Panel:
 	var projectile := Panel.new()
 	projectile.name = "FireballProjectile"

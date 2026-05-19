@@ -59,8 +59,11 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not pay_action_cost(user):
 		return
 
-	var animation_target := target if requires_target() else user
-	await game_manager.play_spell_cast_animation(user, animation_target, spell_data)
+	if SpellTargetResolver.is_area_rule(target_rule):
+		await game_manager.play_area_spell_animation(user, target, spell_data)
+	else:
+		var animation_target := target if requires_target() else user
+		await game_manager.play_spell_cast_animation(user, animation_target, spell_data)
 
 	for effect_data in effects:
 		var runtime_effect_data := effect_data.duplicate(true)
@@ -75,6 +78,12 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 func requires_target() -> bool:
 	return SpellTargetResolver.requires_target(target_rule)
+
+
+func get_area_info() -> Dictionary:
+	if SpellTargetResolver.is_area_rule(target_rule):
+		return SpellTargetResolver.get_area_dimensions(target_rule)
+	return {}
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:

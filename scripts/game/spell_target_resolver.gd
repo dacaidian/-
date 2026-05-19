@@ -7,6 +7,7 @@ class_name SpellTargetResolver
 const TARGET_RULE_ALL_MINIONS := "all_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
+const TARGET_RULE_AREA_3X3 := "area_3x3"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -35,6 +36,11 @@ static func get_valid_targets(target_rule: String, game_manager: GameManager) ->
 	if target_rule == TARGET_RULE_ALL_MINIONS:
 		return BoardQuery.get_face_up_minions(game_manager.board_states)
 
+	if is_area_rule(target_rule):
+		for state in game_manager.board_states:
+			targets.append(state)
+		return targets
+
 	for state in game_manager.board_states:
 		if can_target(target_rule, state):
 			targets.append(state)
@@ -43,6 +49,12 @@ static func get_valid_targets(target_rule: String, game_manager: GameManager) ->
 
 
 static func can_target(target_rule: String, target: CardState) -> bool:
+	if target == null:
+		return false
+
+	if is_area_rule(target_rule):
+		return true
+
 	if not BoardQuery.is_face_up_board_card(target):
 		return false
 
@@ -56,3 +68,15 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 		_:
 			push_warning("暂不支持的法术目标规则: %s" % target_rule)
 			return false
+
+
+static func is_area_rule(target_rule: String) -> bool:
+	return target_rule == TARGET_RULE_AREA_3X3
+
+
+static func get_area_dimensions(target_rule: String) -> Dictionary:
+	match target_rule:
+		TARGET_RULE_AREA_3X3:
+			return {"rows": 3, "cols": 3}
+		_:
+			return {}

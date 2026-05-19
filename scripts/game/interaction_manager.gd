@@ -18,6 +18,10 @@ var selected_hand_owner_id := ""
 var selected_hand_index := -1
 var selected_hand_action_id := ""
 var valid_target_slots: Array[int] = []
+var area_preview_slots: Array[int] = []
+var is_area_target_mode := false
+var _area_rows := 0
+var _area_cols := 0
 
 
 func select_card(state: CardState, board_states: Array[CardState]) -> void:
@@ -71,6 +75,7 @@ func start_action_selection(action: CardAction, board_states: Array[CardState], 
 		return
 
 	clear_targets(board_states)
+	clear_area_preview(board_states)
 	mode = Mode.SELECTING_ACTION_TARGET
 	selected_action = action
 	selected_hand_card_data = null
@@ -78,6 +83,12 @@ func start_action_selection(action: CardAction, board_states: Array[CardState], 
 	selected_hand_index = -1
 	selected_hand_action_id = ""
 	valid_target_slots.clear()
+	area_preview_slots.clear()
+
+	var area_info := action.get_area_info()
+	is_area_target_mode = not area_info.is_empty()
+	_area_rows = area_info.get("rows", 0)
+	_area_cols = area_info.get("cols", 0)
 
 	for state in action.get_valid_targets(focused_state, game_manager):
 		state.set_valid_target(true)
@@ -118,8 +129,37 @@ func is_valid_target_slot(slot_index: int) -> bool:
 	return valid_target_slots.has(slot_index)
 
 
+func update_area_preview(hovered_state: CardState, board_states: Array[CardState], game_manager: GameManager) -> void:
+	if not is_area_target_mode:
+		return
+	clear_area_preview(board_states)
+	if hovered_state == null or not is_valid_target_slot(hovered_state.slot_index):
+		return
+
+	area_preview_slots = BoardQuery.get_area_slots(
+		hovered_state.slot_index, _area_rows, _area_cols,
+		game_manager.board_columns, game_manager.board_states.size()
+	)
+	for slot_index in area_preview_slots:
+		var state := game_manager.get_board_state(slot_index) as CardState
+		if state != null:
+			state.set_area_preview(true)
+
+
+func clear_area_preview(board_states: Array[CardState]) -> void:
+	for slot_index in area_preview_slots:
+		var state := board_states[slot_index] as CardState
+		if state != null:
+			state.set_area_preview(false)
+	area_preview_slots.clear()
+
+
 func cancel(board_states: Array[CardState]) -> void:
 	# 取消当前交互，回到空闲状态。
+	clear_area_preview(board_states)
+	is_area_target_mode = false
+	_area_rows = 0
+	_area_cols = 0
 	clear_focus_and_targets(board_states)
 	mode = Mode.IDLE
 	focused_state = null

@@ -93,6 +93,10 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			return get_selected_adjacent_enemy_minions(source_state, effect_data, game_manager)
 		EffectData.TARGET_OWNER_CARD_BY_ID:
 			return get_owner_cards_by_id(source_state, effect_data, game_manager)
+		EffectData.TARGET_SELECTED_AREA_ENEMY_MINIONS:
+			return get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ENEMY_MINIONS)
+		EffectData.TARGET_SELECTED_AREA_ALL_MINIONS:
+			return get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ALL_MINIONS)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
 			return []
@@ -208,3 +212,40 @@ func get_effect_owner_id(source_state: CardState, effect_data: Dictionary) -> St
 		return source_state.owner_id
 
 	return EffectData.get_effect_owner_id(effect_data)
+
+
+enum AreaFilter { ENEMY_MINIONS, ALL_MINIONS }
+
+
+func get_selected_area_targets(source_state: CardState, effect_data: Dictionary, game_manager: Node, filter_type: AreaFilter) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if game_manager == null:
+		return targets
+
+	var selected_state := EffectData.get_selected_target_state(effect_data)
+	if selected_state == null:
+		return targets
+
+	var area_rows: int = int(effect_data.get(EffectData.KEY_AREA_ROWS, 3))
+	var area_cols: int = int(effect_data.get(EffectData.KEY_AREA_COLS, 3))
+	var board_columns: int = int(game_manager.board_columns)
+	var board_size: int = game_manager.board_states.size()
+	var area_slots := BoardQuery.get_area_slots(selected_state.slot_index, area_rows, area_cols, board_columns, board_size)
+
+	var owner_id := get_effect_owner_id(source_state, effect_data)
+
+	for slot_index in area_slots:
+		var target_state := game_manager.get_board_state(slot_index) as CardState
+		if not BoardQuery.is_face_up_minion(target_state):
+			continue
+
+		match filter_type:
+			AreaFilter.ENEMY_MINIONS:
+				if target_state.owner_id == "" or target_state.owner_id == owner_id:
+					continue
+			AreaFilter.ALL_MINIONS:
+				pass
+
+		targets.append(target_state)
+
+	return targets

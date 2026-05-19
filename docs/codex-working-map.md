@@ -68,6 +68,7 @@
 - `scripts/ui/card_status_overlay.gd`，如果是状态持续视觉。
 - `scripts/ui/card.gd`
 - `scenes/card/scripts/card.gd`，如果项目同时保留旧路径，需要确认实际场景引用。
+- 棋盘卡牌 hover 信号 `mouse_entered_card` / `mouse_exited_card` 在 `scenes/card/scripts/card.gd` 中定义，携带 Card 引用，供 GameManager 连接 area 预览等 hover 行为。
 
 常见修改：
 
@@ -75,9 +76,11 @@
 - 新增棋盘单位运行时字段。
 - 新增中毒、圣盾、冻结、临时增益等状态及其持续回合。
 - 圣盾当前是 `divine_shield` 永久可消耗状态；伤害入口在 `CardState.take_damage()`，它会先消耗一层圣盾并抵消本次伤害，再进入数值护盾/生命结算。
+- 冻结当前是 `freeze` 临时控制状态，配置 `duration_turns: 1` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`。状态到期后自动移除，无需特殊恢复逻辑。
 - 辉煌光环当前是 `arcane_aura` 状态；状态的 `payload.turn_effects` 可在回合时点触发效果，状态层数会乘到效果 `amount` 上。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
 - 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态和摆放覆盖层。
+- **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
 ### 翻牌与补牌
 
@@ -142,8 +145,9 @@
 常见修改：
 
 - 建筑当前不能作为施法目标。伤害、治疗、护盾等可选目标默认应使用 `all_minions`；只有明确设计为可影响建筑时，才扩展目标规则。
+- `area_3x3` 是 AOE 范围目标规则：选择棋盘格子作为范围中心，影响 `area_rows × area_cols` 区域。`SpellTargetResolver.is_area_rule()` 统一判断；新增 area 形状只在 `SpellTargetResolver` 注册常量和尺寸映射。
 - 升级牌授予法术仍走 `grant_spell_actions`，不要把授予逻辑写进具体随从。
-- 新法术动画优先新增 `animation` key，让 `CardAnimationController` 复用或扩展既有表现，例如 `pyroblast` 是放大版 `fireball`。
+- 新法术动画优先新增 `animation` key，让 `CardAnimationController` 复用或扩展既有表现，例如 `pyroblast` 是放大版 `fireball`。AOE 法术使用专用动画入口 `play_area_spell_cast()`。
 
 ### 复活与坟场筛选
 
@@ -195,6 +199,7 @@
 
 - 新增行动、目标选择、行动资源消耗、动作菜单可见性。
 - 行动规则不要写进 UI；优先新增或修改 `CardAction` 子类。
+- AOE 范围目标选择复用同一套 `InteractionManager.start_action_selection()`：通过 `action.get_area_info()` 多态判断是否为 area 模式；area 模式下全棋盘格子为合法目标，悬停显示蓝色 area 预览。
 - 动态法术授予（例如学习最近一次法术）优先改 `GrantedSpellResolver` 和 `PlayerState` 的施法历史；`ActionRegistry` 只负责把解析出来的 spell data 转成动作。
 
 ### 攻击、死亡、占领
@@ -237,6 +242,7 @@
 - 法术目标规则统一放在 `SpellTargetResolver`。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
+- `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
 - 固定授予法术用 `grant_spell_actions`；根据玩家历史动态授予法术用 `grant_last_spell_action` + `source_card_ids`，不要在 UI 或具体卡牌名分支里拼动作。
 
@@ -284,6 +290,7 @@
 - `summon` 是召唤水元素的水蓝法阵与水滴扩散表现，属于无目标手牌法术的 `play_spell_cast_at_rect()` 分支。
 - `arcane_aura` 是辉煌光环的一次性施法/附着动画，持续视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
+- `blizzard` 是暴风雪的冰蓝色区域覆盖 + 消散特效，走 `play_area_spell_cast()` → `play_blizzard_area_spell()` 专用 AOE 动画入口。区域效果面板由 `create_blizzard_area_effect()` 创建。
 - 动画控制器不直接改规则状态；规则变化由 `GameManager` 在 `await` 后处理。
 
 ### 建筑

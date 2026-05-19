@@ -9,7 +9,7 @@
 位置：`scripts/data`
 
 - `CardData`：静态卡牌数据，来自 `data/cards.json`；卡牌所属的数据包通过 `faction_id` 记录，玩家种族包和中立牌库包都走同一读取结构。
-- `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。
+- `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。`has_status_with_tag(tag)` 提供 tag 驱动的通用状态门控，不绑定特定 status_id；`is_area_preview` / `set_area_preview()` 用于 AOE 范围预览标记。
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
 - `CardDatabase`：读取并缓存 JSON 静态数据。
@@ -32,7 +32,7 @@
 - `StatusResolver`：状态生命周期协作者。当前负责在回合时点推进临时状态的剩余回合；状态本身保存在 `CardState.statuses`，具体中毒伤害、圣盾抵挡等规则后续通过状态 id/tag 接入。
 - `EventContext`：触发名和运行时上下文 key 的常量集合，例如 `TRIGGER_ON_DESTROYED`、`DESTROYER_PLAYER_ID`。规则层和效果层跨模块传上下文时优先使用这里的常量，避免字符串散落。
 - `EffectData`：卡牌效果 JSON 的字段名和基础读取工具，例如 `id`、`trigger`、`active_zone`、`card_ids`、`spell_actions`、`target`、`target_card_id`、`death_reason`、`filter_type`、`filter_owner`、`target_zone`、`amount_source`、`card_id`、`trigger_player`。它只定义配置语言，不执行效果；解析升级牌、时点触发、目标过滤、复活坟场筛选、状态内回合效果、上下文数值来源和运行时目标注入时优先使用这里，避免字符串散落。
-- `BoardQuery`：棋盘几何和常用目标过滤工具，例如八方向相邻、正面单位、正面随从集合、指定玩家英雄是否正面在场。攻击范围、法术目标、英雄配套牌使用限制、时点光环等规则需要扫描棋盘时优先复用这里，避免每个规则自己计算格子坐标。
+- `BoardQuery`：棋盘几何和常用目标过滤工具，例如八方向相邻、正面单位、正面随从集合、指定玩家英雄是否正面在场。`get_area_slots()` 以指定格子为中心、按 `area_rows × area_cols` 展开矩形区域，自动处理棋盘边缘裁剪。攻击范围、法术目标、英雄配套牌使用限制、时点光环、AOE 范围展开等规则需要扫描棋盘时优先复用这里，避免每个规则自己计算格子坐标。
 - `HandInteractionController`：手牌 UI 与手牌规则之间的交互编排层，负责手牌焦点、可用提示、动作菜单锚点和手牌点击后的动作流转。
 - `HandCardState`：手牌运行时状态。旧手牌仍可直接保存 `CardData`，但需要冷却、来源、标签等运行时字段的手牌应保存为 `HandCardState`。当前英雄死亡复活会生成带 `cooldown_turns` 的英雄手牌。
 - `HandPlayResolver`：手牌使用规则协作者。当前负责手牌法术的可用性、目标规则、效果结算和消耗手牌，也负责手牌随从放置到棋盘的通用流程；后续装备、升级牌主动使用也优先在这里扩展。
@@ -58,8 +58,8 @@
 
 位置：`scenes`、`scripts/ui`
 
-- `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量与护盾显示在右下角，攻击显示在左下角；攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。
-- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾；未来中毒、冻结、沉默等持续视觉优先扩展这里，不要继续塞进 `Card` 主脚本。
+- `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量与护盾显示在右下角，攻击显示在左下角；攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
+- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵和冻结冰蓝色边框+冰晶雪花；未来中毒、沉默等持续视觉优先扩展这里，不要继续塞进 `Card` 主脚本。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
 - `CardBoard`：只负责 5x5 棋盘布局和响应窗口尺寸变化。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
@@ -210,7 +210,8 @@
 - 绿色背光：`CardState.is_action_available_hint`，表示当前空闲状态下这张牌至少有一个可用行动；由 `ActionHintResolver` 统一计算。
 - 金色背光：`CardState.is_selected`，表示当前焦点牌。
 - 白色背光：`CardState.is_valid_target`，表示当前行动可选择的目标。
-- 背光优先级由 `Card` 统一处理：焦点 > 合法目标 > 可行动。
+- 蓝色填充：`CardState.is_area_preview`，表示当前悬停位置对应的 AOE 生效范围（如暴风雪的 3×3 区域）。蓝色填充从 `Card.draw_area_preview()` 绘制，在合法目标白色背光之前渲染，两者可叠加。
+- 背光优先级由 `Card` 统一处理：焦点 > 合法目标 > 可行动。area 预览作为背景层优先绘制，不参与优先级互斥。
 - `GameManager._on_interaction_changed()` 统一触发行动提示和调试面板刷新，行动提示具体计算交给 `ActionHintResolver`。
 - `GameManager.is_game_busy()` 统一判断翻牌动画、移动/攻击动画和行动结算是否正在进行；忙碌期间忽略新的点击、右键取消和结束回合，降低异步动画带来的竞态。
 - 右键取消约定：焦点状态下右键回到非焦点状态；目标选择状态下右键或 Esc 退回焦点状态和动作菜单。动作菜单的取消按钮、再次点击焦点牌仍然保留。
@@ -220,6 +221,7 @@
 - `target` 为空的目标型手牌法术或随从法术，会在执行前由 `EffectData.mark_selected_target()` 默认注入为 `selected`。
 - 如果一张牌的多段效果需要不同目标，应在对应效果上显式写 `target`；运行时仍会保存选中目标上下文，但不会覆盖显式目标。
 - `selected_adjacent_enemy_minions` 表示：以本次选中的目标为中心，取其 8 方向相邻、正面、敌方、类型为随从的单位。敌我判断优先使用效果拥有者；手牌法术会由 `HandPlayResolver` 注入拥有者，棋盘法术则使用来源随从 owner。
+- `selected_area_enemy_minions` 表示：以本次选中的格子为中心，按效果配置的 `area_rows` × `area_cols` 展开区域，取区域内正面敌方随从。`selected_area_all_minions` 同理但不区分敌我。区域展开由 `BoardQuery.get_area_slots()` 计算，自动处理棋盘边缘裁剪；过滤逻辑在 `CardEffect.get_selected_area_targets()` 中统一处理。新增过滤类型（友方、全部单位等）只需扩展 `CardEffect.AreaFilter` 枚举。
 
 ## 生命值约定
 
@@ -244,7 +246,9 @@
 - `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。可选字段 `apply_animation` 指定状态施加瞬间的视觉动画 key；没有该字段时不播放额外动画，由施法来源自身的动画负责表现。
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
-- 圣盾和辉煌光环的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾或奥术光环。一次性施法动画仍由 `CardAnimationController` 管理。
+- 圣盾和辉煌光环的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾或奥术光环。冻结状态绘制冰蓝色边框与冰晶雪花图案。一次性施法动画仍由 `CardAnimationController` 管理。
+- 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
+- `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会合并层数；永久状态合并后保持永久，临时状态合并后保留更长剩余回合。未来如果需要“同名不同来源互斥”“刷新不叠层”等规则，应在 `CardStatus.is_same_stack_key()` 或状态定义中扩展。
 - `StatusResolver` 会在 `GameManager.resolve_turn_timing_triggers()` 的时点触发结算之后推进状态生命周期。这样到期前的状态仍可参与该时点触发，随后再过期。
 
@@ -308,8 +312,10 @@
 - 随从拥有的施法能力写在 `CardData.spell_actions`，而不是写死在具体行动代码里。
 - 由升级牌解锁的施法能力不要预埋进随从自身 `spell_actions` 再特殊禁用；优先让升级牌通过 `grant_spell_actions` 授予动作。授予规则的 JSON 解释放在 `GrantedSpellResolver`，这样未获得升级时单位基础定义保持干净，未来升级牌也可以授予不同单位不同法术。
 - 法术动作只在当前玩家开启施法回合后展示；施法回合状态保存在 `GameManager.is_spell_turn_active`，回合结束时清空。
-- 每个 spell action 至少包含 `id`、`name`、`target_rule` 和 `effects`；可选 `animation` 用于指定表现层动画 key。
-- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions` 和 `none`；`all_minions` 只选正面随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续“不能选英雄”“只能选建筑”“只选友方”等规则应在这里扩展。
+- 每个 spell action 至少包含 `id`、`name`、`target_rule` 和 `effects`；可选 `animation` 用于指定表现层动画 key。`CardAction.get_area_info()` 是多态方法，基类返回空字典，`SpellAction` 覆写并通过 `SpellTargetResolver` 返回 area 尺寸；`InteractionManager` 不依赖具体行动类的内部字段。
+- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
+- `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
+- AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - 法术效果复用 `EffectRegistry`，治疗、伤害、护盾、翻牌次数等公共效果不和某个法术绑定。`SpellAction` 会通过 `EffectData.mark_selected_target()` 把选中的目标以 `selected` 注入运行时效果数据；效果自身负责执行规则变化，可能导致死亡的效果也负责调用死亡检查。
 - 效果可用性也属于效果系统：`CardEffect.can_execute()` 默认返回可用，特殊效果可以覆写它，例如复活效果会检查坟场候选和目标区域。`HandPlayResolver` 不应按具体效果类型写分支，而是注入施法者上下文后调用 `EffectRegistry.can_execute_effect()`。
 - `GameManager.play_spell_cast_animation()` 是规则层保留的法术视觉入口；具体表现由 `CardAnimationController` 按 spell action 的 `animation` 分派。当前治疗术使用 `heal` 绿色治疗脉冲，火球术使用 `fireball` 橙红色投射物和命中反馈，炎爆术使用 `pyroblast` 放大版火球投射物，冰霜护盾使用 `shield` 蓝色屏障脉冲，奥术智慧使用 `arcane` 紫蓝色奥术脉冲；未来可以让多个法术复用同一种表现 key。
@@ -323,7 +329,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 
@@ -368,6 +374,8 @@
 - 新增卡牌效果：放在 `scripts/effects`，继承 `CardEffect` 并注册到 `EffectRegistry`。
 - 新增效果配置字段、触发名或手牌 active zone 语义：优先补到 `EffectData`，再让具体 resolver 使用，不要在多个模块里直接写同一个字符串。
 - 新增状态：优先用 `apply_status` 写入 `CardStatus`；如果状态需要影响行动、受伤或回合时点，再新增专门 resolver 或在对应规则入口读取 `CardState.has_status()` / `get_status()`；如果只是持续视觉表现，优先扩展 `CardStatusOverlay`。
+- 新增控制状态（眩晕、定身等）：只需在 JSON 中配置 `"status_tags": ["action_prevention"]`，`CardState` 的 `has_status_with_tag(TAG_ACTION_PREVENTION)` 已注册到所有行动门控，零代码改动。不要为每个控制状态写专用的 `is_xxx()` 判断方法。
+- 新增 AOE 形状（5×5、十字等）：在 `SpellTargetResolver` 新增规则常量和 `is_area_rule()`/`get_area_dimensions()` 映射；如需非矩形形状，在 `BoardQuery` 新增对应静态方法。交互层和效果层通过 `get_area_dimensions()` 和效果 JSON 中的 `area_rows`/`area_cols` 自动适配。
 - 新增 UI 菜单按钮：优先从 `ActionRegistry.get_available_actions()` 动态生成。
 - 新增状态字段：优先放到 `CardState` 或 `PlayerState`，避免散落在节点脚本中。
 - 新增手牌内状态：优先放到 `HandCardState`，例如手牌冷却、来源、标签、手牌归属、可使用状态，不要塞进棋盘专用的 `CardState.slot_index` 流程；如果状态需要跨区域长期跟随，再考虑演进为更完整的 `CardInstance`。

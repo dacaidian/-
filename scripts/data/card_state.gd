@@ -42,6 +42,8 @@ var is_valid_target := false
 # 当前是否应该显示“可行动”提示。只用于表现层提示，具体可用动作由 ActionRegistry 决定。
 var is_action_available_hint := false
 
+var is_area_preview := false
+
 # 当前是否已经进入死亡结算队列。用于批量死亡时避免同一张牌重复入队。
 var is_pending_death := false
 
@@ -387,15 +389,24 @@ func set_action_available_hint(value: bool) -> void:
 	state_changed.emit(self)
 
 
+func set_area_preview(value: bool) -> void:
+	if is_area_preview == value:
+		return
+	is_area_preview = value
+	state_changed.emit(self)
+
+
 func can_move() -> bool:
-	return current_movement > 0
+	return current_movement > 0 and not has_status_with_tag(CardStatus.TAG_ACTION_PREVENTION)
 
 
 func can_attack() -> bool:
-	return current_attacks > 0
+	return current_attacks > 0 and not has_status_with_tag(CardStatus.TAG_ACTION_PREVENTION)
 
 
 func can_take_action_group(action_group: String, can_reuse_used_group := true) -> bool:
+	if has_status_with_tag(CardStatus.TAG_ACTION_PREVENTION):
+		return false
 	if action_group == "":
 		return true
 
@@ -523,6 +534,13 @@ func remove_status(status_id: String) -> bool:
 
 func has_status(status_id: String) -> bool:
 	return get_status(status_id) != null
+
+
+func has_status_with_tag(tag: String) -> bool:
+	for status in statuses:
+		if status != null and status.tags.has(tag):
+			return true
+	return false
 
 
 func get_status(status_id: String) -> CardStatus:

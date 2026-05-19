@@ -11,6 +11,9 @@ var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
 var arcane_aura_color := Color(0.45, 0.35, 1.0, 0.18)
 var arcane_aura_edge_color := Color(0.72, 0.66, 1.0, 0.72)
 var arcane_aura_glow_color := Color(0.40, 0.72, 1.0, 0.28)
+var freeze_ice_color := Color(0.30, 0.68, 0.96, 0.22)
+var freeze_ice_edge_color := Color(0.44, 0.82, 1.0, 0.72)
+var freeze_ice_glow_color := Color(0.24, 0.60, 0.96, 0.20)
 
 
 func _ready() -> void:
@@ -29,7 +32,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze()
 
 
 func should_show_divine_shield() -> bool:
@@ -46,11 +49,20 @@ func should_show_arcane_aura() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ARCANE_AURA)
 
 
+func should_show_freeze() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FREEZE)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_divine_shield():
 		draw_divine_shield()
+	if should_show_freeze():
+		draw_freeze_overlay()
 
 
 func draw_arcane_aura() -> void:
@@ -110,3 +122,37 @@ func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, co
 			grown.append(point + (point - center).normalized() * grow_amount)
 		var alpha := color.a * pow(1.0 - float(step) / float(steps + 1), 1.3)
 		draw_polyline(grown, Color(color.r, color.g, color.b, alpha), 5.0, true)
+
+
+func draw_freeze_overlay() -> void:
+	var freeze_rect := Rect2(Vector2.ZERO, size)
+	var border_width := size.x * 0.06
+
+	# Ice-blue border overlay
+	var border_color := Color(freeze_ice_edge_color.r, freeze_ice_edge_color.g, freeze_ice_edge_color.b, freeze_ice_edge_color.a)
+	var inner_border_width := border_width * 0.6
+	draw_rect(freeze_rect, freeze_ice_color, true)
+	draw_rect(freeze_rect, border_color, false, border_width)
+	draw_rect(freeze_rect.grow(-border_width), Color(border_color.r, border_color.g, border_color.b, border_color.a * 0.45), false, inner_border_width)
+
+	# Ice crystal pattern in the center
+	var center := freeze_rect.get_center()
+	var crystal_size := minf(freeze_rect.size.x, freeze_rect.size.y) * 0.19
+	var crystal_color := Color(border_color.r, border_color.g, border_color.b, border_color.a * 0.62)
+	var crystal_glow := Color(freeze_ice_glow_color.r, freeze_ice_glow_color.g, freeze_ice_glow_color.b, freeze_ice_glow_color.a * 0.40)
+
+	# Draw a snowflake-like symbol
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0
+		var dir := Vector2(cos(angle), sin(angle))
+		var inner_point := center + dir * crystal_size * 0.25
+		var outer_point := center + dir * crystal_size
+		var branch_angle := angle + PI * 0.32
+		var branch_dir := Vector2(cos(branch_angle), sin(branch_angle))
+		var branch_mid := center + dir * crystal_size * 0.55
+		draw_line(center, outer_point, crystal_color, 3.0)
+		draw_line(branch_mid, branch_mid + branch_dir * crystal_size * 0.32, crystal_color, 2.2)
+		var opposite_branch_dir := Vector2(cos(branch_angle - PI * 0.64), sin(branch_angle - PI * 0.64))
+		draw_line(branch_mid, branch_mid + opposite_branch_dir * crystal_size * 0.32, crystal_color, 2.2)
+
+	draw_circle(center, crystal_size * 0.12, crystal_glow)

@@ -28,6 +28,10 @@ func requires_target() -> bool:
 	return true
 
 
+func get_area_info() -> Dictionary:
+	return {}
+
+
 func can_pay_action_cost(user: CardState) -> bool:
 	if user == null:
 		return false
