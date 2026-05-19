@@ -287,8 +287,7 @@ func build_weighted_pool(faction_id: String) -> Array[CardData]:
 	var pool: Array[CardData] = []
 
 	for card_data in get_faction_cards(faction_id):
-		for copy_index in range(maxi(card_data.count, 1)):
-			pool.append(card_data)
+		append_card_copies_to_pool(pool, card_data)
 
 	return pool
 
@@ -312,7 +311,15 @@ func build_weighted_pool_for_selection(faction_id: String, selected_hero_card_id
 		if all_attached_card_ids.has(card_data.id) and not selected_attached_card_ids.has(card_data.id):
 			continue
 
-		for copy_index in range(maxi(card_data.count, 1)):
-			pool.append(card_data)
+		append_card_copies_to_pool(pool, card_data)
 
 	return pool
+
+
+func append_card_copies_to_pool(pool: Array[CardData], card_data: CardData) -> void:
+	if card_data == null:
+		return
+
+	var copy_count := maxi(card_data.count, 0)
+	for copy_index in range(copy_count):
+		pool.append(card_data)

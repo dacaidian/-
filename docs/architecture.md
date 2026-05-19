@@ -13,7 +13,7 @@
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
 - `CardDatabase`：读取并缓存 JSON 静态数据。
-- `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。
+- `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。`count <= 0` 的卡不会被展开进牌池，便于未来保留“可被查表但不自然出现”的卡。
 - 衍生牌（Token）：不进入牌池、仅由卡牌效果生成的卡牌。在 `cards.json` 中定义在对应种族的 `tokens[]` 字段下，结构和普通卡牌一致。`CardDatabase.load_faction()` 会把 token 注册到 `cards_by_id`（全局可查），但不加入 `cards_by_faction_id`，因此牌池构造链路天然跳过。
 - 入口选择会从 `CardDatabase.get_playable_faction_ids()` 读取可选种族，排除 `kind: "neutral_pool"` 的中立牌库；该列表保持 `cards.json` 中的加载顺序，避免默认种族选择被字典排序打乱。英雄列表优先读取种族层级 `heroes` 字段。
 
@@ -47,7 +47,7 @@
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions` 和手牌升级牌授予的 `spell_actions` 创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。
 - `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions`，并根据 `card_ids` 判断哪些随从获得这些法术。
-- `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
+- `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
 - 死亡解析：外部仍调用 `GameManager.check_and_destroy_if_dead()` / `destroy_card()`，内部委托 `DeathResolver` 统一处理死亡或销毁；死亡不作为玩家动作显示在动作菜单中。
 
@@ -367,5 +367,5 @@
 - 新增 UI 菜单按钮：优先从 `ActionRegistry.get_available_actions()` 动态生成。
 - 新增状态字段：优先放到 `CardState` 或 `PlayerState`，避免散落在节点脚本中。
 - 新增手牌内状态：优先放到 `HandCardState`，例如手牌冷却、来源、标签、手牌归属、可使用状态，不要塞进棋盘专用的 `CardState.slot_index` 流程；如果状态需要跨区域长期跟随，再考虑演进为更完整的 `CardInstance`。
-- 新增衍生牌：在对应种族的 `tokens[]` 字段下添加卡牌定义，由 `CardDatabase` 自动注册到全局查表。生成衍生牌的效果使用通用 `add_card_to_hand` 效果并指定 `card_id`；不要在效果或行动中手动构造 CardData。
+- 新增衍生牌：在对应种族的 `tokens[]` 字段下添加卡牌定义，由 `CardDatabase` 自动注册到全局查表。生成衍生牌的效果使用通用 `add_card_to_hand` 效果并指定 `card_id`，需要多张时配置 `amount`；不要在效果或行动中手动构造 CardData。
 - 新增手牌法术：在卡牌自身配置 `type: "spell"`、`target_rule`、`animation` 和 `effects`，由 `HandPlayResolver` 解释；不要把手牌法术写成随从的 `spell_actions`。如果它属于某个英雄，把卡牌 id 放入该英雄的 `heroes[].attached_cards`，不要在规则层写死卡牌名。

@@ -1,10 +1,13 @@
 extends CardEffect
 class_name AddCardToHandEffect
 
-# 通用效果：将指定 card_id 的卡牌置入效果归属玩家的手牌。
-# 衍生牌（tokens）、奖励牌等不进入牌池的卡牌统一通过此效果获取。
+# Generic effect: add configured cards to the effect owner's hand.
+# Tokens and reward cards that do not enter the pool should use this path.
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
+	if game_manager == null:
+		return
+
 	var card_id := EffectData.get_card_id(effect_data)
 	if card_id == "":
 		return
@@ -24,7 +27,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if player == null:
 		return
 
-	player.add_to_hand(card_data)
+	var amount := int(effect_data.get(EffectData.KEY_AMOUNT, 1))
+	if amount <= 0:
+		return
+
+	for copy_index in range(amount):
+		player.add_to_hand(card_data)
 
 	if game_manager.has_method("update_hand_drawer_view"):
 		game_manager.update_hand_drawer_view()
