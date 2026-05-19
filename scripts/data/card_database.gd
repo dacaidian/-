@@ -9,6 +9,41 @@ var cards_by_id: Dictionary = {}
 var cards_by_faction_id: Dictionary = {}
 var faction_ids_in_load_order: Array[String] = []
 
+# 测试模式：白名单过滤 + count 覆盖，不修改 cards.json
+var is_test_mode := false
+var test_config: Dictionary = {}
+
+
+func load_test_config(path: String) -> void:
+	if not FileAccess.file_exists(path):
+		return
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	var json_text := file.get_as_text()
+	var parsed_data = JSON.parse_string(json_text)
+
+	if parsed_data == null or not parsed_data is Dictionary:
+		return
+
+	test_config = parsed_data
+	is_test_mode = test_config.get("enabled", false)
+
+
+func is_card_allowed_in_test_mode(card_id: String, faction_id: String) -> bool:
+	var faction_cards: Array = test_config.get("cards", {}).get(faction_id, [])
+	return faction_cards.has(card_id)
+
+
+func get_test_count_override(_card_id: String) -> int:
+	var overrides: Dictionary = test_config.get("override_counts", {})
+	var default_count: int = overrides.get("_default", -1)
+	return overrides.get(_card_id, default_count)
+
+
+func _should_include_neutral_pool() -> bool:
+	return test_config.get("include_neutral_pool", true)
+
+
 func load_from_json(path: String) -> bool:
 	# 入口方法：读取 JSON 文件，并把内容缓存到几个 Dictionary 中。
 	if not FileAccess.file_exists(path):
@@ -282,11 +317,14 @@ func apply_hero_attachment_metadata(faction_dictionary: Dictionary) -> void:
 
 
 func build_weighted_pool(faction_id: String) -> Array[CardData]:
-	# 按 count 字段展开卡池。
-	# 例如 count=5 的卡会进入池子 5 次，随机抽取时自然更容易出现。
 	var pool: Array[CardData] = []
 
+	if is_test_mode and not _should_include_neutral_pool() and is_neutral_faction(faction_id):
+		return pool
+
 	for card_data in get_faction_cards(faction_id):
+		if is_test_mode and not is_card_allowed_in_test_mode(card_data.id, faction_id):
+			continue
 		append_card_copies_to_pool(pool, card_data)
 
 	return pool
@@ -305,6 +343,9 @@ func build_weighted_pool_for_selection(faction_id: String, selected_hero_card_id
 		if card_data == null:
 			continue
 
+		if is_test_mode and not is_card_allowed_in_test_mode(card_data.id, faction_id):
+			continue
+
 		if card_data.is_hero() and card_data.id != selected_hero_id:
 			continue
 
@@ -321,5 +362,9 @@ func append_card_copies_to_pool(pool: Array[CardData], card_data: CardData) -> v
 		return
 
 	var copy_count := maxi(card_data.count, 0)
+	if is_test_mode:
+		var override := get_test_count_override(card_data.id)
+		if override >= 0:
+			copy_count = override
 	for copy_index in range(copy_count):
 		pool.append(card_data)

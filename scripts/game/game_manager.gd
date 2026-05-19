@@ -257,6 +257,8 @@ func load_static_card_data() -> bool:
 	if not card_database.load_from_json(cards_json_path):
 		return false
 
+	card_database.load_test_config("res://data/test_config.json")
+
 	# 卡背暂时作为统一运行时资源，由 GameManager 注入到每个 CardState。
 	default_back_texture = load(default_back_texture_path) as Texture2D
 	return true

@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "cards": {
+    "silver_hand": ["uther", "blessed_infantry"],
+    "dalaran_council": ["antonidas", "frost_witch", "blizzard"]
+  },
+  "include_neutral_pool": false,
+  "override_counts": {
+    "_default": 3
+  }
+}

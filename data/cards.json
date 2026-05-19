@@ -1,941 +1,941 @@
 [
   {
-    "id": "silver_hand",
-    "name": "silverHand",
-    "displayName": "白银之手",
-    "description": "白银之手种族的数据",
-    "heroes": [
-      {
-        "card_id": "uther",
-        "attached_cards": [
-          "divine_shield_spell",
-          "baptism",
-          "resurrection",
+	"id": "silver_hand",
+	"name": "silverHand",
+	"displayName": "白银之手",
+	"description": "白银之手种族的数据",
+	"heroes": [
+	  {
+		"card_id": "uther",
+		"attached_cards": [
+		  "divine_shield_spell",
+		  "baptism",
+		  "resurrection",
           "lightbringer_hammer"
-        ]
-      }
-    ],
-    "cards": [
-      {
-        "id": "uther",
-        "name": "乌瑟尔",
-        "description": "乌瑟尔",
-        "url": "res://assets/img/白银之手/乌瑟尔.png",
-        "type": "minion",
-        "role": "hero",
-        "count": 1,
-        "level": 1,
-        "keywords": [],
-        "attack": 4,
-        "health": 18,
-        "effects": []
-      },
-      {
-        "id": "divine_shield_spell",
-        "name": "圣盾术",
-        "description": "英雄法术。使一个单位获得圣盾，抵消下一次伤害。",
-        "url": "res://assets/img/白银之手/圣盾术.png",
-        "type": "spell",
-        "count": 3,
-        "level": 1,
-        "animation": "shield",
-        "target_rule": "all_minions",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "apply_status",
-            "status_id": "divine_shield",
-            "status_name": "圣盾",
-            "status_description": "抵消下一次伤害。",
-            "status_tags": ["damage_prevention"],
-            "permanent": true
-          }
-        ]
-      },
-      {
-        "id": "baptism",
-        "name": "洗礼",
-        "description": "英雄法术。使一个单位恢复4点生命，并对其相邻敌方随从造成4点伤害。",
-        "url": "res://assets/img/白银之手/洗礼.png",
-        "type": "spell",
-        "count": 2,
-        "level": 2,
-        "animation": "baptism",
-        "target_rule": "all_minions",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "heal",
-            "amount": 4
-          },
-          {
-            "id": "damage",
-            "target": "selected_adjacent_enemy_minions",
-            "amount": 4
-          }
-        ]
-      },
-      {
-        "id": "blessed_infantry",
-        "name": "受祝福的步兵",
-        "description": "受祝福的步兵",
-        "url": "res://assets/img/白银之手/受祝福的步兵.png",
-        "type": "minion",
-        "count": 5,
-        "level": 1,
-        "keywords": [],
-        "attack": 2,
-        "health": 4,
-        "effects": []
-      },
-      {
-        "id": "faith_in_the_light",
-        "name": "信仰圣光",
-        "description": "升级牌。己方回合结束后，战场上所有己方受祝福的步兵和战斗牧师恢复3点生命。",
-        "url": "res://assets/img/白银之手/信仰圣光.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 1,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "heal",
-            "trigger": "after_turn_end",
-            "active_zone": "hand",
-            "target": "turn_player_minions_by_card_ids",
-            "card_ids": ["blessed_infantry", "battle_priest"],
-            "amount": 3
-          }
-        ]
-      },
-      {
-        "id": "priest",
-        "name": "牧师",
-        "description": "牧师",
-        "url": "res://assets/img/白银之手/牧师.png",
-        "type": "minion",
-        "count": 4,
-        "level": 2,
-        "keywords": ["ranged"],
-        "attack": 2,
-        "health": 7,
-        "effects": [],
-        "spell_actions": [
-          {
-            "id": "healing_spell",
-            "name": "治疗术",
-            "animation": "heal",
-            "target_rule": "all_minions",
-            "effects": [
-              {
-                "id": "heal",
-                "amount": 7
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "power_word_shield_upgrade",
-        "name": "真言术·盾",
-        "description": "升级牌。允许所有牧师释放真言术·盾，为一个随从增加5点生命上限，并同步提高当前生命。",
-        "url": "res://assets/img/白银之手/真言术·盾.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 2,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "grant_spell_actions",
-            "active_zone": "hand",
-            "card_ids": ["priest"],
-            "spell_actions": [
-              {
-                "id": "power_word_shield",
-                "name": "真言术·盾",
-                "animation": "shield",
-                "target_rule": "all_minions",
-                "effects": [
-                  {
-                    "id": "increase_max_health",
-                    "amount": 5
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "knight",
-        "name": "骑士",
-        "description": "骑士",
-        "url": "res://assets/img/白银之手/骑士.png",
-        "type": "minion",
-        "count": 4,
-        "level": 2,
-        "keywords": ["cavalry"],
-        "attack": 4,
-        "health": 8,
-        "effects": []
-      },
-      {
-        "id": "horsemanship",
-        "name": "骑术",
-        "description": "升级牌。所有己方骑士移动力变为5。",
-        "url": "res://assets/img/白银之手/骑术.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 2,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "set_unit_movement",
-            "trigger": "while_in_hand",
-            "active_zone": "hand",
-            "card_ids": ["knight"],
-            "amount": 5
-          }
-        ]
-      },
-      {
-        "id": "battle_priest",
-        "name": "战斗牧师",
-        "description": "战斗牧师",
-        "url": "res://assets/img/白银之手/战斗牧师.png",
-        "type": "minion",
-        "count": 4,
-        "level": 3,
-        "keywords": [],
-        "attack": 4,
-        "health": 16,
-        "effects": [
-          {
-            "id": "gain_attack",
-            "trigger": "on_effective_heal",
-            "target": "self",
-            "amount_source": "effective_heal"
-          }
-        ]
-      },
-      {
-        "id": "inner_fire_upgrade",
-        "name": "心灵之火",
-        "description": "升级牌。允许所有牧师和战斗牧师释放心灵之火，使一个随从的攻击力等于其当前生命值。",
-        "url": "res://assets/img/白银之手/心灵之火.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "grant_spell_actions",
-            "active_zone": "hand",
-            "card_ids": ["priest", "battle_priest"],
-            "spell_actions": [
-              {
-                "id": "inner_fire",
-                "name": "心灵之火",
-                "animation": "arcane",
-                "target_rule": "all_minions",
-                "effects": [
-                  {
-                    "id": "set_attack_to_current_health"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "resurrection",
-        "name": "复活术",
-        "description": "复活最多6个阵亡的己方随从，将其置入你的手牌。",
-        "url": "res://assets/img/白银之手/复活术.png",
-        "type": "spell",
-        "count": 1,
-        "level": 3,
-        "animation": "resurrection",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "resurrect",
-            "amount": 6,
-            "filter_type": "minion",
-            "filter_owner": "self",
-            "target_zone": "hand"
-          }
-        ]
-      },
-      {
-        "id": "lightbringer_hammer",
-        "name": "光明使者之锤",
-        "description": "英雄装备，武器。乌瑟尔攻击后，自动对自己释放洗礼。",
-        "url": "res://assets/img/白银之手/光明使者之锤.png",
-        "type": "equipment",
-        "equipment_type": "weapon",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "play_spell_action",
-            "trigger": "after_attack",
-            "card_id": "baptism",
-            "target": "self"
-          }
-        ]
-      }
-    ]
+		]
+	  }
+	],
+	"cards": [
+	  {
+		"id": "uther",
+		"name": "乌瑟尔",
+		"description": "乌瑟尔",
+		"url": "res://assets/img/白银之手/乌瑟尔.png",
+		"type": "minion",
+		"role": "hero",
+		"count": 1,
+		"level": 1,
+		"keywords": [],
+		"attack": 4,
+		"health": 18,
+		"effects": []
+	  },
+	  {
+		"id": "divine_shield_spell",
+		"name": "圣盾术",
+		"description": "英雄法术。使一个单位获得圣盾，抵消下一次伤害。",
+		"url": "res://assets/img/白银之手/圣盾术.png",
+		"type": "spell",
+		"count": 3,
+		"level": 1,
+		"animation": "shield",
+		"target_rule": "all_minions",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "apply_status",
+			"status_id": "divine_shield",
+			"status_name": "圣盾",
+			"status_description": "抵消下一次伤害。",
+			"status_tags": ["damage_prevention"],
+			"permanent": true
+		  }
+		]
+	  },
+	  {
+		"id": "baptism",
+		"name": "洗礼",
+		"description": "英雄法术。使一个单位恢复4点生命，并对其相邻敌方随从造成4点伤害。",
+		"url": "res://assets/img/白银之手/洗礼.png",
+		"type": "spell",
+		"count": 2,
+		"level": 2,
+		"animation": "baptism",
+		"target_rule": "all_minions",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "heal",
+			"amount": 4
+		  },
+		  {
+			"id": "damage",
+			"target": "selected_adjacent_enemy_minions",
+			"amount": 4
+		  }
+		]
+	  },
+	  {
+		"id": "blessed_infantry",
+		"name": "受祝福的步兵",
+		"description": "受祝福的步兵",
+		"url": "res://assets/img/白银之手/受祝福的步兵.png",
+		"type": "minion",
+		"count": 5,
+		"level": 1,
+		"keywords": [],
+		"attack": 2,
+		"health": 4,
+		"effects": []
+	  },
+	  {
+		"id": "faith_in_the_light",
+		"name": "信仰圣光",
+		"description": "升级牌。己方回合结束后，战场上所有己方受祝福的步兵和战斗牧师恢复3点生命。",
+		"url": "res://assets/img/白银之手/信仰圣光.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 1,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "heal",
+			"trigger": "after_turn_end",
+			"active_zone": "hand",
+			"target": "turn_player_minions_by_card_ids",
+			"card_ids": ["blessed_infantry", "battle_priest"],
+			"amount": 3
+		  }
+		]
+	  },
+	  {
+		"id": "priest",
+		"name": "牧师",
+		"description": "牧师",
+		"url": "res://assets/img/白银之手/牧师.png",
+		"type": "minion",
+		"count": 4,
+		"level": 2,
+		"keywords": ["ranged"],
+		"attack": 2,
+		"health": 7,
+		"effects": [],
+		"spell_actions": [
+		  {
+			"id": "healing_spell",
+			"name": "治疗术",
+			"animation": "heal",
+			"target_rule": "all_minions",
+			"effects": [
+			  {
+				"id": "heal",
+				"amount": 7
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "power_word_shield_upgrade",
+		"name": "真言术·盾",
+		"description": "升级牌。允许所有牧师释放真言术·盾，为一个随从增加5点生命上限，并同步提高当前生命。",
+		"url": "res://assets/img/白银之手/真言术·盾.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 2,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "grant_spell_actions",
+			"active_zone": "hand",
+			"card_ids": ["priest"],
+			"spell_actions": [
+			  {
+				"id": "power_word_shield",
+				"name": "真言术·盾",
+				"animation": "shield",
+				"target_rule": "all_minions",
+				"effects": [
+				  {
+					"id": "increase_max_health",
+					"amount": 5
+				  }
+				]
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "knight",
+		"name": "骑士",
+		"description": "骑士",
+		"url": "res://assets/img/白银之手/骑士.png",
+		"type": "minion",
+		"count": 4,
+		"level": 2,
+		"keywords": ["cavalry"],
+		"attack": 4,
+		"health": 8,
+		"effects": []
+	  },
+	  {
+		"id": "horsemanship",
+		"name": "骑术",
+		"description": "升级牌。所有己方骑士移动力变为5。",
+		"url": "res://assets/img/白银之手/骑术.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 2,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "set_unit_movement",
+			"trigger": "while_in_hand",
+			"active_zone": "hand",
+			"card_ids": ["knight"],
+			"amount": 5
+		  }
+		]
+	  },
+	  {
+		"id": "battle_priest",
+		"name": "战斗牧师",
+		"description": "战斗牧师",
+		"url": "res://assets/img/白银之手/战斗牧师.png",
+		"type": "minion",
+		"count": 4,
+		"level": 3,
+		"keywords": [],
+		"attack": 4,
+		"health": 16,
+		"effects": [
+		  {
+			"id": "gain_attack",
+			"trigger": "on_effective_heal",
+			"target": "self",
+			"amount_source": "effective_heal"
+		  }
+		]
+	  },
+	  {
+		"id": "inner_fire_upgrade",
+		"name": "心灵之火",
+		"description": "升级牌。允许所有牧师和战斗牧师释放心灵之火，使一个随从的攻击力等于其当前生命值。",
+		"url": "res://assets/img/白银之手/心灵之火.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "grant_spell_actions",
+			"active_zone": "hand",
+			"card_ids": ["priest", "battle_priest"],
+			"spell_actions": [
+			  {
+				"id": "inner_fire",
+				"name": "心灵之火",
+				"animation": "arcane",
+				"target_rule": "all_minions",
+				"effects": [
+				  {
+					"id": "set_attack_to_current_health"
+				  }
+				]
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "resurrection",
+		"name": "复活术",
+		"description": "复活最多6个阵亡的己方随从，将其置入你的手牌。",
+		"url": "res://assets/img/白银之手/复活术.png",
+		"type": "spell",
+		"count": 1,
+		"level": 3,
+		"animation": "resurrection",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "resurrect",
+			"amount": 6,
+			"filter_type": "minion",
+			"filter_owner": "self",
+			"target_zone": "hand"
+		  }
+		]
+	  },
+	  {
+		"id": "lightbringer_hammer",
+		"name": "光明使者之锤",
+		"description": "英雄装备，武器。乌瑟尔攻击后，自动对自己释放洗礼。",
+		"url": "res://assets/img/白银之手/光明使者之锤.png",
+		"type": "equipment",
+		"equipment_type": "weapon",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "play_spell_action",
+			"trigger": "after_attack",
+			"card_id": "baptism",
+			"target": "self"
+		  }
+		]
+	  }
+	]
   },
   {
-    "id": "dalaran_council",
-    "name": "dalaranCouncil",
-    "displayName": "达拉然议会",
-    "description": "达拉然议会种族的数据",
-    "heroes": [
-      {
-        "card_id": "antonidas",
-        "attached_cards": [
-          "summon_water_elemental",
-          "brilliant_aura",
-          "academy_summon",
+	"id": "dalaran_council",
+	"name": "dalaranCouncil",
+	"displayName": "达拉然议会",
+	"description": "达拉然议会种族的数据",
+	"heroes": [
+	  {
+		"card_id": "antonidas",
+		"attached_cards": [
+		  "summon_water_elemental",
+		  "brilliant_aura",
+		  "academy_summon",
           "staff_of_antonidas"
-        ]
-      }
-    ],
-    "cards": [
-      {
-        "id": "antonidas",
-        "name": "安东尼达斯",
-        "description": "安东尼达斯",
-        "url": "res://assets/img/达拉然议会/安东尼达斯.png",
-        "type": "minion",
-        "role": "hero",
-        "count": 1,
-        "level": 1,
-        "keywords": ["ranged"],
-        "attack": 1,
-        "health": 14,
-        "effects": []
-      },
-      {
-        "id": "mage_apprentice",
-        "name": "法师学徒",
-        "description": "法师学徒",
-        "url": "res://assets/img/达拉然议会/法师学徒.png",
-        "type": "minion",
-        "count": 5,
-        "level": 1,
-        "keywords": ["ranged"],
-        "attack": 1,
-        "health": 2,
-        "effects": []
-      },
-      {
-        "id": "basic_spell_power",
-        "name": "初级法术能量",
-        "description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
-        "url": "res://assets/img/达拉然议会/初级法术能量.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 1,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "modify_unit_attack",
-            "trigger": "while_in_hand",
-            "active_zone": "hand",
-            "card_ids": [
-              "antonidas",
-              "mage_apprentice",
-              "arcane_mage",
-              "frost_witch",
+		]
+	  }
+	],
+	"cards": [
+	  {
+		"id": "antonidas",
+		"name": "安东尼达斯",
+		"description": "安东尼达斯",
+		"url": "res://assets/img/达拉然议会/安东尼达斯.png",
+		"type": "minion",
+		"role": "hero",
+		"count": 1,
+		"level": 1,
+		"keywords": ["ranged"],
+		"attack": 1,
+		"health": 14,
+		"effects": []
+	  },
+	  {
+		"id": "mage_apprentice",
+		"name": "法师学徒",
+		"description": "法师学徒",
+		"url": "res://assets/img/达拉然议会/法师学徒.png",
+		"type": "minion",
+		"count": 5,
+		"level": 1,
+		"keywords": ["ranged"],
+		"attack": 1,
+		"health": 2,
+		"effects": []
+	  },
+	  {
+		"id": "basic_spell_power",
+		"name": "初级法术能量",
+		"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+		"url": "res://assets/img/达拉然议会/初级法术能量.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 1,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "modify_unit_attack",
+			"trigger": "while_in_hand",
+			"active_zone": "hand",
+			"card_ids": [
+			  "antonidas",
+			  "mage_apprentice",
+			  "arcane_mage",
+			  "frost_witch",
               "fire_witch"
-            ],
-            "amount": 1
-          }
-        ]
-      },
-      {
-        "id": "intermediate_spell_power",
-        "name": "中级法术能量",
-        "description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
-        "url": "res://assets/img/达拉然议会/中级法术能量.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 2,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "modify_unit_attack",
-            "trigger": "while_in_hand",
-            "active_zone": "hand",
-            "card_ids": [
-              "antonidas",
-              "mage_apprentice",
-              "arcane_mage",
-              "frost_witch",
+			],
+			"amount": 1
+		  }
+		]
+	  },
+	  {
+		"id": "intermediate_spell_power",
+		"name": "中级法术能量",
+		"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+		"url": "res://assets/img/达拉然议会/中级法术能量.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 2,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "modify_unit_attack",
+			"trigger": "while_in_hand",
+			"active_zone": "hand",
+			"card_ids": [
+			  "antonidas",
+			  "mage_apprentice",
+			  "arcane_mage",
+			  "frost_witch",
               "fire_witch"
-            ],
-            "amount": 1
-          }
-        ]
-      },
-      {
-        "id": "study_hard",
-        "name": "好好学习",
-        "description": "升级牌。法师学徒获得最近一次由奥术法师、火焰女巫或冰霜女巫释放的法术。",
-        "url": "res://assets/img/达拉然议会/好好学习.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 2,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "grant_last_spell_action",
-            "active_zone": "hand",
-            "card_ids": ["mage_apprentice"],
-            "source_card_ids": ["arcane_mage", "fire_witch", "frost_witch"]
-          }
-        ]
-      },
-      {
-        "id": "ultimate_spell_power",
-        "name": "终极法术能量",
-        "description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
-        "url": "res://assets/img/达拉然议会/终级法术能量.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "modify_unit_attack",
-            "trigger": "while_in_hand",
-            "active_zone": "hand",
-            "card_ids": [
-              "antonidas",
-              "mage_apprentice",
-              "arcane_mage",
-              "frost_witch",
+			],
+			"amount": 1
+		  }
+		]
+	  },
+	  {
+		"id": "study_hard",
+		"name": "好好学习",
+		"description": "升级牌。法师学徒获得最近一次由奥术法师、火焰女巫或冰霜女巫释放的法术。",
+		"url": "res://assets/img/达拉然议会/好好学习.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 2,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "grant_last_spell_action",
+			"active_zone": "hand",
+			"card_ids": ["mage_apprentice"],
+			"source_card_ids": ["arcane_mage", "fire_witch", "frost_witch"]
+		  }
+		]
+	  },
+	  {
+		"id": "ultimate_spell_power",
+		"name": "终极法术能量",
+		"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+		"url": "res://assets/img/达拉然议会/终级法术能量.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "modify_unit_attack",
+			"trigger": "while_in_hand",
+			"active_zone": "hand",
+			"card_ids": [
+			  "antonidas",
+			  "mage_apprentice",
+			  "arcane_mage",
+			  "frost_witch",
               "fire_witch"
-            ],
-            "amount": 1
-          }
-        ]
-      },
-      {
-        "id": "pyroblast_upgrade",
-        "name": "炎爆术",
-        "description": "升级牌。允许火焰女巫释放炎爆术，对一个随从造成10点伤害。",
-        "url": "res://assets/img/达拉然议会/炎爆术.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "grant_spell_actions",
-            "active_zone": "hand",
-            "card_ids": ["fire_witch"],
-            "spell_actions": [
-              {
-                "id": "pyroblast",
-                "name": "炎爆术",
-                "animation": "pyroblast",
-                "target_rule": "all_minions",
-                "effects": [
-                  {
-                    "id": "damage",
-                    "amount": 10
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "blizzard",
-        "name": "暴风雪",
-        "description": "升级牌。冰霜女巫获得暴风雪法术，对3×3范围内的敌人造成2点伤害并冻结一回合。",
-        "url": "res://assets/img/达拉然议会/暴风雪.png",
-        "type": "upgrade",
-        "count": 1,
-        "level": 3,
-        "effects": [
-          {
-            "id": "grant_spell_actions",
-            "trigger": "while_in_hand",
-            "active_zone": "hand",
-            "card_ids": ["frost_witch"],
-            "spell_actions": [
-              {
-                "id": "blizzard_spell",
-                "name": "暴风雪",
-                "animation": "blizzard",
-                "target_rule": "area_3x3",
-                "effects": [
-                  {
-                    "id": "damage",
-                    "amount": 2,
-                    "target": "selected_area_enemy_minions",
-                    "area_rows": 3,
-                    "area_cols": 3
-                  },
-                  {
-                    "id": "apply_status",
-                    "status_id": "freeze",
-                    "status_name": "冻结",
-                    "status_description": "被冻结，无法行动",
-                    "duration_turns": 1,
-                    "duration_scope": "target_owner",
-                    "expires_on_trigger": "after_turn_end",
-                    "status_tags": ["action_prevention"],
-                    "target": "selected_area_enemy_minions",
-                    "area_rows": 3,
-                    "area_cols": 3
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "fire_witch",
-        "name": "火焰女巫",
-        "description": "火焰女巫",
-        "url": "res://assets/img/达拉然议会/火焰女巫.png",
-        "type": "minion",
-        "count": 3,
-        "level": 2,
-        "keywords": ["ranged"],
-        "attack": 1,
-        "health": 4,
-        "effects": [],
-        "spell_actions": [
-          {
-            "id": "fireball",
-            "name": "火球术",
-            "animation": "fireball",
-            "target_rule": "all_minions",
-            "effects": [
-              {
-                "id": "damage",
-                "amount": 6
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "frost_witch",
-        "name": "冰霜女巫",
-        "description": "冰霜女巫",
-        "url": "res://assets/img/达拉然议会/冰霜女巫.png",
-        "type": "minion",
-        "count": 3,
-        "level": 2,
-        "keywords": ["ranged"],
-        "attack": 1,
-        "health": 4,
-        "effects": [],
-        "spell_actions": [
-          {
-            "id": "frost_shield",
-            "name": "冰霜护盾",
-            "animation": "shield",
-            "target_rule": "all_minions",
-            "effects": [
-              {
-                "id": "shield",
-                "amount": 6
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "arcane_mage",
-        "name": "奥术法师",
-        "description": "奥术法师",
-        "url": "res://assets/img/达拉然议会/奥术法师.png",
-        "type": "minion",
-        "count": 3,
-        "level": 2,
-        "keywords": ["ranged"],
-        "attack": 1,
-        "health": 4,
-        "effects": [],
-        "spell_actions": [
-          {
-            "id": "arcane_wisdom",
-            "name": "奥术智慧",
-            "animation": "arcane",
-            "target_rule": "none",
-            "effects": [
-              {
-                "id": "gain_flips",
-                "amount": 2
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "arcane_golem",
-        "name": "奥术傀儡",
-        "description": "奥术傀儡",
-        "url": "res://assets/img/达拉然议会/奥术傀儡.png",
-        "type": "minion",
-        "count": 4,
-        "level": 3,
-        "keywords": ["magic_immune"],
-        "attack": 8,
-        "health": 8,
-        "effects": []
-      },
-      {
-        "id": "summon_water_elemental",
-        "name": "召唤水元素",
-        "description": "将一个水元素置入手牌。",
-        "url": "res://assets/img/达拉然议会/召唤水元素.png",
-        "type": "spell",
-        "count": 3,
-        "level": 1,
-        "animation": "summon",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "add_card_to_hand",
-            "card_id": "water_elemental"
-          }
-        ]
-      },
-      {
-        "id": "brilliant_aura",
-        "name": "辉煌光环",
-        "description": "安东尼达斯散发出奥术光环，己方每回合额外获得1点法力。可叠加。",
-        "url": "res://assets/img/达拉然议会/辉煌光环.png",
-        "type": "spell",
-        "count": 2,
-        "level": 2,
-        "animation": "arcane_aura",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "apply_status",
-            "target": "owner_card_by_id",
-            "target_card_id": "antonidas",
-            "status_id": "arcane_aura",
-            "apply_animation": "arcane_aura",
-            "status_name": "辉煌光环",
-            "status_description": "每个自己的回合开始前，获得1点额外法力。可叠加。",
-            "status_tags": ["aura", "mana_generation"],
-            "permanent": true,
-            "persists_after_death": false,
-            "payload": {
-              "turn_effects": [
-                {
-                  "id": "gain_mana",
-                  "trigger": "before_turn_start",
-                  "trigger_player": "source_owner",
-                  "target": "owner",
-                  "amount": 1
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": "academy_summon",
-        "name": "学院召唤",
-        "description": "选择一名法师置入手牌，并额外获得3个法师学徒。",
-        "url": "res://assets/img/达拉然议会/学院召唤.png",
-        "type": "spell",
-        "count": 1,
-        "level": 3,
-        "animation": "summon",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "choose_card_to_hand",
-            "selection_title": "选择学院召唤的法师",
-            "card_ids": ["arcane_mage", "fire_witch", "frost_witch"],
-            "amount": 1,
-            "bonus_cards": [
-              {
-                "card_id": "mage_apprentice",
-                "amount": 3
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "staff_of_antonidas",
-        "name": "安东尼达斯的圣杖",
-        "description": "英雄装备，武器。法术强度+3。",
-        "url": "res://assets/img/达拉然议会/安东尼达斯的圣杖.png",
-        "type": "equipment",
-        "equipment_type": "weapon",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "modify_spell_power",
-            "amount": 3
-          }
-        ]
-      }
-    ],
-    "tokens": [
-      {
-        "id": "water_elemental",
-        "name": "水元素",
-        "description": "水元素",
-        "url": "res://assets/img/达拉然议会/水元素.png",
-        "type": "minion",
-        "count": 0,
-        "level": 1,
-        "keywords": [],
-        "attack": 2,
-        "health": 2,
-        "effects": []
-      }
-    ]
+			],
+			"amount": 1
+		  }
+		]
+	  },
+	  {
+		"id": "pyroblast_upgrade",
+		"name": "炎爆术",
+		"description": "升级牌。允许火焰女巫释放炎爆术，对一个随从造成10点伤害。",
+		"url": "res://assets/img/达拉然议会/炎爆术.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "grant_spell_actions",
+			"active_zone": "hand",
+			"card_ids": ["fire_witch"],
+			"spell_actions": [
+			  {
+				"id": "pyroblast",
+				"name": "炎爆术",
+				"animation": "pyroblast",
+				"target_rule": "all_minions",
+				"effects": [
+				  {
+					"id": "damage",
+					"amount": 10
+				  }
+				]
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "blizzard",
+		"name": "暴风雪",
+		"description": "升级牌。冰霜女巫获得暴风雪法术，对3×3范围内的敌人造成2点伤害并冻结一回合。",
+		"url": "res://assets/img/达拉然议会/暴风雪.png",
+		"type": "upgrade",
+		"count": 1,
+		"level": 3,
+		"effects": [
+		  {
+			"id": "grant_spell_actions",
+			"trigger": "while_in_hand",
+			"active_zone": "hand",
+			"card_ids": ["frost_witch"],
+			"spell_actions": [
+			  {
+				"id": "blizzard_spell",
+				"name": "暴风雪",
+				"animation": "blizzard",
+				"target_rule": "area_3x3",
+				"effects": [
+				  {
+					"id": "damage",
+					"amount": 2,
+					"target": "selected_area_enemy_minions",
+					"area_rows": 3,
+					"area_cols": 3
+				  },
+				  {
+					"id": "apply_status",
+					"status_id": "freeze",
+					"status_name": "冻结",
+					"status_description": "被冻结，无法行动",
+					"duration_turns": 1,
+					"duration_scope": "target_owner",
+					"expires_on_trigger": "after_turn_end",
+					"status_tags": ["action_prevention"],
+					"target": "selected_area_enemy_minions",
+					"area_rows": 3,
+					"area_cols": 3
+				  }
+				]
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "fire_witch",
+		"name": "火焰女巫",
+		"description": "火焰女巫",
+		"url": "res://assets/img/达拉然议会/火焰女巫.png",
+		"type": "minion",
+		"count": 3,
+		"level": 2,
+		"keywords": ["ranged"],
+		"attack": 1,
+		"health": 4,
+		"effects": [],
+		"spell_actions": [
+		  {
+			"id": "fireball",
+			"name": "火球术",
+			"animation": "fireball",
+			"target_rule": "all_minions",
+			"effects": [
+			  {
+				"id": "damage",
+				"amount": 6
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "frost_witch",
+		"name": "冰霜女巫",
+		"description": "冰霜女巫",
+		"url": "res://assets/img/达拉然议会/冰霜女巫.png",
+		"type": "minion",
+		"count": 3,
+		"level": 2,
+		"keywords": ["ranged"],
+		"attack": 1,
+		"health": 4,
+		"effects": [],
+		"spell_actions": [
+		  {
+			"id": "frost_shield",
+			"name": "冰霜护盾",
+			"animation": "shield",
+			"target_rule": "all_minions",
+			"effects": [
+			  {
+				"id": "shield",
+				"amount": 6
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "arcane_mage",
+		"name": "奥术法师",
+		"description": "奥术法师",
+		"url": "res://assets/img/达拉然议会/奥术法师.png",
+		"type": "minion",
+		"count": 3,
+		"level": 2,
+		"keywords": ["ranged"],
+		"attack": 1,
+		"health": 4,
+		"effects": [],
+		"spell_actions": [
+		  {
+			"id": "arcane_wisdom",
+			"name": "奥术智慧",
+			"animation": "arcane",
+			"target_rule": "none",
+			"effects": [
+			  {
+				"id": "gain_flips",
+				"amount": 2
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "arcane_golem",
+		"name": "奥术傀儡",
+		"description": "奥术傀儡",
+		"url": "res://assets/img/达拉然议会/奥术傀儡.png",
+		"type": "minion",
+		"count": 4,
+		"level": 3,
+		"keywords": ["magic_immune"],
+		"attack": 8,
+		"health": 8,
+		"effects": []
+	  },
+	  {
+		"id": "summon_water_elemental",
+		"name": "召唤水元素",
+		"description": "将一个水元素置入手牌。",
+		"url": "res://assets/img/达拉然议会/召唤水元素.png",
+		"type": "spell",
+		"count": 3,
+		"level": 1,
+		"animation": "summon",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "add_card_to_hand",
+			"card_id": "water_elemental"
+		  }
+		]
+	  },
+	  {
+		"id": "brilliant_aura",
+		"name": "辉煌光环",
+		"description": "安东尼达斯散发出奥术光环，己方每回合额外获得1点法力。可叠加。",
+		"url": "res://assets/img/达拉然议会/辉煌光环.png",
+		"type": "spell",
+		"count": 2,
+		"level": 2,
+		"animation": "arcane_aura",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "apply_status",
+			"target": "owner_card_by_id",
+			"target_card_id": "antonidas",
+			"status_id": "arcane_aura",
+			"apply_animation": "arcane_aura",
+			"status_name": "辉煌光环",
+			"status_description": "每个自己的回合开始前，获得1点额外法力。可叠加。",
+			"status_tags": ["aura", "mana_generation"],
+			"permanent": true,
+			"persists_after_death": false,
+			"payload": {
+			  "turn_effects": [
+				{
+				  "id": "gain_mana",
+				  "trigger": "before_turn_start",
+				  "trigger_player": "source_owner",
+				  "target": "owner",
+				  "amount": 1
+				}
+			  ]
+			}
+		  }
+		]
+	  },
+	  {
+		"id": "academy_summon",
+		"name": "学院召唤",
+		"description": "选择一名法师置入手牌，并额外获得3个法师学徒。",
+		"url": "res://assets/img/达拉然议会/学院召唤.png",
+		"type": "spell",
+		"count": 1,
+		"level": 3,
+		"animation": "summon",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "choose_card_to_hand",
+			"selection_title": "选择学院召唤的法师",
+			"card_ids": ["arcane_mage", "fire_witch", "frost_witch"],
+			"amount": 1,
+			"bonus_cards": [
+			  {
+				"card_id": "mage_apprentice",
+				"amount": 3
+			  }
+			]
+		  }
+		]
+	  },
+	  {
+		"id": "staff_of_antonidas",
+		"name": "安东尼达斯的圣杖",
+		"description": "英雄装备，武器。法术强度+3。",
+		"url": "res://assets/img/达拉然议会/安东尼达斯的圣杖.png",
+		"type": "equipment",
+		"equipment_type": "weapon",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "modify_spell_power",
+			"amount": 3
+		  }
+		]
+	  }
+	],
+	"tokens": [
+	  {
+		"id": "water_elemental",
+		"name": "水元素",
+		"description": "水元素",
+		"url": "res://assets/img/达拉然议会/水元素.png",
+		"type": "minion",
+		"count": 0,
+		"level": 1,
+		"keywords": [],
+		"attack": 2,
+		"health": 2,
+		"effects": []
+	  }
+	]
   },
   {
-    "id": "neutral",
-    "name": "neutral",
-    "displayName": "中立牌库",
-    "description": "不属于任一玩家种族的公共中立牌库",
-    "kind": "neutral_pool",
-    "cards": [
-      {
-        "id": "golden_finger",
-        "name": "金手指",
-        "description": "被动：每回合可翻牌数+1",
-        "url": "res://assets/img/公共牌池/金手指.png",
-        "type": "upgrade",
-        "count": 2,
-        "level": 1,
-        "keywords": [],
-        "effects": [
-          {
-            "id": "modify_flip_capacity",
-            "trigger": "while_in_hand",
-            "amount": 1
-          }
-        ]
-      },
-      {
-        "id": "small_ore_vein",
-        "name": "小型矿脉",
-        "description": "中立建筑。摧毁后，摧毁者获得4点资源分。",
-        "url": "res://assets/img/公共牌池/小型矿脉.png",
-        "type": "building",
-        "count": 8,
-        "level": 1,
-        "keywords": [],
-        "attack": 0,
-        "health": 4,
-        "effects": [
-          {
-            "id": "gain_resource_score",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 4
-          }
-        ]
-      },
-      {
-        "id": "medium_ore_vein",
-        "name": "中型矿脉",
-        "description": "中立建筑。摧毁后，摧毁者获得8点资源分。",
-        "url": "res://assets/img/公共牌池/中型矿脉.png",
-        "type": "building",
-        "count": 2,
-        "level": 2,
-        "keywords": [],
-        "attack": 0,
-        "health": 8,
-        "effects": [
-          {
-            "id": "gain_resource_score",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 8
-          }
-        ]
-      },
-      {
-        "id": "arcane_ore_vein",
-        "name": "奥术矿脉",
-        "description": "中立建筑。摧毁后，摧毁者获得16点资源分，并获得1点法力。",
-        "url": "res://assets/img/公共牌池/奥术矿脉.png",
-        "type": "building",
-        "count": 4,
-        "level": 2,
-        "keywords": [],
-        "attack": 0,
-        "health": 16,
-        "effects": [
-          {
-            "id": "gain_resource_score",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 16
-          },
-          {
-            "id": "gain_mana",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 1
-          }
-        ]
-      },
-      {
-        "id": "large_ore_vein",
-        "name": "大型矿脉",
-        "description": "中立建筑。摧毁后，摧毁者获得20点资源分。",
-        "url": "res://assets/img/公共牌池/大型矿脉.png",
-        "type": "building",
-        "count": 2,
-        "level": 3,
-        "keywords": [],
-        "attack": 0,
-        "health": 20,
-        "effects": [
-          {
-            "id": "gain_resource_score",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 20
-          }
-        ]
-      },
-      {
-        "id": "huge_ore_vein",
-        "name": "超大型矿脉",
-        "description": "中立建筑。摧毁后，摧毁者获得30点资源分。",
-        "url": "res://assets/img/公共牌池/超大型矿脉.png",
-        "type": "building",
-        "count": 1,
-        "level": 3,
-        "keywords": [],
-        "attack": 0,
-        "health": 30,
-        "effects": [
-          {
-            "id": "gain_resource_score",
-            "trigger": "on_destroyed",
-            "target": "destroyer",
-            "amount": 30
-          }
-        ]
-      },
-      {
-        "id": "create_something_from_nothing",
-        "name": "无中生有",
-        "description": "本回合可额外翻两张牌。",
-        "url": "res://assets/img/公共牌池/无中生有.png",
-        "type": "spell",
-        "count": 4,
-        "level": 1,
-        "animation": "arcane",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "gain_flips",
-            "amount": 2
-          }
-        ]
-      },
-      {
-        "id": "life_spring",
-        "name": "生命之泉",
-        "description": "回合结束后，恢复相邻己方随从3点生命。",
-        "url": "res://assets/img/公共牌池/生命之泉.png",
-        "type": "building",
-        "count": 1,
-        "level": 1,
-        "keywords": [],
-        "attack": 0,
-        "health": 20,
-        "effects": [
-          {
-            "id": "heal",
-            "trigger": "after_turn_end",
-            "target": "adjacent_turn_player_minions",
-            "amount": 3
-          }
-        ]
-      },
-      {
-        "id": "herb",
-        "name": "草药",
-        "description": "恢复一个单位5点生命。",
-        "url": "res://assets/img/公共牌池/草药.png",
-        "type": "spell",
-        "count": 2,
-        "level": 1,
-        "animation": "heal",
-        "target_rule": "all_minions",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "heal",
-            "amount": 5
-          }
-        ]
-      },
-      {
-        "id": "dark_arrow",
-        "name": "暗箭",
-        "description": "对一个随从造成4点伤害。",
-        "url": "res://assets/img/公共牌池/暗箭.png",
-        "type": "spell",
-        "count": 4,
-        "level": 2,
-        "animation": "dark_arrow",
-        "target_rule": "all_minions",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "damage",
-            "amount": 4
-          }
-        ]
-      },
-      {
-        "id": "create_more_from_nothing",
-        "name": "无中生有生有",
-        "description": "本回合可额外翻开3张牌。",
-        "url": "res://assets/img/公共牌池/无中生有生有.png",
-        "type": "spell",
-        "count": 2,
-        "level": 2,
-        "animation": "arcane",
-        "target_rule": "none",
-        "keywords": [],
-        "effects": [
-          {
-            "id": "gain_flips",
-            "amount": 3
-          }
-        ]
-      }
-    ]
+	"id": "neutral",
+	"name": "neutral",
+	"displayName": "中立牌库",
+	"description": "不属于任一玩家种族的公共中立牌库",
+	"kind": "neutral_pool",
+	"cards": [
+	  {
+		"id": "golden_finger",
+		"name": "金手指",
+		"description": "被动：每回合可翻牌数+1",
+		"url": "res://assets/img/公共牌池/金手指.png",
+		"type": "upgrade",
+		"count": 2,
+		"level": 1,
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "modify_flip_capacity",
+			"trigger": "while_in_hand",
+			"amount": 1
+		  }
+		]
+	  },
+	  {
+		"id": "small_ore_vein",
+		"name": "小型矿脉",
+		"description": "中立建筑。摧毁后，摧毁者获得4点资源分。",
+		"url": "res://assets/img/公共牌池/小型矿脉.png",
+		"type": "building",
+		"count": 8,
+		"level": 1,
+		"keywords": [],
+		"attack": 0,
+		"health": 4,
+		"effects": [
+		  {
+			"id": "gain_resource_score",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 4
+		  }
+		]
+	  },
+	  {
+		"id": "medium_ore_vein",
+		"name": "中型矿脉",
+		"description": "中立建筑。摧毁后，摧毁者获得8点资源分。",
+		"url": "res://assets/img/公共牌池/中型矿脉.png",
+		"type": "building",
+		"count": 2,
+		"level": 2,
+		"keywords": [],
+		"attack": 0,
+		"health": 8,
+		"effects": [
+		  {
+			"id": "gain_resource_score",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 8
+		  }
+		]
+	  },
+	  {
+		"id": "arcane_ore_vein",
+		"name": "奥术矿脉",
+		"description": "中立建筑。摧毁后，摧毁者获得16点资源分，并获得1点法力。",
+		"url": "res://assets/img/公共牌池/奥术矿脉.png",
+		"type": "building",
+		"count": 4,
+		"level": 2,
+		"keywords": [],
+		"attack": 0,
+		"health": 16,
+		"effects": [
+		  {
+			"id": "gain_resource_score",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 16
+		  },
+		  {
+			"id": "gain_mana",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 1
+		  }
+		]
+	  },
+	  {
+		"id": "large_ore_vein",
+		"name": "大型矿脉",
+		"description": "中立建筑。摧毁后，摧毁者获得20点资源分。",
+		"url": "res://assets/img/公共牌池/大型矿脉.png",
+		"type": "building",
+		"count": 2,
+		"level": 3,
+		"keywords": [],
+		"attack": 0,
+		"health": 20,
+		"effects": [
+		  {
+			"id": "gain_resource_score",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 20
+		  }
+		]
+	  },
+	  {
+		"id": "huge_ore_vein",
+		"name": "超大型矿脉",
+		"description": "中立建筑。摧毁后，摧毁者获得30点资源分。",
+		"url": "res://assets/img/公共牌池/超大型矿脉.png",
+		"type": "building",
+		"count": 1,
+		"level": 3,
+		"keywords": [],
+		"attack": 0,
+		"health": 30,
+		"effects": [
+		  {
+			"id": "gain_resource_score",
+			"trigger": "on_destroyed",
+			"target": "destroyer",
+			"amount": 30
+		  }
+		]
+	  },
+	  {
+		"id": "create_something_from_nothing",
+		"name": "无中生有",
+		"description": "本回合可额外翻两张牌。",
+		"url": "res://assets/img/公共牌池/无中生有.png",
+		"type": "spell",
+		"count": 4,
+		"level": 1,
+		"animation": "arcane",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "gain_flips",
+			"amount": 2
+		  }
+		]
+	  },
+	  {
+		"id": "life_spring",
+		"name": "生命之泉",
+		"description": "回合结束后，恢复相邻己方随从3点生命。",
+		"url": "res://assets/img/公共牌池/生命之泉.png",
+		"type": "building",
+		"count": 1,
+		"level": 1,
+		"keywords": [],
+		"attack": 0,
+		"health": 20,
+		"effects": [
+		  {
+			"id": "heal",
+			"trigger": "after_turn_end",
+			"target": "adjacent_turn_player_minions",
+			"amount": 3
+		  }
+		]
+	  },
+	  {
+		"id": "herb",
+		"name": "草药",
+		"description": "恢复一个单位5点生命。",
+		"url": "res://assets/img/公共牌池/草药.png",
+		"type": "spell",
+		"count": 2,
+		"level": 1,
+		"animation": "heal",
+		"target_rule": "all_minions",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "heal",
+			"amount": 5
+		  }
+		]
+	  },
+	  {
+		"id": "dark_arrow",
+		"name": "暗箭",
+		"description": "对一个随从造成4点伤害。",
+		"url": "res://assets/img/公共牌池/暗箭.png",
+		"type": "spell",
+		"count": 4,
+		"level": 2,
+		"animation": "dark_arrow",
+		"target_rule": "all_minions",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "damage",
+			"amount": 4
+		  }
+		]
+	  },
+	  {
+		"id": "create_more_from_nothing",
+		"name": "无中生有生有",
+		"description": "本回合可额外翻开3张牌。",
+		"url": "res://assets/img/公共牌池/无中生有生有.png",
+		"type": "spell",
+		"count": 2,
+		"level": 2,
+		"animation": "arcane",
+		"target_rule": "none",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "gain_flips",
+			"amount": 3
+		  }
+		]
+	  }
+	]
   }
 ]
