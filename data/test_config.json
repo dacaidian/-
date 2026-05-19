@@ -1,15 +1,9 @@
 {
   "enabled": false,
-  "cards": {
-    "silver_hand": ["uther", "blessed_infantry"],
-    "dalaran_council": ["antonidas", "frost_witch", "blizzard"]
-  },
-  "include_neutral_pool": false,
-  "override_counts": {
-    "_default": 3
-  },
+  "cards": {},
+  "include_neutral_pool": true,
   "game_params": {
     "spell_turn_mana_cost": 1,
-    "victory_resource_score": 20
+    "victory_resource_score": 1
   }
 }

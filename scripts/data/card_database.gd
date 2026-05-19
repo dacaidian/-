@@ -9,7 +9,7 @@ var cards_by_id: Dictionary = {}
 var cards_by_faction_id: Dictionary = {}
 var faction_ids_in_load_order: Array[String] = []
 
-# 测试模式：白名单过滤 + count 覆盖，不修改 cards.json
+# 测试模式：白名单过滤 + 游戏参数覆盖，不修改 cards.json
 var is_test_mode := false
 var test_config: Dictionary = {}
 
@@ -30,14 +30,11 @@ func load_test_config(path: String) -> void:
 
 
 func is_card_allowed_in_test_mode(card_id: String, faction_id: String) -> bool:
-	var faction_cards: Array = test_config.get("cards", {}).get(faction_id, [])
+	var cards_config: Dictionary = test_config.get("cards", {})
+	if cards_config.is_empty():
+		return true
+	var faction_cards: Array = cards_config.get(faction_id, [])
 	return faction_cards.has(card_id)
-
-
-func get_test_count_override(_card_id: String) -> int:
-	var overrides: Dictionary = test_config.get("override_counts", {})
-	var default_count: int = overrides.get("_default", -1)
-	return overrides.get(_card_id, default_count)
 
 
 func _should_include_neutral_pool() -> bool:
@@ -336,6 +333,10 @@ func build_weighted_pool(faction_id: String) -> Array[CardData]:
 
 func build_weighted_pool_for_selection(faction_id: String, selected_hero_card_id := "") -> Array[CardData]:
 	var pool: Array[CardData] = []
+
+	if is_test_mode and not _should_include_neutral_pool() and is_neutral_faction(faction_id):
+		return pool
+
 	var selected_hero_id := selected_hero_card_id
 	if selected_hero_id == "":
 		selected_hero_id = get_default_hero_id(faction_id)
@@ -366,9 +367,5 @@ func append_card_copies_to_pool(pool: Array[CardData], card_data: CardData) -> v
 		return
 
 	var copy_count := maxi(card_data.count, 0)
-	if is_test_mode:
-		var override := get_test_count_override(card_data.id)
-		if override >= 0:
-			copy_count = override
 	for copy_index in range(copy_count):
 		pool.append(card_data)
