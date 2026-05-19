@@ -18,7 +18,7 @@ func get_granted_spell_actions(user: CardState, game_manager: GameManager) -> Ar
 		if card_data == null or not card_data.is_upgrade():
 			continue
 
-		append_granted_spell_actions_from_card(granted_spell_actions, user, card_data)
+		append_granted_spell_actions_from_card(granted_spell_actions, user, card_data, owner)
 
 	return granted_spell_actions
 
@@ -26,16 +26,20 @@ func get_granted_spell_actions(user: CardState, game_manager: GameManager) -> Ar
 func append_granted_spell_actions_from_card(
 	granted_spell_actions: Array[Dictionary],
 	user: CardState,
-	card_data: CardData
+	card_data: CardData,
+	owner: PlayerState
 ) -> void:
 	for effect_data in card_data.effects:
-		if not is_grant_spell_actions_effect(effect_data):
-			continue
 		if not does_grant_apply_to_user(effect_data, user):
 			continue
 
-		for spell_data in EffectData.get_spell_actions(effect_data):
-			granted_spell_actions.append(spell_data)
+		if is_grant_spell_actions_effect(effect_data):
+			for spell_data in EffectData.get_spell_actions(effect_data):
+				granted_spell_actions.append(spell_data)
+		elif is_grant_last_spell_action_effect(effect_data):
+			var spell_data := get_last_spell_action_for_effect(effect_data, owner)
+			if not spell_data.is_empty():
+				granted_spell_actions.append(spell_data)
 
 
 func is_grant_spell_actions_effect(effect_data: Dictionary) -> bool:
@@ -43,6 +47,20 @@ func is_grant_spell_actions_effect(effect_data: Dictionary) -> bool:
 		EffectData.get_id(effect_data) == EffectData.EFFECT_GRANT_SPELL_ACTIONS
 		and EffectData.is_active_in_hand(effect_data)
 	)
+
+
+func is_grant_last_spell_action_effect(effect_data: Dictionary) -> bool:
+	return (
+		EffectData.get_id(effect_data) == EffectData.EFFECT_GRANT_LAST_SPELL_ACTION
+		and EffectData.is_active_in_hand(effect_data)
+	)
+
+
+func get_last_spell_action_for_effect(effect_data: Dictionary, owner: PlayerState) -> Dictionary:
+	if owner == null:
+		return {}
+
+	return owner.get_latest_spell_action_for_sources(EffectData.get_source_card_ids(effect_data))
 
 
 func does_grant_apply_to_user(effect_data: Dictionary, user: CardState) -> bool:

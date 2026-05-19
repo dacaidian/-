@@ -44,9 +44,9 @@
 - `CardAction`：行动基类。
 - `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
-- `SpellAction`：配置化施法行动，从 `CardData.spell_actions` 和手牌升级牌授予的 `spell_actions` 创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。
+- `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。
-- `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions`，并根据 `card_ids` 判断哪些随从获得这些法术。
+- `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions` 和 `grant_last_spell_action`，并根据 `card_ids` 判断哪些随从获得这些法术。`grant_last_spell_action` 通过 `source_card_ids` 限定可学习的施法来源，当前用于“好好学习”。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
 - `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
@@ -174,7 +174,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -372,3 +372,4 @@
 - 新增手牌内状态：优先放到 `HandCardState`，例如手牌冷却、来源、标签、手牌归属、可使用状态，不要塞进棋盘专用的 `CardState.slot_index` 流程；如果状态需要跨区域长期跟随，再考虑演进为更完整的 `CardInstance`。
 - 新增衍生牌：在对应种族的 `tokens[]` 字段下添加卡牌定义，由 `CardDatabase` 自动注册到全局查表。生成衍生牌的效果使用通用 `add_card_to_hand` 效果并指定 `card_id`，需要多张时配置 `amount`；需要三选一或多选奖励时使用 `choose_card_to_hand`、`card_ids` 和 `bonus_cards`；不要在效果或行动中手动构造 CardData。
 - 新增手牌法术：在卡牌自身配置 `type: "spell"`、`target_rule`、`animation` 和 `effects`，由 `HandPlayResolver` 解释；不要把手牌法术写成随从的 `spell_actions`。如果它属于某个英雄，把卡牌 id 放入该英雄的 `heroes[].attached_cards`，不要在规则层写死卡牌名。
+- 新增动态授予法术：优先扩展 `GrantedSpellResolver` 和 `PlayerState` 中的施法历史，不要在 `ActionRegistry` 或 UI 层根据卡牌名临时拼动作。像“学习最近一次法术”这种规则使用 `grant_last_spell_action`、`card_ids` 和 `source_card_ids` 配置。

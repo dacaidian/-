@@ -33,6 +33,8 @@ var hand: Array = []
 var deck: Array = []
 var discard_pile: Array = []
 var equipped_cards_by_type: Dictionary = {}
+var spell_history_sequence := 0
+var last_spell_records_by_source_card_id: Dictionary = {}
 
 # 玩家独立坟场，保存离场卡牌的 origin + last_state + death 元数据快照。
 var graveyard: Array[Dictionary] = []
@@ -264,6 +266,42 @@ func equip_card(card_data: CardData) -> void:
 		hand.append(replaced_card)
 
 	state_changed.emit(self)
+
+
+func record_spell_action(source_card_id: String, spell_data: Dictionary) -> void:
+	if source_card_id == "" or spell_data.is_empty():
+		return
+
+	spell_history_sequence += 1
+	last_spell_records_by_source_card_id[source_card_id] = {
+		"source_card_id": source_card_id,
+		"spell_data": spell_data.duplicate(true),
+		"sequence": spell_history_sequence,
+	}
+	state_changed.emit(self)
+
+
+func get_latest_spell_action_for_sources(source_card_ids: Array[String]) -> Dictionary:
+	var latest_sequence := -1
+	var latest_spell_data: Dictionary = {}
+
+	for source_card_id in source_card_ids:
+		var record := last_spell_records_by_source_card_id.get(source_card_id, {})
+		if not record is Dictionary:
+			continue
+
+		var sequence := int(record.get("sequence", -1))
+		if sequence <= latest_sequence:
+			continue
+
+		var spell_data := record.get("spell_data", {})
+		if not spell_data is Dictionary or spell_data.is_empty():
+			continue
+
+		latest_sequence = sequence
+		latest_spell_data = spell_data
+
+	return latest_spell_data.duplicate(true)
 
 
 func get_equipped_cards() -> Array[CardData]:

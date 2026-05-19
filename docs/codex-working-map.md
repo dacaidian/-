@@ -193,6 +193,7 @@
 
 - 新增行动、目标选择、行动资源消耗、动作菜单可见性。
 - 行动规则不要写进 UI；优先新增或修改 `CardAction` 子类。
+- 动态法术授予（例如学习最近一次法术）优先改 `GrantedSpellResolver` 和 `PlayerState` 的施法历史；`ActionRegistry` 只负责把解析出来的 spell data 转成动作。
 
 ### 攻击、死亡、占领
 
@@ -234,6 +235,7 @@
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
+- 固定授予法术用 `grant_spell_actions`；根据玩家历史动态授予法术用 `grant_last_spell_action` + `source_card_ids`，不要在 UI 或具体卡牌名分支里拼动作。
 
 ### 玩家资源、回合、胜负
 

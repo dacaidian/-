@@ -8,6 +8,7 @@ const KEY_ID := "id"
 const KEY_TRIGGER := "trigger"
 const KEY_ACTIVE_ZONE := "active_zone"
 const KEY_CARD_IDS := "card_ids"
+const KEY_SOURCE_CARD_IDS := "source_card_ids"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_AMOUNT := "amount"
 const KEY_TARGET := "target"
@@ -40,6 +41,7 @@ const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
 
 const EFFECT_GRANT_SPELL_ACTIONS := "grant_spell_actions"
+const EFFECT_GRANT_LAST_SPELL_ACTION := "grant_last_spell_action"
 const EFFECT_MODIFY_FLIP_CAPACITY := "modify_flip_capacity"
 const EFFECT_PASSIVE_FLIP_BONUS := "passive_flip_bonus"
 const EFFECT_APPLY_STATUS := "apply_status"
@@ -128,6 +130,18 @@ static func has_trigger(effect_data: Dictionary) -> bool:
 static func get_card_ids(effect_data: Dictionary) -> Array[String]:
 	var card_ids: Array[String] = []
 	var raw_card_ids: Variant = effect_data.get(KEY_CARD_IDS, [])
+	if raw_card_ids is Array:
+		for card_id in raw_card_ids:
+			var normalized_card_id := str(card_id)
+			if normalized_card_id != "":
+				card_ids.append(normalized_card_id)
+
+	return card_ids
+
+
+static func get_source_card_ids(effect_data: Dictionary) -> Array[String]:
+	var card_ids: Array[String] = []
+	var raw_card_ids: Variant = effect_data.get(KEY_SOURCE_CARD_IDS, [])
 	if raw_card_ids is Array:
 		for card_id in raw_card_ids:
 			var normalized_card_id := str(card_id)

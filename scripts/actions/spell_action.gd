@@ -69,6 +69,8 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_SPELL)
 		await game_manager.effect_registry.execute_effect(user, runtime_effect_data, game_manager)
 
+	record_successful_spell_cast(user, game_manager)
+
 
 func requires_target() -> bool:
 	return SpellTargetResolver.requires_target(target_rule)
@@ -76,3 +78,14 @@ func requires_target() -> bool:
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
 	return SpellTargetResolver.can_target(target_rule, target)
+
+
+func record_successful_spell_cast(user: CardState, game_manager: GameManager) -> void:
+	if user == null or game_manager == null:
+		return
+
+	var owner := game_manager.get_player_by_id(user.owner_id) as PlayerState
+	if owner == null:
+		return
+
+	owner.record_spell_action(user.card_id, spell_data)
