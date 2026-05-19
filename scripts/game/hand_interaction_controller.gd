@@ -128,6 +128,9 @@ func _on_hand_card_clicked(card_entry: Variant, source_control: Control, hand_in
 	if game_manager == null or game_manager.is_game_busy():
 		return
 
+	if game_manager.get_current_player() != null and game_manager.get_current_player().is_ai:
+		return
+
 	var current_player := game_manager.get_current_player()
 	if current_player == null:
 		return

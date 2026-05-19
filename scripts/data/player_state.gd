@@ -14,6 +14,8 @@ var display_name := ""
 var faction_id := ""
 var faction_name := ""
 var selected_hero_card_id := ""
+var is_ai := false
+var ai_difficulty := "normal"
 
 # 资源分是玩家的长期胜利资源。达到战局目标值的玩家会赢得游戏。
 var resource_score := DEFAULT_RESOURCE_SCORE

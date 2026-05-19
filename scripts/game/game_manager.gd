@@ -19,6 +19,10 @@ const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_reso
 const StatusResolverScript := preload("res://scripts/game/status_resolver.gd")
 const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_trigger_resolver.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
+const AICommonScript := preload("res://scripts/ai/ai_common.gd")
+const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
+const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
+const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 
 # GameManager 是战局编排入口。
 # 它持有玩家、棋盘、牌池和交互状态，负责串起回合、行动、死亡、补位等规则流程。
@@ -49,6 +53,8 @@ const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_
 
 # 第一版两名玩家名称。启动时会转成 PlayerState。
 @export var player_names: Array[String] = ["Player 1", "Player 2"]
+@export var player_ai_flags: Array[bool] = []
+@export var player_ai_difficulties: Array[String] = []
 @export var player_max_flips_per_turn := 4
 @export var spell_turn_mana_cost := 1
 @export var victory_resource_score := 80
@@ -126,6 +132,7 @@ var turn_trigger_resolver := TurnTriggerResolverScript.new()
 var status_resolver := StatusResolverScript.new()
 var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
 var victory_screen_controller: VictoryScreenController
+var ai_controller := AIControllerScript.new()
 
 # 当前操作人索引，只由 GameManager 修改。
 var current_player_index := 0
@@ -167,6 +174,9 @@ func _input(event: InputEvent) -> void:
 	if is_game_over:
 		return
 
+	if _is_ai_controlling():
+		return
+
 	if is_game_busy():
 		return
 
@@ -203,6 +213,11 @@ func should_cancel_card_selection(event: InputEvent) -> bool:
 
 func is_game_busy() -> bool:
 	return is_game_over or is_resolving_card_action or is_executing_action
+
+
+func _is_ai_controlling() -> bool:
+	var player := get_current_player()
+	return player != null and player.is_ai
 
 
 func connect_viewport_resize() -> void:
@@ -243,6 +258,8 @@ func initialize_players() -> void:
 		if index < player_faction_ids.size():
 			player.set_faction(player_faction_ids[index], get_faction_display_name(player_faction_ids[index]))
 			player.set_selected_hero(get_selected_hero_for_player(index))
+		player.is_ai = get_player_ai_flag(index)
+		player.ai_difficulty = get_player_ai_difficulty(index)
 		player.set_base_flips_per_turn(player_max_flips_per_turn)
 		player.remaining_flips = player.max_flips_per_turn
 		player.max_mana = PlayerState.MANA_CAPACITY
@@ -298,6 +315,20 @@ func get_selected_hero_for_player(player_index: int) -> String:
 		return card_database.get_default_hero_id(player_faction_ids[player_index])
 
 	return ""
+
+
+func get_player_ai_flag(player_index: int) -> bool:
+	if player_index >= 0 and player_index < player_ai_flags.size():
+		return player_ai_flags[player_index]
+	return false
+
+
+func get_player_ai_difficulty(player_index: int) -> String:
+	if player_index >= 0 and player_index < player_ai_difficulties.size():
+		var difficulty := player_ai_difficulties[player_index]
+		if difficulty in ["easy", "normal", "hard"]:
+			return difficulty
+	return "normal"
 
 
 func initialize_board() -> void:
@@ -488,6 +519,9 @@ func _on_card_clicked(card: Card) -> void:
 	if is_game_busy():
 		return
 
+	if _is_ai_controlling():
+		return
+
 	if card.state == null:
 		return
 
@@ -573,10 +607,24 @@ func end_turn() -> void:
 		restore_minion_actions_for_player(current_player.id)
 
 	is_resolving_card_action = false
+	if get_current_player().is_ai:
+		_set_end_turn_button_enabled(false)
+		await _run_ai_turn()
+		return
+	_set_end_turn_button_enabled(true)
 	refresh_action_available_hints()
 	update_turn_status_view()
 	update_hand_drawer_view()
 	refresh_debug_panel()
+
+
+func _run_ai_turn() -> void:
+	await ai_controller.run_turn(self)
+
+
+func _set_end_turn_button_enabled(enabled: bool) -> void:
+	if end_turn_button != null:
+		end_turn_button.disabled = not enabled
 
 
 func resolve_turn_timing_triggers(trigger: String, turn_player_id: String) -> void:

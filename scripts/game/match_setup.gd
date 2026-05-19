@@ -7,6 +7,8 @@ class_name MatchSetup
 var player_names: Array[String] = []
 var player_faction_ids: Array[String] = []
 var selected_hero_card_ids: Array[String] = []
+var player_ai_flags: Array[bool] = []
+var player_ai_difficulties: Array[String] = []
 
 
 func initialize_defaults(
@@ -18,6 +20,8 @@ func initialize_defaults(
 	player_names.clear()
 	player_faction_ids.clear()
 	selected_hero_card_ids.clear()
+	player_ai_flags.clear()
+	player_ai_difficulties.clear()
 
 	for index in range(player_count):
 		player_names.append(default_player_names[index] if index < default_player_names.size() else "Player %d" % (index + 1))
@@ -28,6 +32,8 @@ func initialize_defaults(
 
 		player_faction_ids.append(faction_id)
 		selected_hero_card_ids.append(get_default_hero(card_database, faction_id))
+		player_ai_flags.append(false)
+		player_ai_difficulties.append("normal")
 
 
 func set_faction(
@@ -136,3 +142,28 @@ func get_default_hero(card_database: CardDatabase, faction_id: String) -> String
 		return ""
 
 	return card_database.get_default_hero_id(faction_id)
+
+
+func set_ai_control(player_index: int, is_ai: bool) -> void:
+	if not is_valid_player_index(player_index):
+		return
+	player_ai_flags[player_index] = is_ai
+
+
+func set_ai_difficulty(player_index: int, difficulty: String) -> void:
+	if not is_valid_player_index(player_index):
+		return
+	if difficulty in ["easy", "normal", "hard"]:
+		player_ai_difficulties[player_index] = difficulty
+
+
+func get_ai_flag(player_index: int) -> bool:
+	if player_index < 0 or player_index >= player_ai_flags.size():
+		return false
+	return player_ai_flags[player_index]
+
+
+func get_ai_difficulty(player_index: int) -> String:
+	if player_index < 0 or player_index >= player_ai_difficulties.size():
+		return "normal"
+	return player_ai_difficulties[player_index]

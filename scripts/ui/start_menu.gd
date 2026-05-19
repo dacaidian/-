@@ -17,6 +17,8 @@ var hero_textures: Array[TextureRect] = []
 var faction_labels: Array[Label] = []
 var hero_labels: Array[Label] = []
 var attached_labels: Array[Label] = []
+var control_type_selects: Array[OptionButton] = []
+var ai_difficulty_selects: Array[OptionButton] = []
 var start_button: Button
 var warning_label: Label
 var is_refreshing := false
@@ -200,6 +202,48 @@ func create_player_panel(player_index: int) -> Control:
 	box.add_child(attached_label)
 	attached_labels.append(attached_label)
 
+	var control_separator := HSeparator.new()
+	control_separator.custom_minimum_size = Vector2(0, 2)
+	control_separator.add_theme_color_override("color", Color(0.75, 0.60, 0.36, 0.55))
+	box.add_child(control_separator)
+
+	var control_title := Label.new()
+	control_title.text = "操控方式"
+	control_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	control_title.add_theme_font_size_override("font_size", 18)
+	control_title.add_theme_color_override("font_color", Color(0.82, 0.93, 1.0, 0.85))
+	box.add_child(control_title)
+
+	var control_type_select := OptionButton.new()
+	control_type_select.custom_minimum_size = Vector2(0, 50)
+	control_type_select.add_theme_font_size_override("font_size", 20)
+	control_type_select.add_theme_stylebox_override("normal", create_select_style(false))
+	control_type_select.add_theme_stylebox_override("hover", create_select_style(true))
+	control_type_select.add_item("玩家操作")
+	control_type_select.set_item_metadata(0, false)
+	control_type_select.add_item("AI 控制")
+	control_type_select.set_item_metadata(1, true)
+	control_type_select.item_selected.connect(_on_control_type_selected.bind(player_index))
+	box.add_child(control_type_select)
+	control_type_selects.append(control_type_select)
+
+	var ai_difficulty_select := OptionButton.new()
+	ai_difficulty_select.custom_minimum_size = Vector2(0, 46)
+	ai_difficulty_select.add_theme_font_size_override("font_size", 18)
+	ai_difficulty_select.add_theme_stylebox_override("normal", create_select_style(false))
+	ai_difficulty_select.add_theme_stylebox_override("hover", create_select_style(true))
+	ai_difficulty_select.add_item("AI 难度：简单")
+	ai_difficulty_select.set_item_metadata(0, "easy")
+	ai_difficulty_select.add_item("AI 难度：普通")
+	ai_difficulty_select.set_item_metadata(1, "normal")
+	ai_difficulty_select.add_item("AI 难度：困难")
+	ai_difficulty_select.set_item_metadata(2, "hard")
+	ai_difficulty_select.select(1)
+	ai_difficulty_select.visible = false
+	ai_difficulty_select.item_selected.connect(_on_ai_difficulty_selected.bind(player_index))
+	box.add_child(ai_difficulty_select)
+	ai_difficulty_selects.append(ai_difficulty_select)
+
 	return panel
 
 
@@ -237,6 +281,7 @@ func refresh_all_controls() -> void:
 		refresh_faction_select(index)
 		refresh_hero_select(index)
 		refresh_preview(index)
+		refresh_control_type_select(index)
 
 	is_refreshing = false
 	refresh_start_button()
@@ -305,6 +350,23 @@ func refresh_preview(player_index: int) -> void:
 	attached_labels[player_index].text = "英雄附属牌：%d" % attached_count
 
 
+func refresh_control_type_select(player_index: int) -> void:
+	var control_select := control_type_selects[player_index]
+	var is_ai := match_setup.get_ai_flag(player_index)
+	control_select.select(0 if not is_ai else 1)
+
+	var difficulty_select := ai_difficulty_selects[player_index]
+	difficulty_select.visible = is_ai
+
+	if is_ai:
+		var difficulty := match_setup.get_ai_difficulty(player_index)
+		match difficulty:
+			"easy":   difficulty_select.select(0)
+			"normal": difficulty_select.select(1)
+			"hard":   difficulty_select.select(2)
+			_:        difficulty_select.select(1)
+
+
 func refresh_start_button() -> void:
 	var can_start := can_start_game()
 	start_button.disabled = not can_start
@@ -342,6 +404,27 @@ func _on_hero_selected(item_index: int, player_index: int) -> void:
 	refresh_start_button()
 
 
+func _on_control_type_selected(item_index: int, player_index: int) -> void:
+	if is_refreshing:
+		return
+
+	var select := control_type_selects[player_index]
+	var is_ai := bool(select.get_item_metadata(item_index))
+	match_setup.set_ai_control(player_index, is_ai)
+	var difficulty_select := ai_difficulty_selects[player_index]
+	difficulty_select.visible = is_ai
+	refresh_start_button()
+
+
+func _on_ai_difficulty_selected(item_index: int, player_index: int) -> void:
+	if is_refreshing:
+		return
+
+	var select := ai_difficulty_selects[player_index]
+	var difficulty := str(select.get_item_metadata(item_index))
+	match_setup.set_ai_difficulty(player_index, difficulty)
+
+
 func _on_start_pressed() -> void:
 	if not can_start_game():
 		return
@@ -361,6 +444,8 @@ func _on_start_pressed() -> void:
 	game_manager.player_faction_ids = match_setup.player_faction_ids.duplicate()
 	game_manager.selected_hero_card_ids = match_setup.selected_hero_card_ids.duplicate()
 	game_manager.player_names = match_setup.player_names.duplicate()
+	game_manager.player_ai_flags = match_setup.player_ai_flags.duplicate()
+	game_manager.player_ai_difficulties = match_setup.player_ai_difficulties.duplicate()
 
 	get_tree().root.add_child(battle_root)
 	get_tree().current_scene = battle_root

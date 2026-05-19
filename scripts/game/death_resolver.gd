@@ -253,12 +253,16 @@ func resolve_attack_kill(game_manager: GameManager, attacker_state: CardState, d
 
 	var should_occupy := false
 	if can_occupy and can_offer_attack_occupy(attacker_state, defeated_state):
-		should_occupy = await game_manager.attack_occupy_choice_controller.prompt(
-			game_manager.get_parent(),
-			attacker_state,
-			defeated_state,
-			game_manager.occupy_choice_panel_size
-		)
+		var attacker_owner := game_manager.get_player_by_id(attacker_state.owner_id)
+		if attacker_owner != null and attacker_owner.is_ai:
+			should_occupy = _ai_decide_occupy(game_manager, attacker_state, defeated_state)
+		else:
+			should_occupy = await game_manager.attack_occupy_choice_controller.prompt(
+				game_manager.get_parent(),
+				attacker_state,
+				defeated_state,
+				game_manager.occupy_choice_panel_size
+			)
 
 	if should_occupy:
 		await resolve_attack_occupy(game_manager, attacker_state, defeated_state)
@@ -280,6 +284,40 @@ func can_offer_attack_occupy(attacker_state: CardState, defeated_state: CardStat
 		return false
 
 	return true
+
+
+func _ai_decide_occupy(game_manager: GameManager, attacker_state: CardState, defeated_state: CardState) -> bool:
+	var player_index := -1
+	for i in range(game_manager.players.size()):
+		var p := game_manager.players[i] as PlayerState
+		if p != null and p.id == attacker_state.owner_id:
+			player_index = i
+			break
+
+	if player_index < 0:
+		return true
+
+	var board_columns := game_manager.board_columns
+	var attacker_row := attacker_state.slot_index / board_columns
+	var defeated_row := defeated_state.slot_index / board_columns
+
+	var is_advancing := false
+	if player_index == 0:
+		is_advancing = defeated_row > attacker_row
+	else:
+		is_advancing = defeated_row < attacker_row
+
+	# 检查占领后是否会被相邻敌人反杀
+	var incoming_damage := 0
+	for adj in BoardQuery.get_adjacent_slots(defeated_state.slot_index, board_columns, game_manager.board_states.size()):
+		var adj_state := game_manager.get_board_state(adj)
+		if adj_state != null and adj_state.owner_id != "" and adj_state.owner_id != attacker_state.owner_id and adj_state.current_attack > 0:
+			incoming_damage += adj_state.current_attack
+
+	if incoming_damage >= attacker_state.current_health:
+		return false
+
+	return is_advancing or defeated_row == attacker_row
 
 
 func resolve_attack_occupy(game_manager: GameManager, attacker_state: CardState, defeated_state: CardState) -> void:
