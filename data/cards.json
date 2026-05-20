@@ -715,6 +715,34 @@
 	]
   },
   {
+	"id": "miao_jiang",
+	"name": "miaoJiang",
+	"displayName": "苗疆族",
+	"description": "苗疆族种族的数据",
+	"heroes": [
+	  {
+		"card_id": "chen_duo",
+		"attached_cards": []
+	  }
+	],
+	"cards": [
+	  {
+		"id": "chen_duo",
+		"name": "陈朵",
+		"description": "陈朵",
+		"url": "res://assets/img/苗疆族/陈朵.png",
+		"type": "minion",
+		"role": "hero",
+		"count": 1,
+		"level": 1,
+		"keywords": [],
+		"attack": 2,
+		"health": 10,
+		"effects": []
+	  }
+	]
+  },
+  {
 	"id": "neutral",
 	"name": "neutral",
 	"displayName": "中立牌库",
