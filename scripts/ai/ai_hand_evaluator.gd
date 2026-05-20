@@ -172,6 +172,9 @@ func _score_spell_on_target(card_data: CardData, target: CardState, player: Play
 
 		elif effect_id == "apply_status":
 			var status_id := str(effect_data.get("status_id", ""))
+			var status_tags := EffectData.get_status_tags(effect_data)
+			var status_payload := EffectData.get_status_payload(effect_data)
+			var attack_bonus := int(status_payload.get(EffectData.KEY_ATTACK_BONUS, 0))
 			var is_own := target.owner_id == player.id
 			var is_enemy := target.owner_id != "" and target.owner_id != player.id
 			var threat: float = AICommonScript.calc_threat_score(target)
@@ -187,6 +190,11 @@ func _score_spell_on_target(card_data: CardData, target: CardState, player: Play
 					score += threat * 0.4 + 2.0
 				elif is_enemy:
 					score -= threat * 0.4 + 2.0
+			elif status_tags.has(CardStatus.TAG_ATTACK_MODIFIER) or attack_bonus != 0:
+				if is_own:
+					score += float(attack_bonus) * 2.0 + threat * 0.5
+				elif is_enemy:
+					score -= float(attack_bonus) * 2.0 + threat * 0.5
 			elif is_own:
 				score += 2.0
 

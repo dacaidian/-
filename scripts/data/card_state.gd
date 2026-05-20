@@ -57,6 +57,7 @@ var back_texture: Texture2D
 # 当前攻击、生命上限、已受伤害和护盾。当前生命由 max_health - damage_taken 计算得出。
 var current_attack := 0
 var passive_attack_bonus := 0
+var status_attack_bonus := 0
 var max_health := 0
 var damage_taken := 0
 var shield := 0
@@ -95,6 +96,7 @@ func set_card_data(value: CardData) -> void:
 		origin.clear()
 		current_attack = 0
 		passive_attack_bonus = 0
+		status_attack_bonus = 0
 		max_health = 0
 		damage_taken = 0
 		shield = 0
@@ -119,6 +121,7 @@ func set_card_data(value: CardData) -> void:
 		back_texture = data.back_texture
 		current_attack = data.attack
 		passive_attack_bonus = 0
+		status_attack_bonus = 0
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
@@ -236,6 +239,7 @@ func create_card_snapshot() -> Dictionary:
 		"back_texture": back_texture,
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
+		"status_attack_bonus": status_attack_bonus,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -267,6 +271,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	back_texture = snapshot.get("back_texture") as Texture2D
 	current_attack = int(snapshot.get("current_attack", 0))
 	passive_attack_bonus = int(snapshot.get("passive_attack_bonus", 0))
+	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
@@ -279,6 +284,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	used_action_groups = normalize_string_array(snapshot.get("used_action_groups", []))
 	allowed_action_group_pairs = normalize_string_array(snapshot.get("allowed_action_group_pairs", []))
 	apply_status_snapshots(snapshot.get("statuses", []))
+	if not snapshot.has("status_attack_bonus"):
+		status_attack_bonus = calculate_status_attack_bonus()
 	is_action_available_hint = bool(snapshot.get("is_action_available_hint", false))
 	is_pending_death = false
 	is_selected = false
@@ -322,6 +329,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"is_face_up": is_face_up,
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
+		"status_attack_bonus": status_attack_bonus,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -514,10 +522,12 @@ func add_status(status: CardStatus) -> void:
 	for existing_status in statuses:
 		if existing_status != null and existing_status.is_same_stack_key(status):
 			existing_status.merge_from(status)
+			recalculate_status_modifiers(false)
 			state_changed.emit(self)
 			return
 
 	statuses.append(status)
+	recalculate_status_modifiers(false)
 	state_changed.emit(self)
 
 
@@ -526,6 +536,7 @@ func remove_status(status_id: String) -> bool:
 		var status := statuses[index]
 		if status != null and status.status_id == status_id:
 			statuses.remove_at(index)
+			recalculate_status_modifiers(false)
 			state_changed.emit(self)
 			return true
 
@@ -571,6 +582,7 @@ func expire_statuses_for_turn_timing(trigger: String, turn_player_id: String) ->
 		did_change = true
 
 	if did_change:
+		recalculate_status_modifiers(false)
 		state_changed.emit(self)
 
 	expired_statuses.reverse()
@@ -709,6 +721,32 @@ func set_passive_attack_bonus(value: int) -> void:
 	current_attack = maxi(current_attack - passive_attack_bonus + normalized_value, 0)
 	passive_attack_bonus = normalized_value
 	state_changed.emit(self)
+
+
+func calculate_status_attack_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status == null or not status.tags.has(CardStatus.TAG_ATTACK_MODIFIER):
+			continue
+
+		var amount := int(status.payload.get(EffectData.KEY_ATTACK_BONUS, 0))
+		if amount == 0:
+			continue
+
+		bonus += amount * maxi(status.stacks, 1)
+
+	return bonus
+
+
+func recalculate_status_modifiers(should_emit_changed := true) -> void:
+	var next_status_attack_bonus := calculate_status_attack_bonus()
+	if status_attack_bonus == next_status_attack_bonus:
+		return
+
+	current_attack = maxi(current_attack - status_attack_bonus + next_status_attack_bonus, 0)
+	status_attack_bonus = next_status_attack_bonus
+	if should_emit_changed:
+		state_changed.emit(self)
 
 
 func increase_max_health(amount: int, should_heal_added_health: bool = true) -> void:

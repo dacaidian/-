@@ -79,6 +79,7 @@
 - 圣盾当前是 `divine_shield` 永久可消耗状态；伤害入口在 `CardState.take_damage()`，它会先消耗一层圣盾并抵消本次伤害，再进入数值护盾/生命结算。
 - 冻结当前是 `freeze` 临时控制状态，配置 `duration_turns: 1` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`。状态到期后自动移除，无需特殊恢复逻辑。
 - 辉煌光环当前是 `arcane_aura` 状态；状态的 `payload.turn_effects` 可在回合时点触发效果，状态层数会乘到效果 `amount` 上。
+- 励蛊当前是 `encourage_gu` 状态；使用 `status_tags: ["attack_modifier"]` 和 `payload.attack_bonus` 提供持续攻击力修正，移除状态时由 `CardState.status_attack_bonus` 自动回滚。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
 - 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态和摆放覆盖层。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。

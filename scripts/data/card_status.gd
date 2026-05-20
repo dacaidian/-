@@ -11,9 +11,11 @@ const DURATION_SCOPE_GLOBAL := "global"
 const DEFAULT_EXPIRES_ON_TRIGGER := EventContext.TRIGGER_AFTER_TURN_END
 const STATUS_DIVINE_SHIELD := "divine_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
+const STATUS_ENCOURAGE_GU := "encourage_gu"
 const TAG_DAMAGE_PREVENTION := "damage_prevention"
 const TAG_AURA := "aura"
 const TAG_ACTION_PREVENTION := "action_prevention"
+const TAG_ATTACK_MODIFIER := "attack_modifier"
 const STATUS_FREEZE := "freeze"
 
 var status_id := ""
@@ -49,6 +51,8 @@ static func from_effect_data(effect_data: Dictionary, target_state: CardState, s
 	if source_state != null:
 		status.source_card_id = source_state.card_id
 		status.source_owner_id = source_state.owner_id
+	else:
+		status.source_owner_id = EffectData.get_effect_owner_id(effect_data)
 
 	status.duration_owner_id = status.resolve_duration_owner_id(target_state)
 	return status
