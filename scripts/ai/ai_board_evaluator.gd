@@ -306,31 +306,47 @@ func _score_apply_status_effect(target: CardState, effect_data: Dictionary, play
 	if target == null:
 		return 0.0
 	var status_id := str(effect_data.get("status_id", ""))
+	var status_tags := EffectData.get_status_tags(effect_data)
+	var status_payload := EffectData.get_status_payload(effect_data)
+	var attack_bonus := int(status_payload.get(EffectData.KEY_ATTACK_BONUS, 0))
+	var poison_damage := int(status_payload.get(EffectData.KEY_POISON_DAMAGE, 0))
+	var poison_turns := int(effect_data.get(EffectData.KEY_STATUS_DURATION_TURNS, 0))
 	var is_own := target.owner_id == player.id
 	var is_enemy := target.owner_id != "" and target.owner_id != player.id
 	var threat: float = AICommonScript.calc_threat_score(target)
 
-	# 冻结: 对敌人是debuff(好)，对己方是debuff(坏)
-	if status_id == "freeze":
+	if status_id == CardStatus.STATUS_FREEZE:
 		if is_enemy:
 			return threat * 0.6 + 2.0
 		elif is_own:
 			return -threat * 0.6 - 2.0
 		return 0.0
 
-	# 圣盾: 对己方是buff(好)，对敌人是buff(坏)
-	if status_id == "divine_shield":
+	if status_id == CardStatus.STATUS_DIVINE_SHIELD:
 		if is_own:
 			return threat * 0.4 + 2.0
 		elif is_enemy:
 			return -threat * 0.4 - 2.0
 		return 0.0
 
-	# 其他正面状态默认加给己方
+	if status_id == CardStatus.STATUS_POISON or status_tags.has(CardStatus.TAG_DAMAGE_OVER_TIME):
+		var poison_value := float(poison_damage * maxi(poison_turns, 1))
+		if is_enemy:
+			return poison_value * 1.8 + threat * 0.35
+		elif is_own:
+			return -poison_value * 1.8 - threat * 0.35
+		return 0.0
+
+	if status_tags.has(CardStatus.TAG_ATTACK_MODIFIER) or attack_bonus != 0:
+		if is_own:
+			return float(attack_bonus) * 2.0 + threat * 0.5
+		elif is_enemy:
+			return -float(attack_bonus) * 2.0 - threat * 0.5
+		return 0.0
+
 	if is_own:
 		return 2.0
 	return 0.0
-
 
 func _count_area_hits(action: SpellAction, center_target: CardState, gm: GameManager, player: PlayerState) -> Dictionary:
 	var result := {"enemy": 0, "own": 0}

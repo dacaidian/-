@@ -518,6 +518,9 @@ func apply_status_snapshots(value: Variant) -> void:
 func add_status(status: CardStatus) -> void:
 	if status == null or status.status_id == "":
 		return
+	if status.status_id == CardStatus.STATUS_POISON:
+		add_unique_poison_status(status)
+		return
 
 	for existing_status in statuses:
 		if existing_status != null and existing_status.is_same_stack_key(status):
@@ -528,6 +531,18 @@ func add_status(status: CardStatus) -> void:
 
 	statuses.append(status)
 	recalculate_status_modifiers(false)
+	state_changed.emit(self)
+
+
+func add_unique_poison_status(status: CardStatus) -> void:
+	var existing_status := get_status(CardStatus.STATUS_POISON)
+	if existing_status != null:
+		if not status.is_stronger_poison_than(existing_status):
+			return
+
+		statuses.erase(existing_status)
+
+	statuses.append(status)
 	state_changed.emit(self)
 
 

@@ -18,6 +18,9 @@ var encourage_gu_color := Color(0.42, 1.0, 0.36, 0.16)
 var encourage_gu_edge_color := Color(0.72, 1.0, 0.48, 0.72)
 var encourage_gu_venom_color := Color(0.20, 0.95, 0.38, 0.58)
 var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
+var poison_color := Color(0.42, 0.05, 0.58, 0.20)
+var poison_edge_color := Color(0.74, 0.24, 0.92, 0.62)
+var poison_bubble_color := Color(0.65, 1.0, 0.25, 0.52)
 
 
 func _ready() -> void:
@@ -36,7 +39,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_poison()
 
 
 func should_show_divine_shield() -> bool:
@@ -67,11 +70,20 @@ func should_show_encourage_gu() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ENCOURAGE_GU)
 
 
+func should_show_poison() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_POISON)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
+	if should_show_poison():
+		draw_poison_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -211,3 +223,22 @@ func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int) -> void:
 		var wing_dir := Vector2(-sin(angle), cos(angle))
 		draw_circle(pos, 2.4, encourage_gu_insect_color)
 		draw_line(pos - wing_dir * 3.0, pos + wing_dir * 3.0, Color(encourage_gu_insect_color.r, encourage_gu_insect_color.g, encourage_gu_insect_color.b, 0.42), 1.4)
+
+
+func draw_poison_overlay() -> void:
+	var poison_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
+	var border_width := maxf(size.x * 0.035, 2.0)
+	var status := state.get_status(CardStatus.STATUS_POISON) if state != null else null
+	var damage := status.get_poison_damage() if status != null else 1
+	var turns := status.remaining_turns if status != null else 1
+	var bubble_count: int = mini(maxi(damage + turns, 3), 9)
+
+	draw_rect(poison_rect, poison_color, true)
+	draw_rect(poison_rect, poison_edge_color, false, border_width, true)
+
+	for index in range(bubble_count):
+		var t := float(index) / float(maxi(bubble_count - 1, 1))
+		var x := poison_rect.position.x + poison_rect.size.x * (0.16 + fmod(t * 1.73, 0.68))
+		var y := poison_rect.position.y + poison_rect.size.y * (0.18 + fmod(t * 2.21, 0.66))
+		var radius := 2.4 + float((index + damage) % 3) * 1.3
+		draw_circle(Vector2(x, y), radius, poison_bubble_color)

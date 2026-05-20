@@ -30,6 +30,7 @@ const KEY_STATUS_PERSISTS_AFTER_DEATH := "persists_after_death"
 const KEY_STATUS_PAYLOAD := "payload"
 const KEY_STATUS_TURN_EFFECTS := "turn_effects"
 const KEY_ATTACK_BONUS := "attack_bonus"
+const KEY_POISON_DAMAGE := "poison_damage"
 const KEY_FILTER_TYPE := "filter_type"
 const KEY_FILTER_OWNER := "filter_owner"
 const KEY_TARGET_ZONE := "target_zone"
@@ -83,6 +84,7 @@ const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
 const DEATH_REASON_EFFECT := "effect"
 const DEATH_REASON_SPELL := "spell"
 const DEATH_REASON_HAND_SPELL := "hand_spell"
+const DEATH_REASON_POISON := "poison"
 
 
 static func get_id(effect_data: Dictionary) -> String:

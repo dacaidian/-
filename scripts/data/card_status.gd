@@ -12,10 +12,12 @@ const DEFAULT_EXPIRES_ON_TRIGGER := EventContext.TRIGGER_AFTER_TURN_END
 const STATUS_DIVINE_SHIELD := "divine_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
 const STATUS_ENCOURAGE_GU := "encourage_gu"
+const STATUS_POISON := "poison"
 const TAG_DAMAGE_PREVENTION := "damage_prevention"
 const TAG_AURA := "aura"
 const TAG_ACTION_PREVENTION := "action_prevention"
 const TAG_ATTACK_MODIFIER := "attack_modifier"
+const TAG_DAMAGE_OVER_TIME := "damage_over_time"
 const STATUS_FREEZE := "freeze"
 
 var status_id := ""
@@ -112,6 +114,31 @@ func merge_from(other: CardStatus) -> void:
 		remaining_turns = maxi(remaining_turns, other.remaining_turns)
 
 	payload.merge(other.payload, true)
+
+
+func get_poison_damage() -> int:
+	return int(payload.get(EffectData.KEY_POISON_DAMAGE, 0))
+
+
+func get_poison_total_remaining_damage() -> int:
+	if status_id != STATUS_POISON:
+		return 0
+
+	return get_poison_damage() * maxi(remaining_turns, 0)
+
+
+func is_stronger_poison_than(other: CardStatus) -> bool:
+	if status_id != STATUS_POISON:
+		return false
+	if other == null:
+		return true
+
+	var total_damage := get_poison_total_remaining_damage()
+	var other_total_damage := other.get_poison_total_remaining_damage()
+	if total_damage != other_total_damage:
+		return total_damage > other_total_damage
+
+	return get_poison_damage() > other.get_poison_damage()
 
 
 func to_snapshot() -> Dictionary:
