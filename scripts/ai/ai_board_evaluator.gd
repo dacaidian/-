@@ -17,12 +17,12 @@ func evaluate_and_execute_all(gm: GameManager, difficulty: String) -> void:
 
 	owned.sort_custom(func(a: CardState, b: CardState): return AICommonScript.calc_threat_score(a) > AICommonScript.calc_threat_score(b))
 
-	var acted_slots: Array = []
+	var acted_states: Array[CardState] = []
 
 	for minion in owned:
 		if gm.is_game_over:
 			return
-		if acted_slots.has(minion.slot_index):
+		if acted_states.has(minion):
 			continue
 
 		var best: Dictionary = _find_best_action(minion, gm)
@@ -42,7 +42,7 @@ func evaluate_and_execute_all(gm: GameManager, difficulty: String) -> void:
 		await action.execute(minion, target, gm)
 		gm.is_executing_action = false
 
-		acted_slots.append(minion.slot_index)
+		acted_states.append(minion)
 		gm.refresh_action_available_hints()
 		gm.refresh_debug_panel()
 		await AICommonScript.await_step_delay(gm)
@@ -56,6 +56,13 @@ func _find_best_action(minion: CardState, gm: GameManager) -> Dictionary:
 	var actions: Array = gm.action_registry.get_available_actions(minion, gm)
 	for action in actions:
 		if action == null:
+			continue
+		if not action.requires_target():
+			var no_target_score: float = _score_action(action, minion, null, gm)
+			if no_target_score > best["score"]:
+				best["action"] = action
+				best["target"] = null
+				best["score"] = no_target_score
 			continue
 		var targets: Array = action.get_valid_targets(minion, gm)
 		for target in targets:
@@ -187,9 +194,10 @@ func _score_spell(action: CardAction, user: CardState, target: CardState, gm: Ga
 		elif effect_id == "play_spell_action":
 			score += 3.0
 		elif effect_id == "set_attack_to_current_health":
-			var new_attack := target.current_health - target.current_attack
-			if new_attack > 0:
-				score += new_attack * 2.0
+			if target != null:
+				var new_attack := target.current_health - target.current_attack
+				if new_attack > 0:
+					score += new_attack * 2.0
 
 	var target_rule := spell_action.target_rule
 	if SpellTargetResolver.is_area_rule(target_rule):

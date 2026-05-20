@@ -200,7 +200,7 @@
 
 - 新增行动、目标选择、行动资源消耗、动作菜单可见性。
 - 行动规则不要写进 UI；优先新增或修改 `CardAction` 子类。
-- AOE 范围目标选择复用同一套 `InteractionManager.start_action_selection()`：通过 `action.get_area_info()` 多态判断是否为 area 模式；area 模式下全棋盘格子为合法目标，悬停显示蓝色 area 预览。
+- AOE 范围目标选择复用 `InteractionManager` 的目标选择状态：战场行动通过 `start_action_selection()` + `action.get_area_info()` 判断 area 模式，手牌法术通过 `start_hand_card_target_selection()` + `SpellTargetResolver.get_area_dimensions()` 判断 area 模式；area 模式下全棋盘格子为合法目标，悬停显示蓝色 area 预览。
 - 动态法术授予（例如学习最近一次法术）优先改 `GrantedSpellResolver` 和 `PlayerState` 的施法历史；`ActionRegistry` 只负责把解析出来的 spell data 转成动作。
 
 ### 攻击、死亡、占领
@@ -327,6 +327,22 @@
 - 双方种族牌库和中立牌库一起洗入公共牌池。
 - 中立手牌类卡牌翻开后进入当前玩家手牌。
 - 中立棋盘单位翻开后留在战场且通常无 owner。
+
+### AI 对手
+
+优先读：
+
+- `scripts/ai/ai_controller.gd`
+- `scripts/ai/ai_board_evaluator.gd`
+- `scripts/ai/ai_hand_evaluator.gd`
+- `scripts/ai/ai_common.gd`
+- `scripts/game/game_manager.gd` 中 `schedule_ai_turn_if_needed()`、`_run_ai_turn()` 和 `choose_card_indices_for_ai()`。
+
+常见修改：
+
+- 新增 AI 可用行动：先确认 `CardAction.requires_target()`，无目标动作要单独评分，不要依赖 `get_valid_targets()` 返回非空。
+- 新增需要选择候选牌的效果：人类玩家可以调用 `CardMultiSelectController`，AI 玩家必须走自动选择路径，当前统一从 `GameManager.choose_card_indices_for_ai()` 获取索引。
+- 新增手牌玩法时，AI 应调用 `GameManager.get_hand_play_resolver()` 暴露的规则入口，不要穿过 UI 控制器访问 resolver。
 
 ## 尽量避免的高消耗行为
 

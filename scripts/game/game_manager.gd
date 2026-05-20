@@ -146,6 +146,7 @@ var is_resolving_card_action := false
 
 # 行动执行期间由行动流程统一收尾，避免死亡结算和外层点击流程重复取消交互。
 var is_executing_action := false
+var is_ai_turn_scheduled := false
 
 func _ready() -> void:
 	connect_end_turn_button()
@@ -168,6 +169,7 @@ func _ready() -> void:
 	initialize_board()
 	setup_card_pool_view()
 	update_card_pool_view()
+	schedule_ai_turn_if_needed()
 
 
 func _input(event: InputEvent) -> void:
@@ -607,18 +609,34 @@ func end_turn() -> void:
 		restore_minion_actions_for_player(current_player.id)
 
 	is_resolving_card_action = false
-	if get_current_player().is_ai:
-		_set_end_turn_button_enabled(false)
-		await _run_ai_turn()
-		return
-	_set_end_turn_button_enabled(true)
 	refresh_action_available_hints()
 	update_turn_status_view()
 	update_hand_drawer_view()
 	refresh_debug_panel()
+	schedule_ai_turn_if_needed()
+
+
+func schedule_ai_turn_if_needed() -> void:
+	if is_game_over or is_ai_turn_scheduled:
+		return
+
+	var player := get_current_player()
+	if player == null or not player.is_ai:
+		_set_end_turn_button_enabled(true)
+		return
+
+	_set_end_turn_button_enabled(false)
+	is_ai_turn_scheduled = true
+	_run_ai_turn.call_deferred()
 
 
 func _run_ai_turn() -> void:
+	await get_tree().process_frame
+	is_ai_turn_scheduled = false
+	if is_game_over or not _is_ai_controlling() or is_game_busy():
+		schedule_ai_turn_if_needed()
+		return
+
 	await ai_controller.run_turn(self)
 
 
@@ -682,6 +700,39 @@ func get_player_by_id(player_id: String) -> PlayerState:
 
 func get_card_data_by_id(card_id: String) -> CardData:
 	return card_database.get_card(card_id)
+
+
+func get_hand_play_resolver() -> HandPlayResolver:
+	return hand_interaction_controller.hand_play_resolver
+
+
+func choose_card_indices_for_ai(candidates: Array[Dictionary], max_select: int) -> Array[int]:
+	var selected: Array[int] = []
+	if candidates.is_empty() or max_select <= 0:
+		return selected
+
+	var scored: Array[Dictionary] = []
+	for index in range(candidates.size()):
+		var candidate: Dictionary = candidates[index]
+		scored.append({
+			"index": index,
+			"score": _score_ai_card_choice(candidate)
+		})
+
+	scored.sort_custom(func(a: Dictionary, b: Dictionary): return float(a["score"]) > float(b["score"]))
+	for item in scored:
+		if selected.size() >= max_select:
+			break
+		selected.append(int(item["index"]))
+
+	return selected
+
+
+func _score_ai_card_choice(candidate: Dictionary) -> float:
+	var attack := float(candidate.get("attack", 0))
+	var health := float(candidate.get("health", 0))
+	var level := float(candidate.get("level", 1))
+	return attack * 2.0 + health + level * 0.75
 
 
 func find_face_up_board_state(owner_id: String, card_id: String) -> CardState:

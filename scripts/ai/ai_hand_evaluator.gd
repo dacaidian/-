@@ -18,7 +18,7 @@ func evaluate_and_play_all(gm: GameManager, difficulty: String) -> void:
 	if player == null or player.hand.is_empty():
 		return
 
-	var hpr := gm.hand_interaction_controller.hand_play_resolver
+	var hpr := gm.get_hand_play_resolver()
 	var threshold: float = AICommonScript.reserve_threshold(difficulty)
 	var max_iterations := player.hand.size() * 2
 	var iterations := 0
@@ -266,7 +266,7 @@ func _execute_card(card_data: CardData, hand_index: int, player: PlayerState, ta
 	if gm == null or card_data == null or player == null:
 		return
 
-	var hpr := gm.hand_interaction_controller.hand_play_resolver
+	var hpr := gm.get_hand_play_resolver()
 	gm.is_executing_action = true
 
 	if card_data.is_spell():

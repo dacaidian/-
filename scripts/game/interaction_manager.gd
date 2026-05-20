@@ -107,6 +107,7 @@ func start_hand_card_target_selection(
 ) -> void:
 	# 手牌法术也复用同一个目标选择模式，但没有棋盘焦点牌。
 	clear_targets(board_states)
+	clear_area_preview(board_states)
 	mode = Mode.SELECTING_ACTION_TARGET
 	focused_state = null
 	selected_action = null
@@ -115,6 +116,13 @@ func start_hand_card_target_selection(
 	selected_hand_index = hand_index
 	selected_hand_action_id = hand_action_id
 	valid_target_slots.clear()
+	area_preview_slots.clear()
+
+	var target_rule := SpellTargetResolver.get_rule_from_card_data(card_data)
+	var area_info := SpellTargetResolver.get_area_dimensions(target_rule)
+	is_area_target_mode = not area_info.is_empty()
+	_area_rows = area_info.get("rows", 0)
+	_area_cols = area_info.get("cols", 0)
 
 	for state in targets:
 		if state == null:

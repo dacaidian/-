@@ -70,7 +70,7 @@
 - `EquipmentDisplayController`：负责右侧当前玩家装备展示区，读取 `PlayerState.get_equipped_cards()` 展示当前生效装备、装备类型和悬浮大图预览；只做展示，不参与装备规则。
 - `CardAnimationController`：负责卡牌交换、攻击、远程投射物、施法特效、占领移动等卡牌表现动画；规则层只通过 `GameManager` 的动画入口间接调用它。
 - `AttackOccupyChoiceController`：负责攻击击杀后”是否占领”的选择弹窗，`GameManager` 只关心选择结果和后续规则结算。
-- `CardMultiSelectController`：通用卡牌多选面板。不绑定任何特定区域或卡牌语义；调用方传入标题、待选卡牌列表和最大可选数量，面板展示卡牌缩略图、名称和数值，用户通过复选框多选后点击确认。当前用于坟场复活选择和学院召唤的三选一，未来可复用于牌库发现、手牌弃置、坟场放逐等场景。
+- `CardMultiSelectController`：通用卡牌多选面板。不绑定任何特定区域或卡牌语义；调用方传入标题、待选卡牌列表和最大可选数量，面板展示卡牌缩略图、名称和数值，用户通过复选框多选后点击确认。当前用于坟场复活选择和学院召唤的三选一，未来可复用于牌库发现、手牌弃置、坟场放逐等场景。AI 玩家不会打开这个 UI，而是通过 `GameManager.choose_card_indices_for_ai()` 对同一批候选数据自动选择，避免规则效果依赖人工点击。
 
 原则：表现层不直接修改游戏规则状态，所有点击都交给 `GameManager`。
 
@@ -316,11 +316,20 @@
 - 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
+- 手牌法术的目标选择同样由 `InteractionManager.start_hand_card_target_selection()` 进入目标选择模式；如果手牌法术的 `target_rule` 是 area 规则，也会读取 `SpellTargetResolver.get_area_dimensions()` 并启用相同的蓝色范围预览。不要为手牌 AOE 法术另写一套交互状态。
 - 法术效果复用 `EffectRegistry`，治疗、伤害、护盾、翻牌次数等公共效果不和某个法术绑定。`SpellAction` 会通过 `EffectData.mark_selected_target()` 把选中的目标以 `selected` 注入运行时效果数据；效果自身负责执行规则变化，可能导致死亡的效果也负责调用死亡检查。
 - 效果可用性也属于效果系统：`CardEffect.can_execute()` 默认返回可用，特殊效果可以覆写它，例如复活效果会检查坟场候选和目标区域。`HandPlayResolver` 不应按具体效果类型写分支，而是注入施法者上下文后调用 `EffectRegistry.can_execute_effect()`。
 - `GameManager.play_spell_cast_animation()` 是规则层保留的法术视觉入口；具体表现由 `CardAnimationController` 按 spell action 的 `animation` 分派。当前治疗术使用 `heal` 绿色治疗脉冲，火球术使用 `fireball` 橙红色投射物和命中反馈，炎爆术使用 `pyroblast` 放大版火球投射物，冰霜护盾使用 `shield` 蓝色屏障脉冲，奥术智慧使用 `arcane` 紫蓝色奥术脉冲；未来可以让多个法术复用同一种表现 key。
 - 手牌法术不消耗法力水晶，也不要求进入“施法回合”；它消耗的是手牌本身。手牌法术的 `target_rule` 和 `animation` 写在卡牌自身数据上，效果仍复用 `EffectRegistry`。`HandPlayResolver` 与 `SpellAction` 都通过 `SpellTargetResolver` 获取目标，后续目标规则只在一个地方扩展。
 - 英雄配套手牌由 `CardData.owner_hero_card_id` 标记。它来自种族 `heroes[].attached_cards`，不是每张牌单独写死判断。`HandPlayResolver` 在手牌绿光、动作菜单和实际执行前统一检查：所属玩家的对应英雄必须正面在战场上，否则这张英雄配套牌不能释放；具体棋盘扫描通过 `BoardQuery.has_face_up_hero()` 完成。
+
+## AI 对手约定
+
+- 入口页可把某个玩家标记为 AI，并把控制权写入 `MatchSetup`；战斗初始化时 `GameManager.initialize_players()` 将它同步到 `PlayerState.is_ai` 和 `ai_difficulty`。
+- `GameManager.schedule_ai_turn_if_needed()` 是 AI 回合调度入口。回合切换完成、UI 和状态刷新之后，通过 `call_deferred()` 启动 `_run_ai_turn()`，避免在 `end_turn()` 内部直接递归等待 AI 再次结束回合。
+- AI 行动分为手牌评估、战场行动评估和翻牌评估。AI 不模拟鼠标点击，也不调用表现层菜单；它调用规则层入口，例如 `HandPlayResolver`、`CardAction.execute()` 和翻牌/补位协作者。
+- 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。
+- AI 战场评估必须同时考虑有目标和无目标行动。`CardAction.requires_target() == false` 的动作不应依赖 `get_valid_targets()` 返回非空；这类动作应按空目标评分并直接执行。
 
 ## 动画与表现约定
 
@@ -338,7 +347,7 @@
 - 玩家资源分变化统一通过 `GameManager.award_resource_score()` 或 `PlayerState.gain_resource_score()` 入口完成；前者会在加分后调用 `VictoryResolver` 检查胜利。
 - `gain_resource_score` 是通用卡牌效果，当前支持 `target: "destroyer"`、`target: "owner"`、`target: "turn_player"` 和 `target: "current_player"`。这些玩家目标由 `CardEffect` 基类统一解析。`DeathResolver` 在卡牌清空前把 `on_destroyed` 交给 `TriggerResolver`，并把摧毁者 owner 作为上下文传入，因此中立单位也能把资源分给摧毁它的玩家。
 - `gain_mana` 复用同一套玩家目标解析，当前用于奥术矿脉被摧毁时给摧毁者增加 1 点法力；后续其他玩家数值类效果也应优先复用基类目标解析，而不是在效果类里重复判断 owner/destroyer/current_player。
-- 任意玩家资源分达到 80 后，`GameManager` 进入 `is_game_over` 状态，清理当前交互并在右上角 HUD 显示获胜者。后续结算画面应从这个状态进入场景流程，而不是让具体卡牌直接切场景。
+- 任意玩家资源分达到 `GameManager.victory_resource_score` 后，`GameManager` 进入 `is_game_over` 状态，清理当前交互并在右上角 HUD 显示获胜者。后续结算画面应从这个状态进入场景流程，而不是让具体卡牌直接切场景。
 - `PlayerState.max_mana` 当前只表示法力保留上限，默认是 `PlayerState.MANA_CAPACITY`，也就是 5。
 - 每个玩家自己的回合开始时，`mana` 增加 1，最多保留到 5。
 - 使用法力会消耗 `mana`；回合开始不会自动回满已经消耗的法力。
@@ -362,7 +371,7 @@
 - 公共牌池未来会演进为分级供应池，例如 `TieredCardPool` 或 `SupplyDeck`：内部持有 1/2/3 级牌池，`BoardSlotResolver` 只向它请求下一张牌，不关心当前消耗到哪个等级。
 - 玩家区域会从当前 `hand/deck/discard/graveyard` 字段逐步变成更明确的 Zone 概念。建议所有“入手牌、使用手牌、入坟场、弃牌、英雄复活进手牌、召回”都走统一区域方法，不直接在行动或 UI 中改数组。
 - 击杀后的占领目前是 `GameManager.resolve_attack_kill()` 内的攻击后结算，选择弹窗已经拆到 `AttackOccupyChoiceController`。若后续出现掠夺、连击、击杀得分、阵营特性，建议抽成“行动后副作用/事件结算器”，由攻击行动发出上下文，再按规则链处理。亡语和摧毁后资源分不属于占领副作用，统一走 `TriggerResolver`。
-- 资源分胜利条件作为独立胜负检查流程存在于 `VictoryResolver`。击杀中立单位只负责增加资源分，资源变化后统一检查是否达到 80 分，不要把胜负逻辑写进某张牌或某个行动。
+- 资源分胜利条件作为独立胜负检查流程存在于 `VictoryResolver`。击杀中立单位只负责增加资源分，资源变化后统一检查是否达到 `GameManager.victory_resource_score`，不要把胜负逻辑写进某张牌或某个行动。
 - 入口界面、种族选择和结算画面应作为场景流程层处理。战局内脚本只接收已经确定的玩家种族、牌池配置和初始规则，避免战斗逻辑依赖菜单 UI。
 - 入口选择页不要直接拼接战斗牌池，也不要修改棋盘状态。它只产出 `MatchSetup` 结果；牌池构建仍由战斗初始化阶段的 `GameManager` / `CardPool.from_match_selection()` 完成。
 - `GameManager` 目前仍是合适的战局编排者；翻牌区域路由已经拆到 `RevealResolver`，死亡/攻击击杀后结算拆到 `DeathResolver`，手牌交互编排拆到 `HandInteractionController`。后续复杂度上来后，优先继续拆出 `ZoneManager`、`HeroLifecycleResolver`、`PostActionResolver`、`VictoryResolver` 这类协作者；UI 和动画继续交给独立 Controller。

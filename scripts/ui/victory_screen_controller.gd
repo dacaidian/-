@@ -160,12 +160,12 @@ func _build_stats_panel(winner: PlayerState, all_players: Array[PlayerState], tu
 
 	var loser := _find_loser(winner, all_players)
 	if loser != null:
-		vbox.add_child(_create_comparison_section(winner, loser))
+		vbox.add_child(_create_comparison_section(winner, loser, victory_target))
 
 	return panel
 
 
-func _create_comparison_section(winner: PlayerState, loser: PlayerState) -> VBoxContainer:
+func _create_comparison_section(winner: PlayerState, loser: PlayerState, victory_target: int) -> VBoxContainer:
 	var section := VBoxContainer.new()
 	section.name = "ComparisonSection"
 	section.add_theme_constant_override("separation", 8)
@@ -203,7 +203,7 @@ func _create_comparison_section(winner: PlayerState, loser: PlayerState) -> VBox
 	labels_vbox.add_child(_create_label("", 16, Color.WHITE))
 	_add_player_name_row(p2_vbox, loser, false)
 
-	_add_compare_row(p1_vbox, labels_vbox, p2_vbox, "资源分", _resource_text(winner, 80), _resource_text(loser, 80), true, false)
+	_add_compare_row(p1_vbox, labels_vbox, p2_vbox, "资源分", _resource_text(winner, victory_target), _resource_text(loser, victory_target), true, false)
 	_add_compare_row(p1_vbox, labels_vbox, p2_vbox, "手牌数", str(winner.hand.size()), str(loser.hand.size()), true, false)
 	_add_compare_row(p1_vbox, labels_vbox, p2_vbox, "坟场牌", str(winner.graveyard.size()), str(loser.graveyard.size()), true, false)
 	_add_compare_row(p1_vbox, labels_vbox, p2_vbox, "装备数", str(winner.equipped_cards_by_type.size()), str(loser.equipped_cards_by_type.size()), true, false)

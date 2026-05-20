@@ -24,13 +24,18 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if max_select <= 0:
 		return
 
-	var controller := CardMultiSelectController.new()
-	var selected_indices: Array[int] = await controller.show_panel(
-		game_manager.get_parent(),
-		EffectData.get_selection_title(effect_data),
-		create_candidate_view_data(candidate_cards),
-		max_select
-	)
+	var view_data := create_candidate_view_data(candidate_cards)
+	var selected_indices: Array[int] = []
+	if player.is_ai and game_manager.has_method("choose_card_indices_for_ai"):
+		selected_indices = game_manager.choose_card_indices_for_ai(view_data, max_select)
+	else:
+		var controller := CardMultiSelectController.new()
+		selected_indices = await controller.show_panel(
+			game_manager.get_parent(),
+			EffectData.get_selection_title(effect_data),
+			view_data,
+			max_select
+		)
 
 	if selected_indices.is_empty():
 		return
@@ -86,6 +91,7 @@ func create_candidate_view_data(candidate_cards: Array[CardData]) -> Array[Dicti
 			"name": card_data.display_name,
 			"attack": card_data.attack,
 			"health": card_data.health,
+			"level": card_data.level,
 			"front_texture_path": card_data.front_texture_path,
 		})
 

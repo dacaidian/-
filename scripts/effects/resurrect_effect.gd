@@ -37,6 +37,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 				"name": str(origin.get("display_name", "???")) if origin.has("display_name") else str(origin.get("card_id", "???")),
 				"attack": int(origin.get("attack", 0)),
 				"health": int(origin.get("health", 0)),
+				"level": int(origin.get("level", 1)),
 				"front_texture_path": str(origin.get("front_texture_path", "")),
 			})
 			candidate_indices.append(i)
@@ -47,9 +48,13 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	var max_select := mini(amount, candidates.size())
 	var title := "选择要复活的随从（最多%d个）" % max_select
 
-	var root := game_manager.get_parent()
-	var controller := CardMultiSelectController.new()
-	var selected_indices: Array[int] = await controller.show_panel(root, title, candidates, max_select)
+	var selected_indices: Array[int] = []
+	if player.is_ai and game_manager.has_method("choose_card_indices_for_ai"):
+		selected_indices = game_manager.choose_card_indices_for_ai(candidates, max_select)
+	else:
+		var root := game_manager.get_parent()
+		var controller := CardMultiSelectController.new()
+		selected_indices = await controller.show_panel(root, title, candidates, max_select)
 
 	if selected_indices.is_empty():
 		return
