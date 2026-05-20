@@ -1,6 +1,9 @@
 {
   "enabled": false,
-  "cards": {},
+  "cards": {
+    "silver_hand": ["uther", "blessed_infantry"],
+    "dalaran_council": ["antonidas", "frost_witch", "blizzard", "arcane_golem"]
+  },
   "include_neutral_pool": true,
   "game_params": {
     "spell_turn_mana_cost": 1,
