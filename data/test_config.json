@@ -1,8 +1,13 @@
 {
   "enabled": false,
   "cards": {
-    "silver_hand": ["uther", "blessed_infantry"],
-    "dalaran_council": ["antonidas", "frost_witch", "blizzard", "arcane_golem"]
+    "silver_hand": [
+      "uther",
+      "blessed_infantry",
+      "baptism",
+      "divine_shield_spell"
+    ],
+    "dalaran_council": ["antonidas", "arcane_golem"]
   },
   "include_neutral_pool": true,
   "game_params": {
