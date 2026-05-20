@@ -722,7 +722,9 @@
 	"heroes": [
 	  {
 		"card_id": "chen_duo",
-		"attached_cards": []
+		"attached_cards": [
+		  "encourage_gu"
+		]
 	  }
 	],
 	"cards": [
@@ -739,6 +741,24 @@
 		"attack": 2,
 		"health": 10,
 		"effects": []
+	  },
+	  {
+		"id": "encourage_gu",
+		"name": "励蛊",
+		"description": "英雄法术。使一个随从增加3点攻击力。",
+		"url": "res://assets/img/苗疆族/励蛊.png",
+		"type": "spell",
+		"count": 2,
+		"level": 1,
+		"animation": "arcane",
+		"target_rule": "all_minions",
+		"keywords": [],
+		"effects": [
+		  {
+			"id": "gain_attack",
+			"amount": 3
+		  }
+		]
 	  }
 	]
   },
