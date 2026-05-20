@@ -10,6 +10,7 @@ const EQUIPMENT_TYPE_WEAPON := "weapon"
 const ROLE_HERO := "hero"
 const KEYWORD_CAVALRY := "cavalry"
 const KEYWORD_RANGED := "ranged"
+const KEYWORD_MAGIC_IMMUNE := "magic_immune"
 
 # CardData 是静态卡牌数据，来自 data/cards.json。
 # 它描述“这是什么牌”，不记录“这张牌当前怎么样”。

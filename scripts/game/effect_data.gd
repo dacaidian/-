@@ -130,6 +130,14 @@ static func should_apply_spell_power(effect_data: Dictionary) -> bool:
 	return bool(effect_data.get(KEY_APPLY_SPELL_POWER, false)) and bool(effect_data.get(KEY_SPELL_POWER_SCALING, true))
 
 
+static func is_spell_effect(effect_data: Dictionary) -> bool:
+	if bool(effect_data.get(KEY_APPLY_SPELL_POWER, false)):
+		return true
+
+	var death_reason := get_death_reason(effect_data, "")
+	return death_reason == DEATH_REASON_SPELL or death_reason == DEATH_REASON_HAND_SPELL
+
+
 static func is_active_in_hand(effect_data: Dictionary) -> bool:
 	return get_active_zone(effect_data) == ACTIVE_ZONE_HAND
 

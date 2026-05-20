@@ -74,32 +74,45 @@ func get_target_player(source_state: CardState, effect_data: Dictionary, game_ma
 
 func get_target_states(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
 	var target := get_target(effect_data)
+	var targets: Array[CardState] = []
 
 	match target:
 		EffectData.TARGET_SELF:
 			if source_state != null:
-				return [source_state]
-			return []
+				targets.append(source_state)
 		EffectData.TARGET_SELECTED:
 			var selected_state := EffectData.get_selected_target_state(effect_data)
 			if selected_state != null:
-				return [selected_state]
-			return []
+				targets.append(selected_state)
 		EffectData.TARGET_ADJACENT_TURN_PLAYER_MINIONS:
-			return get_adjacent_turn_player_minions(source_state, effect_data, game_manager)
+			targets = get_adjacent_turn_player_minions(source_state, effect_data, game_manager)
 		EffectData.TARGET_TURN_PLAYER_MINIONS_BY_CARD_IDS:
-			return get_turn_player_minions_by_card_ids(effect_data, game_manager)
+			targets = get_turn_player_minions_by_card_ids(effect_data, game_manager)
 		EffectData.TARGET_SELECTED_ADJACENT_ENEMY_MINIONS:
-			return get_selected_adjacent_enemy_minions(source_state, effect_data, game_manager)
+			targets = get_selected_adjacent_enemy_minions(source_state, effect_data, game_manager)
 		EffectData.TARGET_OWNER_CARD_BY_ID:
-			return get_owner_cards_by_id(source_state, effect_data, game_manager)
+			targets = get_owner_cards_by_id(source_state, effect_data, game_manager)
 		EffectData.TARGET_SELECTED_AREA_ENEMY_MINIONS:
-			return get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ENEMY_MINIONS)
+			targets = get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ENEMY_MINIONS)
 		EffectData.TARGET_SELECTED_AREA_ALL_MINIONS:
-			return get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ALL_MINIONS)
+			targets = get_selected_area_targets(source_state, effect_data, game_manager, AreaFilter.ALL_MINIONS)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
-			return []
+			targets = []
+
+	return filter_spell_immune_targets(targets, effect_data)
+
+
+func filter_spell_immune_targets(targets: Array[CardState], effect_data: Dictionary) -> Array[CardState]:
+	if not EffectData.is_spell_effect(effect_data):
+		return targets
+
+	var filtered_targets: Array[CardState] = []
+	for target_state in targets:
+		if SpellTargetResolver.can_spell_affect(target_state):
+			filtered_targets.append(target_state)
+
+	return filtered_targets
 
 
 func get_adjacent_turn_player_minions(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:

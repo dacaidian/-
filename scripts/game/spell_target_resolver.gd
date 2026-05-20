@@ -33,14 +33,6 @@ static func get_valid_targets(target_rule: String, game_manager: GameManager) ->
 	if game_manager == null or not requires_target(target_rule):
 		return targets
 
-	if target_rule == TARGET_RULE_ALL_MINIONS:
-		return BoardQuery.get_face_up_minions(game_manager.board_states)
-
-	if is_area_rule(target_rule):
-		for state in game_manager.board_states:
-			targets.append(state)
-		return targets
-
 	for state in game_manager.board_states:
 		if can_target(target_rule, state):
 			targets.append(state)
@@ -53,9 +45,12 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 		return false
 
 	if is_area_rule(target_rule):
-		return true
+		return can_select_area_center(target)
 
 	if not BoardQuery.is_face_up_board_card(target):
+		return false
+
+	if is_magic_immune(target):
 		return false
 
 	match target_rule:
@@ -68,6 +63,28 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 		_:
 			push_warning("暂不支持的法术目标规则: %s" % target_rule)
 			return false
+
+
+static func can_select_area_center(target: CardState) -> bool:
+	if target == null:
+		return false
+
+	if BoardQuery.is_face_up_board_card(target) and is_magic_immune(target):
+		return false
+
+	return true
+
+
+static func can_spell_affect(target: CardState) -> bool:
+	return not is_magic_immune(target)
+
+
+static func is_magic_immune(target: CardState) -> bool:
+	return (
+		target != null
+		and BoardQuery.is_face_up_board_card(target)
+		and target.has_keyword(CardData.KEYWORD_MAGIC_IMMUNE)
+	)
 
 
 static func is_area_rule(target_rule: String) -> bool:

@@ -241,6 +241,7 @@
 - 复活效果 `resurrect` 通过 `filter_type`/`filter_owner`/`amount`/`target_zone` 配置，可被不同卡牌复用；当前支持复活到 `hand`。选中 UI 委托给 `CardMultiSelectController`。是否有合法坟场候选由 `ResurrectEffect.can_execute()` 判断，手牌施放入口只通过 `EffectRegistry.can_execute_effect()` 询问，不直接依赖具体效果类。
 - 有效治疗联动走 `on_effective_heal` 触发。`HealEffect` 只负责计算实际恢复量并排队触发；按有效治疗量缩放的效果使用 `amount_source: "effective_heal"`，例如战斗牧师的 `gain_attack`。
 - 法术目标规则统一放在 `SpellTargetResolver`。
+- 魔法免疫统一由 `SpellTargetResolver` 和 `CardEffect.get_target_states()` 处理。新增法术目标规则、AOE 或自动施法时不要绕过这两个入口。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
