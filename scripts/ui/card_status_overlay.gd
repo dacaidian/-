@@ -14,6 +14,10 @@ var arcane_aura_glow_color := Color(0.40, 0.72, 1.0, 0.28)
 var freeze_ice_color := Color(0.30, 0.68, 0.96, 0.22)
 var freeze_ice_edge_color := Color(0.44, 0.82, 1.0, 0.72)
 var freeze_ice_glow_color := Color(0.24, 0.60, 0.96, 0.20)
+var encourage_gu_color := Color(0.42, 1.0, 0.36, 0.16)
+var encourage_gu_edge_color := Color(0.72, 1.0, 0.48, 0.72)
+var encourage_gu_venom_color := Color(0.20, 0.95, 0.38, 0.58)
+var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
 
 
 func _ready() -> void:
@@ -32,7 +36,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu()
 
 
 func should_show_divine_shield() -> bool:
@@ -56,9 +60,18 @@ func should_show_freeze() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FREEZE)
 
 
+func should_show_encourage_gu() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ENCOURAGE_GU)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
+	if should_show_encourage_gu():
+		draw_encourage_gu_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -156,3 +169,45 @@ func draw_freeze_overlay() -> void:
 		draw_line(branch_mid, branch_mid + opposite_branch_dir * crystal_size * 0.32, crystal_color, 2.2)
 
 	draw_circle(center, crystal_size * 0.12, crystal_glow)
+
+
+func draw_encourage_gu_overlay() -> void:
+	var gu_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.05)
+	var center := gu_rect.get_center()
+	var status := state.get_status(CardStatus.STATUS_ENCOURAGE_GU) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var pulse_count: int = mini(maxi(stack_count, 1), 5)
+	var edge_width := maxf(size.x * 0.025, 2.0)
+
+	for index in range(pulse_count):
+		var grow := float(index) * 4.0
+		var pulse_alpha := encourage_gu_edge_color.a * (1.0 - float(index) * 0.12)
+		draw_rect(gu_rect.grow(grow), Color(encourage_gu_edge_color.r, encourage_gu_edge_color.g, encourage_gu_edge_color.b, pulse_alpha), false, edge_width, true)
+
+	draw_rect(gu_rect, encourage_gu_color, true)
+	draw_gu_veins(center, gu_rect)
+	draw_gu_insects(center, gu_rect, pulse_count)
+
+
+func draw_gu_veins(center: Vector2, gu_rect: Rect2) -> void:
+	var vein_count := 7
+	var vein_length := minf(gu_rect.size.x, gu_rect.size.y) * 0.35
+	for index in range(vein_count):
+		var angle := -PI * 0.78 + float(index) * PI * 1.56 / float(vein_count - 1)
+		var dir := Vector2(cos(angle), sin(angle))
+		var start := center + dir * vein_length * 0.18
+		var mid := center + dir * vein_length * 0.55 + Vector2(-dir.y, dir.x) * sin(float(index) * 1.7) * 7.0
+		var end := center + dir * vein_length
+		draw_line(start, mid, encourage_gu_venom_color, 2.2)
+		draw_line(mid, end, Color(encourage_gu_venom_color.r, encourage_gu_venom_color.g, encourage_gu_venom_color.b, encourage_gu_venom_color.a * 0.72), 1.7)
+
+
+func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int) -> void:
+	var orbit_radius := minf(gu_rect.size.x, gu_rect.size.y) * 0.39
+	var insect_count := mini(count + 2, 7)
+	for index in range(insect_count):
+		var angle := TAU * float(index) / float(insect_count) + 0.34
+		var pos := center + Vector2(cos(angle), sin(angle)) * orbit_radius
+		var wing_dir := Vector2(-sin(angle), cos(angle))
+		draw_circle(pos, 2.4, encourage_gu_insect_color)
+		draw_line(pos - wing_dir * 3.0, pos + wing_dir * 3.0, Color(encourage_gu_insect_color.r, encourage_gu_insect_color.g, encourage_gu_insect_color.b, 0.42), 1.4)

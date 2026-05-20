@@ -247,7 +247,7 @@
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。
-- 圣盾和辉煌光环的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾或奥术光环。冻结状态绘制冰蓝色边框与冰晶雪花图案。一次性施法动画仍由 `CardAnimationController` 管理。
+- 圣盾、辉煌光环和励蛊的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环或绿色蛊虫强化背光。冻结状态绘制冰蓝色边框与冰晶雪花图案。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会合并层数；永久状态合并后保持永久，临时状态合并后保留更长剩余回合。未来如果需要“同名不同来源互斥”“刷新不叠层”等规则，应在 `CardStatus.is_same_stack_key()` 或状态定义中扩展。
