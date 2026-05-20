@@ -1,10 +1,10 @@
 extends RefCounted
 class_name StatusResolver
 
-# StatusResolver handles status lifecycle and fixed status rules.
-# Pre-turn-timing effects run before normal turn triggers; lifecycle ticking still runs after them.
+# StatusResolver handles fixed status rules and status lifecycle.
+# Pre-trigger effects run before normal turn timing triggers; lifecycle ticking runs after them.
 
-func resolve_before_turn_timing(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
+func resolve_pre_trigger_status_effects(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
 	if game_manager == null or trigger == "" or turn_player_id == "":
 		return
 	if trigger != EventContext.TRIGGER_AFTER_TURN_END:

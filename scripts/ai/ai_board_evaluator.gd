@@ -348,6 +348,7 @@ func _score_apply_status_effect(target: CardState, effect_data: Dictionary, play
 		return 2.0
 	return 0.0
 
+
 func _count_area_hits(action: SpellAction, center_target: CardState, gm: GameManager, player: PlayerState) -> Dictionary:
 	var result := {"enemy": 0, "own": 0}
 	if center_target == null or gm == null:
