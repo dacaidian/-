@@ -56,7 +56,7 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 @export var player_ai_flags: Array[bool] = []
 @export var player_ai_difficulties: Array[String] = []
 @export var player_max_flips_per_turn := 4
-@export var spell_turn_mana_cost := 1
+@export var spell_turn_mana_cost := 3
 @export var victory_resource_score := 80
 
 # 棋盘列数。当前 5*5 棋盘用于判断上下左右相邻。

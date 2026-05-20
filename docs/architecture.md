@@ -108,7 +108,7 @@
    - 若目标生命小于等于 0，进入 `GameManager.resolve_attack_kill()` 击杀后结算。
    - 如果 attack profile 允许占领，`AttackOccupyChoiceController` 展示选择弹窗：不占领时目标入坟并补目标格；占领时目标入坟但不补目标格，攻击者移动到目标格，攻击者旧格走统一补位。当前近战击杀随从或摧毁建筑都允许占领；远程击杀仍不触发占领。
 13. 玩家选择施法：
-   - 当前玩家先在右上角 HUD 点击“开启施法”并消耗法力。测试阶段费用为 1，标准规则目标为 3。
+   - 当前玩家先在右上角 HUD 点击“开启施法”并消耗法力。标准规则费用为 3；测试模式可以通过 `data/test_config.json` 的 `game_params.spell_turn_mana_cost` 临时覆盖。
    - 施法回合开启后，`ActionRegistry` 才会从当前随从的 `CardData.spell_actions` 和当前玩家手牌升级牌授予的 `spell_actions` 动态创建 `SpellAction`。
    - `SpellAction` 根据 `target_rule` 计算合法目标，当前 `all_minions` 表示所有正面随从。
    - 点击目标后登记 `spell` 行动类别，通过 `GameManager.play_spell_cast_animation()` 委托 `CardAnimationController` 播放表现，再执行配置中的效果。
@@ -352,7 +352,7 @@
 - 每个玩家自己的回合开始时，`mana` 增加 1，最多保留到 5。
 - 使用法力会消耗 `mana`；回合开始不会自动回满已经消耗的法力。
 - 初始化时所有玩家都是 `0/5`，第一个实际回合开始后变为 `1/5`；第二名玩家第一次轮到自己时也从 `0/5` 增长到 `1/5`。
-- `GameManager.spell_turn_mana_cost` 是开启施法回合的费用。当前为了测试是 1；两个种族施法验证完成后应改回标准值 3。
+- `GameManager.spell_turn_mana_cost` 是开启施法回合的费用，标准值为 3；测试模式可以通过 `data/test_config.json` 的 `game_params.spell_turn_mana_cost` 临时覆盖。
 
 ## 关键词被动约定
 
