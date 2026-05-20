@@ -30,6 +30,10 @@ var dark_arrow_projectile_size := Vector2(58, 18)
 var dark_arrow_projectile_color := Color(0.03, 0.025, 0.055, 0.96)
 var dark_arrow_projectile_glow_color := Color(0.42, 0.18, 0.72, 0.46)
 var dark_arrow_impact_color := Color(0.60, 0.44, 0.92, 1.0)
+var gu_projectile_size := Vector2(18, 10)
+var gu_projectile_color := Color(0.09, 0.28, 0.08, 0.94)
+var gu_projectile_glow_color := Color(0.44, 1.0, 0.20, 0.48)
+var gu_impact_color := Color(0.58, 1.22, 0.34, 1.0)
 
 
 func setup(config: Dictionary) -> void:
@@ -319,6 +323,10 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_dark_arrow_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
+		"gu_infusion":
+			if caster_card == null or target_card == null:
+				return
+			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		_:
 			await play_default_spell(owner, target_card)
 
@@ -341,6 +349,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
 		"baptism":
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
+		"gu_infusion":
+			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
 		_:
 			await play_default_spell_at_rect(owner, effect_root, target_rect)
 
@@ -363,6 +373,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_fireball_from_point(owner, effect_root, source_rect.get_center(), target_card, 1.65)
 		"dark_arrow":
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
+		"gu_infusion":
+			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"baptism":
 			await play_baptism_spell(owner, effect_root, target_card)
 		_:
@@ -874,6 +886,99 @@ func play_dark_arrow_spell(owner: Node, effect_root: Control, caster_center: Vec
 	target_card.is_animating = false
 
 
+func play_gu_infusion_spell(owner: Node, effect_root: Control, caster_center: Vector2, target_card: Card) -> void:
+	if owner == null or effect_root == null or target_card == null:
+		return
+
+	var target_start_scale: Vector2 = target_card.scale
+	var target_start_modulate: Color = target_card.self_modulate
+	var target_start_z_index: int = target_card.z_index
+	var target_center: Vector2 = target_card.get_global_rect().get_center()
+	var cast_vector: Vector2 = target_center - caster_center
+
+	if cast_vector.length() <= 0.01:
+		await play_gu_infusion_at_rect(owner, effect_root, target_card.get_global_rect())
+		return
+
+	target_card.is_animating = true
+	target_card.z_index = 1190
+
+	var cast_direction: Vector2 = cast_vector.normalized()
+	var perpendicular := Vector2(-cast_direction.y, cast_direction.x)
+	var flight_duration: float = spell_animation_duration * 0.62
+	var impact_duration: float = spell_animation_duration * 0.34
+	var worms: Array[Panel] = []
+
+	for index in range(5):
+		var worm := create_gu_projectile()
+		var lane_offset: float = (float(index) - 2.0) * 8.0
+		var start_offset: Vector2 = perpendicular * lane_offset
+		var end_offset: Vector2 = perpendicular * lane_offset * 0.22
+		worm.global_position = caster_center + start_offset - worm.pivot_offset
+		worm.rotation = cast_direction.angle() + sin(float(index)) * 0.28
+		effect_root.add_child(worm)
+		worms.append(worm)
+
+		var worm_tween := owner.create_tween()
+		worm_tween.set_parallel(true)
+		worm_tween.set_trans(Tween.TRANS_CUBIC)
+		worm_tween.set_ease(Tween.EASE_IN_OUT)
+		worm_tween.tween_property(worm, "global_position", target_center + end_offset - worm.pivot_offset, flight_duration)
+		worm_tween.tween_property(worm, "rotation", worm.rotation + 0.75 + float(index) * 0.10, flight_duration)
+		worm_tween.tween_property(worm, "scale", Vector2(1.35, 1.35), flight_duration)
+
+	await owner.create_tween().tween_interval(flight_duration).finished
+
+	var impact_ring := create_gu_infusion_effect_for_rect(target_card.get_global_rect())
+	effect_root.add_child(impact_ring)
+
+	var impact_tween := owner.create_tween()
+	impact_tween.set_parallel(true)
+	impact_tween.set_trans(Tween.TRANS_SINE)
+	impact_tween.set_ease(Tween.EASE_OUT)
+	impact_tween.tween_property(impact_ring, "scale", Vector2(1.36, 1.36), impact_duration)
+	impact_tween.tween_property(impact_ring, "modulate:a", 0.0, impact_duration)
+	impact_tween.tween_property(target_card, "scale", target_start_scale * 1.08, impact_duration * 0.48)
+	impact_tween.tween_property(target_card, "self_modulate", gu_impact_color, impact_duration * 0.48)
+	for worm in worms:
+		impact_tween.tween_property(worm, "modulate:a", 0.0, impact_duration)
+		impact_tween.tween_property(worm, "scale", Vector2(0.35, 0.35), impact_duration)
+	await impact_tween.finished
+
+	var recover_tween := owner.create_tween()
+	recover_tween.set_parallel(true)
+	recover_tween.set_trans(Tween.TRANS_BACK)
+	recover_tween.set_ease(Tween.EASE_OUT)
+	recover_tween.tween_property(target_card, "scale", target_start_scale, spell_animation_duration * 0.28)
+	recover_tween.tween_property(target_card, "self_modulate", target_start_modulate, spell_animation_duration * 0.28)
+	await recover_tween.finished
+
+	for worm in worms:
+		worm.queue_free()
+	impact_ring.queue_free()
+	target_card.scale = target_start_scale
+	target_card.self_modulate = target_start_modulate
+	target_card.z_index = target_start_z_index
+	target_card.is_animating = false
+
+
+func play_gu_infusion_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var ring := create_gu_infusion_effect_for_rect(target_rect)
+	effect_root.add_child(ring)
+
+	var tween := owner.create_tween()
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring, "scale", Vector2(1.34, 1.34), spell_animation_duration)
+	tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration)
+	await tween.finished
+	ring.queue_free()
+
+
 func play_area_spell_cast(owner: Node, effect_root: Control, caster_card: Card, center_card: Card, spell_data: Dictionary) -> void:
 	if owner == null or effect_root == null or caster_card == null or center_card == null:
 		return
@@ -1003,6 +1108,18 @@ func create_dark_arrow_projectile() -> Control:
 	return arrow
 
 
+func create_gu_projectile() -> Panel:
+	var projectile := Panel.new()
+	projectile.name = "GuInfusionWorm"
+	projectile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	projectile.size = gu_projectile_size
+	projectile.pivot_offset = gu_projectile_size * 0.5
+	projectile.modulate = Color(1.0, 1.0, 1.0, 0.96)
+	projectile.z_index = 2170
+	projectile.add_theme_stylebox_override("panel", create_gu_projectile_style())
+	return projectile
+
+
 func create_fireball_projectile_style(size_scale := 1.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fireball_projectile_color
@@ -1022,6 +1139,17 @@ func create_dark_arrow_shaft_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(4)
 	style.shadow_color = dark_arrow_projectile_glow_color
 	style.shadow_size = 18
+	return style
+
+
+func create_gu_projectile_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = gu_projectile_color
+	style.border_color = gu_projectile_glow_color
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = gu_projectile_glow_color
+	style.shadow_size = 12
 	return style
 
 
@@ -1054,6 +1182,10 @@ func create_arcane_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 
 func create_arcane_aura_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "ArcaneAuraEffect", create_arcane_aura_effect_style(), 1.30)
+
+
+func create_gu_infusion_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "GuInfusionImpactEffect", create_gu_infusion_effect_style(), 1.18)
 
 
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
@@ -1147,6 +1279,17 @@ func create_arcane_aura_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.46, 0.72, 1.0, 0.54)
 	style.shadow_size = 38
+	return style
+
+
+func create_gu_infusion_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.20, 0.72, 0.12, 0.24)
+	style.border_color = Color(0.64, 1.0, 0.28, 0.82)
+	style.set_border_width_all(7)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.36, 1.0, 0.18, 0.56)
+	style.shadow_size = 34
 	return style
 
 

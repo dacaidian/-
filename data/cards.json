@@ -750,7 +750,7 @@
 		"type": "spell",
 		"count": 2,
 		"level": 1,
-		"animation": "arcane",
+		"animation": "gu_infusion",
 		"target_rule": "all_minions",
 		"keywords": [],
 		"effects": [
