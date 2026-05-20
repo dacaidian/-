@@ -77,6 +77,10 @@ func _find_best_action(minion: CardState, gm: GameManager) -> Dictionary:
 	return best
 
 
+func score_action(action: CardAction, user: CardState, target: CardState, gm: GameManager) -> float:
+	return _score_action(action, user, target, gm)
+
+
 func _score_action(action: CardAction, user: CardState, target: CardState, gm: GameManager) -> float:
 	match action.id:
 		"move": return _score_move(user, target, gm)
@@ -133,21 +137,56 @@ func _score_attack(user: CardState, target: CardState, gm: GameManager) -> float
 	var combat: Dictionary = AICommonScript.predict_combat(user, target)
 	var score := 0.0
 	var threat: float = AICommonScript.calc_threat_score(target)
+	var dealt_to_defender := int(combat["dealt_to_defender"])
+	var will_kill_defender := bool(combat["will_kill_defender"])
 
-	score += combat["dealt_to_defender"] * 3.0
+	if target.is_building():
+		var destroyed_value := _score_destroyed_building_value(target)
+		if will_kill_defender:
+			score += destroyed_value
+			score += 2.0 if destroyed_value > 0.0 else 0.5
+		else:
+			score += float(dealt_to_defender) * 0.2
+			if destroyed_value <= 0.0:
+				score -= 2.0
+		return score
+	else:
+		score += dealt_to_defender * 3.0
+
 	if combat["breaks_divine_shield"]:
 		score += 2.0
-	if combat["will_kill_defender"]:
+	if will_kill_defender:
 		score += threat * 1.2 + 10.0
 		if target.is_hero():
 			score += 8.0
-	else:
+	elif not target.is_building():
 		score += threat * 0.3
 
 	var retaliation := int(combat["retaliation_to_attacker"])
 	score -= retaliation * 2.0
 	if combat["will_kill_attacker"]:
 		score *= 0.15
+
+	return score
+
+
+func _score_destroyed_building_value(target: CardState) -> float:
+	if target == null or target.data == null:
+		return 0.0
+
+	var score := 0.0
+	for effect_data in target.data.effects:
+		if not effect_data is Dictionary:
+			continue
+		if EffectData.get_trigger(effect_data) != EventContext.TRIGGER_ON_DESTROYED:
+			continue
+
+		var effect_id := EffectData.get_id(effect_data)
+		var amount := EffectData.get_amount(effect_data)
+		if effect_id == "gain_resource_score":
+			score += float(amount) * 2.5
+		elif effect_id == "gain_mana":
+			score += float(amount) * 3.0
 
 	return score
 

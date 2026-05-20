@@ -328,8 +328,10 @@
 - 入口页可把某个玩家标记为 AI，并把控制权写入 `MatchSetup`；战斗初始化时 `GameManager.initialize_players()` 将它同步到 `PlayerState.is_ai` 和 `ai_difficulty`。
 - `GameManager.schedule_ai_turn_if_needed()` 是 AI 回合调度入口。回合切换完成、UI 和状态刷新之后，通过 `call_deferred()` 启动 `_run_ai_turn()`，避免在 `end_turn()` 内部直接递归等待 AI 再次结束回合。
 - AI 行动分为手牌评估、战场行动评估和翻牌评估。AI 不模拟鼠标点击，也不调用表现层菜单；它调用规则层入口，例如 `HandPlayResolver`、`CardAction.execute()` 和翻牌/补位协作者。
+- AI 回合使用“候选动作评分循环”：每一步收集当前所有可执行候选（手牌、战场行动、翻牌、开启施法回合），执行最高分候选并等待结算完成，然后重新评估。不要恢复成固定的“先手牌、再随从、再翻牌”流水线。
 - 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。
 - AI 战场评估必须同时考虑有目标和无目标行动。`CardAction.requires_target() == false` 的动作不应依赖 `get_valid_targets()` 返回非空；这类动作应按空目标评分并直接执行。
+- AI 攻击评分按收益计算：击杀高威胁敌方随从、获得资源分、获得法力和破圣盾是正收益；攻击己方单位或无法摧毁且没有奖励的中立建筑是低收益或负收益。新增建筑奖励时应通过 `on_destroyed` 效果反映价值，而不是在 AI 中写死卡牌名。
 
 ## 动画与表现约定
 

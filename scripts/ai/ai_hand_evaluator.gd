@@ -65,6 +65,10 @@ func _evaluate_single_card(card_data: CardData, _hand_index: int, player: Player
 	return {"target": null, "score": 0.0}
 
 
+func evaluate_hand_card(card_data: CardData, hand_index: int, player: PlayerState, gm: GameManager, hpr: HandPlayResolver) -> Dictionary:
+	return _evaluate_single_card(card_data, hand_index, player, gm, hpr)
+
+
 func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, hpr: HandPlayResolver) -> Dictionary:
 	var target_rule := hpr.get_target_rule(card_data)
 	if not SpellTargetResolver.requires_target(target_rule):
