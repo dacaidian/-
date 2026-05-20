@@ -57,6 +57,7 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 @export var player_ai_difficulties: Array[String] = []
 @export var player_max_flips_per_turn := 4
 @export var spell_turn_mana_cost := 3
+@export var ai_turn_watchdog_seconds := 18.0
 @export var victory_resource_score := 80
 
 # 棋盘列数。当前 5*5 棋盘用于判断上下左右相邻。
@@ -147,6 +148,7 @@ var is_resolving_card_action := false
 # 行动执行期间由行动流程统一收尾，避免死亡结算和外层点击流程重复取消交互。
 var is_executing_action := false
 var is_ai_turn_scheduled := false
+var ai_turn_watchdog_token := 0
 
 func _ready() -> void:
 	connect_end_turn_button()
@@ -637,7 +639,49 @@ func _run_ai_turn() -> void:
 		schedule_ai_turn_if_needed()
 		return
 
+	var watchdog_token := start_ai_turn_watchdog()
 	await ai_controller.run_turn(self)
+	stop_ai_turn_watchdog(watchdog_token)
+
+
+func start_ai_turn_watchdog() -> int:
+	ai_turn_watchdog_token += 1
+	var token := ai_turn_watchdog_token
+	Callable(self, "resolve_ai_turn_watchdog").call_deferred(token)
+	return token
+
+
+func stop_ai_turn_watchdog(token: int) -> void:
+	if token == ai_turn_watchdog_token:
+		ai_turn_watchdog_token += 1
+
+
+func resolve_ai_turn_watchdog(token: int) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+
+	await tree.create_timer(ai_turn_watchdog_seconds).timeout
+	if token != ai_turn_watchdog_token:
+		return
+	if is_game_over or not _is_ai_controlling():
+		return
+
+	var player := get_current_player()
+	var player_name: String = player.display_name if player != null else "AI"
+	push_warning("AI turn watchdog forced end turn for %s after %.1f seconds." % [player_name, ai_turn_watchdog_seconds])
+
+	is_executing_action = false
+	is_resolving_card_action = false
+	is_ai_turn_scheduled = false
+	hide_action_menu()
+	interaction_manager.cancel(board_states)
+	refresh_action_available_hints()
+	update_turn_status_view()
+	update_hand_drawer_view()
+	refresh_debug_panel()
+
+	await end_turn()
 
 
 func _set_end_turn_button_enabled(enabled: bool) -> void:

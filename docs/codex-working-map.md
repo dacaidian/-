@@ -342,6 +342,7 @@
 
 - 新增 AI 可用行动：先确认 `CardAction.requires_target()`，无目标动作要单独评分，不要依赖 `get_valid_targets()` 返回非空。
 - AI 回合使用候选动作评分循环，每执行一步都要重新收集候选。不要把逻辑重新写成固定的“先手牌、再随从、再翻牌”顺序。
+- AI 卡住优先查 `_run_ai_turn()` 和 `ai_turn_watchdog_seconds`。watchdog 只做兜底结束回合；真正的根因通常是某个 `await` 的动作、动画或选择型效果没有返回。
 - 新增需要选择候选牌的效果：人类玩家可以调用 `CardMultiSelectController`，AI 玩家必须走自动选择路径，当前统一从 `GameManager.choose_card_indices_for_ai()` 获取索引。
 - 新增手牌玩法时，AI 应调用 `GameManager.get_hand_play_resolver()` 暴露的规则入口，不要穿过 UI 控制器访问 resolver。
 

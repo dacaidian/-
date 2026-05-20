@@ -327,6 +327,7 @@
 
 - 入口页可把某个玩家标记为 AI，并把控制权写入 `MatchSetup`；战斗初始化时 `GameManager.initialize_players()` 将它同步到 `PlayerState.is_ai` 和 `ai_difficulty`。
 - `GameManager.schedule_ai_turn_if_needed()` 是 AI 回合调度入口。回合切换完成、UI 和状态刷新之后，通过 `call_deferred()` 启动 `_run_ai_turn()`，避免在 `end_turn()` 内部直接递归等待 AI 再次结束回合。
+- `_run_ai_turn()` 会为每个 AI 回合启动 `ai_turn_watchdog_seconds` 超时保护。如果异步动作、动画或效果没有正常返回，watchdog 会在仍处于同一个 AI 回合时清理 busy flag 并强制走正常 `end_turn()`，避免 AI 永久卡住。
 - AI 行动分为手牌评估、战场行动评估和翻牌评估。AI 不模拟鼠标点击，也不调用表现层菜单；它调用规则层入口，例如 `HandPlayResolver`、`CardAction.execute()` 和翻牌/补位协作者。
 - AI 回合使用“候选动作评分循环”：每一步收集当前所有可执行候选（手牌、战场行动、翻牌、开启施法回合），执行最高分候选并等待结算完成，然后重新评估。不要恢复成固定的“先手牌、再随从、再翻牌”流水线。
 - 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。
