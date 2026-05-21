@@ -4,9 +4,13 @@ class_name HandPlayResolver
 # HandPlayResolver 负责手牌使用规则。
 # 当前只实现手牌法术；它复用 InteractionManager 的目标选择模式和 EffectRegistry。
 
+const HandSpellModifierResolverScript := preload("res://scripts/game/hand_spell_modifier_resolver.gd")
+
 const HAND_CAST_ACTION_ID := "hand:cast"
 const HAND_PLACE_ACTION_ID := "hand:place"
 const HAND_EQUIP_ACTION_ID := "hand:equip"
+
+var hand_spell_modifier_resolver := HandSpellModifierResolverScript.new()
 
 
 func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: GameManager = null) -> bool:
@@ -145,9 +149,11 @@ func execute_hand_card(
 	if requires_target(card_data) and not can_target(card_data, target_state, game_manager):
 		return
 
-	await game_manager.play_hand_spell_card_animation(card_data, target_state)
+	var resolved_spell := resolve_hand_spell(player, card_data, target_state)
+	var resolved_animation := str(resolved_spell.get("animation", card_data.animation))
+	await game_manager.play_hand_spell_card_animation(card_data, target_state, resolved_animation)
 
-	for effect_data in card_data.effects:
+	for effect_data in get_resolved_effects(resolved_spell):
 		var runtime_effect_data := effect_data.duplicate(true)
 		EffectData.mark_effect_owner(runtime_effect_data, player.id)
 		if requires_target(card_data):
@@ -159,6 +165,25 @@ func execute_hand_card(
 	player.remove_from_hand_at(hand_index, card_data)
 	game_manager.update_hand_drawer_view()
 	game_manager.refresh_debug_panel()
+
+
+func get_resolved_effects(resolved_spell: Dictionary) -> Array[Dictionary]:
+	var effects: Array[Dictionary] = []
+	var raw_effects: Variant = resolved_spell.get("effects", [])
+	if raw_effects is Array:
+		for effect_data in raw_effects:
+			if effect_data is Dictionary:
+				effects.append(effect_data)
+
+	return effects
+
+
+func resolve_hand_spell(player: PlayerState, card_data: CardData, target_state: CardState) -> Dictionary:
+	return hand_spell_modifier_resolver.resolve_hand_spell(player, card_data, target_state)
+
+
+func get_resolved_spell_effects(player: PlayerState, card_data: CardData, target_state: CardState) -> Array[Dictionary]:
+	return get_resolved_effects(resolve_hand_spell(player, card_data, target_state))
 
 
 func get_valid_targets(card_data: CardData, game_manager: GameManager) -> Array[CardState]:

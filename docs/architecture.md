@@ -38,6 +38,7 @@
 - `HandCardState`：手牌运行时状态。旧手牌仍可直接保存 `CardData`，但需要冷却、来源、标签等运行时字段的手牌应保存为 `HandCardState`。当前英雄死亡复活会生成带 `cooldown_turns` 的英雄手牌。
 - `HandPlayResolver`：手牌使用规则协作者。当前负责手牌法术的可用性、目标规则、效果结算和消耗手牌，也负责手牌随从放置到棋盘的通用流程；后续装备、升级牌主动使用也优先在这里扩展。
 - `HandPassiveResolver`：手牌持续被动规则协作者，统一解析 `while_in_hand` 这类手牌中持续生效的数值修正。当前用于升级牌“金手指”的每回合翻牌上限加成、骑术的移动力覆盖、达拉然法术能量的攻击力光环。
+- `HandSpellModifierResolver`：手牌法术运行时修正规则协作者。它读取手牌中 `modify_hand_spell_effects` 这类升级牌效果，根据目标关系、被影响的 `card_ids` 等条件，在手牌法术结算前替换或追加运行时效果与动画；静态法术牌本身不被改写。
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
 - `VictoryResolver`：胜负检查协作者。当前检查玩家资源分是否达到胜利目标，后续其他胜利条件也应在这里扩展。
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
@@ -122,7 +123,7 @@
 	- 合法目标仍写入 `CardState.is_valid_target`，所以白色背光、右键/Esc 取消、点击目标结算都和移动/攻击/随从施法共用一套交互。
 	- 目标选择阶段右键或 Esc 会退回这张手牌的焦点态和动作菜单；再次点击已选中的手牌或动作菜单取消按钮会回到空闲状态。
 	- 手牌动作菜单定位使用点击瞬间记录的手牌卡全局矩形，而不是刷新后的 UI 节点；这样同名手牌、手牌重排和抽屉重绘不会让菜单错位到第一张牌。
-	- 当前第一张手牌法术是中立法术牌“草药”：目标规则为 `all_minions`，点击一个正面随从后播放治疗表现，恢复 5 点生命，并从当前玩家手牌中消耗。
+	- 中立法术牌“草药”：目标规则为 `all_minions`，默认恢复目标 5 点生命，并从当前玩家手牌中消耗。苗疆族升级牌“草药符咒”使用 `modify_hand_spell_effects` 在运行时修正草药：对友方目标保持原治疗效果，对敌方目标替换为造成 5 点伤害。
 15. 玩家获得手牌升级牌：
 	- 升级牌、法术牌、装备牌都通过 `RevealResolver` 在翻开成功后进入当前玩家手牌，并腾空原棋盘格补牌。
 	- 手牌持续被动由 `HandPassiveResolver` 统一刷新，不放在 `PlayerState` 中硬编码具体卡牌 id。
@@ -328,6 +329,7 @@
 - 效果可用性也属于效果系统：`CardEffect.can_execute()` 默认返回可用，特殊效果可以覆写它，例如复活效果会检查坟场候选和目标区域。`HandPlayResolver` 不应按具体效果类型写分支，而是注入施法者上下文后调用 `EffectRegistry.can_execute_effect()`。
 - `GameManager.play_spell_cast_animation()` 是规则层保留的法术视觉入口；具体表现由 `CardAnimationController` 按 spell action 的 `animation` 分派。当前治疗术使用 `heal` 绿色治疗脉冲，火球术使用 `fireball` 橙红色投射物和命中反馈，炎爆术使用 `pyroblast` 放大版火球投射物，冰霜护盾使用 `shield` 蓝色屏障脉冲，奥术智慧使用 `arcane` 紫蓝色奥术脉冲；未来可以让多个法术复用同一种表现 key。
 - 手牌法术不消耗法力水晶，也不要求进入“施法回合”；它消耗的是手牌本身。手牌法术的 `target_rule` 和 `animation` 写在卡牌自身数据上，效果仍复用 `EffectRegistry`。`HandPlayResolver` 与 `SpellAction` 都通过 `SpellTargetResolver` 获取目标，后续目标规则只在一个地方扩展。
+- 手牌法术运行时修正统一由 `HandSpellModifierResolver` 处理。升级牌通过 `modify_hand_spell_effects`、`card_ids`、`target_relation`、`replace_effects` / `append_effects` 和可选 `animation` 配置，不要在某张法术或 `HandPlayResolver` 中写死“如果是草药就改效果”。AI 手牌评分同样通过 `HandPlayResolver.get_resolved_spell_effects()` 读取修正后的效果。
 - 英雄配套手牌由 `CardData.owner_hero_card_id` 标记。它来自种族 `heroes[].attached_cards`，不是每张牌单独写死判断。`HandPlayResolver` 在手牌绿光、动作菜单和实际执行前统一检查：所属玩家的对应英雄必须正面在战场上，否则这张英雄配套牌不能释放；具体棋盘扫描通过 `BoardQuery.has_face_up_hero()` 完成。
 
 ## AI 对手约定
@@ -402,5 +404,6 @@
 - 新增手牌内状态：优先放到 `HandCardState`，例如手牌冷却、来源、标签、手牌归属、可使用状态，不要塞进棋盘专用的 `CardState.slot_index` 流程；如果状态需要跨区域长期跟随，再考虑演进为更完整的 `CardInstance`。
 - 新增衍生牌：在对应种族的 `tokens[]` 字段下添加卡牌定义，由 `CardDatabase` 自动注册到全局查表。生成衍生牌的效果使用通用 `add_card_to_hand` 效果并指定 `card_id`，需要多张时配置 `amount`；需要三选一或多选奖励时使用 `choose_card_to_hand`、`card_ids` 和 `bonus_cards`；不要在效果或行动中手动构造 CardData。
 - 新增手牌法术：在卡牌自身配置 `type: "spell"`、`target_rule`、`animation` 和 `effects`，由 `HandPlayResolver` 解释；不要把手牌法术写成随从的 `spell_actions`。如果它属于某个英雄，把卡牌 id 放入该英雄的 `heroes[].attached_cards`，不要在规则层写死卡牌名。
+- 新增手牌法术修正升级牌：使用 `modify_hand_spell_effects`，通过 `card_ids` 指定影响的手牌法术，通过 `target_relation` 指定目标关系（`friendly` / `enemy` / `any`），再配置 `replace_effects` 或 `append_effects`。这类规则应走 `HandSpellModifierResolver`，保持法术静态数据、升级牌数据和手牌执行流程分离。
 - 新增动态授予法术：优先扩展 `GrantedSpellResolver` 和 `PlayerState` 中的施法历史，不要在 `ActionRegistry` 或 UI 层根据卡牌名临时拼动作。像“学习最近一次法术”这种规则使用 `grant_last_spell_action`、`card_ids` 和 `source_card_ids` 配置。
 - 新增法术强度：装备或其他区域效果使用 `modify_spell_power`。法术施放入口通过 `EffectData.mark_spell_power_enabled()` 给运行时效果打标，`CardEffect.get_spell_scaled_amount()` 统一读取玩家装备法强；回合触发、亡语、建筑治疗等非施法效果不会自动吃法强。默认加成 `damage`、`heal`、`shield`、`increase_max_health` 这类直接数值法术效果，如需某个效果不吃法强，可配置 `spell_power_scaling: false`。

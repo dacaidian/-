@@ -114,6 +114,7 @@
 - 手牌焦点、动作菜单、手牌法术使用、手牌被动、手牌 UI 展示。
 - 英雄配套手牌的可用性统一由 `HandPlayResolver` 判断；手牌绿光、动作菜单和真正执行都应传入 `GameManager` 上下文，不要只看卡牌自身效果。
 - 手牌持续被动由 `HandPassiveResolver` 统一刷新；`modify_flip_capacity` 改翻牌上限，`set_unit_movement` 按 `card_ids` 改己方战场单位移动力，`modify_unit_attack` 按 `card_ids` 给己方战场单位叠加可刷新的攻击力光环。
+- 手牌法术运行时修正由 `HandSpellModifierResolver` 统一处理；`modify_hand_spell_effects` 可按 `card_ids` 和 `target_relation` 替换/追加效果，不要在某张法术牌或 `HandPlayResolver` 里写死卡牌名。
 - 手牌抽屉高度由 `HandDrawerController` 根据视窗动态设置；各分区内部用 `ScrollContainer` 承载 `HFlowContainer`，手牌变多时应滚动而不是撑出外边框。
 - 同名手牌仍依赖 `selected_hand_index` 区分；需要冷却、来源、标签等运行时字段的手牌已使用 `HandCardState`，未来可继续演进为更完整的 `CardInstance` / Zone。
 - 装备牌使用 `hand:equip` 动作，装备后进入 `PlayerState.equipped_cards_by_type`。同一 `equipment_type` 只保留一张生效装备；新装备会把同槽位旧装备退回手牌。英雄配套装备仍通过 `owner_hero_card_id` 要求英雄在场。

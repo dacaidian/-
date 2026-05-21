@@ -72,7 +72,8 @@ func evaluate_hand_card(card_data: CardData, hand_index: int, player: PlayerStat
 func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, hpr: HandPlayResolver) -> Dictionary:
 	var target_rule := hpr.get_target_rule(card_data)
 	if not SpellTargetResolver.requires_target(target_rule):
-		return {"target": null, "score": _score_no_target_spell(card_data, player, gm)}
+		var no_target_effects := get_resolved_spell_effects(card_data, player, null, hpr)
+		return {"target": null, "score": _score_no_target_spell(no_target_effects, player, gm)}
 
 	var valid_targets: Array = hpr.get_valid_targets(card_data, gm)
 	var best_target = null
@@ -81,7 +82,8 @@ func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, 
 	for target in valid_targets:
 		if target == null:
 			continue
-		var score: float = _score_spell_on_target(card_data, target, player, gm)
+		var target_effects := get_resolved_spell_effects(card_data, player, target, hpr)
+		var score: float = _score_spell_on_target(target_effects, target, player, gm)
 		if score > best_score:
 			best_target = target
 			best_score = score
@@ -89,9 +91,24 @@ func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, 
 	return {"target": best_target, "score": best_score}
 
 
-func _score_no_target_spell(card_data: CardData, _player: PlayerState, _gm: GameManager) -> float:
+func get_resolved_spell_effects(
+	card_data: CardData,
+	player: PlayerState,
+	target: CardState,
+	hpr: HandPlayResolver
+) -> Array[Dictionary]:
+	if hpr == null:
+		var fallback_effects: Array[Dictionary] = []
+		if card_data != null:
+			fallback_effects = card_data.effects.duplicate(true)
+		return fallback_effects
+
+	return hpr.get_resolved_spell_effects(player, card_data, target)
+
+
+func _score_no_target_spell(effects: Array[Dictionary], _player: PlayerState, _gm: GameManager) -> float:
 	var score := 0.0
-	for effect_data in card_data.effects:
+	for effect_data in effects:
 		if not effect_data is Dictionary:
 			continue
 		var effect_id := str(effect_data.get("id", ""))
@@ -122,12 +139,12 @@ func _score_no_target_spell(card_data: CardData, _player: PlayerState, _gm: Game
 	return score
 
 
-func _score_spell_on_target(card_data: CardData, target: CardState, player: PlayerState, _gm: GameManager) -> float:
+func _score_spell_on_target(effects: Array[Dictionary], target: CardState, player: PlayerState, _gm: GameManager) -> float:
 	if target == null:
 		return 0.0
 
 	var score := 0.0
-	for effect_data in card_data.effects:
+	for effect_data in effects:
 		if not effect_data is Dictionary:
 			continue
 		var effect_id := str(effect_data.get("id", ""))

@@ -866,6 +866,33 @@
 						"death_reason": "trap"
 					}
 				]
+			},
+			{
+				"id": "herb_charm",
+				"name": "草药符咒",
+				"description": "升级牌。草药对友方使用仍恢复5点生命；对敌方使用改为造成5点伤害。",
+				"url": "res://assets/img/苗疆族/草药符咒.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_hand_spell_effects",
+						"trigger": "while_in_hand",
+						"card_ids": [
+							"herb"
+						],
+						"target_relation": "enemy",
+						"animation": "gu_infusion",
+						"replace_effects": [
+							{
+								"id": "damage",
+								"amount": 5
+							}
+						]
+					}
+				]
 			}
 		],
 		"tokens": [

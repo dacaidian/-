@@ -40,6 +40,9 @@ const KEY_TARGET_CARD_ID := "target_card_id"
 const KEY_TRIGGER_PLAYER := "trigger_player"
 const KEY_BONUS_CARDS := "bonus_cards"
 const KEY_SELECTION_TITLE := "selection_title"
+const KEY_REPLACE_EFFECTS := "replace_effects"
+const KEY_APPEND_EFFECTS := "append_effects"
+const KEY_TARGET_RELATION := "target_relation"
 const KEY_AREA_ROWS := "area_rows"
 const KEY_AREA_COLS := "area_cols"
 const KEY_SLOT_EFFECT_ID := "slot_effect_id"
@@ -61,6 +64,7 @@ const EFFECT_APPLY_STATUS := "apply_status"
 const EFFECT_SET_UNIT_MOVEMENT := "set_unit_movement"
 const EFFECT_MODIFY_UNIT_ATTACK := "modify_unit_attack"
 const EFFECT_MODIFY_SPELL_POWER := "modify_spell_power"
+const EFFECT_MODIFY_HAND_SPELL_EFFECTS := "modify_hand_spell_effects"
 const EFFECT_RESURRECT := "resurrect"
 const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
@@ -89,6 +93,10 @@ const TARGET_ATTACK_TARGET_ENEMY_UNIT := "attack_target_enemy_unit"
 
 const TRIGGER_PLAYER_ANY := "any"
 const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
+
+const TARGET_RELATION_ANY := "any"
+const TARGET_RELATION_FRIENDLY := "friendly"
+const TARGET_RELATION_ENEMY := "enemy"
 
 const DEATH_REASON_EFFECT := "effect"
 const DEATH_REASON_SPELL := "spell"
@@ -204,6 +212,32 @@ static func get_bonus_cards(effect_data: Dictionary) -> Array[Dictionary]:
 				bonus_cards.append(bonus_card)
 
 	return bonus_cards
+
+
+static func get_replace_effects(effect_data: Dictionary) -> Array[Dictionary]:
+	var replace_effects: Array[Dictionary] = []
+	var raw_replace_effects: Variant = effect_data.get(KEY_REPLACE_EFFECTS, [])
+	if raw_replace_effects is Array:
+		for replace_effect in raw_replace_effects:
+			if replace_effect is Dictionary:
+				replace_effects.append(replace_effect)
+
+	return replace_effects
+
+
+static func get_append_effects(effect_data: Dictionary) -> Array[Dictionary]:
+	var append_effects: Array[Dictionary] = []
+	var raw_append_effects: Variant = effect_data.get(KEY_APPEND_EFFECTS, [])
+	if raw_append_effects is Array:
+		for append_effect in raw_append_effects:
+			if append_effect is Dictionary:
+				append_effects.append(append_effect)
+
+	return append_effects
+
+
+static func get_target_relation(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_TARGET_RELATION, TARGET_RELATION_ANY))
 
 
 static func get_spell_actions(effect_data: Dictionary) -> Array[Dictionary]:

@@ -1197,12 +1197,12 @@ func play_card_to_hand_animation(source_card: Card, card_data: CardData) -> void
 	)
 
 
-func play_hand_spell_card_animation(card_data: CardData, target_state: CardState = null) -> void:
+func play_hand_spell_card_animation(card_data: CardData, target_state: CardState = null, animation_override := "") -> void:
 	if card_data == null:
 		return
 
 	var spell_data := {
-		"animation": card_data.animation if card_data.animation != "" else "heal"
+		"animation": animation_override if animation_override != "" else (card_data.animation if card_data.animation != "" else "heal")
 	}
 
 	is_resolving_card_action = true
