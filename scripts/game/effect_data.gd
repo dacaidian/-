@@ -18,6 +18,7 @@ const KEY_DEATH_REASON := "death_reason"
 const KEY_APPLY_SPELL_POWER := "_apply_spell_power"
 const KEY_SPELL_POWER_SCALING := "spell_power_scaling"
 const KEY_STATUS_ID := "status_id"
+const KEY_STATUS_IDS := "status_ids"
 const KEY_STATUS_NAME := "status_name"
 const KEY_STATUS_DESCRIPTION := "status_description"
 const KEY_STATUS_TAGS := "status_tags"
@@ -52,6 +53,8 @@ const KEY_CONSUME_ON_TRIGGER := "consume_on_trigger"
 const KEY_TRIGGER_ANIMATION := "trigger_animation"
 const KEY_SOURCE_CARD_ID := "source_card_id"
 const KEY_SOURCE_DISPLAY_NAME := "source_display_name"
+const KEY_SET_DURATION_TURNS := "set_duration_turns"
+const KEY_PRESERVE_TOTAL_DAMAGE := "preserve_total_damage"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -65,6 +68,7 @@ const EFFECT_SET_UNIT_MOVEMENT := "set_unit_movement"
 const EFFECT_MODIFY_UNIT_ATTACK := "modify_unit_attack"
 const EFFECT_MODIFY_SPELL_POWER := "modify_spell_power"
 const EFFECT_MODIFY_HAND_SPELL_EFFECTS := "modify_hand_spell_effects"
+const EFFECT_MODIFY_APPLIED_STATUS := "modify_applied_status"
 const EFFECT_RESURRECT := "resurrect"
 const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
@@ -281,6 +285,22 @@ static func ensure_death_reason(effect_data: Dictionary, death_reason: String) -
 
 static func get_status_id(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_STATUS_ID, ""))
+
+
+static func get_status_ids(effect_data: Dictionary) -> Array[String]:
+	var status_ids: Array[String] = []
+	var raw_status_ids: Variant = effect_data.get(KEY_STATUS_IDS, [])
+	if raw_status_ids is Array:
+		for status_id in raw_status_ids:
+			var normalized_status_id := str(status_id)
+			if normalized_status_id != "":
+				status_ids.append(normalized_status_id)
+
+	var single_status_id := get_status_id(effect_data)
+	if single_status_id != "" and not status_ids.has(single_status_id):
+		status_ids.append(single_status_id)
+
+	return status_ids
 
 
 static func get_status_name(effect_data: Dictionary, default_name := "") -> String:

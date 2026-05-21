@@ -893,6 +893,27 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "poison_burst",
+				"name": "毒性爆发",
+				"description": "升级牌。己方施加的毒性伤害会在1回合内爆发。",
+				"url": "res://assets/img/苗疆族/毒性爆发.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_applied_status",
+						"trigger": "while_in_hand",
+						"status_ids": [
+							"poison"
+						],
+						"set_duration_turns": 1,
+						"preserve_total_damage": true
+					}
+				]
 			}
 		],
 		"tokens": [

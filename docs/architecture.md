@@ -39,6 +39,7 @@
 - `HandPlayResolver`：手牌使用规则协作者。当前负责手牌法术的可用性、目标规则、效果结算和消耗手牌，也负责手牌随从放置到棋盘的通用流程；后续装备、升级牌主动使用也优先在这里扩展。
 - `HandPassiveResolver`：手牌持续被动规则协作者，统一解析 `while_in_hand` 这类手牌中持续生效的数值修正。当前用于升级牌“金手指”的每回合翻牌上限加成、骑术的移动力覆盖、达拉然法术能量的攻击力光环。
 - `HandSpellModifierResolver`：手牌法术运行时修正规则协作者。它读取手牌中 `modify_hand_spell_effects` 这类升级牌效果，根据目标关系、被影响的 `card_ids` 等条件，在手牌法术结算前替换或追加运行时效果与动画；静态法术牌本身不被改写。
+- `StatusModifierResolver`：状态施加前的运行时修正规则协作者。它读取施加者手牌中的 `modify_applied_status` 升级效果，在 `CardStatus.from_effect_data()` 前改写状态数据；当前用于“毒性爆发”把己方施加的毒压缩到 1 回合爆发。
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
 - `VictoryResolver`：胜负检查协作者。当前检查玩家资源分是否达到胜利目标，后续其他胜利条件也应在这里扩展。
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
@@ -178,7 +179,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -251,7 +252,7 @@
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。
-- `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。
+- `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
 - 圣盾、辉煌光环、励蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
@@ -397,6 +398,7 @@
 - 新增卡牌效果：放在 `scripts/effects`，继承 `CardEffect` 并注册到 `EffectRegistry`。
 - 新增效果配置字段、触发名或手牌 active zone 语义：优先补到 `EffectData`，再让具体 resolver 使用，不要在多个模块里直接写同一个字符串。
 - 新增状态：优先用 `apply_status` 写入 `CardStatus`；如果状态需要影响行动、受伤或回合时点，再新增专门 resolver 或在对应规则入口读取 `CardState.has_status()` / `get_status()`；如果只是持续视觉表现，优先扩展 `CardStatusOverlay`。如果状态有明确数值（毒性总伤害、护盾值、未来燃烧层数等），优先扩展 `Card` 的状态数字栈，放在血量图标上方纵向排列。
+- 新增状态施加修正升级牌：使用 `modify_applied_status`，通过 `status_ids` 指定影响哪些状态；需要压缩持续伤害时可配置 `set_duration_turns` 和 `preserve_total_damage`。这类规则应走 `StatusModifierResolver`，不要在具体状态效果或卡牌名里写死。
 - 新增控制状态（眩晕、定身等）：只需在 JSON 中配置 `"status_tags": ["action_prevention"]`，`CardState` 的 `has_status_with_tag(TAG_ACTION_PREVENTION)` 已注册到所有行动门控，零代码改动。不要为每个控制状态写专用的 `is_xxx()` 判断方法。
 - 新增 AOE 形状（5×5、十字等）：在 `SpellTargetResolver` 新增规则常量和 `is_area_rule()`/`get_area_dimensions()` 映射；如需非矩形形状，在 `BoardQuery` 新增对应静态方法。交互层和效果层通过 `get_area_dimensions()` 和效果 JSON 中的 `area_rows`/`area_cols` 自动适配。
 - 新增 UI 菜单按钮：优先从 `ActionRegistry.get_available_actions()` 动态生成。
