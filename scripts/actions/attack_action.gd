@@ -17,7 +17,7 @@ func can_start(user: CardState, game_manager: GameManager) -> bool:
 	if not is_controlled_face_up_minion(user, game_manager):
 		return false
 
-	if user.current_attack <= 0:
+	if user.current_attack <= 0 and not user.has_keyword(CardData.KEYWORD_CAN_ATTACK_WITH_ZERO_ATTACK):
 		return false
 
 	return user.can_attack() and can_pay_action_cost(user)

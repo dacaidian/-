@@ -77,6 +77,7 @@ const TARGET_SELECTED_ADJACENT_ENEMY_MINIONS := "selected_adjacent_enemy_minions
 const TARGET_SELECTED_AREA_ENEMY_MINIONS := "selected_area_enemy_minions"
 const TARGET_SELECTED_AREA_ALL_MINIONS := "selected_area_all_minions"
 const TARGET_OWNER_CARD_BY_ID := "owner_card_by_id"
+const TARGET_ATTACK_TARGET_ENEMY_UNIT := "attack_target_enemy_unit"
 
 const TRIGGER_PLAYER_ANY := "any"
 const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"

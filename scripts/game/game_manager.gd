@@ -896,6 +896,11 @@ func resolve_attack_kill(attacker_state: CardState, defeated_state: CardState, c
 
 
 func resolve_after_attack_triggers(attacker_state: CardState, attacked_state: CardState) -> void:
+	var context := {
+		EventContext.ATTACK_TARGET_STATE: attacked_state
+	}
+	trigger_resolver.queue_trigger(attacker_state, EventContext.TRIGGER_AFTER_ATTACK, context)
+	await trigger_resolver.resolve_queued(self)
 	await equipment_trigger_resolver.resolve_after_attack(self, attacker_state, attacked_state)
 
 

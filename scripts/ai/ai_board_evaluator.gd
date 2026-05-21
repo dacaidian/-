@@ -152,6 +152,7 @@ func _score_attack(user: CardState, target: CardState, gm: GameManager) -> float
 		return score
 	else:
 		score += dealt_to_defender * 3.0
+		score += _score_after_attack_effects(user, target, player)
 
 	if combat["breaks_divine_shield"]:
 		score += 2.0
@@ -166,6 +167,22 @@ func _score_attack(user: CardState, target: CardState, gm: GameManager) -> float
 	score -= retaliation * 2.0
 	if combat["will_kill_attacker"]:
 		score *= 0.15
+
+	return score
+
+
+func _score_after_attack_effects(user: CardState, target: CardState, player: PlayerState) -> float:
+	if user == null or user.data == null or target == null:
+		return 0.0
+
+	var score := 0.0
+	for effect_data in user.data.effects:
+		if not effect_data is Dictionary:
+			continue
+		if EffectData.get_trigger(effect_data) != EventContext.TRIGGER_AFTER_ATTACK:
+			continue
+		if EffectData.get_id(effect_data) == EffectData.EFFECT_APPLY_STATUS:
+			score += _score_apply_status_effect(target, effect_data, player)
 
 	return score
 

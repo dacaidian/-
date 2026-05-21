@@ -220,6 +220,7 @@
 
 - 攻击范围、远程/近战区分、击杀后占领、死亡触发、入坟、摧毁后效果。
 - 当前近战击杀随从或摧毁建筑都可占领；远程击杀不触发占领。
+- 攻击后的单位自身触发效果走 `TriggerResolver` 的 `after_attack`；目标被攻击敌方单位时使用 `target: "attack_target_enemy_unit"`。0 攻但需要攻击触发的单位使用关键词 `can_attack_with_zero_attack`。
 - 死亡触发统一走 `TriggerResolver`；效果伤害应先伤害全部目标，再调用 `GameManager.resolve_dead_states()` 做批量死亡结算。
 - 死亡事件上下文 key 和触发名统一放在 `EventContext`。
 

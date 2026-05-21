@@ -815,6 +815,68 @@
 						}
 					}
 				]
+			},
+			{
+				"id": "gu_child",
+				"name": "蛊童",
+				"description": "苗疆族随从。可以施法生蛊毒蝎，将一张毒蝎置入手牌。",
+				"url": "res://assets/img/苗疆族/蛊童.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [],
+				"attack": 1,
+				"health": 2,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "summon_poison_scorpion",
+						"name": "生蛊毒蝎",
+						"animation": "summon",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_id": "poison_scorpion"
+							}
+						]
+					}
+				]
+			}
+		],
+		"tokens": [
+			{
+				"id": "poison_scorpion",
+				"name": "毒蝎",
+				"description": "衍生随从。攻击敌方单位后，对其施加1*3的毒。",
+				"url": "res://assets/img/苗疆族/毒蝎.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"can_attack_with_zero_attack"
+				],
+				"attack": 0,
+				"health": 1,
+				"effects": [
+					{
+						"id": "apply_status",
+						"trigger": "after_attack",
+						"target": "attack_target_enemy_unit",
+						"status_id": "poison",
+						"status_name": "蝎毒",
+						"status_description": "回合结束时受到1点毒性伤害，持续3回合。",
+						"status_tags": [
+							"damage_over_time"
+						],
+						"duration_turns": 3,
+						"expires_on_trigger": "after_turn_end",
+						"duration_scope": "target_owner",
+						"payload": {
+							"poison_damage": 1
+						}
+					}
+				]
 			}
 		]
 	},
