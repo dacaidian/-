@@ -18,6 +18,7 @@ const TriggerResolverScript := preload("res://scripts/game/trigger_resolver.gd")
 const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_resolver.gd")
 const StatusResolverScript := preload("res://scripts/game/status_resolver.gd")
 const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_trigger_resolver.gd")
+const BoardSlotEffectResolverScript := preload("res://scripts/game/board_slot_effect_resolver.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
@@ -132,6 +133,7 @@ var trigger_resolver := TriggerResolverScript.new()
 var turn_trigger_resolver := TurnTriggerResolverScript.new()
 var status_resolver := StatusResolverScript.new()
 var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
+var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
@@ -904,6 +906,19 @@ func resolve_after_attack_triggers(attacker_state: CardState, attacked_state: Ca
 	await equipment_trigger_resolver.resolve_after_attack(self, attacker_state, attacked_state)
 
 
+func set_board_slot_effect(slot_index: int, slot_effect: Variant) -> void:
+	if slot_effect == null:
+		return
+
+	slot_effect.slot_index = slot_index
+	board_slot_effect_resolver.add_slot_effect(slot_effect)
+	refresh_debug_panel()
+
+
+func resolve_slot_unit_entered(state: CardState) -> void:
+	await board_slot_effect_resolver.resolve_unit_entered(self, state)
+
+
 func can_offer_attack_occupy(attacker_state: CardState, defeated_state: CardState) -> bool:
 	return death_resolver.can_offer_attack_occupy(attacker_state, defeated_state)
 
@@ -1020,6 +1035,8 @@ func swap_board_slot_contents(first_state: CardState, second_state: CardState) -
 
 	if first_card == null or second_card == null:
 		first_state.swap_card_content_with(second_state)
+		await resolve_slot_unit_entered(first_state)
+		await resolve_slot_unit_entered(second_state)
 		refresh_action_available_hints()
 		refresh_debug_panel()
 		return
@@ -1035,6 +1052,8 @@ func swap_board_slot_contents(first_state: CardState, second_state: CardState) -
 		first_global_position,
 		second_global_position
 	)
+	await resolve_slot_unit_entered(first_state)
+	await resolve_slot_unit_entered(second_state)
 
 	is_resolving_card_action = false
 	refresh_action_available_hints()
@@ -1150,6 +1169,22 @@ func play_status_apply_animation(target_state: CardState, animation_key: String)
 	)
 
 
+func play_slot_effect_animation(target_state: CardState, animation_key: String) -> void:
+	if target_state == null or animation_key == "":
+		return
+
+	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	if target_card == null:
+		return
+
+	await card_animation_controller.play_spell_cast_at_rect(
+		self,
+		get_overlay_animation_root(),
+		target_card.get_global_rect(),
+		{"animation": animation_key}
+	)
+
+
 func play_card_to_hand_animation(source_card: Card, card_data: CardData) -> void:
 	if source_card == null or card_data == null:
 		return
@@ -1224,6 +1259,7 @@ func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState)
 	if from_card == null or to_card == null:
 		to_state.apply_card_snapshot(moving_snapshot)
 		from_state.clear_card()
+		await resolve_slot_unit_entered(to_state)
 		refresh_action_available_hints()
 		refresh_debug_panel()
 		return
@@ -1232,6 +1268,7 @@ func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState)
 	await card_animation_controller.play_card_to_empty_slot(self, from_card, to_card)
 	to_state.apply_card_snapshot(moving_snapshot)
 	from_state.clear_card()
+	await resolve_slot_unit_entered(to_state)
 	is_resolving_card_action = false
 	refresh_action_available_hints()
 	refresh_debug_panel()

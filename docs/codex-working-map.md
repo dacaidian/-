@@ -231,6 +231,8 @@
 - `scripts/actions/spell_action.gd`
 - `scripts/game/spell_target_resolver.gd`
 - `scripts/game/hand_play_resolver.gd`，如果是手牌法术。
+- `scripts/game/board_slot_effect_resolver.gd`，如果是陷阱、地形、格子光环等固定格子效果。
+- `scripts/data/board_slot_effect.gd`，如果需要新增格子效果数据字段。
 - `scripts/effects/effect_registry.gd`
 - `scripts/effects/card_effect.gd`
 - `scripts/game/trigger_resolver.gd`，如果涉及触发时机。
@@ -246,6 +248,7 @@
 - 法术目标规则统一放在 `SpellTargetResolver`。
 - 魔法免疫统一由 `SpellTargetResolver` 和 `CardEffect.get_target_states()` 处理。新增法术目标规则、AOE 或自动施法时不要绕过这两个入口。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
+- `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
@@ -295,6 +298,7 @@
 - `summon` 是召唤水元素的水蓝法阵与水滴扩散表现，属于无目标手牌法术的 `play_spell_cast_at_rect()` 分支。
 - `arcane_aura` 是辉煌光环的一次性施法/附着动画，持续视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
+- `gu_lure` 是诱蛊释放到格子的暗绿法阵表现；`gu_trap_trigger` 是诱蛊触发时的毒红咬合和蛊孢爆散表现。
 - `blizzard` 是暴风雪的冰蓝色区域覆盖 + 消散特效，走 `play_area_spell_cast()` → `play_blizzard_area_spell()` 专用 AOE 动画入口。区域效果面板由 `create_blizzard_area_effect()` 创建。
 - 动画控制器不直接改规则状态；规则变化由 `GameManager` 在 `await` 后处理。
 

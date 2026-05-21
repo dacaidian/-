@@ -8,6 +8,7 @@ const TARGET_RULE_ALL_MINIONS := "all_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
 const TARGET_RULE_AREA_3X3 := "area_3x3"
+const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -47,6 +48,9 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 	if is_area_rule(target_rule):
 		return can_select_area_center(target)
 
+	if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
+		return target.is_empty() or not target.is_face_up
+
 	if not BoardQuery.is_face_up_board_card(target):
 		return false
 
@@ -58,6 +62,8 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 			return target.is_minion()
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
+		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
+			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:
 			return false
 		_:

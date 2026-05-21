@@ -220,6 +220,7 @@ func execute_hand_minion_placement(
 	target_state.set_card_data(card_data)
 	target_state.set_owner(player.id)
 	target_state.set_face_up(true)
+	await game_manager.resolve_slot_unit_entered(target_state)
 	game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 	game_manager.refresh_action_available_hints()
 	game_manager.update_hand_drawer_view()

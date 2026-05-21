@@ -42,6 +42,13 @@ const KEY_BONUS_CARDS := "bonus_cards"
 const KEY_SELECTION_TITLE := "selection_title"
 const KEY_AREA_ROWS := "area_rows"
 const KEY_AREA_COLS := "area_cols"
+const KEY_SLOT_EFFECT_ID := "slot_effect_id"
+const KEY_SLOT_EFFECT_NAME := "slot_effect_name"
+const KEY_SLOT_EFFECT_TRIGGER := "slot_effect_trigger"
+const KEY_CONSUME_ON_TRIGGER := "consume_on_trigger"
+const KEY_TRIGGER_ANIMATION := "trigger_animation"
+const KEY_SOURCE_CARD_ID := "source_card_id"
+const KEY_SOURCE_DISPLAY_NAME := "source_display_name"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -59,6 +66,7 @@ const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
 const EFFECT_ADD_CARD_TO_HAND := "add_card_to_hand"
 const EFFECT_CHOOSE_CARD_TO_HAND := "choose_card_to_hand"
+const EFFECT_SET_SLOT_TRAP := "set_slot_trap"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -86,6 +94,7 @@ const DEATH_REASON_EFFECT := "effect"
 const DEATH_REASON_SPELL := "spell"
 const DEATH_REASON_HAND_SPELL := "hand_spell"
 const DEATH_REASON_POISON := "poison"
+const DEATH_REASON_TRAP := "trap"
 
 
 static func get_id(effect_data: Dictionary) -> String:

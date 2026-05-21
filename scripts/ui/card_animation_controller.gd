@@ -34,6 +34,10 @@ var gu_projectile_size := Vector2(18, 10)
 var gu_projectile_color := Color(0.09, 0.28, 0.08, 0.94)
 var gu_projectile_glow_color := Color(0.44, 1.0, 0.20, 0.48)
 var gu_impact_color := Color(0.58, 1.22, 0.34, 1.0)
+var gu_lure_color := Color(0.10, 0.42, 0.07, 0.22)
+var gu_lure_glow_color := Color(0.50, 1.0, 0.22, 0.62)
+var gu_trap_trigger_color := Color(0.30, 0.04, 0.10, 0.32)
+var gu_trap_trigger_glow_color := Color(0.92, 0.18, 0.36, 0.76)
 
 
 func setup(config: Dictionary) -> void:
@@ -327,6 +331,14 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
+		"gu_lure":
+			if target_card == null:
+				return
+			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
+		"gu_trap_trigger":
+			if target_card == null:
+				return
+			await play_gu_trap_trigger_at_rect(owner, effect_root, target_card.get_global_rect())
 		_:
 			await play_default_spell(owner, target_card)
 
@@ -351,6 +363,10 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"gu_infusion":
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
+		"gu_lure":
+			await play_gu_lure_at_rect(owner, effect_root, target_rect)
+		"gu_trap_trigger":
+			await play_gu_trap_trigger_at_rect(owner, effect_root, target_rect)
 		_:
 			await play_default_spell_at_rect(owner, effect_root, target_rect)
 
@@ -375,6 +391,10 @@ func play_spell_cast_from_rect_to_card(
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
+		"gu_lure":
+			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
+		"gu_trap_trigger":
+			await play_gu_trap_trigger_at_rect(owner, effect_root, target_card.get_global_rect())
 		"baptism":
 			await play_baptism_spell(owner, effect_root, target_card)
 		_:
@@ -979,6 +999,81 @@ func play_gu_infusion_at_rect(owner: Node, effect_root: Control, target_rect: Re
 	ring.queue_free()
 
 
+func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var snare := create_gu_lure_effect_for_rect(target_rect)
+	var pulse := create_rect_spell_effect(target_rect, "GuLurePulseEffect", create_gu_lure_pulse_style(), 1.04)
+	effect_root.add_child(pulse)
+	effect_root.add_child(snare)
+
+	var bloom_tween := owner.create_tween()
+	bloom_tween.set_parallel(true)
+	bloom_tween.set_trans(Tween.TRANS_SINE)
+	bloom_tween.set_ease(Tween.EASE_OUT)
+	bloom_tween.tween_property(snare, "scale", Vector2(1.12, 1.12), spell_animation_duration * 0.42)
+	bloom_tween.tween_property(snare, "rotation", 0.14, spell_animation_duration * 0.42)
+	bloom_tween.tween_property(snare, "modulate:a", 0.88, spell_animation_duration * 0.42)
+	bloom_tween.tween_property(pulse, "scale", Vector2(1.22, 1.22), spell_animation_duration * 0.42)
+	bloom_tween.tween_property(pulse, "modulate:a", 0.55, spell_animation_duration * 0.42)
+	await bloom_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(snare, "scale", Vector2(1.55, 1.55), spell_animation_duration * 0.70)
+	fade_tween.tween_property(snare, "rotation", 0.72, spell_animation_duration * 0.70)
+	fade_tween.tween_property(snare, "modulate:a", 0.0, spell_animation_duration * 0.70)
+	fade_tween.tween_property(pulse, "scale", Vector2(1.90, 1.90), spell_animation_duration * 0.70)
+	fade_tween.tween_property(pulse, "modulate:a", 0.0, spell_animation_duration * 0.70)
+	await fade_tween.finished
+
+	snare.queue_free()
+	pulse.queue_free()
+
+
+func play_gu_trap_trigger_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var bite := create_gu_trap_trigger_effect_for_rect(target_rect)
+	var spores: Array[Panel] = create_gu_trap_spores_for_rect(target_rect)
+	effect_root.add_child(bite)
+	for spore in spores:
+		effect_root.add_child(spore)
+
+	var snap_tween := owner.create_tween()
+	snap_tween.set_parallel(true)
+	snap_tween.set_trans(Tween.TRANS_BACK)
+	snap_tween.set_ease(Tween.EASE_OUT)
+	snap_tween.tween_property(bite, "scale", Vector2(1.28, 1.28), spell_animation_duration * 0.34)
+	snap_tween.tween_property(bite, "modulate:a", 0.96, spell_animation_duration * 0.34)
+	for spore in spores:
+		var offset: Vector2 = spore.get_meta("trap_offset", Vector2.ZERO)
+		snap_tween.tween_property(spore, "position", spore.position + offset * 0.38, spell_animation_duration * 0.34)
+		snap_tween.tween_property(spore, "modulate:a", 0.90, spell_animation_duration * 0.34)
+	await snap_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(bite, "scale", Vector2(1.72, 1.72), spell_animation_duration * 0.58)
+	burst_tween.tween_property(bite, "modulate:a", 0.0, spell_animation_duration * 0.58)
+	for spore in spores:
+		var offset: Vector2 = spore.get_meta("trap_offset", Vector2.ZERO)
+		burst_tween.tween_property(spore, "position", spore.position + offset, spell_animation_duration * 0.58)
+		burst_tween.tween_property(spore, "scale", Vector2(0.28, 0.28), spell_animation_duration * 0.58)
+		burst_tween.tween_property(spore, "modulate:a", 0.0, spell_animation_duration * 0.58)
+	await burst_tween.finished
+
+	bite.queue_free()
+	for spore in spores:
+		spore.queue_free()
+
+
 func play_area_spell_cast(owner: Node, effect_root: Control, caster_card: Card, center_card: Card, spell_data: Dictionary) -> void:
 	if owner == null or effect_root == null or caster_card == null or center_card == null:
 		return
@@ -1188,6 +1283,14 @@ func create_gu_infusion_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "GuInfusionImpactEffect", create_gu_infusion_effect_style(), 1.18)
 
 
+func create_gu_lure_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "GuLureSnareEffect", create_gu_lure_effect_style(), 1.18)
+
+
+func create_gu_trap_trigger_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "GuTrapTriggerEffect", create_gu_trap_trigger_effect_style(), 1.24)
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -1219,6 +1322,31 @@ func create_summon_droplets_for_rect(target_rect: Rect2) -> Array[Panel]:
 		droplets.append(droplet)
 
 	return droplets
+
+
+func create_gu_trap_spores_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var spores: Array[Panel] = []
+	var center: Vector2 = target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.34
+	var spore_size := Vector2(12.0, 12.0)
+
+	for index in range(7):
+		var angle: float = TAU * float(index) / 7.0 + PI * 0.12
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.16
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * 0.86
+		var spore := Panel.new()
+		spore.name = "GuTrapSpore_%d" % index
+		spore.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spore.size = spore_size
+		spore.pivot_offset = spore_size * 0.5
+		spore.global_position = center + start_offset - spore.pivot_offset
+		spore.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		spore.z_index = 2330
+		spore.set_meta("trap_offset", burst_offset)
+		spore.add_theme_stylebox_override("panel", create_gu_trap_spore_style())
+		spores.append(spore)
+
+	return spores
 
 
 func create_baptism_wave_effect_for_rect(target_rect: Rect2) -> Panel:
@@ -1290,6 +1418,50 @@ func create_gu_infusion_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.36, 1.0, 0.18, 0.56)
 	style.shadow_size = 34
+	return style
+
+
+func create_gu_lure_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = gu_lure_color
+	style.border_color = gu_lure_glow_color
+	style.set_border_width_all(7)
+	style.set_corner_radius_all(999)
+	style.shadow_color = gu_lure_glow_color
+	style.shadow_size = 34
+	return style
+
+
+func create_gu_lure_pulse_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.24, 0.04, 0.16)
+	style.border_color = Color(0.42, 0.92, 0.18, 0.58)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.32, 0.82, 0.12, 0.36)
+	style.shadow_size = 26
+	return style
+
+
+func create_gu_trap_trigger_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = gu_trap_trigger_color
+	style.border_color = gu_trap_trigger_glow_color
+	style.set_border_width_all(9)
+	style.set_corner_radius_all(999)
+	style.shadow_color = gu_trap_trigger_glow_color
+	style.shadow_size = 38
+	return style
+
+
+func create_gu_trap_spore_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.18, 0.42, 0.05, 0.92)
+	style.border_color = Color(0.70, 1.0, 0.20, 0.72)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.42, 1.0, 0.16, 0.50)
+	style.shadow_size = 12
 	return style
 
 

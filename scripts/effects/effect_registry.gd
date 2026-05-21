@@ -22,6 +22,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_RESURRECT, ResurrectEffect.new())
 	register_effect(EffectData.EFFECT_ADD_CARD_TO_HAND, AddCardToHandEffect.new())
 	register_effect(EffectData.EFFECT_CHOOSE_CARD_TO_HAND, ChooseCardToHandEffect.new())
+	register_effect(EffectData.EFFECT_SET_SLOT_TRAP, SetSlotTrapEffect.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

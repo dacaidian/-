@@ -770,7 +770,8 @@
 			{
 				"card_id": "chen_duo",
 				"attached_cards": [
-					"encourage_gu"
+					"encourage_gu",
+					"lure_gu"
 				]
 			}
 		],
@@ -840,6 +841,29 @@
 								"card_id": "poison_scorpion"
 							}
 						]
+					}
+				]
+			},
+			{
+				"id": "lure_gu",
+				"name": "诱蛊",
+				"description": "在一个空格或未翻开卡牌格设置诱蛊。当随从进入该格时，诱蛊触发并杀死该随从。",
+				"url": "res://assets/img/苗疆族/诱蛊.png",
+				"type": "spell",
+				"count": 2,
+				"level": 1,
+				"animation": "gu_lure",
+				"target_rule": "empty_or_hidden_slots",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "set_slot_trap",
+						"slot_effect_id": "kill_entering_minion",
+						"slot_effect_name": "诱蛊",
+						"slot_effect_trigger": "unit_entered",
+						"consume_on_trigger": true,
+						"trigger_animation": "gu_trap_trigger",
+						"death_reason": "trap"
 					}
 				]
 			}

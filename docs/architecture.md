@@ -26,6 +26,7 @@
 - `GameManager`：战局编排者，管理回合、玩家、棋盘、行动执行入口等核心流程；复杂规则和表现编排通过协作者拆分，避免继续膨胀。
 - `MatchSetup`：战局配置数据对象，保存玩家名称、双方选择的种族和英雄，并负责“双方种族不可重复”和开始游戏合法性校验。入口 UI 修改它，战斗场景只读取最终结果。
 - `BoardSlotResolver`：棋盘格填充与补位规则协作者，负责从公共牌池抽牌放入空格、清空格子、批量补空格；未来分级牌池或翻开进手牌后的补位策略优先在这里扩展。
+- `BoardSlotEffect` / `BoardSlotEffectResolver`：固定棋盘格上的临时效果，不随卡牌内容移动。当前用于“诱蛊”这类陷阱：法术把效果写到空格或背面格，之后随从通过移动、手牌放置或翻开进入该格时触发。未来地形、陷阱、格子光环优先扩展这里，不要把格子状态塞进 `CardState`。
 - `RevealResolver`：翻牌成功后的归属与区域路由协作者，负责判断当前玩家能否获得这张牌，并决定卡牌留在棋盘、进入手牌还是扣回背面。
 - `DeathResolver`：死亡、入坟、销毁和攻击击杀后占领结算协作者。`GameManager` 保留 `check_and_destroy_if_dead()` 等对外入口，具体死亡流程放在这里。
 - `TriggerResolver`：触发队列协作者。当前负责排队并结算 `on_reveal`、`on_destroyed`、`on_effective_heal`；后续亡语、受伤、召唤、施法等触发都应优先接入这里。
@@ -176,7 +177,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、蛊童、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -320,6 +321,8 @@
 - 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
+- `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
+- 格子效果使用 `set_slot_trap` 这类效果写入 `BoardSlotEffectResolver`。触发时机由 `slot_effect_trigger` 描述，当前支持 `unit_entered`；进入检查由移动交换、手牌随从放置和翻开进入棋盘三个入口统一调用 `GameManager.resolve_slot_unit_entered()`。持续展示默认不显示，释放和触发分别走 `gu_lure` / `gu_trap_trigger` 等一次性动画。
 - 手牌法术的目标选择同样由 `InteractionManager.start_hand_card_target_selection()` 进入目标选择模式；如果手牌法术的 `target_rule` 是 area 规则，也会读取 `SpellTargetResolver.get_area_dimensions()` 并启用相同的蓝色范围预览。不要为手牌 AOE 法术另写一套交互状态。
 - 法术效果复用 `EffectRegistry`，治疗、伤害、护盾、翻牌次数等公共效果不和某个法术绑定。`SpellAction` 会通过 `EffectData.mark_selected_target()` 把选中的目标以 `selected` 注入运行时效果数据；效果自身负责执行规则变化，可能导致死亡的效果也负责调用死亡检查。
 - 效果可用性也属于效果系统：`CardEffect.can_execute()` 默认返回可用，特殊效果可以覆写它，例如复活效果会检查坟场候选和目标区域。`HandPlayResolver` 不应按具体效果类型写分支，而是注入施法者上下文后调用 `EffectRegistry.can_execute_effect()`。
@@ -345,7 +348,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 
