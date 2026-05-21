@@ -28,6 +28,9 @@ signal face_changed(is_face_up: bool)
 # 护盾数字图片所在目录。文件名按当前护盾值命名，例如 6.png。
 @export var shield_number_dir := "res://assets/img/护盾数字"
 
+@export var poison_number_dir := "res://assets/img/毒性数字"
+@export var status_number_icon_gap := 2
+
 # 攻击数字图片所在子目录。实际路径会从卡牌正面图所属种族目录推导。
 @export var attack_number_folder_name := "攻击数字"
 
@@ -57,6 +60,7 @@ signal face_changed(is_face_up: bool)
 # 这张卡牌绑定的运行时状态。翻开状态等数据只从这里读取。
 var state: CardState
 var shield_texture: TextureRect
+var poison_texture: TextureRect
 var attack_texture: TextureRect
 var status_overlay: CardStatusOverlay
 
@@ -83,6 +87,7 @@ func _ready() -> void:
 	# 根据初始状态刷新一次卡牌图片。
 	setup_status_overlay()
 	setup_shield_texture()
+	setup_poison_texture()
 	setup_attack_texture()
 	update_card_texture()
 
@@ -180,7 +185,7 @@ func update_card_texture() -> void:
 	if state != null and state.is_empty():
 		texture_rect.texture = null
 		health_texture.hide()
-		update_shield_texture()
+		update_status_number_textures()
 		update_attack_texture()
 		update_status_overlay()
 		update_interaction_visual()
@@ -193,7 +198,7 @@ func update_card_texture() -> void:
 		texture_rect.texture = get_back_texture()
 
 	update_health_texture()
-	update_shield_texture()
+	update_status_number_textures()
 	update_attack_texture()
 	update_status_overlay()
 	update_interaction_visual()
@@ -243,10 +248,13 @@ func setup_shield_texture() -> void:
 		return
 
 	shield_texture = create_value_texture("ShieldTexture")
-	shield_texture.offset_left = health_texture.offset_left - health_texture.custom_minimum_size.x
-	shield_texture.offset_top = health_texture.offset_top
-	shield_texture.offset_right = health_texture.offset_left
-	shield_texture.offset_bottom = health_texture.offset_bottom
+
+
+func setup_poison_texture() -> void:
+	if poison_texture != null:
+		return
+
+	poison_texture = create_value_texture("PoisonTexture")
 
 
 func setup_attack_texture() -> void:
@@ -292,16 +300,26 @@ func update_status_overlay() -> void:
 	status_overlay.set_state(null if is_content_temporarily_hidden else state)
 
 
-func update_shield_texture() -> void:
+func update_status_number_textures() -> void:
+	var stack_index := 0
+	stack_index = update_shield_texture(stack_index)
+	update_poison_texture(stack_index)
+
+
+func update_shield_texture(stack_index: int) -> int:
 	if shield_texture == null:
-		return
+		return stack_index
 
 	if not should_show_shield():
 		shield_texture.hide()
-		return
+		return stack_index
 
 	var shield_texture_path := "%s/%d.png" % [shield_number_dir, state.shield]
-	set_value_texture(shield_texture, shield_texture_path, "护盾")
+	if set_value_texture(shield_texture, shield_texture_path, "护盾"):
+		position_status_number_texture(shield_texture, stack_index)
+		return stack_index + 1
+
+	return stack_index
 
 
 func should_show_shield() -> bool:
@@ -309,6 +327,57 @@ func should_show_shield() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.shield > 0
+
+
+func update_poison_texture(stack_index: int) -> int:
+	if poison_texture == null:
+		return stack_index
+
+	if not should_show_poison_number():
+		poison_texture.hide()
+		return stack_index
+
+	var poison_total_damage := get_poison_total_damage()
+	var poison_texture_path := "%s/%d.png" % [poison_number_dir, poison_total_damage]
+	if set_value_texture(poison_texture, poison_texture_path, "毒性"):
+		position_status_number_texture(poison_texture, stack_index)
+		return stack_index + 1
+
+	return stack_index
+
+
+func should_show_poison_number() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and get_poison_total_damage() > 0
+
+
+func get_poison_total_damage() -> int:
+	if state == null:
+		return 0
+
+	var poison_status := state.get_status(CardStatus.STATUS_POISON)
+	if poison_status == null:
+		return 0
+
+	return poison_status.get_poison_total_remaining_damage()
+
+
+func position_status_number_texture(value_texture: TextureRect, stack_index: int) -> void:
+	if value_texture == null:
+		return
+
+	var icon_size := health_texture.custom_minimum_size
+	var vertical_offset := (icon_size.y + float(status_number_icon_gap)) * float(stack_index + 1)
+	value_texture.anchor_left = health_texture.anchor_left
+	value_texture.anchor_top = health_texture.anchor_top
+	value_texture.anchor_right = health_texture.anchor_right
+	value_texture.anchor_bottom = health_texture.anchor_bottom
+	value_texture.offset_left = health_texture.offset_left
+	value_texture.offset_right = health_texture.offset_right
+	value_texture.offset_top = health_texture.offset_top - vertical_offset
+	value_texture.offset_bottom = health_texture.offset_bottom - vertical_offset
 
 
 func update_attack_texture() -> void:
@@ -363,23 +432,26 @@ func create_value_texture(node_name: String) -> TextureRect:
 	return value_texture
 
 
-func set_value_texture(value_texture: TextureRect, texture_path: String, label: String) -> void:
+func set_value_texture(value_texture: TextureRect, texture_path: String, label: String) -> bool:
 	if value_texture == null:
-		return
+		return false
 
 	if not ResourceLoader.exists(texture_path):
 		push_warning("找不到%s数字图片: %s" % [label, texture_path])
 		value_texture.hide()
-		return
+		return false
 
 	value_texture.texture = load(texture_path) as Texture2D
 	value_texture.show()
+	return true
 
 
 func hide_value_textures() -> void:
 	health_texture.hide()
 	if shield_texture != null:
 		shield_texture.hide()
+	if poison_texture != null:
+		poison_texture.hide()
 	if attack_texture != null:
 		attack_texture.hide()
 

@@ -59,8 +59,8 @@
 
 位置：`scenes`、`scripts/ui`
 
-- `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量与护盾显示在右下角，攻击显示在左下角；攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
-- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵和冻结冰蓝色边框+冰晶雪花；未来中毒、沉默等持续视觉优先扩展这里，不要继续塞进 `Card` 主脚本。
+- `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
+- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
 - `CardBoard`：只负责 5x5 棋盘布局和响应窗口尺寸变化。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
@@ -250,8 +250,8 @@
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。
-- `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。
-- 圣盾、辉煌光环、励蛊和毒的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或紫绿色腐蚀雾。冻结状态绘制冰蓝色边框与冰晶雪花图案。一次性施法动画仍由 `CardAnimationController` 管理。
+- `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。
+- 圣盾、辉煌光环、励蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会合并层数；永久状态合并后保持永久，临时状态合并后保留更长剩余回合。未来如果需要“同名不同来源互斥”“刷新不叠层”等规则，应在 `CardStatus.is_same_stack_key()` 或状态定义中扩展。
@@ -394,7 +394,7 @@
 - 新增行动目标规则：实现该行动的 `get_valid_targets()`，由 `InteractionManager` 统一标记目标；如果需要相邻、正面单位、正面随从等棋盘通用查询，优先复用 `BoardQuery`。
 - 新增卡牌效果：放在 `scripts/effects`，继承 `CardEffect` 并注册到 `EffectRegistry`。
 - 新增效果配置字段、触发名或手牌 active zone 语义：优先补到 `EffectData`，再让具体 resolver 使用，不要在多个模块里直接写同一个字符串。
-- 新增状态：优先用 `apply_status` 写入 `CardStatus`；如果状态需要影响行动、受伤或回合时点，再新增专门 resolver 或在对应规则入口读取 `CardState.has_status()` / `get_status()`；如果只是持续视觉表现，优先扩展 `CardStatusOverlay`。
+- 新增状态：优先用 `apply_status` 写入 `CardStatus`；如果状态需要影响行动、受伤或回合时点，再新增专门 resolver 或在对应规则入口读取 `CardState.has_status()` / `get_status()`；如果只是持续视觉表现，优先扩展 `CardStatusOverlay`。如果状态有明确数值（毒性总伤害、护盾值、未来燃烧层数等），优先扩展 `Card` 的状态数字栈，放在血量图标上方纵向排列。
 - 新增控制状态（眩晕、定身等）：只需在 JSON 中配置 `"status_tags": ["action_prevention"]`，`CardState` 的 `has_status_with_tag(TAG_ACTION_PREVENTION)` 已注册到所有行动门控，零代码改动。不要为每个控制状态写专用的 `is_xxx()` 判断方法。
 - 新增 AOE 形状（5×5、十字等）：在 `SpellTargetResolver` 新增规则常量和 `is_area_rule()`/`get_area_dimensions()` 映射；如需非矩形形状，在 `BoardQuery` 新增对应静态方法。交互层和效果层通过 `get_area_dimensions()` 和效果 JSON 中的 `area_rows`/`area_cols` 自动适配。
 - 新增 UI 菜单按钮：优先从 `ActionRegistry.get_available_actions()` 动态生成。

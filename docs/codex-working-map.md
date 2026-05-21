@@ -82,7 +82,7 @@
 - 励蛊当前是 `encourage_gu` 状态；使用 `status_tags: ["attack_modifier"]` 和 `payload.attack_bonus` 提供持续攻击力修正，移除状态时由 `CardState.status_attack_bonus` 自动回滚。
 - 毒当前是 `poison` 唯一状态；使用 `status_tags: ["damage_over_time"]`、`payload.poison_damage` 和 `duration_turns`。新毒只在剩余总伤害更高时覆盖旧毒。毒伤害在 `after_turn_end` 普通触发前由 `StatusResolver.resolve_pre_trigger_status_effects()` 结算，早于回合结束治疗。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
-- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态和摆放覆盖层。当前持续视觉包括圣盾、辉煌光环、冻结、励蛊和毒。
+- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结和励蛊；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
 ### 翻牌与补牌
