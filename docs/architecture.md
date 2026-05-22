@@ -9,7 +9,7 @@
 位置：`scripts/data`
 
 - `CardData`：静态卡牌数据，来自 `data/cards.json`；卡牌所属的数据包通过 `faction_id` 记录，玩家种族包和中立牌库包都走同一读取结构。
-- `BoardCell`：物理棋盘单元格，记录坐标、是否为普通地面格、地面层 `ground_state` 和预留的飞行层 `aerial_states`。当前棋盘为 7x7，外圈是战场边缘，不补牌、不允许普通地面随从放置；中间 5x5 继续作为现有地面牌池区域。
+- `BoardCell`：当前占据某个棋盘坐标的单元格属性，记录坐标、是否为普通地面格、地面层 `ground_state` 和预留的飞行层 `aerial_states`。当前棋盘为 7x7，初始外圈是战场边缘，不补牌、不允许普通地面随从放置；初始中间 5x5 是现有地面牌池区域。奥术空间这类“交换单元格”效果会让 `is_land` 等单元格性质随单元格移动，而不是固定在屏幕坐标上。
 - `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。当前它仍作为 `BoardCell.ground_state` 的兼容地面层状态使用；未来飞行单位应进入 `BoardCell.aerial_states`，不要强行塞进地面层。`has_status_with_tag(tag)` 提供 tag 驱动的通用状态门控，不绑定特定 status_id；`is_area_preview` / `set_area_preview()` 用于 AOE 范围预览标记。
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
@@ -67,7 +67,7 @@
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
 - `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
-- `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card 节点、区分内圈地面格和外圈边缘格，并响应窗口尺寸变化。
+- `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
 - `ActionMenuController`：负责动作菜单 UI 的创建、显示、定位和按钮事件。
 - `CardPoolViewController`：负责公共牌池的表现，例如固定牌堆节点绑定、剩余数量显示、补位飞牌动画。
@@ -188,8 +188,8 @@
 
 ## 棋盘单元格
 
-- 物理棋盘尺寸为 `board_columns x board_rows`，当前默认 `7x7`。`GameManager.board_cells` 是新的单元格模型，`board_states` 继续作为地面层兼容视图存在，二者索引一致。
-- `BoardCell.is_land` 表示普通地面格。当前只有内圈 5x5 为地面格；外圈是战场边缘，不从牌池补牌，不允许普通地面随从通过移动、手牌放置或格子型法术占用。
+- 物理棋盘尺寸为 `board_columns x board_rows`，当前默认 `7x7`。`GameManager.board_cells` 是当前占据各坐标的单元格属性模型，`board_states` 继续作为地面层兼容视图存在，二者索引一致。
+- `BoardCell.is_land` 表示普通地面格。初始状态只有内圈 5x5 为地面格，外圈是战场边缘；但奥术空间可以交换两个单元格，使地面格移动到外圈坐标，或使边缘格移动到内圈坐标。补牌和普通随从放置永远读取当前位置上的 `BoardCell.is_land`。
 - 补牌入口统一使用 `GameManager.can_refill_ground_slot()`；普通地面放置入口统一使用 `GameManager.can_place_ground_card_on_slot()`。新增规则不要直接判断 `state.is_empty()` 就认为可放置，否则会绕过外圈/飞行层限制。
 - 飞行单位的未来扩展入口是 `BoardCell.aerial_states`。飞行单位可以在外圈存在，也可以和地面单位共存于同一 `BoardCell`；这类逻辑不应破坏现有 `ground_state` 和 `board_states` 的兼容规则。
 
@@ -335,7 +335,7 @@
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
 - `target_rule: "none"` 不一定表示完全没有后续交互。若某个效果在法术成功施放后需要多段棋盘选择，应由对应效果启动专门的选择协作者。例如 `swap_board_slots` 使用 `BoardPairSelectionController`，在效果结算期间最多选择三组格子并逐组交换。它不把每次点击塞回 `InteractionManager` 的单次目标流程，避免和普通施法目标、手牌目标、AOE 预览互相耦合。
-- `swap_board_slots` 只交换两个固定格子的 `CardState` 内容，不交换 `BoardCell` 的物理属性。7x7 棋盘中，内圈地面格和外圈边缘格的“能否补牌/能否放置普通随从”等属性永远跟随格子本身；因此内圈格与外圈格交换后，被移动到外圈物理位置的旧内圈内容会失去普通补牌/放置能力，而移动到内圈物理位置的内容会获得该格子的普通地面能力。
+- `swap_board_slots` 交换的是单元格本身：两个位置上的 `BoardCell.is_land` 等单元格性质会互换，地面层卡牌内容也随之交换；屏幕上的 CardSlot / Card 节点仍保持原物理坐标。7x7 棋盘中，初始内圈地面格被交换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被交换到内圈后仍不可补牌/放置普通随从。
 - 格子效果使用 `set_slot_trap` 这类效果写入 `BoardSlotEffectResolver`。触发时机由 `slot_effect_trigger` 描述，当前支持 `unit_entered`；进入检查由移动交换、手牌随从放置和翻开进入棋盘三个入口统一调用 `GameManager.resolve_slot_unit_entered()`。持续展示默认不显示，释放和触发分别走 `gu_lure` / `gu_trap_trigger` 等一次性动画。
 - 手牌法术的目标选择同样由 `InteractionManager.start_hand_card_target_selection()` 进入目标选择模式；如果手牌法术的 `target_rule` 是 area 规则，也会读取 `SpellTargetResolver.get_area_dimensions()` 并启用相同的蓝色范围预览。不要为手牌 AOE 法术另写一套交互状态。
 - 法术效果复用 `EffectRegistry`，治疗、伤害、护盾、翻牌次数等公共效果不和某个法术绑定。`SpellAction` 会通过 `EffectData.mark_selected_target()` 把选中的目标以 `selected` 注入运行时效果数据；效果自身负责执行规则变化，可能导致死亡的效果也负责调用死亡检查。

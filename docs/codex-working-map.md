@@ -254,7 +254,7 @@
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
 - 多段棋盘格选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程。
-- 交换单元格只交换 `CardState` 内容，不交换 `BoardCell` 物理属性。内圈/外圈的补牌、普通随从放置等能力跟随格子本身；处理 7x7 边缘格时不要用内容移动结果改写格子属性。
+- 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
@@ -402,7 +402,7 @@ rg --files scripts scenes data docs
 
 常见修改：
 
-- 当前物理棋盘是 7x7，内圈 5x5 是普通地面格；外圈是战场边缘，当前只为未来飞行单位预留。
+- 当前物理棋盘是 7x7，初始内圈 5x5 是普通地面格，初始外圈是战场边缘。奥术空间会交换 `BoardCell.is_land`，所以后续某个物理坐标是否可补牌/放置必须查当前 `BoardCell`，不要按几何位置重算。
 - 普通补牌必须走 `can_refill_ground_slot()`；普通随从放置、移动、格子型法术必须走 `can_place_ground_card_on_slot()`。
-- 交换格子内容（例如奥术空间）不等同于普通放置或补牌，不应调用 `can_place_ground_card_on_slot()` 限制可交换格。交换后仍由物理格子的 `BoardCell` 决定后续能否补牌/放置。
+- 交换单元格（例如奥术空间）不等同于普通放置或补牌，不应调用 `can_place_ground_card_on_slot()` 限制可交换格。交换后由被交换过去的 `BoardCell` 性质决定该位置后续能否补牌/放置。
 - 未来飞行单位应进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。

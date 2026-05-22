@@ -375,6 +375,8 @@ func initialize_board() -> void:
 		if not card.mouse_exited_card.is_connected(_on_card_unhovered):
 			card.mouse_exited_card.connect(_on_card_unhovered)
 
+	sync_card_board_slot_styles()
+
 	debug_panel = get_node_or_null(debug_panel_path)
 	refresh_action_available_hints()
 	refresh_debug_panel()
@@ -424,6 +426,31 @@ func can_refill_ground_slot(slot_index: int) -> bool:
 func can_place_ground_card_on_slot(slot_index: int) -> bool:
 	var cell := get_board_cell(slot_index)
 	return cell != null and cell.can_place_ground_card()
+
+
+func sync_board_cell_state_flags(slot_index: int) -> void:
+	var cell := get_board_cell(slot_index)
+	var state := get_board_state(slot_index)
+	if cell == null or state == null:
+		return
+
+	cell.ground_state = state
+	var can_interact := cell.can_hold_ground()
+	if state.is_interactable != can_interact:
+		state.is_interactable = can_interact
+		state.state_changed.emit(state)
+
+
+func sync_card_board_slot_styles() -> void:
+	var card_board := get_node_or_null(card_board_path)
+	if card_board == null or not card_board.has_method("set_land_slot_states"):
+		return
+
+	var land_states: Array[bool] = []
+	for cell in board_cells:
+		land_states.append(cell != null and cell.is_land)
+
+	card_board.set_land_slot_states(land_states)
 
 
 func create_initial_card_state(card_data: CardData, slot_index: int) -> CardState:
@@ -1078,6 +1105,26 @@ func execute_selected_action(target_state: CardState) -> void:
 
 func execute_selected_hand_card(target_state: CardState) -> void:
 	await hand_interaction_controller.execute_selected_hand_card(self, target_state)
+
+
+func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
+	# 交换两个单元格：地面/边缘等单元格性质跟随单元格移动，
+	# 卡牌内容也随单元格一起移动；UI 物理坐标和 Card 节点仍保持原位。
+	if first_state == null or second_state == null:
+		return
+
+	var first_cell := get_board_cell(first_state.slot_index)
+	var second_cell := get_board_cell(second_state.slot_index)
+	if first_cell != null and second_cell != null:
+		first_cell.swap_cell_properties_with(second_cell)
+		sync_board_cell_state_flags(first_state.slot_index)
+		sync_board_cell_state_flags(second_state.slot_index)
+		sync_card_board_slot_styles()
+
+	await swap_board_slot_contents(first_state, second_state)
+	sync_board_cell_state_flags(first_state.slot_index)
+	sync_board_cell_state_flags(second_state.slot_index)
+	sync_card_board_slot_styles()
 
 
 func swap_board_slot_contents(first_state: CardState, second_state: CardState) -> void:

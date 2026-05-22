@@ -157,7 +157,7 @@ func handle_slot_selected(slot_index: int) -> void:
 		update_hint()
 		return
 
-	await _game_manager.swap_board_slot_contents(first_state, second_state)
+	await _game_manager.swap_board_cells(first_state, second_state)
 	_completed_pairs += 1
 	set_all_targets_enabled(true)
 	update_hint()

@@ -11,6 +11,8 @@ const CardScene := preload("res://scenes/card.tscn")
 
 @onready var grid_container: GridContainer = $MarginContainer/GridContainer
 
+var land_slot_states: Array[bool] = []
+
 
 func _ready() -> void:
 	ensure_board_slots()
@@ -74,11 +76,26 @@ func apply_slot_styles() -> void:
 		if not slot is PanelContainer:
 			continue
 
-		var row := int(index / board_columns)
-		var column := index % board_columns
-		var is_edge := row == 0 or row == board_rows - 1 or column == 0 or column == board_columns - 1
-		var style := create_edge_slot_style() if is_edge else create_slot_style()
+		var is_land := is_land_style_slot(index)
+		var style := create_slot_style() if is_land else create_edge_slot_style()
 		slot.add_theme_stylebox_override("panel", style)
+
+
+func set_land_slot_states(new_land_slot_states: Array) -> void:
+	land_slot_states.clear()
+	for value in new_land_slot_states:
+		land_slot_states.append(bool(value))
+
+	apply_slot_styles()
+
+
+func is_land_style_slot(index: int) -> bool:
+	if index >= 0 and index < land_slot_states.size():
+		return land_slot_states[index]
+
+	var row := int(index / board_columns)
+	var column := index % board_columns
+	return not (row == 0 or row == board_rows - 1 or column == 0 or column == board_columns - 1)
 
 
 func resize_to_viewport() -> void:

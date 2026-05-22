@@ -1,9 +1,11 @@
 extends Resource
 class_name BoardCell
 
-# BoardCell represents one physical board coordinate.
-# Current gameplay uses the ground_state layer. The aerial_states layer is reserved
-# for future flying units that can share a coordinate with ground units.
+# BoardCell represents the board-cell properties currently occupying a board
+# coordinate. The UI slot coordinate stays fixed, but effects such as Arcane
+# Space may swap the cell properties between coordinates.
+# Current gameplay uses the ground_state layer. The aerial_states layer is
+# reserved for future flying units that can share a coordinate with ground units.
 
 const LAYER_GROUND := "ground"
 const LAYER_AERIAL := "aerial"
@@ -37,6 +39,15 @@ func can_place_ground_card() -> bool:
 	if ground_state.is_empty():
 		return true
 	return not ground_state.is_face_up
+
+
+func swap_cell_properties_with(other_cell: BoardCell) -> void:
+	if other_cell == null:
+		return
+
+	var self_is_land := is_land
+	is_land = other_cell.is_land
+	other_cell.is_land = self_is_land
 
 
 func has_aerial_units() -> bool:

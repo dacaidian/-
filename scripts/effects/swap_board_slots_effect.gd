@@ -3,8 +3,8 @@ class_name SwapBoardSlotsEffect
 
 const BoardPairSelectionControllerScript := preload("res://scripts/game/board_pair_selection_controller.gd")
 
-# Generic effect: repeatedly select two board slots and swap their contents.
-# BoardCell properties stay attached to their physical slot; only CardState content moves.
+# Generic effect: repeatedly select two board cells and swap them.
+# Cell properties such as land/edge behavior move together with the card content.
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
