@@ -42,6 +42,7 @@
 - `HandSpellModifierResolver`：手牌法术运行时修正规则协作者。它读取手牌中 `modify_hand_spell_effects` 这类升级牌效果，根据目标关系、被影响的 `card_ids` 等条件，在手牌法术结算前替换或追加运行时效果与动画；静态法术牌本身不被改写。
 - `StatusModifierResolver`：状态施加前的运行时修正规则协作者。它读取施加者手牌中的 `modify_applied_status` 升级效果，在 `CardStatus.from_effect_data()` 前改写状态数据；当前用于“毒性爆发”把己方施加的毒压缩到 1 回合爆发。
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
+- `BoardPairSelectionController`：效果内部的多段棋盘格选择协作者。它用于“选择第一个格子，再选择第二个格子”的重复流程，例如 `swap_board_slots`。这类流程发生在法术已经成功施放之后，不属于 `SpellTargetResolver` 的单次目标规则；因此它临时监听棋盘卡牌点击并在完成后清理目标提示和连接。
 - `VictoryResolver`：胜负检查协作者。当前检查玩家资源分是否达到胜利目标，后续其他胜利条件也应在这里扩展。
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
 - `InteractionManager`：只管理当前交互状态，例如当前焦点牌、当前选择的行动、合法目标格子。
@@ -54,7 +55,7 @@
 - `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
-- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
+- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
 - 死亡解析：外部仍调用 `GameManager.check_and_destroy_if_dead()` / `destroy_card()`，内部委托 `DeathResolver` 统一处理死亡或销毁；死亡不作为玩家动作显示在动作菜单中。
 
 原则：新增攻击、施法、技能时，优先新增一个 `CardAction` 子类，再注册到 `ActionRegistry`。行动自己决定 `can_start()`、`get_valid_targets()` 和 `execute()`，不要把行动规则写进 UI。需要目标的行动只有在存在合法目标时才会显示在动作菜单中。行动基类提供通用判断，例如 `is_controlled_face_up_minion()`，避免每个行动重复写当前玩家归属和随从检查。
@@ -181,7 +182,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -333,6 +334,8 @@
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
+- `target_rule: "none"` 不一定表示完全没有后续交互。若某个效果在法术成功施放后需要多段棋盘选择，应由对应效果启动专门的选择协作者。例如 `swap_board_slots` 使用 `BoardPairSelectionController`，在效果结算期间最多选择三组格子并逐组交换。它不把每次点击塞回 `InteractionManager` 的单次目标流程，避免和普通施法目标、手牌目标、AOE 预览互相耦合。
+- `swap_board_slots` 只交换两个固定格子的 `CardState` 内容，不交换 `BoardCell` 的物理属性。7x7 棋盘中，内圈地面格和外圈边缘格的“能否补牌/能否放置普通随从”等属性永远跟随格子本身；因此内圈格与外圈格交换后，被移动到外圈物理位置的旧内圈内容会失去普通补牌/放置能力，而移动到内圈物理位置的内容会获得该格子的普通地面能力。
 - 格子效果使用 `set_slot_trap` 这类效果写入 `BoardSlotEffectResolver`。触发时机由 `slot_effect_trigger` 描述，当前支持 `unit_entered`；进入检查由移动交换、手牌随从放置和翻开进入棋盘三个入口统一调用 `GameManager.resolve_slot_unit_entered()`。持续展示默认不显示，释放和触发分别走 `gu_lure` / `gu_trap_trigger` 等一次性动画。
 - 手牌法术的目标选择同样由 `InteractionManager.start_hand_card_target_selection()` 进入目标选择模式；如果手牌法术的 `target_rule` 是 area 规则，也会读取 `SpellTargetResolver.get_area_dimensions()` 并启用相同的蓝色范围预览。不要为手牌 AOE 法术另写一套交互状态。
 - 法术效果复用 `EffectRegistry`，治疗、伤害、护盾、翻牌次数等公共效果不和某个法术绑定。`SpellAction` 会通过 `EffectData.mark_selected_target()` 把选中的目标以 `selected` 注入运行时效果数据；效果自身负责执行规则变化，可能导致死亡的效果也负责调用死亡检查。
@@ -349,7 +352,7 @@
 - `_run_ai_turn()` 会为每个 AI 回合启动 `ai_turn_watchdog_seconds` 超时保护。如果异步动作、动画或效果没有正常返回，watchdog 会在仍处于同一个 AI 回合时清理 busy flag 并强制走正常 `end_turn()`，避免 AI 永久卡住。
 - AI 行动分为手牌评估、战场行动评估和翻牌评估。AI 不模拟鼠标点击，也不调用表现层菜单；它调用规则层入口，例如 `HandPlayResolver`、`CardAction.execute()` 和翻牌/补位协作者。
 - AI 回合使用“候选动作评分循环”：每一步收集当前所有可执行候选（手牌、战场行动、翻牌、开启施法回合），执行最高分候选并等待结算完成，然后重新评估。不要恢复成固定的“先手牌、再随从、再翻牌”流水线。
-- 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。
+- 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。需要多段棋盘点击的效果也必须有 AI 路径或显式跳过 AI，避免 AI 回合等待玩家输入。
 - AI 战场评估必须同时考虑有目标和无目标行动。`CardAction.requires_target() == false` 的动作不应依赖 `get_valid_targets()` 返回非空；这类动作应按空目标评分并直接执行。
 - AI 攻击评分按收益计算：击杀高威胁敌方随从、获得资源分、获得法力和破圣盾是正收益；攻击己方单位或无法摧毁且没有奖励的中立建筑是低收益或负收益。新增建筑奖励时应通过 `on_destroyed` 效果反映价值，而不是在 AI 中写死卡牌名。
 

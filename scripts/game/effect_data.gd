@@ -79,6 +79,7 @@ const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
 const EFFECT_ADD_CARD_TO_HAND := "add_card_to_hand"
 const EFFECT_CHOOSE_CARD_TO_HAND := "choose_card_to_hand"
 const EFFECT_SET_SLOT_TRAP := "set_slot_trap"
+const EFFECT_SWAP_BOARD_SLOTS := "swap_board_slots"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 

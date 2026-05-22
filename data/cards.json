@@ -743,6 +743,40 @@
 						"amount": 3
 					}
 				]
+			},
+			{
+				"id": "arcane_space_upgrade",
+				"name": "奥术空间",
+				"description": "奥术法师获得法术：奥术空间。可以交换两处单元格，最多交换三次。",
+				"url": "res://assets/img/达拉然议会/奥术空间.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_spell_actions",
+						"active_zone": "hand",
+						"card_ids": [
+							"arcane_mage"
+						],
+						"spell_actions": [
+							{
+								"id": "arcane_space",
+								"name": "奥术空间",
+								"animation": "arcane",
+								"target_rule": "none",
+								"effects": [
+									{
+										"id": "swap_board_slots",
+										"amount": 3,
+										"selection_title": "奥术空间：选择两个单元格交换"
+									}
+								]
+							}
+						]
+					}
+				]
 			}
 		],
 		"tokens": [
