@@ -3,6 +3,7 @@ class_name Card
 
 const CardStatusOverlayScript := preload("res://scripts/ui/card_status_overlay.gd")
 const VALUE_ICON_SIZE := Vector2(40, 40)
+const BOARD_FRONT_CROP_RECT := Rect2(0.25, 0.0, 0.5, 0.5)
 
 # 玩家点击卡牌时发出的信号。
 # Card 不直接修改游戏状态，而是把操作交给 GameManager。
@@ -69,6 +70,8 @@ var status_overlay: CardStatusOverlay
 var is_animating := false
 var flip_tween: Tween
 var is_content_temporarily_hidden := false
+var board_front_display_texture: Texture2D
+var board_front_display_source: Texture2D
 
 # 兼容其他组件读取 card.is_face_up，但它只是 CardState 的只读映射。
 var is_face_up: bool:
@@ -212,7 +215,7 @@ func update_card_texture() -> void:
 
 	# 正面朝上且正面图存在时显示正面，否则显示背面。
 	if is_face_up and get_front_texture() != null:
-		texture_rect.texture = get_front_texture()
+		texture_rect.texture = get_board_front_display_texture()
 	else:
 		texture_rect.texture = get_back_texture()
 
@@ -235,6 +238,35 @@ func get_front_texture() -> Texture2D:
 		return state.front_texture
 
 	return front_texture
+
+
+func get_board_front_display_texture() -> Texture2D:
+	var source_texture := get_front_texture()
+	if source_texture == null:
+		return null
+
+	if board_front_display_source == source_texture and board_front_display_texture != null:
+		return board_front_display_texture
+
+	board_front_display_source = source_texture
+	board_front_display_texture = create_cropped_texture(source_texture, BOARD_FRONT_CROP_RECT)
+	return board_front_display_texture
+
+
+func create_cropped_texture(source_texture: Texture2D, normalized_rect: Rect2) -> Texture2D:
+	var source_size := Vector2(source_texture.get_width(), source_texture.get_height())
+	if source_size.x <= 0.0 or source_size.y <= 0.0:
+		return source_texture
+
+	var region := Rect2(
+		Vector2(source_size.x * normalized_rect.position.x, source_size.y * normalized_rect.position.y),
+		Vector2(source_size.x * normalized_rect.size.x, source_size.y * normalized_rect.size.y)
+	)
+
+	var cropped_texture := AtlasTexture.new()
+	cropped_texture.atlas = source_texture
+	cropped_texture.region = region
+	return cropped_texture
 
 
 func get_back_texture() -> Texture2D:
