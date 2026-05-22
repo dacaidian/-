@@ -2,9 +2,7 @@ extends Control
 class_name Card
 
 const CardStatusOverlayScript := preload("res://scripts/ui/card_status_overlay.gd")
-const CardPortraitFrameScript := preload("res://scripts/ui/card_portrait_frame.gd")
 const VALUE_ICON_SIZE := Vector2(40, 40)
-const BOARD_FRONT_CROP_RECT := Rect2(0.2, 0.0, 0.6, 0.6)
 
 # 玩家点击卡牌时发出的信号。
 # Card 不直接修改游戏状态，而是把操作交给 GameManager。
@@ -65,15 +63,12 @@ var state: CardState
 var shield_texture: TextureRect
 var poison_texture: TextureRect
 var attack_texture: TextureRect
-var portrait_frame: Control
 var status_overlay: CardStatusOverlay
 
 # 当前是否正在播放翻牌动画，播放期间忽略新的点击。
 var is_animating := false
 var flip_tween: Tween
 var is_content_temporarily_hidden := false
-var board_front_display_texture: Texture2D
-var board_front_display_source: Texture2D
 
 # 兼容其他组件读取 card.is_face_up，但它只是 CardState 的只读映射。
 var is_face_up: bool:
@@ -89,7 +84,6 @@ func _ready() -> void:
 	apply_card_size(card_size)
 
 	# 根据初始状态刷新一次卡牌图片。
-	setup_portrait_frame()
 	setup_status_overlay()
 	setup_health_texture()
 	setup_shield_texture()
@@ -199,7 +193,6 @@ func refresh_flip_pivot() -> void:
 func update_card_texture() -> void:
 	if is_content_temporarily_hidden:
 		texture_rect.hide()
-		update_portrait_frame()
 		hide_value_textures()
 		update_status_overlay()
 		queue_redraw()
@@ -210,7 +203,6 @@ func update_card_texture() -> void:
 	# 空格子不显示卡背，保留 Control 区域供后续放置、召唤等逻辑使用。
 	if state != null and state.is_empty():
 		texture_rect.texture = null
-		update_portrait_frame()
 		health_texture.hide()
 		update_status_number_textures()
 		update_attack_texture()
@@ -220,14 +212,13 @@ func update_card_texture() -> void:
 
 	# 正面朝上且正面图存在时显示正面，否则显示背面。
 	if is_face_up and get_front_texture() != null:
-		texture_rect.texture = get_board_front_display_texture()
+		texture_rect.texture = get_front_texture()
 	else:
 		texture_rect.texture = get_back_texture()
 
 	update_health_texture()
 	update_status_number_textures()
 	update_attack_texture()
-	update_portrait_frame()
 	update_status_overlay()
 	update_interaction_visual()
 
@@ -244,35 +235,6 @@ func get_front_texture() -> Texture2D:
 		return state.front_texture
 
 	return front_texture
-
-
-func get_board_front_display_texture() -> Texture2D:
-	var source_texture := get_front_texture()
-	if source_texture == null:
-		return null
-
-	if board_front_display_source == source_texture and board_front_display_texture != null:
-		return board_front_display_texture
-
-	board_front_display_source = source_texture
-	board_front_display_texture = create_cropped_texture(source_texture, BOARD_FRONT_CROP_RECT)
-	return board_front_display_texture
-
-
-func create_cropped_texture(source_texture: Texture2D, normalized_rect: Rect2) -> Texture2D:
-	var source_size := Vector2(source_texture.get_width(), source_texture.get_height())
-	if source_size.x <= 0.0 or source_size.y <= 0.0:
-		return source_texture
-
-	var region := Rect2(
-		Vector2(source_size.x * normalized_rect.position.x, source_size.y * normalized_rect.position.y),
-		Vector2(source_size.x * normalized_rect.size.x, source_size.y * normalized_rect.size.y)
-	)
-
-	var cropped_texture := AtlasTexture.new()
-	cropped_texture.atlas = source_texture
-	cropped_texture.region = region
-	return cropped_texture
 
 
 func get_back_texture() -> Texture2D:
@@ -341,26 +303,6 @@ func setup_attack_texture() -> void:
 	attack_texture.offset_bottom = 0.0
 
 
-func setup_portrait_frame() -> void:
-	if portrait_frame != null:
-		return
-
-	portrait_frame = CardPortraitFrameScript.new() as Control
-	portrait_frame.name = "PortraitFrame"
-	portrait_frame.visible = false
-	portrait_frame.layout_mode = 1
-	portrait_frame.anchor_left = 0.0
-	portrait_frame.anchor_top = 0.0
-	portrait_frame.anchor_right = 1.0
-	portrait_frame.anchor_bottom = 1.0
-	portrait_frame.offset_left = 0.0
-	portrait_frame.offset_top = 0.0
-	portrait_frame.offset_right = 0.0
-	portrait_frame.offset_bottom = 0.0
-	add_child(portrait_frame)
-	move_child(portrait_frame, texture_rect.get_index() + 1)
-
-
 func setup_status_overlay() -> void:
 	if status_overlay != null:
 		return
@@ -381,8 +323,7 @@ func setup_status_overlay() -> void:
 	status_overlay.divine_shield_glow_color = divine_shield_glow_color
 	status_overlay.visible = false
 	add_child(status_overlay)
-	var frame_index := portrait_frame.get_index() if portrait_frame != null else texture_rect.get_index()
-	move_child(status_overlay, frame_index + 1)
+	move_child(status_overlay, texture_rect.get_index() + 1)
 
 
 func update_status_overlay() -> void:
@@ -390,24 +331,6 @@ func update_status_overlay() -> void:
 		return
 
 	status_overlay.set_state(null if is_content_temporarily_hidden else state)
-
-
-func update_portrait_frame() -> void:
-	if portrait_frame == null:
-		return
-
-	portrait_frame.visible = should_show_portrait_frame()
-	if portrait_frame.visible:
-		portrait_frame.queue_redraw()
-
-
-func should_show_portrait_frame() -> bool:
-	if is_content_temporarily_hidden:
-		return false
-	if state == null or state.is_empty() or not state.is_face_up:
-		return false
-
-	return get_front_texture() != null
 
 
 func update_status_number_textures() -> void:
