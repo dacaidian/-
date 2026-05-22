@@ -2,6 +2,7 @@ extends Control
 class_name Card
 
 const CardStatusOverlayScript := preload("res://scripts/ui/card_status_overlay.gd")
+const VALUE_ICON_SIZE := Vector2(40, 40)
 
 # 玩家点击卡牌时发出的信号。
 # Card 不直接修改游戏状态，而是把操作交给 GameManager。
@@ -248,27 +249,14 @@ func should_show_health() -> bool:
 
 
 func setup_health_texture() -> void:
-	if health_texture != null:
-		return
+	if health_texture == null:
+		health_texture = TextureRect.new()
+		health_texture.name = "HealthTexture"
+		health_texture.visible = false
+		add_child(health_texture)
 
-	health_texture = TextureRect.new()
-	health_texture.name = "HealthTexture"
-	health_texture.visible = false
-	health_texture.custom_minimum_size = Vector2(30, 30)
-	health_texture.size = health_texture.custom_minimum_size
-	health_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	health_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	health_texture.stretch_mode = TextureRect.STRETCH_SCALE
-	health_texture.layout_mode = 1
-	health_texture.anchor_left = 1.0
-	health_texture.anchor_top = 1.0
-	health_texture.anchor_right = 1.0
-	health_texture.anchor_bottom = 1.0
-	health_texture.offset_left = -health_texture.custom_minimum_size.x
-	health_texture.offset_top = -health_texture.custom_minimum_size.y
-	health_texture.offset_right = 0.0
-	health_texture.offset_bottom = 0.0
-	add_child(health_texture)
+	configure_value_texture(health_texture)
+	position_health_texture()
 
 
 func setup_shield_texture() -> void:
@@ -293,9 +281,9 @@ func setup_attack_texture() -> void:
 	attack_texture.anchor_left = 0.0
 	attack_texture.anchor_right = 0.0
 	attack_texture.offset_left = 0.0
-	attack_texture.offset_top = health_texture.offset_top
-	attack_texture.offset_right = health_texture.custom_minimum_size.x
-	attack_texture.offset_bottom = health_texture.offset_bottom
+	attack_texture.offset_top = -VALUE_ICON_SIZE.y
+	attack_texture.offset_right = VALUE_ICON_SIZE.x
+	attack_texture.offset_bottom = 0.0
 
 
 func setup_status_overlay() -> void:
@@ -396,8 +384,7 @@ func position_status_number_texture(value_texture: TextureRect, stack_index: int
 	if value_texture == null:
 		return
 
-	var icon_size := health_texture.custom_minimum_size
-	var vertical_offset := (icon_size.y + float(status_number_icon_gap)) * float(stack_index + 1)
+	var vertical_offset := (VALUE_ICON_SIZE.y + float(status_number_icon_gap)) * float(stack_index + 1)
 	value_texture.anchor_left = health_texture.anchor_left
 	value_texture.anchor_top = health_texture.anchor_top
 	value_texture.anchor_right = health_texture.anchor_right
@@ -449,8 +436,14 @@ func create_value_texture(node_name: String) -> TextureRect:
 	var value_texture := TextureRect.new()
 	value_texture.name = node_name
 	value_texture.visible = false
-	value_texture.custom_minimum_size = health_texture.custom_minimum_size
-	value_texture.size = health_texture.custom_minimum_size
+	configure_value_texture(value_texture)
+	add_child(value_texture)
+	return value_texture
+
+
+func configure_value_texture(value_texture: TextureRect) -> void:
+	value_texture.custom_minimum_size = VALUE_ICON_SIZE
+	value_texture.size = VALUE_ICON_SIZE
 	value_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	value_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	value_texture.stretch_mode = TextureRect.STRETCH_SCALE
@@ -459,8 +452,17 @@ func create_value_texture(node_name: String) -> TextureRect:
 	value_texture.anchor_top = 1.0
 	value_texture.anchor_right = 1.0
 	value_texture.anchor_bottom = 1.0
-	add_child(value_texture)
-	return value_texture
+
+
+func position_health_texture() -> void:
+	health_texture.anchor_left = 1.0
+	health_texture.anchor_top = 1.0
+	health_texture.anchor_right = 1.0
+	health_texture.anchor_bottom = 1.0
+	health_texture.offset_left = -VALUE_ICON_SIZE.x
+	health_texture.offset_top = -VALUE_ICON_SIZE.y
+	health_texture.offset_right = 0.0
+	health_texture.offset_bottom = 0.0
 
 
 func set_value_texture(value_texture: TextureRect, texture_path: String, label: String) -> bool:
