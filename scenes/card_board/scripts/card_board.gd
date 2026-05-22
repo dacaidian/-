@@ -130,6 +130,9 @@ func update_slot_sizes(board_size: Vector2) -> void:
 func resize_cards_in_slot(slot: Control, slot_size: Vector2) -> void:
 	for child in slot.get_children():
 		if child is Control:
-			child.custom_minimum_size = slot_size
-			child.size = slot_size
-			child.set("card_size", slot_size)
+			if child.has_method("apply_card_size"):
+				child.apply_card_size(slot_size)
+			else:
+				child.custom_minimum_size = slot_size
+				child.size = slot_size
+				child.set("card_size", slot_size)

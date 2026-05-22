@@ -81,9 +81,7 @@ func _ready() -> void:
 		back_texture = texture_rect.texture
 
 	# 设置卡牌控件尺寸，让编辑器预览和运行时保持一致。
-	custom_minimum_size = card_size
-	size = card_size
-	pivot_offset = card_size * 0.5
+	apply_card_size(card_size)
 
 	# 根据初始状态刷新一次卡牌图片。
 	setup_status_overlay()
@@ -144,6 +142,7 @@ func play_flip_animation(apply_state_change: Callable) -> void:
 	if is_animating:
 		return
 
+	refresh_flip_pivot()
 	is_animating = true
 
 	if flip_tween != null:
@@ -171,6 +170,24 @@ func play_flip_animation(apply_state_change: Callable) -> void:
 	scale = original_scale
 	flip_tween = null
 	is_animating = false
+
+
+func apply_card_size(new_card_size: Vector2) -> void:
+	if new_card_size.x <= 0.0 or new_card_size.y <= 0.0:
+		return
+
+	card_size = new_card_size
+	custom_minimum_size = new_card_size
+	size = new_card_size
+	refresh_flip_pivot()
+
+
+func refresh_flip_pivot() -> void:
+	var pivot_size := size
+	if pivot_size.x <= 0.0 or pivot_size.y <= 0.0:
+		pivot_size = card_size
+
+	pivot_offset = pivot_size * 0.5
 
 
 func update_card_texture() -> void:
