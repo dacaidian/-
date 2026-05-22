@@ -156,7 +156,7 @@
 
 - 普通攻击本体只负责校验、消耗行动资源、播放攻击动画和造成伤害。
 - `AttackAction.get_attack_profile()` 是攻击规则的汇总点，目前包含 `can_attack`、`is_melee`、`can_occupy`。动画表现和击杀后副作用都读取这份 profile，避免各自重复推断攻击类型。
-- 攻击后的单位自身触发效果统一走 `TriggerResolver` 的 `after_attack`，上下文包含 `EventContext.ATTACK_TARGET_STATE`。需要作用于被攻击敌方单位时，效果目标使用 `target: "attack_target_enemy_unit"`；只作用于被攻击敌方随从时使用 `target: "attack_target_enemy_minion"`。当前毒蝎的“蝎毒”和蛊毒蛇受升级牌“蛇毒”授予的攻击附毒都走 `after_attack + apply_status`，不要在 `AttackAction` 中写死卡牌名。
+- 攻击后的单位自身触发效果统一走 `TriggerResolver` 的 `after_attack`，上下文包含 `EventContext.ATTACK_TARGET_STATE`。需要作用于被攻击敌方单位时，效果目标使用 `target: "attack_target_enemy_unit"`；只作用于被攻击敌方随从时使用 `target: "attack_target_enemy_minion"`。当前毒蝎的“蝎毒”、蛊毒蛇受升级牌“蛇毒”授予的攻击附毒、生蛊王蛇的“王毒”都走 `after_attack + apply_status`，不要在 `AttackAction` 中写死卡牌名。
 - `can_attack_with_zero_attack` 关键词允许 0 攻单位发起攻击，用于毒蝎这类“攻击不造成战斗伤害，但攻击后触发效果”的单位。普通 0 攻单位仍不能攻击。
 - 攻击造成击杀后，统一进入 `GameManager.resolve_attack_kill()`，内部委托 `DeathResolver.resolve_attack_kill()` 处理攻击击杀后的副作用结算。攻击击杀仍保留占领选择；效果伤害走批量死亡结算，不触发占领。
 - 当前内置副作用是“可选占领”：攻击者可以移动到被击杀目标的格子。
@@ -180,7 +180,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -352,7 +352,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 

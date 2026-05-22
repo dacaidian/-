@@ -771,7 +771,8 @@
 				"card_id": "chen_duo",
 				"attached_cards": [
 					"encourage_gu",
-					"lure_gu"
+					"lure_gu",
+					"summon_gu_king_snake"
 				]
 			}
 		],
@@ -981,6 +982,24 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "summon_gu_king_snake",
+				"name": "生蛊王蛇",
+				"description": "英雄法术。将一张生蛊王蛇置入手牌。",
+				"url": "res://assets/img/苗疆族/生蛊王蛇.png",
+				"type": "spell",
+				"count": 2,
+				"level": 3,
+				"animation": "gu_summon",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "add_card_to_hand",
+						"card_id": "gu_king_snake"
+					}
+				]
 			}
 		],
 		"tokens": [
@@ -1013,6 +1032,37 @@
 						"duration_scope": "target_owner",
 						"payload": {
 							"poison_damage": 1
+						}
+					}
+				]
+			},
+			{
+				"id": "gu_king_snake",
+				"name": "生蛊王蛇",
+				"description": "衍生随从。王毒：攻击敌方随从后，对其施加3×3的毒性伤害。",
+				"url": "res://assets/img/苗疆族/蛊王蛇.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 4,
+				"health": 10,
+				"effects": [
+					{
+						"id": "apply_status",
+						"trigger": "after_attack",
+						"target": "attack_target_enemy_minion",
+						"status_id": "poison",
+						"status_name": "王毒",
+						"status_description": "回合结束时受到3点毒性伤害，持续3回合。",
+						"status_tags": [
+							"damage_over_time"
+						],
+						"duration_turns": 3,
+						"expires_on_trigger": "after_turn_end",
+						"duration_scope": "target_owner",
+						"payload": {
+							"poison_damage": 3
 						}
 					}
 				]

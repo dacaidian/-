@@ -38,6 +38,8 @@ var gu_lure_color := Color(0.10, 0.42, 0.07, 0.22)
 var gu_lure_glow_color := Color(0.50, 1.0, 0.22, 0.62)
 var gu_trap_trigger_color := Color(0.30, 0.04, 0.10, 0.32)
 var gu_trap_trigger_glow_color := Color(0.92, 0.18, 0.36, 0.76)
+var gu_summon_color := Color(0.08, 0.30, 0.06, 0.30)
+var gu_summon_glow_color := Color(0.66, 1.0, 0.20, 0.70)
 
 
 func setup(config: Dictionary) -> void:
@@ -365,6 +367,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_rect)
+		"gu_summon":
+			await play_gu_summon_at_rect(owner, effect_root, target_rect)
 		"gu_trap_trigger":
 			await play_gu_trap_trigger_at_rect(owner, effect_root, target_rect)
 		_:
@@ -1034,6 +1038,57 @@ func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2)
 	pulse.queue_free()
 
 
+func play_gu_summon_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var circle := create_rect_spell_effect(target_rect, "GuSummonCircleEffect", create_gu_summon_circle_style(), 1.22)
+	var coil := create_rect_spell_effect(target_rect, "GuSummonCoilEffect", create_gu_summon_coil_style(), 0.92)
+	var motes: Array[Panel] = create_gu_summon_motes_for_rect(target_rect)
+	effect_root.add_child(circle)
+	effect_root.add_child(coil)
+	for mote in motes:
+		effect_root.add_child(mote)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_SINE)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(circle, "scale", Vector2(1.22, 1.22), spell_animation_duration * 0.46)
+	rise_tween.tween_property(circle, "rotation", -0.34, spell_animation_duration * 0.46)
+	rise_tween.tween_property(circle, "modulate:a", 0.96, spell_animation_duration * 0.46)
+	rise_tween.tween_property(coil, "scale", Vector2(1.44, 1.44), spell_animation_duration * 0.46)
+	rise_tween.tween_property(coil, "rotation", 0.62, spell_animation_duration * 0.46)
+	rise_tween.tween_property(coil, "modulate:a", 0.82, spell_animation_duration * 0.46)
+	for mote in motes:
+		var offset: Vector2 = mote.get_meta("gu_summon_offset", Vector2.ZERO)
+		rise_tween.tween_property(mote, "position", mote.position + offset * 0.30, spell_animation_duration * 0.46)
+		rise_tween.tween_property(mote, "modulate:a", 0.92, spell_animation_duration * 0.46)
+	await rise_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(circle, "scale", Vector2(1.74, 1.74), spell_animation_duration * 0.72)
+	burst_tween.tween_property(circle, "rotation", -1.05, spell_animation_duration * 0.72)
+	burst_tween.tween_property(circle, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(coil, "scale", Vector2(2.10, 2.10), spell_animation_duration * 0.72)
+	burst_tween.tween_property(coil, "rotation", 1.64, spell_animation_duration * 0.72)
+	burst_tween.tween_property(coil, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for mote in motes:
+		var offset: Vector2 = mote.get_meta("gu_summon_offset", Vector2.ZERO)
+		burst_tween.tween_property(mote, "position", mote.position + offset, spell_animation_duration * 0.72)
+		burst_tween.tween_property(mote, "scale", Vector2(0.20, 0.20), spell_animation_duration * 0.72)
+		burst_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await burst_tween.finished
+
+	circle.queue_free()
+	coil.queue_free()
+	for mote in motes:
+		mote.queue_free()
+
+
 func play_gu_trap_trigger_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -1291,6 +1346,31 @@ func create_gu_trap_trigger_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "GuTrapTriggerEffect", create_gu_trap_trigger_effect_style(), 1.24)
 
 
+func create_gu_summon_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var motes: Array[Panel] = []
+	var center: Vector2 = target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.38
+	var mote_size := Vector2(9.0, 9.0)
+
+	for index in range(8):
+		var angle: float = TAU * float(index) / 8.0 + PI * 0.08
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.24
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * 0.92
+		var mote := Panel.new()
+		mote.name = "GuSummonMote_%d" % index
+		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mote.size = mote_size
+		mote.pivot_offset = mote_size * 0.5
+		mote.global_position = center + start_offset - mote.pivot_offset
+		mote.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		mote.z_index = 2330
+		mote.set_meta("gu_summon_offset", burst_offset)
+		mote.add_theme_stylebox_override("panel", create_gu_summon_mote_style())
+		motes.append(mote)
+
+	return motes
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -1461,6 +1541,39 @@ func create_gu_trap_spore_style() -> StyleBoxFlat:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.42, 1.0, 0.16, 0.50)
+	style.shadow_size = 12
+	return style
+
+
+func create_gu_summon_circle_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = gu_summon_color
+	style.border_color = gu_summon_glow_color
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = gu_summon_glow_color
+	style.shadow_size = 38
+	return style
+
+
+func create_gu_summon_coil_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.16, 0.04, 0.10)
+	style.border_color = Color(0.78, 1.0, 0.28, 0.62)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(42)
+	style.shadow_color = Color(0.36, 1.0, 0.18, 0.42)
+	style.shadow_size = 30
+	return style
+
+
+func create_gu_summon_mote_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.62, 1.0, 0.22, 0.92)
+	style.border_color = Color(0.12, 0.30, 0.04, 0.72)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.44, 1.0, 0.16, 0.56)
 	style.shadow_size = 12
 	return style
 
