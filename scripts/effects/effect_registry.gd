@@ -4,7 +4,10 @@ class_name EffectRegistry
 # EffectRegistry 把 JSON 里的 effect id 映射到真正的效果类。
 # 以后新增效果时，在这里注册即可，不需要修改 Card 或 CardState。
 
+const GrantedUnitTriggerResolverScript := preload("res://scripts/game/granted_unit_trigger_resolver.gd")
+
 var effects_by_id: Dictionary = {}
+var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
 
 func _init() -> void:
 	# 内置公共效果。以后扩展效果时继续在这里注册。
@@ -60,3 +63,5 @@ func execute_trigger(source_state: CardState, trigger: String, game_manager: Nod
 		if EffectData.get_trigger(effect_data) == trigger:
 			var runtime_effect_data := EffectData.duplicate_with_context(effect_data, context)
 			await execute_effect(source_state, runtime_effect_data, game_manager)
+
+	await granted_unit_trigger_resolver.execute_granted_triggers(source_state, trigger, game_manager, context)

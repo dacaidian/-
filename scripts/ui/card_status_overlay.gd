@@ -18,6 +18,9 @@ var encourage_gu_color := Color(0.42, 1.0, 0.36, 0.16)
 var encourage_gu_edge_color := Color(0.72, 1.0, 0.48, 0.72)
 var encourage_gu_venom_color := Color(0.20, 0.95, 0.38, 0.58)
 var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
+var snake_venom_color := Color(0.26, 0.10, 0.36, 0.22)
+var snake_venom_edge_color := Color(0.72, 0.38, 1.0, 0.70)
+var snake_venom_fang_color := Color(0.82, 1.0, 0.34, 0.80)
 
 
 func _ready() -> void:
@@ -36,7 +39,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom()
 
 
 func should_show_divine_shield() -> bool:
@@ -67,11 +70,20 @@ func should_show_encourage_gu() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ENCOURAGE_GU)
 
 
+func should_show_snake_venom() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_SNAKE_VENOM)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
+	if should_show_snake_venom():
+		draw_snake_venom_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -211,3 +223,42 @@ func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int) -> void:
 		var wing_dir := Vector2(-sin(angle), cos(angle))
 		draw_circle(pos, 2.4, encourage_gu_insect_color)
 		draw_line(pos - wing_dir * 3.0, pos + wing_dir * 3.0, Color(encourage_gu_insect_color.r, encourage_gu_insect_color.g, encourage_gu_insect_color.b, 0.42), 1.4)
+
+
+func draw_snake_venom_overlay() -> void:
+	var venom_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := venom_rect.get_center()
+	var edge_width := maxf(size.x * 0.026, 2.0)
+	var status := state.get_status(CardStatus.STATUS_SNAKE_VENOM) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 4)
+
+	draw_rect(venom_rect, snake_venom_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 5.0
+		var alpha := snake_venom_edge_color.a * (1.0 - float(index) * 0.15)
+		draw_rect(venom_rect.grow(grow), Color(snake_venom_edge_color.r, snake_venom_edge_color.g, snake_venom_edge_color.b, alpha), false, edge_width, true)
+
+	var fang_height := venom_rect.size.y * 0.28
+	var fang_width := venom_rect.size.x * 0.10
+	var left_fang_x := center.x - venom_rect.size.x * 0.15
+	var right_fang_x := center.x + venom_rect.size.x * 0.15
+	var fang_top := venom_rect.position.y + venom_rect.size.y * 0.22
+	draw_fang(Vector2(left_fang_x, fang_top), fang_width, fang_height)
+	draw_fang(Vector2(right_fang_x, fang_top), fang_width, fang_height)
+
+	for index in range(5):
+		var t := float(index) / 4.0
+		var drop_x := venom_rect.position.x + venom_rect.size.x * (0.28 + t * 0.44)
+		var drop_y := venom_rect.position.y + venom_rect.size.y * (0.60 + sin(t * TAU) * 0.06)
+		draw_circle(Vector2(drop_x, drop_y), 2.2 + float(index % 2), Color(snake_venom_fang_color.r, snake_venom_fang_color.g, snake_venom_fang_color.b, 0.56))
+
+
+func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:
+	var points := PackedVector2Array([
+		top_center + Vector2(-fang_width, 0.0),
+		top_center + Vector2(fang_width, 0.0),
+		top_center + Vector2(0.0, fang_height)
+	])
+	draw_colored_polygon(points, Color(snake_venom_fang_color.r, snake_venom_fang_color.g, snake_venom_fang_color.b, 0.34))
+	draw_polyline(PackedVector2Array([points[0], points[2], points[1]]), snake_venom_fang_color, 2.0, true)

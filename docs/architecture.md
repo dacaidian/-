@@ -50,6 +50,7 @@
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。
 - `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions` 和 `grant_last_spell_action`，并根据 `card_ids` 判断哪些随从获得这些法术。`grant_last_spell_action` 通过 `source_card_ids` 限定可学习的施法来源，当前用于“好好学习”。
+- `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
 - `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
@@ -155,7 +156,7 @@
 
 - 普通攻击本体只负责校验、消耗行动资源、播放攻击动画和造成伤害。
 - `AttackAction.get_attack_profile()` 是攻击规则的汇总点，目前包含 `can_attack`、`is_melee`、`can_occupy`。动画表现和击杀后副作用都读取这份 profile，避免各自重复推断攻击类型。
-- 攻击后的单位自身触发效果统一走 `TriggerResolver` 的 `after_attack`，上下文包含 `EventContext.ATTACK_TARGET_STATE`。需要作用于被攻击敌方单位时，效果目标使用 `target: "attack_target_enemy_unit"`。当前毒蝎的“蝎毒”就是 `after_attack + apply_status(poison)`，不要在 `AttackAction` 中写死卡牌名。
+- 攻击后的单位自身触发效果统一走 `TriggerResolver` 的 `after_attack`，上下文包含 `EventContext.ATTACK_TARGET_STATE`。需要作用于被攻击敌方单位时，效果目标使用 `target: "attack_target_enemy_unit"`；只作用于被攻击敌方随从时使用 `target: "attack_target_enemy_minion"`。当前毒蝎的“蝎毒”和蛊毒蛇受升级牌“蛇毒”授予的攻击附毒都走 `after_attack + apply_status`，不要在 `AttackAction` 中写死卡牌名。
 - `can_attack_with_zero_attack` 关键词允许 0 攻单位发起攻击，用于毒蝎这类“攻击不造成战斗伤害，但攻击后触发效果”的单位。普通 0 攻单位仍不能攻击。
 - 攻击造成击杀后，统一进入 `GameManager.resolve_attack_kill()`，内部委托 `DeathResolver.resolve_attack_kill()` 处理攻击击杀后的副作用结算。攻击击杀仍保留占领选择；效果伤害走批量死亡结算，不触发占领。
 - 当前内置副作用是“可选占领”：攻击者可以移动到被击杀目标的格子。
@@ -179,7 +180,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、光明使者之锤、安东尼达斯的圣杖、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -256,7 +257,7 @@
 - 圣盾、辉煌光环、励蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
-- 同一来源、同一 `status_id` 的状态会合并层数；永久状态合并后保持永久，临时状态合并后保留更长剩余回合。未来如果需要“同名不同来源互斥”“刷新不叠层”等规则，应在 `CardStatus.is_same_stack_key()` 或状态定义中扩展。
+- 同一来源、同一 `status_id` 的状态会按 `stack_policy` 合并：默认 `stack` 会叠层，`refresh` 会刷新持续信息但不额外叠层，`replace` 会用新状态替换旧状态，`ignore` 会忽略后续同源同名状态。蛇毒减攻使用 `refresh`，避免重复攻击把同一个“攻击-2”状态叠成无限减攻；毒状态仍走专门的强度比较逻辑。
 - `StatusResolver` 会在 `GameManager.resolve_turn_timing_triggers()` 中分两段工作：先通过 `resolve_pre_trigger_status_effects()` 结算需要早于普通时点触发的状态规则（当前是毒伤害），然后在普通时点触发结算之后推进状态生命周期。这样毒伤害早于回合结束治疗，而到期前的状态仍可参与该时点触发，随后再过期。
 
 ## 行动资源约定
@@ -408,4 +409,5 @@
 - 新增手牌法术：在卡牌自身配置 `type: "spell"`、`target_rule`、`animation` 和 `effects`，由 `HandPlayResolver` 解释；不要把手牌法术写成随从的 `spell_actions`。如果它属于某个英雄，把卡牌 id 放入该英雄的 `heroes[].attached_cards`，不要在规则层写死卡牌名。
 - 新增手牌法术修正升级牌：使用 `modify_hand_spell_effects`，通过 `card_ids` 指定影响的手牌法术，通过 `target_relation` 指定目标关系（`friendly` / `enemy` / `any`），再配置 `replace_effects` 或 `append_effects`。这类规则应走 `HandSpellModifierResolver`，保持法术静态数据、升级牌数据和手牌执行流程分离。
 - 新增动态授予法术：优先扩展 `GrantedSpellResolver` 和 `PlayerState` 中的施法历史，不要在 `ActionRegistry` 或 UI 层根据卡牌名临时拼动作。像“学习最近一次法术”这种规则使用 `grant_last_spell_action`、`card_ids` 和 `source_card_ids` 配置。
+- 新增动态授予单位触发效果：使用 `grant_unit_trigger_effects`、`card_ids`、`granted_trigger` 和 `granted_effects`，由 `GrantedUnitTriggerResolver` 在 `TriggerResolver` / `EffectRegistry.execute_trigger()` 之后统一结算；不要把升级牌授予的攻击附带效果写进 `AttackAction` 或随从静态 `effects`。
 - 新增法术强度：装备或其他区域效果使用 `modify_spell_power`。法术施放入口通过 `EffectData.mark_spell_power_enabled()` 给运行时效果打标，`CardEffect.get_spell_scaled_amount()` 统一读取玩家装备法强；回合触发、亡语、建筑治疗等非施法效果不会自动吃法强。默认加成 `damage`、`heal`、`shield`、`increase_max_health` 这类直接数值法术效果，如需某个效果不吃法强，可配置 `spell_power_scaling: false`。

@@ -23,6 +23,7 @@ const KEY_STATUS_NAME := "status_name"
 const KEY_STATUS_DESCRIPTION := "status_description"
 const KEY_STATUS_TAGS := "status_tags"
 const KEY_STATUS_STACKS := "stacks"
+const KEY_STATUS_STACK_POLICY := "stack_policy"
 const KEY_STATUS_PERMANENT := "permanent"
 const KEY_STATUS_DURATION_TURNS := "duration_turns"
 const KEY_STATUS_DURATION_SCOPE := "duration_scope"
@@ -55,6 +56,8 @@ const KEY_SOURCE_CARD_ID := "source_card_id"
 const KEY_SOURCE_DISPLAY_NAME := "source_display_name"
 const KEY_SET_DURATION_TURNS := "set_duration_turns"
 const KEY_PRESERVE_TOTAL_DAMAGE := "preserve_total_damage"
+const KEY_GRANTED_TRIGGER := "granted_trigger"
+const KEY_GRANTED_EFFECTS := "granted_effects"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -69,6 +72,7 @@ const EFFECT_MODIFY_UNIT_ATTACK := "modify_unit_attack"
 const EFFECT_MODIFY_SPELL_POWER := "modify_spell_power"
 const EFFECT_MODIFY_HAND_SPELL_EFFECTS := "modify_hand_spell_effects"
 const EFFECT_MODIFY_APPLIED_STATUS := "modify_applied_status"
+const EFFECT_GRANT_UNIT_TRIGGER_EFFECTS := "grant_unit_trigger_effects"
 const EFFECT_RESURRECT := "resurrect"
 const EFFECT_GAIN_ATTACK := "gain_attack"
 const EFFECT_PLAY_SPELL_ACTION := "play_spell_action"
@@ -94,6 +98,7 @@ const TARGET_SELECTED_AREA_ENEMY_MINIONS := "selected_area_enemy_minions"
 const TARGET_SELECTED_AREA_ALL_MINIONS := "selected_area_all_minions"
 const TARGET_OWNER_CARD_BY_ID := "owner_card_by_id"
 const TARGET_ATTACK_TARGET_ENEMY_UNIT := "attack_target_enemy_unit"
+const TARGET_ATTACK_TARGET_ENEMY_MINION := "attack_target_enemy_minion"
 
 const TRIGGER_PLAYER_ANY := "any"
 const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
@@ -115,6 +120,10 @@ static func get_id(effect_data: Dictionary) -> String:
 
 static func get_trigger(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TRIGGER, ""))
+
+
+static func get_granted_trigger(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_GRANTED_TRIGGER, ""))
 
 
 static func get_active_zone(effect_data: Dictionary) -> String:
@@ -240,6 +249,17 @@ static func get_append_effects(effect_data: Dictionary) -> Array[Dictionary]:
 	return append_effects
 
 
+static func get_granted_effects(effect_data: Dictionary) -> Array[Dictionary]:
+	var granted_effects: Array[Dictionary] = []
+	var raw_granted_effects: Variant = effect_data.get(KEY_GRANTED_EFFECTS, [])
+	if raw_granted_effects is Array:
+		for granted_effect in raw_granted_effects:
+			if granted_effect is Dictionary:
+				granted_effects.append(granted_effect)
+
+	return granted_effects
+
+
 static func get_target_relation(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TARGET_RELATION, TARGET_RELATION_ANY))
 
@@ -325,6 +345,10 @@ static func get_status_tags(effect_data: Dictionary) -> Array[String]:
 
 static func get_status_stacks(effect_data: Dictionary) -> int:
 	return int(effect_data.get(KEY_STATUS_STACKS, 1))
+
+
+static func get_status_stack_policy(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_STATUS_STACK_POLICY, CardStatus.STACK_POLICY_STACK))
 
 
 static func is_permanent_status(effect_data: Dictionary) -> bool:

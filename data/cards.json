@@ -914,6 +914,73 @@
 						"preserve_total_damage": true
 					}
 				]
+			},
+			{
+				"id": "gu_poison_snake",
+				"name": "蛊毒蛇",
+				"description": "苗疆族随从。",
+				"url": "res://assets/img/苗疆族/蛊毒蛇.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [],
+				"attack": 4,
+				"health": 6,
+				"effects": []
+			},
+			{
+				"id": "snake_venom_upgrade",
+				"name": "蛇毒",
+				"description": "升级牌。蛊毒蛇攻击后对敌方随从施加2×3的毒性伤害，并使敌方随从获得蛇毒状态，攻击-2。",
+				"url": "res://assets/img/苗疆族/蛇毒.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_unit_trigger_effects",
+						"trigger": "while_in_hand",
+						"card_ids": [
+							"gu_poison_snake"
+						],
+						"granted_trigger": "after_attack",
+						"granted_effects": [
+							{
+								"id": "apply_status",
+								"target": "attack_target_enemy_minion",
+								"status_id": "poison",
+								"status_name": "蛇毒",
+								"status_description": "回合结束时受到2点毒性伤害，持续3回合。",
+								"status_tags": [
+									"damage_over_time"
+								],
+								"duration_turns": 3,
+								"expires_on_trigger": "after_turn_end",
+								"duration_scope": "target_owner",
+								"payload": {
+									"poison_damage": 2
+								}
+							},
+							{
+								"id": "apply_status",
+								"target": "attack_target_enemy_minion",
+								"status_id": "snake_venom",
+								"status_name": "蛇毒",
+								"status_description": "攻击-2。",
+								"status_tags": [
+									"attack_modifier"
+								],
+								"permanent": true,
+								"apply_animation": "gu_infusion",
+								"payload": {
+									"attack_bonus": -2
+								},
+								"stack_policy": "refresh"
+							}
+						]
+					}
+				]
 			}
 		],
 		"tokens": [

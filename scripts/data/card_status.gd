@@ -13,6 +13,11 @@ const STATUS_DIVINE_SHIELD := "divine_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
 const STATUS_ENCOURAGE_GU := "encourage_gu"
 const STATUS_POISON := "poison"
+const STATUS_SNAKE_VENOM := "snake_venom"
+const STACK_POLICY_STACK := "stack"
+const STACK_POLICY_REFRESH := "refresh"
+const STACK_POLICY_REPLACE := "replace"
+const STACK_POLICY_IGNORE := "ignore"
 const TAG_DAMAGE_PREVENTION := "damage_prevention"
 const TAG_AURA := "aura"
 const TAG_ACTION_PREVENTION := "action_prevention"
@@ -25,6 +30,7 @@ var display_name := ""
 var description := ""
 var tags: Array[String] = []
 var stacks := 1
+var stack_policy := STACK_POLICY_STACK
 var is_permanent := true
 var remaining_turns := -1
 var duration_scope := DURATION_SCOPE_TARGET_OWNER
@@ -43,6 +49,7 @@ static func from_effect_data(effect_data: Dictionary, target_state: CardState, s
 	status.description = EffectData.get_status_description(effect_data)
 	status.tags = EffectData.get_status_tags(effect_data)
 	status.stacks = maxi(EffectData.get_status_stacks(effect_data), 1)
+	status.stack_policy = EffectData.get_status_stack_policy(effect_data)
 	status.is_permanent = EffectData.is_permanent_status(effect_data)
 	status.remaining_turns = EffectData.get_status_duration_turns(effect_data)
 	status.duration_scope = EffectData.get_status_duration_scope(effect_data)
@@ -106,14 +113,35 @@ func merge_from(other: CardStatus) -> void:
 	if other == null:
 		return
 
-	stacks += other.stacks
+	match other.stack_policy:
+		STACK_POLICY_IGNORE:
+			return
+		STACK_POLICY_REPLACE:
+			stacks = other.stacks
+			is_permanent = other.is_permanent
+			remaining_turns = other.remaining_turns
+			payload = other.payload.duplicate(true)
+		STACK_POLICY_REFRESH:
+			stacks = maxi(stacks, other.stacks)
+			if is_permanent or other.is_permanent:
+				is_permanent = true
+				remaining_turns = -1
+			else:
+				remaining_turns = maxi(remaining_turns, other.remaining_turns)
+			payload.merge(other.payload, true)
+		_:
+			stacks += other.stacks
+			if is_permanent or other.is_permanent:
+				is_permanent = true
+				remaining_turns = -1
+			else:
+				remaining_turns = maxi(remaining_turns, other.remaining_turns)
+			payload.merge(other.payload, true)
+
+	stack_policy = other.stack_policy
 	if is_permanent or other.is_permanent:
 		is_permanent = true
 		remaining_turns = -1
-	else:
-		remaining_turns = maxi(remaining_turns, other.remaining_turns)
-
-	payload.merge(other.payload, true)
 
 
 func get_poison_damage() -> int:
@@ -148,6 +176,7 @@ func to_snapshot() -> Dictionary:
 		"description": description,
 		"tags": tags.duplicate(),
 		"stacks": stacks,
+		"stack_policy": stack_policy,
 		"is_permanent": is_permanent,
 		"remaining_turns": remaining_turns,
 		"duration_scope": duration_scope,
@@ -166,6 +195,7 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	description = str(snapshot.get("description", ""))
 	tags = normalize_string_array(snapshot.get("tags", []))
 	stacks = maxi(int(snapshot.get("stacks", 1)), 1)
+	stack_policy = str(snapshot.get("stack_policy", STACK_POLICY_STACK))
 	is_permanent = bool(snapshot.get("is_permanent", true))
 	remaining_turns = int(snapshot.get("remaining_turns", -1))
 	duration_scope = str(snapshot.get("duration_scope", DURATION_SCOPE_TARGET_OWNER))
