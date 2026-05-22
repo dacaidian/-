@@ -199,15 +199,18 @@ func get_valid_placement_targets(game_manager: GameManager) -> Array[CardState]:
 		return targets
 
 	for state in game_manager.board_states:
-		if can_place_minion_on_target(state):
+		if can_place_minion_on_target(state, game_manager):
 			targets.append(state)
 
 	return targets
 
 
-func can_place_minion_on_target(target_state: CardState) -> bool:
+func can_place_minion_on_target(target_state: CardState, game_manager: GameManager = null) -> bool:
 	if target_state == null:
 		return false
+	if game_manager != null and game_manager.has_method("can_place_ground_card_on_slot"):
+		if not game_manager.can_place_ground_card_on_slot(target_state.slot_index):
+			return false
 
 	if target_state.is_empty():
 		return true
@@ -231,7 +234,7 @@ func execute_hand_minion_placement(
 	if not can_play_hand_card_at(player, hand_index, game_manager):
 		return
 
-	if not can_place_minion_on_target(target_state):
+	if not can_place_minion_on_target(target_state, game_manager):
 		return
 
 	if not player.remove_from_hand_at(hand_index, card_data):

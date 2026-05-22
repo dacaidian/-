@@ -125,6 +125,8 @@ static func get_empty_or_hidden_slots(gm: GameManager) -> Array:
 	for state in gm.board_states:
 		if state == null:
 			continue
+		if gm.has_method("can_place_ground_card_on_slot") and not gm.can_place_ground_card_on_slot(state.slot_index):
+			continue
 		if state.is_empty() or not state.is_face_up:
 			slots.append(state.slot_index)
 	return slots

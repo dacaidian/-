@@ -61,8 +61,9 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 @export var ai_turn_watchdog_seconds := 18.0
 @export var victory_resource_score := 80
 
-# 棋盘列数。当前 5*5 棋盘用于判断上下左右相邻。
-@export var board_columns := 5
+# 棋盘尺寸。当前物理棋盘为 7x7，外圈是战场边缘；中间 5x5 是普通地面牌池区域。
+@export var board_columns := 7
+@export var board_rows := 7
 
 # 卡牌移动动画时长。移动规则仍然由 CardState 交换决定，这里只负责表现。
 @export var move_animation_duration := 0.24
@@ -87,7 +88,10 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 # 攻击击杀后的占领选择面板。
 @export var occupy_choice_panel_size := Vector2(320, 132)
 
-# 棋盘上的 25 个状态，索引和 CardSlot 顺序一致。
+# 物理棋盘单元格。当前只启用 ground_state；aerial_states 预留给未来飞行单位。
+var board_cells: Array[BoardCell] = []
+
+# 棋盘地面层状态，索引和 BoardCell / CardSlot 顺序一致；保留给现有规则兼容。
 var board_states: Array[CardState] = []
 
 # 与 board_states 一一对应的卡牌节点。
@@ -338,8 +342,10 @@ func get_player_ai_difficulty(player_index: int) -> String:
 
 
 func initialize_board() -> void:
+	prepare_card_board_view()
 	board_cards = find_board_cards()
 	board_states.clear()
+	board_cells.clear()
 
 	if card_pool == null:
 		push_error("GameManager 初始化失败：牌池未创建")
@@ -349,11 +355,14 @@ func initialize_board() -> void:
 		var card: Card = board_cards[index]
 		var card_data: CardData = null
 
-		if not card_pool.is_empty():
+		if is_land_slot(index) and not card_pool.is_empty():
 			card_data = card_pool.draw_random()
 
 		var state := create_initial_card_state(card_data, index)
+		state.is_interactable = is_land_slot(index)
+		var cell := create_board_cell(index, state)
 
+		board_cells.append(cell)
 		board_states.append(state)
 		state.state_changed.connect(_on_card_state_changed)
 		card.bind_state(state)
@@ -369,6 +378,52 @@ func initialize_board() -> void:
 	debug_panel = get_node_or_null(debug_panel_path)
 	refresh_action_available_hints()
 	refresh_debug_panel()
+
+
+func prepare_card_board_view() -> void:
+	var card_board := get_node_or_null(card_board_path)
+	if card_board == null:
+		return
+
+	card_board.set("board_columns", board_columns)
+	card_board.set("board_rows", board_rows)
+	if card_board.has_method("ensure_board_slots"):
+		card_board.ensure_board_slots()
+	if card_board.has_method("resize_to_viewport"):
+		card_board.resize_to_viewport()
+
+
+func create_board_cell(slot_index: int, ground_state: CardState) -> BoardCell:
+	var cell := BoardCell.new()
+	cell.setup(slot_index, board_columns, is_land_slot(slot_index))
+	cell.ground_state = ground_state
+	return cell
+
+
+func is_land_slot(slot_index: int) -> bool:
+	if slot_index < 0 or board_columns <= 0 or board_rows <= 0:
+		return false
+
+	var row := int(slot_index / board_columns)
+	var column := slot_index % board_columns
+	return row > 0 and row < board_rows - 1 and column > 0 and column < board_columns - 1
+
+
+func get_board_cell(slot_index: int) -> BoardCell:
+	if slot_index < 0 or slot_index >= board_cells.size():
+		return null
+
+	return board_cells[slot_index]
+
+
+func can_refill_ground_slot(slot_index: int) -> bool:
+	var cell := get_board_cell(slot_index)
+	return cell != null and cell.can_refill_ground()
+
+
+func can_place_ground_card_on_slot(slot_index: int) -> bool:
+	var cell := get_board_cell(slot_index)
+	return cell != null and cell.can_place_ground_card()
 
 
 func create_initial_card_state(card_data: CardData, slot_index: int) -> CardState:

@@ -35,6 +35,9 @@ static func get_valid_targets(target_rule: String, game_manager: GameManager) ->
 		return targets
 
 	for state in game_manager.board_states:
+		if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS and game_manager.has_method("can_place_ground_card_on_slot"):
+			if not game_manager.can_place_ground_card_on_slot(state.slot_index):
+				continue
 		if can_target(target_rule, state):
 			targets.append(state)
 

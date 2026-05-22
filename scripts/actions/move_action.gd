@@ -22,7 +22,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 		return targets
 
 	for state in game_manager.board_states:
-		if can_target(user, state, game_manager.board_columns):
+		if can_target(user, state, game_manager):
 			targets.append(state)
 
 	return targets
@@ -32,7 +32,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if user == null or target == null or game_manager == null:
 		return
 
-	if not can_target(user, target, game_manager.board_columns):
+	if not can_target(user, target, game_manager):
 		return
 
 	if not can_start(user, game_manager):
@@ -47,14 +47,18 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	await game_manager.swap_board_slot_contents(user, target)
 
 
-func can_target(user: CardState, target: CardState, board_columns: int) -> bool:
-	if user == null or target == null or board_columns <= 0:
+func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
+	if user == null or target == null or game_manager == null or game_manager.board_columns <= 0:
 		return false
 
 	if user == target:
 		return false
 
-	if not is_neighbor(user.slot_index, target.slot_index, board_columns):
+	if game_manager.has_method("can_place_ground_card_on_slot"):
+		if not game_manager.can_place_ground_card_on_slot(target.slot_index):
+			return false
+
+	if not is_neighbor(user.slot_index, target.slot_index, game_manager.board_columns):
 		return false
 
 	return target.is_empty() or not target.is_face_up

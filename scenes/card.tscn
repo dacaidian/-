@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://bxlr6ct7knhp6"]
 
-[ext_resource type="Script" path="res://scripts/ui/card.gd" id="1_6u4wf"]
+[ext_resource type="Script" path="res://scenes/card/scripts/card.gd" id="1_6u4wf"]
 [ext_resource type="Texture2D" uid="uid://cccipnd37wn1l" path="res://assets/img/1.png" id="1_d81rb"]
 [ext_resource type="Texture2D" uid="uid://doaftw1thwn4w" path="res://assets/img/乌瑟尔.png" id="2_ktuci"]
-[ext_resource type="Script" path="res://scripts/interactions/card_hover_preview.gd" id="4_g2u7p"]
+[ext_resource type="Script" path="res://scenes/card/scripts/card_hover_preview.gd" id="4_g2u7p"]
 
 [node name="Card" type="Control" unique_id=637541742]
 custom_minimum_size = Vector2(180, 252)

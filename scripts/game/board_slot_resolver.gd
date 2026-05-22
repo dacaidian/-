@@ -12,6 +12,9 @@ func draw_card_to_slot(game_manager: GameManager, slot_index: int) -> bool:
 	if game_manager.card_pool == null or game_manager.card_pool.is_empty():
 		return false
 
+	if game_manager.has_method("can_refill_ground_slot") and not game_manager.can_refill_ground_slot(slot_index):
+		return false
+
 	var state := game_manager.get_board_state(slot_index)
 	if state == null or not state.is_empty():
 		return false
@@ -29,6 +32,9 @@ func refill_board_slot_from_pool(game_manager: GameManager, slot_index: int) -> 
 		return false
 
 	if game_manager.card_pool == null or game_manager.card_pool.is_empty():
+		return false
+
+	if game_manager.has_method("can_refill_ground_slot") and not game_manager.can_refill_ground_slot(slot_index):
 		return false
 
 	var state := game_manager.get_board_state(slot_index)
@@ -65,6 +71,8 @@ func refill_empty_board_slots(game_manager: GameManager, max_count: int = -1) ->
 			break
 
 		if not state.is_empty():
+			continue
+		if game_manager.has_method("can_refill_ground_slot") and not game_manager.can_refill_ground_slot(state.slot_index):
 			continue
 
 		if draw_card_to_slot(game_manager, state.slot_index):

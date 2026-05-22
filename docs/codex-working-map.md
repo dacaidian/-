@@ -385,3 +385,20 @@ rg --files scripts scenes data docs
 
 - PowerShell 读取中文文件时优先使用 UTF-8 语义，避免乱码影响补丁判断。
 - 需要修改中文密集文件时，尽量用稳定结构锚点，而不是依赖终端里显示出的乱码文本。
+
+### 棋盘单元格
+
+优先读：
+
+- `scripts/data/board_cell.gd`
+- `scripts/game/game_manager.gd` 中 `board_cells`、`is_land_slot()`、`can_refill_ground_slot()`、`can_place_ground_card_on_slot()`。
+- `scenes/card_board/scripts/card_board.gd`
+- `scripts/game/board_slot_resolver.gd`
+- `scripts/game/hand_play_resolver.gd`
+- `scripts/game/spell_target_resolver.gd`
+
+常见修改：
+
+- 当前物理棋盘是 7x7，内圈 5x5 是普通地面格；外圈是战场边缘，当前只为未来飞行单位预留。
+- 普通补牌必须走 `can_refill_ground_slot()`；普通随从放置、移动、格子型法术必须走 `can_place_ground_card_on_slot()`。
+- 未来飞行单位应进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。

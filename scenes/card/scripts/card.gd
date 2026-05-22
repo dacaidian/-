@@ -55,7 +55,7 @@ signal face_changed(is_face_up: bool)
 
 # 等当前节点和子节点都准备好之后，再获取子节点引用。
 @onready var texture_rect: TextureRect = $TextureRect
-@onready var health_texture: TextureRect = $HealthTexture
+@onready var health_texture: TextureRect = get_node_or_null("HealthTexture") as TextureRect
 
 # 这张卡牌绑定的运行时状态。翻开状态等数据只从这里读取。
 var state: CardState
@@ -86,6 +86,7 @@ func _ready() -> void:
 
 	# 根据初始状态刷新一次卡牌图片。
 	setup_status_overlay()
+	setup_health_texture()
 	setup_shield_texture()
 	setup_poison_texture()
 	setup_attack_texture()
@@ -227,6 +228,9 @@ func get_back_texture() -> Texture2D:
 
 
 func update_health_texture() -> void:
+	if health_texture == null:
+		return
+
 	# 只有翻开的棋盘单位才展示右下角血量。
 	if not should_show_health():
 		health_texture.hide()
@@ -241,6 +245,30 @@ func should_show_health() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit()
+
+
+func setup_health_texture() -> void:
+	if health_texture != null:
+		return
+
+	health_texture = TextureRect.new()
+	health_texture.name = "HealthTexture"
+	health_texture.visible = false
+	health_texture.custom_minimum_size = Vector2(30, 30)
+	health_texture.size = health_texture.custom_minimum_size
+	health_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	health_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	health_texture.stretch_mode = TextureRect.STRETCH_SCALE
+	health_texture.layout_mode = 1
+	health_texture.anchor_left = 1.0
+	health_texture.anchor_top = 1.0
+	health_texture.anchor_right = 1.0
+	health_texture.anchor_bottom = 1.0
+	health_texture.offset_left = -health_texture.custom_minimum_size.x
+	health_texture.offset_top = -health_texture.custom_minimum_size.y
+	health_texture.offset_right = 0.0
+	health_texture.offset_bottom = 0.0
+	add_child(health_texture)
 
 
 func setup_shield_texture() -> void:
@@ -415,6 +443,9 @@ func get_attack_texture_path(attack_value: int) -> String:
 
 
 func create_value_texture(node_name: String) -> TextureRect:
+	if health_texture == null:
+		setup_health_texture()
+
 	var value_texture := TextureRect.new()
 	value_texture.name = node_name
 	value_texture.visible = false
@@ -447,7 +478,8 @@ func set_value_texture(value_texture: TextureRect, texture_path: String, label: 
 
 
 func hide_value_textures() -> void:
-	health_texture.hide()
+	if health_texture != null:
+		health_texture.hide()
 	if shield_texture != null:
 		shield_texture.hide()
 	if poison_texture != null:
