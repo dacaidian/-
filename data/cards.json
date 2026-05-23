@@ -556,7 +556,7 @@
 						"id": "fireball",
 						"name": "火球术",
 						"animation": "fireball",
-						"target_rule": "all_minions",
+						"target_rule": "non_hero_minions",
 						"effects": [
 							{
 								"id": "damage",

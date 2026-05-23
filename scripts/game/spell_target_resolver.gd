@@ -5,6 +5,7 @@ class_name SpellTargetResolver
 # 随从 spell_actions 和手牌法术都走这里，避免未来扩展目标限制时两边分叉。
 
 const TARGET_RULE_ALL_MINIONS := "all_minions"
+const TARGET_RULE_NON_HERO_MINIONS := "non_hero_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
 const TARGET_RULE_AREA_3X3 := "area_3x3"
@@ -63,6 +64,8 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 	match target_rule:
 		TARGET_RULE_ALL_MINIONS:
 			return target.is_minion()
+		TARGET_RULE_NON_HERO_MINIONS:
+			return target.is_minion() and not target.is_hero()
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:

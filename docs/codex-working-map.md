@@ -251,7 +251,7 @@
 - 有效治疗联动走 `on_effective_heal` 触发。`HealEffect` 只负责计算实际恢复量并排队触发；按有效治疗量缩放的效果使用 `amount_source: "effective_heal"`，例如战斗牧师的 `gain_attack`。
 - 法术目标规则统一放在 `SpellTargetResolver`。
 - 魔法免疫统一由 `SpellTargetResolver` 和 `CardEffect.get_target_states()` 处理。新增法术目标规则、AOE 或自动施法时不要绕过这两个入口。
-- `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
+- `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`non_hero_minions` 只选正面非英雄随从，适合火球术这类不能打英雄的法术；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
 - 多段棋盘格选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程。
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。

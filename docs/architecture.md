@@ -330,7 +330,7 @@
 - 由升级牌解锁的施法能力不要预埋进随从自身 `spell_actions` 再特殊禁用；优先让升级牌通过 `grant_spell_actions` 授予动作。授予规则的 JSON 解释放在 `GrantedSpellResolver`，这样未获得升级时单位基础定义保持干净，未来升级牌也可以授予不同单位不同法术。
 - 法术动作只在当前玩家开启施法回合后展示；施法回合状态保存在 `GameManager.is_spell_turn_active`，回合结束时清空。
 - 每个 spell action 至少包含 `id`、`name`、`target_rule` 和 `effects`；可选 `animation` 用于指定表现层动画 key。`CardAction.get_area_info()` 是多态方法，基类返回空字典，`SpellAction` 覆写并通过 `SpellTargetResolver` 返回 area 尺寸；`InteractionManager` 不依赖具体行动类的内部字段。
-- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
+- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`non_hero_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`non_hero_minions` 只选正面非英雄随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
