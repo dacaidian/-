@@ -964,6 +964,35 @@
 				"effects": []
 			},
 			{
+				"id": "witch_doctor",
+				"name": "巫医",
+				"description": "苗疆族远程随从。可以施法行医，将一张草药置入手牌。",
+				"url": "res://assets/img/苗疆族/巫医.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 6,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "medical_practice",
+						"name": "行医",
+						"animation": "heal",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_id": "herb"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "snake_venom_upgrade",
 				"name": "蛇毒",
 				"description": "升级牌。蛊毒蛇攻击后对敌方随从施加2×3的毒性伤害，并使敌方随从获得蛇毒状态，攻击-2。",
