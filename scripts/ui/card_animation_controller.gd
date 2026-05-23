@@ -313,6 +313,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell(owner, effect_root, target_card)
+		"medical_practice":
+			await play_medical_practice_spell(owner, effect_root, target_card)
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
 		"arcane", "arcane_wisdom":
@@ -353,6 +355,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
+		"medical_practice":
+			await play_medical_practice_at_rect(owner, effect_root, target_rect)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"arcane", "arcane_wisdom":
@@ -393,6 +397,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_fireball_from_point(owner, effect_root, source_rect.get_center(), target_card, 1.65)
 		"dark_arrow":
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
+		"medical_practice":
+			await play_medical_practice_spell(owner, effect_root, target_card)
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"gu_lure":
@@ -493,6 +499,74 @@ func play_heal_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 	await recover_tween.finished
 
 	heal_effect.queue_free()
+
+
+func play_medical_practice_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
+	if owner == null or effect_root == null or target_card == null:
+		return
+
+	target_card.is_animating = true
+	var start_scale: Vector2 = target_card.scale
+	var pulse_tween := owner.create_tween()
+	pulse_tween.set_trans(Tween.TRANS_SINE)
+	pulse_tween.set_ease(Tween.EASE_OUT)
+	pulse_tween.tween_property(target_card, "scale", start_scale * 1.05, spell_animation_duration * 0.40)
+	pulse_tween.tween_property(target_card, "scale", start_scale, spell_animation_duration * 0.55)
+
+	await play_medical_practice_at_rect(owner, effect_root, target_card.get_global_rect())
+	await pulse_tween.finished
+
+	target_card.scale = start_scale
+	target_card.is_animating = false
+
+
+func play_medical_practice_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var mist := create_rect_spell_effect(target_rect, "MedicalPracticeMistEffect", create_medical_practice_mist_style(), 1.18)
+	var herb_ring := create_rect_spell_effect(target_rect, "MedicalPracticeHerbRingEffect", create_medical_practice_ring_style(), 0.86)
+	var herb_motes: Array[Panel] = create_medical_practice_motes_for_rect(target_rect)
+	effect_root.add_child(mist)
+	effect_root.add_child(herb_ring)
+	for mote in herb_motes:
+		effect_root.add_child(mote)
+
+	var bloom_tween := owner.create_tween()
+	bloom_tween.set_parallel(true)
+	bloom_tween.set_trans(Tween.TRANS_SINE)
+	bloom_tween.set_ease(Tween.EASE_OUT)
+	bloom_tween.tween_property(mist, "scale", Vector2(1.26, 1.26), spell_animation_duration * 0.42)
+	bloom_tween.tween_property(mist, "modulate:a", 0.72, spell_animation_duration * 0.42)
+	bloom_tween.tween_property(herb_ring, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.42)
+	bloom_tween.tween_property(herb_ring, "rotation", -0.28, spell_animation_duration * 0.42)
+	bloom_tween.tween_property(herb_ring, "modulate:a", 0.95, spell_animation_duration * 0.42)
+	for mote in herb_motes:
+		var gather_offset: Vector2 = mote.get_meta("medical_practice_offset", Vector2.ZERO)
+		bloom_tween.tween_property(mote, "position", mote.position + gather_offset * 0.24, spell_animation_duration * 0.42)
+		bloom_tween.tween_property(mote, "modulate:a", 0.92, spell_animation_duration * 0.42)
+	await bloom_tween.finished
+
+	var release_tween := owner.create_tween()
+	release_tween.set_parallel(true)
+	release_tween.set_trans(Tween.TRANS_CUBIC)
+	release_tween.set_ease(Tween.EASE_OUT)
+	release_tween.tween_property(mist, "scale", Vector2(1.74, 1.74), spell_animation_duration * 0.68)
+	release_tween.tween_property(mist, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	release_tween.tween_property(herb_ring, "scale", Vector2(1.52, 1.52), spell_animation_duration * 0.68)
+	release_tween.tween_property(herb_ring, "rotation", -0.92, spell_animation_duration * 0.68)
+	release_tween.tween_property(herb_ring, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	for mote in herb_motes:
+		var release_offset: Vector2 = mote.get_meta("medical_practice_offset", Vector2.ZERO)
+		release_tween.tween_property(mote, "position", mote.position + release_offset, spell_animation_duration * 0.68)
+		release_tween.tween_property(mote, "scale", Vector2(0.24, 0.24), spell_animation_duration * 0.68)
+		release_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	await release_tween.finished
+
+	mist.queue_free()
+	herb_ring.queue_free()
+	for mote in herb_motes:
+		mote.queue_free()
 
 
 func play_shield_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
@@ -1371,6 +1445,32 @@ func create_gu_summon_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	return motes
 
 
+func create_medical_practice_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var motes: Array[Panel] = []
+	var center: Vector2 = target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.36
+	var mote_size := Vector2(11.0, 8.0)
+
+	for index in range(7):
+		var angle: float = TAU * float(index) / 7.0 - PI * 0.18
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.20
+		var release_offset := Vector2(cos(angle), sin(angle)) * radius * 0.82
+		var mote := Panel.new()
+		mote.name = "MedicalPracticeMote_%d" % index
+		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mote.size = mote_size
+		mote.pivot_offset = mote_size * 0.5
+		mote.global_position = center + start_offset - mote.pivot_offset
+		mote.rotation = angle + PI * 0.18
+		mote.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		mote.z_index = 2330
+		mote.set_meta("medical_practice_offset", release_offset)
+		mote.add_theme_stylebox_override("panel", create_medical_practice_mote_style())
+		motes.append(mote)
+
+	return motes
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -1574,6 +1674,39 @@ func create_gu_summon_mote_style() -> StyleBoxFlat:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.44, 1.0, 0.16, 0.56)
+	style.shadow_size = 12
+	return style
+
+
+func create_medical_practice_mist_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.13, 0.42, 0.08, 0.20)
+	style.border_color = Color(0.62, 1.0, 0.34, 0.66)
+	style.set_border_width_all(6)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.42, 1.0, 0.24, 0.44)
+	style.shadow_size = 30
+	return style
+
+
+func create_medical_practice_ring_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.22, 0.78, 0.18, 0.18)
+	style.border_color = Color(0.84, 1.0, 0.52, 0.82)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.52, 1.0, 0.26, 0.52)
+	style.shadow_size = 24
+	return style
+
+
+func create_medical_practice_mote_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.72, 1.0, 0.38, 0.94)
+	style.border_color = Color(0.18, 0.42, 0.08, 0.72)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.52, 1.0, 0.22, 0.58)
 	style.shadow_size = 12
 	return style
 

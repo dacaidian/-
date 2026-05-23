@@ -981,7 +981,7 @@
 					{
 						"id": "medical_practice",
 						"name": "行医",
-						"animation": "heal",
+						"animation": "medical_practice",
 						"target_rule": "none",
 						"effects": [
 							{
