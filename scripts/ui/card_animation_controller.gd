@@ -514,7 +514,8 @@ func play_medical_practice_spell(owner: Node, effect_root: Control, target_card:
 	pulse_tween.tween_property(target_card, "scale", start_scale, spell_animation_duration * 0.55)
 
 	await play_medical_practice_at_rect(owner, effect_root, target_card.get_global_rect())
-	await pulse_tween.finished
+	if pulse_tween.is_running():
+		await pulse_tween.finished
 
 	target_card.scale = start_scale
 	target_card.is_animating = false
