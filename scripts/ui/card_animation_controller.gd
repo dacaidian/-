@@ -335,6 +335,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
+		"gu_life_link":
+			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			if target_card == null:
 				return
@@ -369,6 +371,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"gu_infusion":
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
+		"gu_life_link":
+			await play_gu_life_link_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_rect)
 		"gu_summon":
@@ -401,6 +405,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_medical_practice_spell(owner, effect_root, target_card)
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
+		"gu_life_link":
+			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_trap_trigger":
@@ -1113,6 +1119,80 @@ func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2)
 	pulse.queue_free()
 
 
+func play_gu_life_link_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var ring := create_life_link_effect_for_rect(target_rect)
+	effect_root.add_child(ring)
+
+	var tween := owner.create_tween()
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring, "scale", Vector2(1.42, 1.42), spell_animation_duration * 0.78)
+	tween.tween_property(ring, "rotation", -0.42, spell_animation_duration * 0.78)
+	tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration * 0.78)
+	await tween.finished
+
+	ring.queue_free()
+
+
+func play_life_link_spell(
+	owner: Node,
+	effect_root: Control,
+	first_card: Card,
+	second_card: Card,
+	_spell_data: Dictionary
+) -> void:
+	if owner == null or effect_root == null or first_card == null or second_card == null:
+		return
+
+	var first_rect := first_card.get_global_rect()
+	var second_rect := second_card.get_global_rect()
+	var first_ring := create_life_link_effect_for_rect(first_rect)
+	var second_ring := create_life_link_effect_for_rect(second_rect)
+	var tether := Line2D.new()
+	tether.name = "GuLifeLinkTether"
+	tether.width = 7.0
+	tether.default_color = Color(0.56, 1.0, 0.28, 0.0)
+	tether.z_index = 2310
+	tether.points = PackedVector2Array([first_rect.get_center(), second_rect.get_center()])
+	tether.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	tether.end_cap_mode = Line2D.LINE_CAP_ROUND
+
+	effect_root.add_child(tether)
+	effect_root.add_child(first_ring)
+	effect_root.add_child(second_ring)
+
+	var bind_tween := owner.create_tween()
+	bind_tween.set_parallel(true)
+	bind_tween.set_trans(Tween.TRANS_SINE)
+	bind_tween.set_ease(Tween.EASE_OUT)
+	bind_tween.tween_property(tether, "default_color:a", 0.86, spell_animation_duration * 0.36)
+	bind_tween.tween_property(first_ring, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
+	bind_tween.tween_property(first_ring, "modulate:a", 0.92, spell_animation_duration * 0.36)
+	bind_tween.tween_property(second_ring, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
+	bind_tween.tween_property(second_ring, "modulate:a", 0.92, spell_animation_duration * 0.36)
+	await bind_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(tether, "width", 2.0, spell_animation_duration * 0.64)
+	fade_tween.tween_property(tether, "default_color:a", 0.0, spell_animation_duration * 0.64)
+	fade_tween.tween_property(first_ring, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.64)
+	fade_tween.tween_property(first_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	fade_tween.tween_property(second_ring, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.64)
+	fade_tween.tween_property(second_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	await fade_tween.finished
+
+	tether.queue_free()
+	first_ring.queue_free()
+	second_ring.queue_free()
+
+
 func play_gu_summon_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -1421,6 +1501,10 @@ func create_gu_trap_trigger_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "GuTrapTriggerEffect", create_gu_trap_trigger_effect_style(), 1.24)
 
 
+func create_life_link_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "GuLifeLinkEffect", create_life_link_effect_style(), 1.20)
+
+
 func create_gu_summon_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	var motes: Array[Panel] = []
 	var center: Vector2 = target_rect.get_center()
@@ -1632,6 +1716,17 @@ func create_gu_trap_trigger_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = gu_trap_trigger_glow_color
 	style.shadow_size = 38
+	return style
+
+
+func create_life_link_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.32, 0.08, 0.18)
+	style.border_color = Color(0.58, 1.0, 0.28, 0.82)
+	style.set_border_width_all(7)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.36, 1.0, 0.18, 0.56)
+	style.shadow_size = 34
 	return style
 
 

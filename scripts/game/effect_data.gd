@@ -32,6 +32,7 @@ const KEY_STATUS_PERSISTS_AFTER_DEATH := "persists_after_death"
 const KEY_STATUS_PAYLOAD := "payload"
 const KEY_STATUS_TURN_EFFECTS := "turn_effects"
 const KEY_STATUS_TRIGGER_EFFECTS := "trigger_effects"
+const KEY_TRIGGER_STATUS := "_trigger_status"
 const KEY_ATTACK_BONUS := "attack_bonus"
 const KEY_MAX_HEALTH_BONUS := "max_health_bonus"
 const KEY_CUMULATIVE_STATUS_MODIFIER := "cumulative_status_modifier"
@@ -62,6 +63,7 @@ const KEY_SET_DURATION_TURNS := "set_duration_turns"
 const KEY_PRESERVE_TOTAL_DAMAGE := "preserve_total_damage"
 const KEY_GRANTED_TRIGGER := "granted_trigger"
 const KEY_GRANTED_EFFECTS := "granted_effects"
+const KEY_LINK_ID := "link_id"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -85,6 +87,8 @@ const EFFECT_CHOOSE_CARD_TO_HAND := "choose_card_to_hand"
 const EFFECT_SET_SLOT_TRAP := "set_slot_trap"
 const EFFECT_SWAP_BOARD_SLOTS := "swap_board_slots"
 const EFFECT_DEVOUR := "devour"
+const EFFECT_LINK_UNITS := "link_units"
+const EFFECT_DESTROY_LINKED_UNITS := "destroy_linked_units"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -118,6 +122,7 @@ const DEATH_REASON_SPELL := "spell"
 const DEATH_REASON_HAND_SPELL := "hand_spell"
 const DEATH_REASON_POISON := "poison"
 const DEATH_REASON_TRAP := "trap"
+const DEATH_REASON_LINKED := "linked_death"
 
 
 static func get_id(effect_data: Dictionary) -> String:
@@ -156,6 +161,10 @@ static func get_target(effect_data: Dictionary, default_target := TARGET_SELF) -
 
 static func get_selected_target_state(effect_data: Dictionary) -> CardState:
 	return effect_data.get(KEY_SELECTED_TARGET_STATE) as CardState
+
+
+static func get_trigger_status(effect_data: Dictionary) -> CardStatus:
+	return effect_data.get(KEY_TRIGGER_STATUS) as CardStatus
 
 
 static func get_effect_owner_id(effect_data: Dictionary) -> String:
@@ -298,6 +307,11 @@ static func mark_selected_target(effect_data: Dictionary, target_state: CardStat
 static func mark_effect_owner(effect_data: Dictionary, owner_id: String) -> void:
 	if owner_id != "":
 		effect_data[KEY_EFFECT_OWNER_ID] = owner_id
+
+
+static func mark_trigger_status(effect_data: Dictionary, status: CardStatus) -> void:
+	if status != null:
+		effect_data[KEY_TRIGGER_STATUS] = status
 
 
 static func mark_spell_power_enabled(effect_data: Dictionary) -> void:

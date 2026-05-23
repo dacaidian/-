@@ -43,6 +43,7 @@
 - `StatusModifierResolver`：状态施加前的运行时修正规则协作者。它读取施加者手牌中的 `modify_applied_status` 升级效果，在 `CardStatus.from_effect_data()` 前改写状态数据；当前用于“毒性爆发”把己方施加的毒压缩到 1 回合爆发。
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
 - `BoardPairSelectionController`：效果内部的多段棋盘格选择协作者。它用于“选择第一个格子，再选择第二个格子”的重复流程，例如 `swap_board_slots`。这类流程发生在法术已经成功施放之后，不属于 `SpellTargetResolver` 的单次目标规则；因此它临时监听棋盘卡牌点击并在完成后清理目标提示和连接。
+- `BoardUnitPairSelectionController`：效果内部的双单位选择协作者。它用于“已成功施放后，再从当前合法单位中选择两个单位”的流程，例如苗疆族“子母蛊”。它接收一组 `CardState` 候选，不重新解释法术目标规则；AI 玩家不打开该 UI，由对应效果自行选择单位，避免 AI 回合等待人工点击。
 - `VictoryResolver`：胜负检查协作者。当前检查玩家资源分是否达到胜利目标，后续其他胜利条件也应在这里扩展。
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
 - `InteractionManager`：只管理当前交互状态，例如当前焦点牌、当前选择的行动、合法目标格子。
@@ -55,7 +56,7 @@
 - `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
-- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`、`devour`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。单位自身状态也可以在 `payload.trigger_effects` 中提供触发效果，由 `EffectRegistry.execute_status_triggers()` 在同一触发入口结算。
+- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`、`devour`、`link_units`、`destroy_linked_units`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。单位自身状态也可以在 `payload.trigger_effects` 中提供触发效果，由 `EffectRegistry.execute_status_triggers()` 在同一触发入口结算；触发来源状态会以 `_trigger_status` 注入运行时效果，供“链接死亡”这类状态自身效果读取 link id。
 - 死亡解析：外部仍调用 `GameManager.check_and_destroy_if_dead()` / `destroy_card()`，内部委托 `DeathResolver` 统一处理死亡或销毁；死亡不作为玩家动作显示在动作菜单中。
 
 原则：新增攻击、施法、技能时，优先新增一个 `CardAction` 子类，再注册到 `ActionRegistry`。行动自己决定 `can_start()`、`get_valid_targets()` 和 `execute()`，不要把行动规则写进 UI。需要目标的行动只有在存在合法目标时才会显示在动作菜单中。行动基类提供通用判断，例如 `is_controlled_face_up_minion()`，避免每个行动重复写当前玩家归属和随从检查。
@@ -65,7 +66,7 @@
 位置：`scenes`、`scripts/ui`
 
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
-- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
+- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
 - `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
@@ -182,7 +183,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -263,7 +264,8 @@
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。
 - `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
-- 圣盾、辉煌光环、励蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
+- `同命蛊` 使用 `status_id: "life_link"` 和 `status_tags: ["death_link"]`。每次 `link_units` 施法都会生成唯一 `link_id`，分别给两个目标写入一层 `life_link` 状态；状态的 `payload.trigger_effects` 在 `on_destroyed` 时触发 `destroy_linked_units`，后者读取 `_trigger_status.payload.link_id` 找到同一链接的另一端并直接销毁。因为每次施法的 link id 独立，AB 和 CD 不互相影响；AB 与 BC 这种链式链接会通过死亡队列自然传播为 A 死亡、B 直接死亡、再触发 C 直接死亡。
+- 圣盾、辉煌光环、励蛊、同命蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光、链接绿纹或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会按 `stack_policy` 合并：默认 `stack` 会叠层，`refresh` 会刷新持续信息但不额外叠层，`replace` 会用新状态替换旧状态，`ignore` 会忽略后续同源同名状态。蛇毒减攻使用 `refresh`，避免重复攻击把同一个“攻击-2”状态叠成无限减攻；毒状态仍走专门的强度比较逻辑。
@@ -305,6 +307,7 @@
 - 英雄配套牌在种族层级定义，而不是写进英雄随从卡本身。当前 `cards.json` 使用 `heroes` 字段，每个条目通过 `card_id` 指向英雄卡牌，并预留 `attached_cards` 保存配套法术牌、武器牌等；牌池构建时只加载已选英雄的 `attached_cards`，加载后会把对应 `CardData.owner_hero_card_id` 标记为所属英雄。
 - 英雄配套牌的使用限制统一在手牌规则层处理：只要手牌牌带有 `owner_hero_card_id`，释放时就要求该玩家对应英雄当前正面在战场上。这样未来英雄法术、英雄武器、英雄专属随从都能复用同一条规则。
 - 当前乌瑟尔英雄配套牌包括：1 级 `圣盾术`，目标规则为 `all_minions`，使一个随从获得可消耗圣盾；2 级 `洗礼`，目标规则为 `all_minions`，治疗选中随从 4 点生命，并对选中随从 8 邻接范围内的敌方随从造成 4 点伤害；3 级 `复活术`，从己方坟场选择最多 6 个随从移入手牌（使用通用 `resurrect` 效果和 `CardMultiSelectController` 多选面板）；3 级武器 `光明使者之锤`，装备后乌瑟尔攻击后会自动以自身为目标释放 `洗礼`。
+- 当前陈朵英雄配套牌包括：1 级 `励蛊`，对一个随从施加可被驱散的攻击增益状态；2 级 `子母蛊`，使用 `link_units` 在两个可被法术影响的随从之间建立同命链接；3 级 `生蛊王蛇`，把生蛊王蛇衍生随从置入手牌。
 - 注意区分：法术型复活（`resurrect` 效果，从坟场选牌移入手牌）和英雄自身复活是两套机制。英雄死亡不进入普通坟场，而是离开棋盘，并生成一张进入玩家手牌的英雄随从牌实例。
 - 这张复活后的英雄手牌不是立即可用，而是带有 3 回合使用冷却。冷却在所属玩家自己的回合开始时减少 1；冷却归零后，玩家可以像使用普通手牌随从一样，主动把英雄放置到棋盘上。
 - “手牌牌有冷却”应作为通用手牌机制实现，不是英雄专属字段。未来一些法术牌、武器牌、随从牌也可以在手牌中处于冷却状态，冷却结束前不可使用。
@@ -335,7 +338,7 @@
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
-- `target_rule: "none"` 不一定表示完全没有后续交互。若某个效果在法术成功施放后需要多段棋盘选择，应由对应效果启动专门的选择协作者。例如 `swap_board_slots` 使用 `BoardPairSelectionController`，在效果结算期间最多选择三组格子并逐组交换。它不把每次点击塞回 `InteractionManager` 的单次目标流程，避免和普通施法目标、手牌目标、AOE 预览互相耦合。
+- `target_rule: "none"` 不一定表示完全没有后续交互。若某个效果在法术成功施放后需要多段棋盘选择，应由对应效果启动专门的选择协作者。例如 `swap_board_slots` 使用 `BoardPairSelectionController`，在效果结算期间最多选择三组格子并逐组交换；`link_units` 使用 `BoardUnitPairSelectionController`，在效果结算期间从合法随从中选两个建立链接。它们不把每次点击塞回 `InteractionManager` 的单次目标流程，避免和普通施法目标、手牌目标、AOE 预览互相耦合。
 - `swap_board_slots` 交换的是单元格本身：两个位置上的 `BoardCell.is_land` 等单元格性质会互换，地面层卡牌内容也随之交换；屏幕上的 CardSlot / Card 节点仍保持原物理坐标。7x7 棋盘中，初始内圈地面格被交换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被交换到内圈后仍不可补牌/放置普通随从。
 - 格子效果使用 `set_slot_trap` 这类效果写入 `BoardSlotEffectResolver`。触发时机由 `slot_effect_trigger` 描述，当前支持 `unit_entered`；进入检查由移动交换、手牌随从放置和翻开进入棋盘三个入口统一调用 `GameManager.resolve_slot_unit_entered()`。持续展示默认不显示，释放和触发分别走 `gu_lure` / `gu_trap_trigger` 等一次性动画。
 - 手牌法术的目标选择同样由 `InteractionManager.start_hand_card_target_selection()` 进入目标选择模式；如果手牌法术的 `target_rule` 是 area 规则，也会读取 `SpellTargetResolver.get_area_dimensions()` 并启用相同的蓝色范围预览。不要为手牌 AOE 法术另写一套交互状态。
@@ -353,7 +356,7 @@
 - `_run_ai_turn()` 会为每个 AI 回合启动 `ai_turn_watchdog_seconds` 超时保护。如果异步动作、动画或效果没有正常返回，watchdog 会在仍处于同一个 AI 回合时清理 busy flag 并强制走正常 `end_turn()`，避免 AI 永久卡住。
 - AI 行动分为手牌评估、战场行动评估和翻牌评估。AI 不模拟鼠标点击，也不调用表现层菜单；它调用规则层入口，例如 `HandPlayResolver`、`CardAction.execute()` 和翻牌/补位协作者。
 - AI 回合使用“候选动作评分循环”：每一步收集当前所有可执行候选（手牌、战场行动、翻牌、开启施法回合），执行最高分候选并等待结算完成，然后重新评估。不要恢复成固定的“先手牌、再随从、再翻牌”流水线。
-- 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。需要多段棋盘点击的效果也必须有 AI 路径或显式跳过 AI，避免 AI 回合等待玩家输入。
+- 需要玩家从候选牌中选择的效果（例如 `resurrect`、`choose_card_to_hand`）必须先判断当前效果拥有者是否为 AI。人类玩家走 `CardMultiSelectController`，AI 玩家走 `GameManager.choose_card_indices_for_ai()` 自动选择候选索引。新增选择型效果时不要把选择面板写死进效果逻辑。需要多段棋盘点击的效果也必须有 AI 路径或显式跳过 AI；例如 `link_units` 的人类路径使用 `BoardUnitPairSelectionController`，AI 路径直接按单位价值选择候选，避免 AI 回合等待玩家输入。
 - AI 战场评估必须同时考虑有目标和无目标行动。`CardAction.requires_target() == false` 的动作不应依赖 `get_valid_targets()` 返回非空；这类动作应按空目标评分并直接执行。
 - AI 攻击评分按收益计算：击杀高威胁敌方随从、获得资源分、获得法力和破圣盾是正收益；攻击己方单位或无法摧毁且没有奖励的中立建筑是低收益或负收益。新增建筑奖励时应通过 `on_destroyed` 效果反映价值，而不是在 AI 中写死卡牌名。
 
@@ -364,7 +367,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 
@@ -411,6 +414,7 @@
 - 新增卡牌效果：放在 `scripts/effects`，继承 `CardEffect` 并注册到 `EffectRegistry`。
 - 新增效果配置字段、触发名或手牌 active zone 语义：优先补到 `EffectData`，再让具体 resolver 使用，不要在多个模块里直接写同一个字符串。
 - 新增状态：优先用 `apply_status` 写入 `CardStatus`；如果状态需要影响行动、受伤或回合时点，再新增专门 resolver 或在对应规则入口读取 `CardState.has_status()` / `get_status()`；如果只是持续视觉表现，优先扩展 `CardStatusOverlay`。如果状态有明确数值（毒性总伤害、护盾值、未来燃烧层数等），优先扩展 `Card` 的状态数字栈，放在血量图标上方纵向排列。
+- 新增状态触发效果：优先把效果写入状态 `payload.trigger_effects`，由 `EffectRegistry.execute_status_triggers()` 统一结算；如果效果需要知道是哪一层状态触发，读取 `EffectData.get_trigger_status()`，不要通过 `status_id` 全局猜测。
 - 新增状态施加修正升级牌：使用 `modify_applied_status`，通过 `status_ids` 指定影响哪些状态；需要压缩持续伤害时可配置 `set_duration_turns` 和 `preserve_total_damage`。这类规则应走 `StatusModifierResolver`，不要在具体状态效果或卡牌名里写死。
 - 新增控制状态（眩晕、定身等）：只需在 JSON 中配置 `"status_tags": ["action_prevention"]`，`CardState` 的 `has_status_with_tag(TAG_ACTION_PREVENTION)` 已注册到所有行动门控，零代码改动。不要为每个控制状态写专用的 `is_xxx()` 判断方法。
 - 新增 AOE 形状（5×5、十字等）：在 `SpellTargetResolver` 新增规则常量和 `is_area_rule()`/`get_area_dimensions()` 映射；如需非矩形形状，在 `BoardQuery` 新增对应静态方法。交互层和效果层通过 `get_area_dimensions()` 和效果 JSON 中的 `area_rows`/`area_cols` 自动适配。

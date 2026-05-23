@@ -21,6 +21,9 @@ var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
 var snake_venom_color := Color(0.26, 0.10, 0.36, 0.22)
 var snake_venom_edge_color := Color(0.72, 0.38, 1.0, 0.70)
 var snake_venom_fang_color := Color(0.82, 1.0, 0.34, 0.80)
+var life_link_color := Color(0.10, 0.36, 0.08, 0.18)
+var life_link_edge_color := Color(0.62, 1.0, 0.32, 0.76)
+var life_link_thread_color := Color(0.46, 1.0, 0.24, 0.78)
 
 
 func _ready() -> void:
@@ -39,7 +42,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link()
 
 
 func should_show_divine_shield() -> bool:
@@ -77,6 +80,13 @@ func should_show_snake_venom() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_SNAKE_VENOM)
 
 
+func should_show_life_link() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_LIFE_LINK)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -84,6 +94,8 @@ func _draw() -> void:
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
 		draw_snake_venom_overlay()
+	if should_show_life_link():
+		draw_life_link_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -252,6 +264,42 @@ func draw_snake_venom_overlay() -> void:
 		var drop_x := venom_rect.position.x + venom_rect.size.x * (0.28 + t * 0.44)
 		var drop_y := venom_rect.position.y + venom_rect.size.y * (0.60 + sin(t * TAU) * 0.06)
 		draw_circle(Vector2(drop_x, drop_y), 2.2 + float(index % 2), Color(snake_venom_fang_color.r, snake_venom_fang_color.g, snake_venom_fang_color.b, 0.56))
+
+
+func draw_life_link_overlay() -> void:
+	var link_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
+	var center := link_rect.get_center()
+	var edge_width := maxf(size.x * 0.022, 2.0)
+	var status := state.get_status(CardStatus.STATUS_LIFE_LINK) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 4)
+
+	draw_rect(link_rect, life_link_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 4.0
+		var alpha := life_link_edge_color.a * (1.0 - float(index) * 0.14)
+		draw_rect(link_rect.grow(grow), Color(life_link_edge_color.r, life_link_edge_color.g, life_link_edge_color.b, alpha), false, edge_width, true)
+
+	var left_anchor := center + Vector2(-link_rect.size.x * 0.20, -link_rect.size.y * 0.02)
+	var right_anchor := center + Vector2(link_rect.size.x * 0.20, -link_rect.size.y * 0.02)
+	draw_circle(left_anchor, size.x * 0.045, life_link_thread_color)
+	draw_circle(right_anchor, size.x * 0.045, life_link_thread_color)
+
+	var thread_points := PackedVector2Array()
+	for index in range(9):
+		var t := float(index) / 8.0
+		var x := lerpf(left_anchor.x, right_anchor.x, t)
+		var y := lerpf(left_anchor.y, right_anchor.y, t) + sin(t * TAU * 1.5) * size.y * 0.035
+		thread_points.append(Vector2(x, y))
+	draw_polyline(thread_points, life_link_thread_color, 2.4, false)
+
+	var lower_points := PackedVector2Array()
+	for index in range(9):
+		var t := float(index) / 8.0
+		var x := lerpf(left_anchor.x, right_anchor.x, t)
+		var y := lerpf(left_anchor.y, right_anchor.y, t) - sin(t * TAU * 1.5) * size.y * 0.035 + size.y * 0.07
+		lower_points.append(Vector2(x, y))
+	draw_polyline(lower_points, Color(life_link_thread_color.r, life_link_thread_color.g, life_link_thread_color.b, life_link_thread_color.a * 0.70), 1.8, false)
 
 
 func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:

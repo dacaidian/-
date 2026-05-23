@@ -1237,6 +1237,26 @@ func play_area_spell_animation(caster_state: CardState, center_state: CardState,
 	is_resolving_card_action = false
 
 
+func play_link_units_animation(first_state: CardState, second_state: CardState, animation_key := "gu_life_link") -> void:
+	if first_state == null or second_state == null:
+		return
+
+	var first_card: Card = get_card_by_slot(first_state.slot_index)
+	var second_card: Card = get_card_by_slot(second_state.slot_index)
+	if first_card == null or second_card == null:
+		return
+
+	is_resolving_card_action = true
+	await card_animation_controller.play_life_link_spell(
+		self,
+		get_overlay_animation_root(),
+		first_card,
+		second_card,
+		{"animation": animation_key}
+	)
+	is_resolving_card_action = false
+
+
 func play_effect_heal_animation(target_state: CardState) -> void:
 	if target_state == null:
 		return

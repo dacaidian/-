@@ -85,8 +85,9 @@
 - 状态施加前修正由 `StatusModifierResolver` 统一处理；`modify_applied_status` 可按 `status_ids` 修改己方施加的新状态，例如毒性爆发把毒的总伤害压缩到 1 回合内结算。
 - 同源同名状态默认叠层；需要刷新不叠层、替换或忽略时，在状态配置中使用 `stack_policy`（`stack` / `refresh` / `replace` / `ignore`）。例如蛇毒减攻使用 `refresh`，重复施加不继续叠加攻击惩罚。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
-- 状态自身也可以通过 `payload.trigger_effects` 提供触发效果，由 `EffectRegistry.execute_status_triggers()` 结算。当前用于蛊巨蜥“吞噬”继承最高级毒性攻击；不要把这种状态授予的攻击后效果写进 `AttackAction`。
-- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结和励蛊；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
+- 状态自身也可以通过 `payload.trigger_effects` 提供触发效果，由 `EffectRegistry.execute_status_triggers()` 结算。当前用于蛊巨蜥“吞噬”继承最高级毒性攻击，以及子母蛊 `life_link` 在 `on_destroyed` 时触发 `destroy_linked_units`；不要把这种状态授予的触发效果写进 `AttackAction` 或 `DeathResolver`。
+- 同命/链接类状态读取 `EffectData.get_trigger_status()` 获取触发的具体状态层，再用 `payload.link_id` 找到同一链接另一端。AB、BC 链式链接依赖死亡队列自然传播，独立链接必须使用独立 link id。
+- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结、励蛊和同命蛊；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
 ### 翻牌与补牌
@@ -240,6 +241,7 @@
 - `scripts/game/board_slot_effect_resolver.gd`，如果是陷阱、地形、格子光环等固定格子效果。
 - `scripts/data/board_slot_effect.gd`，如果需要新增格子效果数据字段。
 - `scripts/game/board_pair_selection_controller.gd`，如果效果需要多次选择两个棋盘格。
+- `scripts/game/board_unit_pair_selection_controller.gd`，如果效果需要在施放后选择两个棋盘单位。
 - `scripts/effects/effect_registry.gd`
 - `scripts/effects/card_effect.gd`
 - `scripts/game/trigger_resolver.gd`，如果涉及触发时机。
@@ -248,7 +250,7 @@
 
 常见修改：
 
-- 新增治疗、伤害、护盾、翻牌、资源分、复活、卡牌生成、吞噬等公共效果。
+- 新增治疗、伤害、护盾、翻牌、资源分、复活、卡牌生成、吞噬、单位链接等公共效果。
 - 法术强度统一走 `modify_spell_power` 与 `CardEffect.get_spell_scaled_amount()`；只有施法入口打了 `_apply_spell_power` 的运行时效果会吃法强，非施法触发不要手动加成。
 - 复活效果 `resurrect` 通过 `filter_type`/`filter_owner`/`amount`/`target_zone` 配置，可被不同卡牌复用；当前支持复活到 `hand`。选中 UI 委托给 `CardMultiSelectController`。是否有合法坟场候选由 `ResurrectEffect.can_execute()` 判断，手牌施放入口只通过 `EffectRegistry.can_execute_effect()` 询问，不直接依赖具体效果类。
 - 有效治疗联动走 `on_effective_heal` 触发。`HealEffect` 只负责计算实际恢复量并排队触发；按有效治疗量缩放的效果使用 `amount_source: "effective_heal"`，例如战斗牧师的 `gain_attack`。
@@ -257,7 +259,7 @@
 - `minions_by_card_ids` 使用 `spell_data.card_ids` 做目标白名单，并排除施法者自身；当前用于蛊巨蜥“吞噬”可选毒蝎、蛊毒蛇、生蛊王蛇和其他蛊巨蜥。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`non_hero_minions` 只选正面非英雄随从，适合火球术这类不能打英雄的法术；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
-- 多段棋盘格选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程。
+- 多段棋盘格/单位选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子或单位，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程，`link_units` 通过 `BoardUnitPairSelectionController` 执行“双单位选择并建立状态链接”。
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
@@ -307,6 +309,7 @@
 - 移动、近战攻击、远程攻击、法术特效、补牌飞行、入手牌飞行。
 - `summon` 是召唤水元素的水蓝法阵与水滴扩散表现，`gu_summon` 是苗疆蛊术召唤的暗绿蛊雾与蛇形脉冲表现，`medical_practice` 是巫医行医的草药光点与苗疆药雾脉冲；这些都属于无目标法术的 `play_spell_cast_at_rect()` / 自身施法分支。
 - `arcane_aura` 是辉煌光环的一次性施法/附着动画，持续视觉由 `CardStatusOverlay` 绘制。
+- `gu_life_link` 是子母蛊的双目标蛊环与生命线连接动画；持续链接视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
 - `gu_lure` 是诱蛊释放到格子的暗绿法阵表现；`gu_trap_trigger` 是诱蛊触发时的毒红咬合和蛊孢爆散表现。
 - `blizzard` 是暴风雪的冰蓝色区域覆盖 + 消散特效，走 `play_area_spell_cast()` → `play_blizzard_area_spell()` 专用 AOE 动画入口。区域效果面板由 `create_blizzard_area_effect()` 创建。

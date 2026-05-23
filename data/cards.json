@@ -618,7 +618,7 @@
 						"effects": [
 							{
 								"id": "gain_flips",
-								"amount": 2
+								"amount": 3
 							}
 						]
 					}
@@ -806,6 +806,7 @@
 				"attached_cards": [
 					"encourage_gu",
 					"lure_gu",
+					"mother_child_gu",
 					"summon_gu_king_snake"
 				]
 			}
@@ -822,7 +823,7 @@
 				"level": 1,
 				"keywords": [],
 				"attack": 2,
-				"health": 15,
+				"health": 18,
 				"effects": []
 			},
 			{
@@ -899,6 +900,25 @@
 						"consume_on_trigger": true,
 						"trigger_animation": "gu_trap_trigger",
 						"death_reason": "trap"
+					}
+				]
+			},
+			{
+				"id": "mother_child_gu",
+				"name": "子母蛊",
+				"description": "英雄法术。链接两个随从，其中一个死亡时另一个也会直接死亡。",
+				"url": "res://assets/img/苗疆族/子母蛊.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "gu_life_link",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "link_units",
+						"selection_title": "选择两个随从建立子母蛊",
+						"animation": "gu_life_link"
 					}
 				]
 			},

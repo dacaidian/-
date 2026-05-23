@@ -28,6 +28,8 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_SET_SLOT_TRAP, SetSlotTrapEffect.new())
 	register_effect(EffectData.EFFECT_SWAP_BOARD_SLOTS, SwapBoardSlotsEffect.new())
 	register_effect(EffectData.EFFECT_DEVOUR, DevourEffect.new())
+	register_effect(EffectData.EFFECT_LINK_UNITS, LinkUnitsEffect.new())
+	register_effect(EffectData.EFFECT_DESTROY_LINKED_UNITS, DestroyLinkedUnitsEffect.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:
@@ -78,5 +80,6 @@ func execute_status_triggers(source_state: CardState, trigger: String, game_mana
 		for effect_data in EffectData.get_status_trigger_effects(status, trigger):
 			var runtime_effect_data := EffectData.duplicate_with_context(effect_data, context)
 			EffectData.mark_effect_owner(runtime_effect_data, source_state.owner_id)
+			EffectData.mark_trigger_status(runtime_effect_data, status)
 			EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_EFFECT)
 			await execute_effect(source_state, runtime_effect_data, game_manager)
