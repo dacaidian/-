@@ -7,9 +7,9 @@
       "baptism",
       "divine_shield_spell"
     ],
-    "dalaran_council": ["antonidas", "arcane_golem"]
+    "dalaran_council": ["antonidas", "arcane_mage", "arcane_space_upgrade"]
   },
-  "include_neutral_pool": true,
+  "include_neutral_pool": false,
   "game_params": {
     "spell_turn_mana_cost": 1,
     "victory_resource_score": 1
