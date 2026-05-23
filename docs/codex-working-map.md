@@ -80,10 +80,12 @@
 - 冻结当前是 `freeze` 临时控制状态，配置 `duration_turns: 1` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`。状态到期后自动移除，无需特殊恢复逻辑。
 - 辉煌光环当前是 `arcane_aura` 状态；状态的 `payload.turn_effects` 可在回合时点触发效果，状态层数会乘到效果 `amount` 上。
 - 励蛊当前是 `encourage_gu` 状态；使用 `status_tags: ["attack_modifier"]` 和 `payload.attack_bonus` 提供持续攻击力修正，移除状态时由 `CardState.status_attack_bonus` 自动回滚。
+- 生命上限类状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，移除状态时由 `CardState.status_max_health_bonus` 自动回滚。吞噬这类“多次叠加但 payload 已累计”的状态需要配置/写入 `cumulative_status_modifier: true`，避免按 stacks 二次相乘。
 - 毒当前是 `poison` 唯一状态；使用 `status_tags: ["damage_over_time"]`、`payload.poison_damage` 和 `duration_turns`。新毒只在剩余总伤害更高时覆盖旧毒。毒伤害在 `after_turn_end` 普通触发前由 `StatusResolver.resolve_pre_trigger_status_effects()` 结算，早于回合结束治疗。
 - 状态施加前修正由 `StatusModifierResolver` 统一处理；`modify_applied_status` 可按 `status_ids` 修改己方施加的新状态，例如毒性爆发把毒的总伤害压缩到 1 回合内结算。
 - 同源同名状态默认叠层；需要刷新不叠层、替换或忽略时，在状态配置中使用 `stack_policy`（`stack` / `refresh` / `replace` / `ignore`）。例如蛇毒减攻使用 `refresh`，重复施加不继续叠加攻击惩罚。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
+- 状态自身也可以通过 `payload.trigger_effects` 提供触发效果，由 `EffectRegistry.execute_status_triggers()` 结算。当前用于蛊巨蜥“吞噬”继承最高级毒性攻击；不要把这种状态授予的攻击后效果写进 `AttackAction`。
 - 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结和励蛊；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
@@ -224,6 +226,7 @@
 - 攻击范围、远程/近战区分、击杀后占领、死亡触发、入坟、摧毁后效果。
 - 当前近战击杀随从或摧毁建筑都可占领；远程击杀不触发占领。
 - 攻击后的单位自身触发效果走 `TriggerResolver` 的 `after_attack`；目标被攻击敌方单位时使用 `target: "attack_target_enemy_unit"`，只作用于被攻击敌方随从时使用 `target: "attack_target_enemy_minion"`。0 攻但需要攻击触发的单位使用关键词 `can_attack_with_zero_attack`。手牌升级牌授予单位触发效果时使用 `grant_unit_trigger_effects` + `granted_trigger` + `granted_effects`。
+- 状态授予的攻击后效果走 `CardStatus.payload.trigger_effects`，由 `EffectRegistry.execute_status_triggers()` 与静态/升级授予触发共用同一上下文。
 - 死亡触发统一走 `TriggerResolver`；效果伤害应先伤害全部目标，再调用 `GameManager.resolve_dead_states()` 做批量死亡结算。
 - 死亡事件上下文 key 和触发名统一放在 `EventContext`。
 
@@ -245,12 +248,13 @@
 
 常见修改：
 
-- 新增治疗、伤害、护盾、翻牌、资源分、复活、卡牌生成等公共效果。
+- 新增治疗、伤害、护盾、翻牌、资源分、复活、卡牌生成、吞噬等公共效果。
 - 法术强度统一走 `modify_spell_power` 与 `CardEffect.get_spell_scaled_amount()`；只有施法入口打了 `_apply_spell_power` 的运行时效果会吃法强，非施法触发不要手动加成。
 - 复活效果 `resurrect` 通过 `filter_type`/`filter_owner`/`amount`/`target_zone` 配置，可被不同卡牌复用；当前支持复活到 `hand`。选中 UI 委托给 `CardMultiSelectController`。是否有合法坟场候选由 `ResurrectEffect.can_execute()` 判断，手牌施放入口只通过 `EffectRegistry.can_execute_effect()` 询问，不直接依赖具体效果类。
 - 有效治疗联动走 `on_effective_heal` 触发。`HealEffect` 只负责计算实际恢复量并排队触发；按有效治疗量缩放的效果使用 `amount_source: "effective_heal"`，例如战斗牧师的 `gain_attack`。
 - 法术目标规则统一放在 `SpellTargetResolver`。
 - 魔法免疫统一由 `SpellTargetResolver` 和 `CardEffect.get_target_states()` 处理。新增法术目标规则、AOE 或自动施法时不要绕过这两个入口。
+- `minions_by_card_ids` 使用 `spell_data.card_ids` 做目标白名单，并排除施法者自身；当前用于蛊巨蜥“吞噬”可选毒蝎、蛊毒蛇、生蛊王蛇和其他蛊巨蜥。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`non_hero_minions` 只选正面非英雄随从，适合火球术这类不能打英雄的法术；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
 - 多段棋盘格选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程。

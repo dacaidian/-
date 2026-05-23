@@ -1063,6 +1063,44 @@
 						"card_id": "gu_king_snake"
 					}
 				]
+			},
+			{
+				"id": "gu_giant_lizard",
+				"name": "蛊巨蜥",
+				"description": "苗疆族随从。可以吞噬毒虫，获得其两倍攻击和生命，并继承最高级毒性攻击。",
+				"url": "res://assets/img/苗疆族/蛊巨蜥.png",
+				"type": "minion",
+				"count": 5,
+				"level": 3,
+				"keywords": [],
+				"attack": 6,
+				"health": 10,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "devour",
+						"name": "吞噬",
+						"animation": "gu_trap_trigger",
+						"target_rule": "minions_by_card_ids",
+						"card_ids": [
+							"poison_scorpion",
+							"gu_poison_snake",
+							"gu_king_snake",
+							"gu_giant_lizard"
+						],
+						"effects": [
+							{
+								"id": "devour",
+								"card_ids": [
+									"poison_scorpion",
+									"gu_poison_snake",
+									"gu_king_snake",
+									"gu_giant_lizard"
+								]
+							}
+						]
+					}
+				]
 			}
 		],
 		"tokens": [

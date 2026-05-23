@@ -58,6 +58,7 @@ var back_texture: Texture2D
 var current_attack := 0
 var passive_attack_bonus := 0
 var status_attack_bonus := 0
+var status_max_health_bonus := 0
 var max_health := 0
 var damage_taken := 0
 var shield := 0
@@ -97,6 +98,7 @@ func set_card_data(value: CardData) -> void:
 		current_attack = 0
 		passive_attack_bonus = 0
 		status_attack_bonus = 0
+		status_max_health_bonus = 0
 		max_health = 0
 		damage_taken = 0
 		shield = 0
@@ -122,6 +124,7 @@ func set_card_data(value: CardData) -> void:
 		current_attack = data.attack
 		passive_attack_bonus = 0
 		status_attack_bonus = 0
+		status_max_health_bonus = 0
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
@@ -240,6 +243,7 @@ func create_card_snapshot() -> Dictionary:
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
 		"status_attack_bonus": status_attack_bonus,
+		"status_max_health_bonus": status_max_health_bonus,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -272,6 +276,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	current_attack = int(snapshot.get("current_attack", 0))
 	passive_attack_bonus = int(snapshot.get("passive_attack_bonus", 0))
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
+	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
@@ -286,6 +291,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	apply_status_snapshots(snapshot.get("statuses", []))
 	if not snapshot.has("status_attack_bonus"):
 		status_attack_bonus = calculate_status_attack_bonus()
+	if not snapshot.has("status_max_health_bonus"):
+		status_max_health_bonus = calculate_status_max_health_bonus()
 	is_action_available_hint = bool(snapshot.get("is_action_available_hint", false))
 	is_pending_death = false
 	is_selected = false
@@ -330,6 +337,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
 		"status_attack_bonus": status_attack_bonus,
+		"status_max_health_bonus": status_max_health_bonus,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -744,22 +752,57 @@ func calculate_status_attack_bonus() -> int:
 		if status == null or not status.tags.has(CardStatus.TAG_ATTACK_MODIFIER):
 			continue
 
-		var amount := int(status.payload.get(EffectData.KEY_ATTACK_BONUS, 0))
-		if amount == 0:
-			continue
-
-		bonus += amount * maxi(status.stacks, 1)
+		bonus += calculate_status_numeric_modifier(status, EffectData.KEY_ATTACK_BONUS)
 
 	return bonus
 
 
+func calculate_status_max_health_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status == null or not status.tags.has(CardStatus.TAG_HEALTH_MODIFIER):
+			continue
+
+		bonus += calculate_status_numeric_modifier(status, EffectData.KEY_MAX_HEALTH_BONUS)
+
+	return bonus
+
+
+func calculate_status_numeric_modifier(status: CardStatus, payload_key: String) -> int:
+	if status == null:
+		return 0
+
+	var amount := int(status.payload.get(payload_key, 0))
+	if amount == 0:
+		return 0
+
+	if bool(status.payload.get(EffectData.KEY_CUMULATIVE_STATUS_MODIFIER, false)):
+		return amount
+
+	return amount * maxi(status.stacks, 1)
+
+
 func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	var next_status_attack_bonus := calculate_status_attack_bonus()
-	if status_attack_bonus == next_status_attack_bonus:
+	var next_status_max_health_bonus := calculate_status_max_health_bonus()
+	if (
+		status_attack_bonus == next_status_attack_bonus
+		and status_max_health_bonus == next_status_max_health_bonus
+	):
 		return
 
 	current_attack = maxi(current_attack - status_attack_bonus + next_status_attack_bonus, 0)
 	status_attack_bonus = next_status_attack_bonus
+
+	var health_bonus_delta := next_status_max_health_bonus - status_max_health_bonus
+	if health_bonus_delta != 0:
+		max_health = maxi(max_health + health_bonus_delta, 0)
+		if health_bonus_delta > 0:
+			damage_taken = maxi(damage_taken - health_bonus_delta, 0)
+		else:
+			damage_taken = mini(damage_taken, max_health)
+		status_max_health_bonus = next_status_max_health_bonus
+
 	if should_emit_changed:
 		state_changed.emit(self)
 

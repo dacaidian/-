@@ -249,6 +249,8 @@ func _score_spell(action: CardAction, user: CardState, target: CardState, gm: Ga
 			score += 5.0
 		elif effect_id == "play_spell_action":
 			score += 3.0
+		elif effect_id == EffectData.EFFECT_DEVOUR:
+			score += _score_devour_effect(user, target, player)
 		elif effect_id == "set_attack_to_current_health":
 			if target != null:
 				var new_attack := target.current_health - target.current_attack
@@ -268,6 +270,22 @@ func _score_spell(action: CardAction, user: CardState, target: CardState, gm: Ga
 	var spell_power := player.get_spell_power_bonus()
 	if spell_power > 0:
 		score *= 1.0 + float(spell_power) * 0.15
+
+	return score
+
+
+func _score_devour_effect(user: CardState, target: CardState, player: PlayerState) -> float:
+	if user == null or target == null or player == null:
+		return 0.0
+
+	var gained_attack := target.current_attack * 2
+	var gained_health := target.max_health * 2
+	var score := float(gained_attack) * 2.2 + float(gained_health) * 0.9
+
+	if target.owner_id == player.id:
+		score -= AICommonScript.calc_threat_score(target) * 1.4
+	else:
+		score += AICommonScript.calc_threat_score(target) * 0.8
 
 	return score
 

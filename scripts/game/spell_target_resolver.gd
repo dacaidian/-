@@ -10,6 +10,7 @@ const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
 const TARGET_RULE_AREA_3X3 := "area_3x3"
 const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
+const TARGET_RULE_MINIONS_BY_CARD_IDS := "minions_by_card_ids"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -30,7 +31,12 @@ static func requires_target(target_rule: String) -> bool:
 	return target_rule != TARGET_RULE_NONE
 
 
-static func get_valid_targets(target_rule: String, game_manager: GameManager) -> Array[CardState]:
+static func get_valid_targets(
+	target_rule: String,
+	game_manager: GameManager,
+	card_ids: Array[String] = [],
+	source_state: CardState = null
+) -> Array[CardState]:
 	var targets: Array[CardState] = []
 	if game_manager == null or not requires_target(target_rule):
 		return targets
@@ -39,13 +45,18 @@ static func get_valid_targets(target_rule: String, game_manager: GameManager) ->
 		if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS and game_manager.has_method("can_place_ground_card_on_slot"):
 			if not game_manager.can_place_ground_card_on_slot(state.slot_index):
 				continue
-		if can_target(target_rule, state):
+		if can_target(target_rule, state, card_ids, source_state):
 			targets.append(state)
 
 	return targets
 
 
-static func can_target(target_rule: String, target: CardState) -> bool:
+static func can_target(
+	target_rule: String,
+	target: CardState,
+	card_ids: Array[String] = [],
+	source_state: CardState = null
+) -> bool:
 	if target == null:
 		return false
 
@@ -68,6 +79,8 @@ static func can_target(target_rule: String, target: CardState) -> bool:
 			return target.is_minion() and not target.is_hero()
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
+		TARGET_RULE_MINIONS_BY_CARD_IDS:
+			return target.is_minion() and target != source_state and card_ids.has(target.card_id)
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:

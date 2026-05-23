@@ -49,13 +49,13 @@
 - `CardAction`：行动基类。
 - `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
-- `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
+- `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。
 - `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions` 和 `grant_last_spell_action`，并根据 `card_ids` 判断哪些随从获得这些法术。`grant_last_spell_action` 通过 `source_card_ids` 限定可学习的施法来源，当前用于“好好学习”。
 - `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
-- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。
+- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`、`devour`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。单位自身状态也可以在 `payload.trigger_effects` 中提供触发效果，由 `EffectRegistry.execute_status_triggers()` 在同一触发入口结算。
 - 死亡解析：外部仍调用 `GameManager.check_and_destroy_if_dead()` / `destroy_card()`，内部委托 `DeathResolver` 统一处理死亡或销毁；死亡不作为玩家动作显示在动作菜单中。
 
 原则：新增攻击、施法、技能时，优先新增一个 `CardAction` 子类，再注册到 `ActionRegistry`。行动自己决定 `can_start()`、`get_valid_targets()` 和 `execute()`，不要把行动规则写进 UI。需要目标的行动只有在存在合法目标时才会显示在动作菜单中。行动基类提供通用判断，例如 `is_controlled_face_up_minion()`，避免每个行动重复写当前玩家归属和随从检查。
@@ -182,7 +182,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -261,12 +261,13 @@
 - `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。可选字段 `apply_animation` 指定状态施加瞬间的视觉动画 key；没有该字段时不播放额外动画，由施法来源自身的动画负责表现。
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
-- `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。
+- `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。
 - `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
 - 圣盾、辉煌光环、励蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会按 `stack_policy` 合并：默认 `stack` 会叠层，`refresh` 会刷新持续信息但不额外叠层，`replace` 会用新状态替换旧状态，`ignore` 会忽略后续同源同名状态。蛇毒减攻使用 `refresh`，避免重复攻击把同一个“攻击-2”状态叠成无限减攻；毒状态仍走专门的强度比较逻辑。
+- `吞噬` 使用 `status_id: "devour"`，同时带 `attack_modifier` 和 `health_modifier`。多次吞噬会叠层，但具体攻击/生命加成保存在累计 payload 中，并通过 `cumulative_status_modifier: true` 告诉 `CardState` 不再按 stacks 二次相乘。吞噬继承的毒性攻击放在状态 `payload.trigger_effects` 中，只保留最高级毒性包；未来驱散移除此状态时，属性和继承毒性攻击会一起消失。
 - `StatusResolver` 会在 `GameManager.resolve_turn_timing_triggers()` 中分两段工作：先通过 `resolve_pre_trigger_status_effects()` 结算需要早于普通时点触发的状态规则（当前是毒伤害），然后在普通时点触发结算之后推进状态生命周期。这样毒伤害早于回合结束治疗，而到期前的状态仍可参与该时点触发，随后再过期。
 
 ## 行动资源约定
@@ -330,7 +331,7 @@
 - 由升级牌解锁的施法能力不要预埋进随从自身 `spell_actions` 再特殊禁用；优先让升级牌通过 `grant_spell_actions` 授予动作。授予规则的 JSON 解释放在 `GrantedSpellResolver`，这样未获得升级时单位基础定义保持干净，未来升级牌也可以授予不同单位不同法术。
 - 法术动作只在当前玩家开启施法回合后展示；施法回合状态保存在 `GameManager.is_spell_turn_active`，回合结束时清空。
 - 每个 spell action 至少包含 `id`、`name`、`target_rule` 和 `effects`；可选 `animation` 用于指定表现层动画 key。`CardAction.get_area_info()` 是多态方法，基类返回空字典，`SpellAction` 覆写并通过 `SpellTargetResolver` 返回 area 尺寸；`InteractionManager` 不依赖具体行动类的内部字段。
-- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`non_hero_minions`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`non_hero_minions` 只选正面非英雄随从，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
+- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`non_hero_minions`、`minions_by_card_ids`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`non_hero_minions` 只选正面非英雄随从，`minions_by_card_ids` 只选 `spell_data.card_ids` 白名单里的正面随从并排除施法者自身，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
 - `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
 - AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。

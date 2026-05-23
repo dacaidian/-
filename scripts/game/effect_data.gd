@@ -31,7 +31,11 @@ const KEY_STATUS_EXPIRES_ON_TRIGGER := "expires_on_trigger"
 const KEY_STATUS_PERSISTS_AFTER_DEATH := "persists_after_death"
 const KEY_STATUS_PAYLOAD := "payload"
 const KEY_STATUS_TURN_EFFECTS := "turn_effects"
+const KEY_STATUS_TRIGGER_EFFECTS := "trigger_effects"
 const KEY_ATTACK_BONUS := "attack_bonus"
+const KEY_MAX_HEALTH_BONUS := "max_health_bonus"
+const KEY_CUMULATIVE_STATUS_MODIFIER := "cumulative_status_modifier"
+const KEY_POISON_ATTACK_LEVEL := "poison_attack_level"
 const KEY_POISON_DAMAGE := "poison_damage"
 const KEY_FILTER_TYPE := "filter_type"
 const KEY_FILTER_OWNER := "filter_owner"
@@ -80,6 +84,7 @@ const EFFECT_ADD_CARD_TO_HAND := "add_card_to_hand"
 const EFFECT_CHOOSE_CARD_TO_HAND := "choose_card_to_hand"
 const EFFECT_SET_SLOT_TRAP := "set_slot_trap"
 const EFFECT_SWAP_BOARD_SLOTS := "swap_board_slots"
+const EFFECT_DEVOUR := "devour"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -391,6 +396,23 @@ static func get_status_turn_effects(status: CardStatus) -> Array[Dictionary]:
 				turn_effects.append(effect_data)
 
 	return turn_effects
+
+
+static func get_status_trigger_effects(status: CardStatus, trigger: String) -> Array[Dictionary]:
+	var trigger_effects: Array[Dictionary] = []
+	if status == null:
+		return trigger_effects
+
+	var raw_trigger_effects: Variant = status.payload.get(KEY_STATUS_TRIGGER_EFFECTS, [])
+	if raw_trigger_effects is Array:
+		for effect_data in raw_trigger_effects:
+			if not effect_data is Dictionary:
+				continue
+			if get_trigger(effect_data) != trigger:
+				continue
+			trigger_effects.append(effect_data)
+
+	return trigger_effects
 
 
 static func get_trigger_player(effect_data: Dictionary) -> String:

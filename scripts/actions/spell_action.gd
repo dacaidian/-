@@ -3,6 +3,7 @@ class_name SpellAction
 
 var spell_data: Dictionary = {}
 var target_rule := SpellTargetResolver.TARGET_RULE_ALL_MINIONS
+var target_card_ids: Array[String] = []
 var effects: Array[Dictionary] = []
 
 
@@ -14,6 +15,7 @@ func setup(new_spell_data: Dictionary) -> SpellAction:
 	action_group = CardState.ACTION_GROUP_SPELL
 	can_reuse_action_group = false
 	target_rule = SpellTargetResolver.get_rule_from_spell_data(spell_data)
+	target_card_ids = EffectData.get_card_ids(spell_data)
 	effects.clear()
 
 	var raw_effects = spell_data.get("effects", [])
@@ -43,7 +45,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 	if not requires_target():
 		return targets
 
-	return SpellTargetResolver.get_valid_targets(target_rule, game_manager)
+	return SpellTargetResolver.get_valid_targets(target_rule, game_manager, target_card_ids, user)
 
 
 func execute(user: CardState, target: CardState, game_manager: GameManager) -> void:
@@ -87,7 +89,7 @@ func get_area_info() -> Dictionary:
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
-	return SpellTargetResolver.can_target(target_rule, target)
+	return SpellTargetResolver.can_target(target_rule, target, target_card_ids, user)
 
 
 func record_successful_spell_cast(user: CardState, game_manager: GameManager) -> void:
