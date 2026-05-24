@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1314,8 +1314,8 @@
 				"keywords": [
 					"ranged"
 				],
-				"attack": 2,
-				"health": 16,
+				"attack": 1,
+				"health": 14,
 				"effects": []
 			},
 			{
