@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "cards": {
     "silver_hand": [
       "uther",
@@ -13,7 +13,10 @@
       "arcane_space_upgrade"
     ],
     "night_elf_sentinels": [
-      "tyrande"
+      "tyrande",
+      "sentinel_archer",
+      "precision_shot",
+      "full_moon_cover"
     ]
   },
   "include_neutral_pool": false,
