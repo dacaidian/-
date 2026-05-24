@@ -434,3 +434,11 @@
 - 新增动态授予法术：优先扩展 `GrantedSpellResolver` 和 `PlayerState` 中的施法历史，不要在 `ActionRegistry` 或 UI 层根据卡牌名临时拼动作。像“学习最近一次法术”这种规则使用 `grant_last_spell_action`、`card_ids` 和 `source_card_ids` 配置。
 - 新增动态授予单位触发效果：使用 `grant_unit_trigger_effects`、`card_ids`、`granted_trigger` 和 `granted_effects`，由 `GrantedUnitTriggerResolver` 在 `TriggerResolver` / `EffectRegistry.execute_trigger()` 之后统一结算；不要把升级牌授予的攻击附带效果写进 `AttackAction` 或随从静态 `effects`。
 - 新增法术强度：装备或其他区域效果使用 `modify_spell_power`。法术施放入口通过 `EffectData.mark_spell_power_enabled()` 给运行时效果打标，`CardEffect.get_spell_scaled_amount()` 统一读取玩家装备法强；回合触发、亡语、建筑治疗等非施法效果不会自动吃法强。默认加成 `damage`、`heal`、`shield`、`increase_max_health` 这类直接数值法术效果，如需某个效果不吃法强，可配置 `spell_power_scaling: false`。
+## 种族运行时状态
+
+- 某些种族可以拥有自己的运行时状态，例如暗夜精灵哨兵的“时间”循环。该类状态属于玩家种族状态，不属于单张战场卡牌状态，因此保存在 `PlayerState`，而不是 `CardState.statuses`。
+- 静态配置写在 `data/cards.json` 的种族字段 `runtime_state` 中。当前字段包括：`id`、`name`、`default_state_id`、`advance_trigger` 和 `cycle`。`cycle` 中的每个节点包含 `id`、`name`、`card_id`，其中 `card_id` 指向一张 `type: "time"` 的展示卡。
+- `CardDatabase.get_faction_runtime_state_config()` 只负责读取配置；`PlayerState.setup_faction_runtime_state()` 初始化当前状态；`PlayerState.advance_faction_runtime_state()` 推进状态。回合流程由 `GameManager.advance_faction_runtime_state_for_player()` 在对应触发点调用。
+- 当前暗夜精灵哨兵配置为：日出 -> 正午 -> 黄昏 -> 月升 -> 满月 -> 月落，并在该玩家自己的回合结束后推进到下一状态。回合结束触发效果仍先按旧状态结算，随后再推进时间。
+- 种族状态展示由 `FactionTimePanelController` 管理。它只读取玩家当前状态和对应展示卡图，不参与规则结算。未来新增天气、仪式、季节等种族循环状态，应复用同一套 `runtime_state` 数据结构和面板入口。
+- `type: "time"` 是非牌池展示型卡牌；这类卡可以被 `CardDatabase` 全局查表和 UI 展示，但 `count: 0`，不会进入公共牌池，也不会进入手牌或战场。

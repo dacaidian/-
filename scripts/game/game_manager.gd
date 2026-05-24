@@ -3,6 +3,7 @@ class_name GameManager
 
 const CardPoolViewControllerScript := preload("res://scripts/ui/card_pool_view_controller.gd")
 const TurnStatusControllerScript := preload("res://scripts/ui/turn_status_controller.gd")
+const FactionTimePanelControllerScript := preload("res://scripts/ui/faction_time_panel_controller.gd")
 const HandDrawerControllerScript := preload("res://scripts/ui/hand_drawer_controller.gd")
 const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_display_controller.gd")
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
@@ -122,6 +123,7 @@ var end_turn_button: Button
 var action_menu_controller := ActionMenuController.new()
 var card_pool_view_controller := CardPoolViewControllerScript.new()
 var turn_status_controller := TurnStatusControllerScript.new()
+var faction_time_panel_controller := FactionTimePanelControllerScript.new()
 var hand_drawer_controller := HandDrawerControllerScript.new()
 var equipment_display_controller := EquipmentDisplayControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
@@ -168,9 +170,11 @@ func _ready() -> void:
 	initialize_players()
 	setup_card_animation_controller()
 	setup_turn_status_view()
+	setup_faction_time_panel_view()
 	setup_hand_drawer_view()
 	setup_equipment_display_view()
 	update_turn_status_view()
+	update_faction_time_panel_view()
 	update_hand_drawer_view()
 	update_equipment_display_view()
 	card_pool = create_initial_card_pool()
@@ -239,6 +243,8 @@ func connect_viewport_resize() -> void:
 		viewport.size_changed.connect(update_card_pool_view)
 	if not viewport.size_changed.is_connected(update_equipment_display_view):
 		viewport.size_changed.connect(update_equipment_display_view)
+	if not viewport.size_changed.is_connected(update_faction_time_panel_view):
+		viewport.size_changed.connect(update_faction_time_panel_view)
 
 
 func connect_end_turn_button() -> void:
@@ -268,6 +274,7 @@ func initialize_players() -> void:
 		if index < player_faction_ids.size():
 			player.set_faction(player_faction_ids[index], get_faction_display_name(player_faction_ids[index]))
 			player.set_selected_hero(get_selected_hero_for_player(index))
+			player.setup_faction_runtime_state(card_database.get_faction_runtime_state_config(player_faction_ids[index]))
 		player.is_ai = get_player_ai_flag(index)
 		player.ai_difficulty = get_player_ai_difficulty(index)
 		player.set_base_flips_per_turn(player_max_flips_per_turn)
@@ -524,6 +531,14 @@ func update_turn_status_view() -> void:
 	)
 
 
+func setup_faction_time_panel_view() -> void:
+	faction_time_panel_controller.setup(get_parent() as Control)
+
+
+func update_faction_time_panel_view() -> void:
+	faction_time_panel_controller.update(players, card_database, get_parent() as Control)
+
+
 func setup_hand_drawer_view() -> void:
 	hand_interaction_controller.setup(self)
 
@@ -682,6 +697,7 @@ func end_turn() -> void:
 	if current_player != null:
 		current_player.end_turn()
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_AFTER_TURN_END, current_player.id)
+		advance_faction_runtime_state_for_player(current_player)
 
 	is_spell_turn_active = false
 	current_player_index = (current_player_index + 1) % players.size()
@@ -697,9 +713,21 @@ func end_turn() -> void:
 	is_resolving_card_action = false
 	refresh_action_available_hints()
 	update_turn_status_view()
+	update_faction_time_panel_view()
 	update_hand_drawer_view()
 	refresh_debug_panel()
 	schedule_ai_turn_if_needed()
+
+
+func advance_faction_runtime_state_for_player(player: PlayerState) -> void:
+	if player == null:
+		return
+
+	if not player.should_advance_faction_runtime_state_on(EventContext.TRIGGER_AFTER_TURN_END):
+		return
+
+	if player.advance_faction_runtime_state():
+		update_faction_time_panel_view()
 
 
 func schedule_ai_turn_if_needed() -> void:
@@ -1523,6 +1551,7 @@ func _on_card_state_changed(state: CardState) -> void:
 func _on_player_state_changed(state: PlayerState) -> void:
 	check_victory()
 	update_turn_status_view()
+	update_faction_time_panel_view()
 	if state == get_current_player():
 		update_hand_drawer_view()
 	refresh_debug_panel()

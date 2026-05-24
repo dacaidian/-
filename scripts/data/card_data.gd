@@ -6,6 +6,7 @@ const TYPE_SPELL := "spell"
 const TYPE_BUILDING := "building"
 const TYPE_UPGRADE := "upgrade"
 const TYPE_EQUIPMENT := "equipment"
+const TYPE_TIME := "time"
 const EQUIPMENT_TYPE_WEAPON := "weapon"
 const ROLE_HERO := "hero"
 const KEYWORD_CAVALRY := "cavalry"
@@ -67,6 +68,10 @@ func is_upgrade() -> bool:
 
 func is_equipment() -> bool:
 	return type == TYPE_EQUIPMENT
+
+
+func is_time() -> bool:
+	return type == TYPE_TIME
 
 
 func is_hero() -> bool:

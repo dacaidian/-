@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1249,6 +1249,140 @@
 						}
 					}
 				]
+			}
+		]
+	},
+	{
+		"id": "night_elf_sentinels",
+		"name": "暗夜精灵哨兵",
+		"displayName": "暗夜精灵哨兵",
+		"description": "暗夜精灵哨兵种族的数据。该种族拥有时间循环：日出、正午、黄昏、月升、满月、月落。",
+		"runtime_state": {
+			"id": "time",
+			"name": "时间",
+			"default_state_id": "sunrise",
+			"advance_trigger": "after_turn_end",
+			"cycle": [
+				{
+					"id": "sunrise",
+					"name": "日出",
+					"card_id": "sentinel_time_sunrise"
+				},
+				{
+					"id": "noon",
+					"name": "正午",
+					"card_id": "sentinel_time_noon"
+				},
+				{
+					"id": "dusk",
+					"name": "黄昏",
+					"card_id": "sentinel_time_dusk"
+				},
+				{
+					"id": "moonrise",
+					"name": "月升",
+					"card_id": "sentinel_time_moonrise"
+				},
+				{
+					"id": "full_moon",
+					"name": "满月",
+					"card_id": "sentinel_time_full_moon"
+				},
+				{
+					"id": "moonset",
+					"name": "月落",
+					"card_id": "sentinel_time_moonset"
+				}
+			]
+		},
+		"heroes": [
+			{
+				"card_id": "tyrande",
+				"attached_cards": []
+			}
+		],
+		"cards": [
+			{
+				"id": "tyrande",
+				"name": "泰兰德",
+				"description": "暗夜精灵哨兵英雄。",
+				"url": "res://assets/img/暗夜精灵哨兵/泰兰德.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 16,
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_sunrise",
+				"name": "日出",
+				"description": "暗夜精灵哨兵的时间状态：日出。",
+				"url": "res://assets/img/暗夜精灵哨兵/日出.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_noon",
+				"name": "正午",
+				"description": "暗夜精灵哨兵的时间状态：正午。",
+				"url": "res://assets/img/暗夜精灵哨兵/正午.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_dusk",
+				"name": "黄昏",
+				"description": "暗夜精灵哨兵的时间状态：黄昏。",
+				"url": "res://assets/img/暗夜精灵哨兵/黄昏.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_moonrise",
+				"name": "月升",
+				"description": "暗夜精灵哨兵的时间状态：月升。",
+				"url": "res://assets/img/暗夜精灵哨兵/月升.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_full_moon",
+				"name": "满月",
+				"description": "暗夜精灵哨兵的时间状态：满月。",
+				"url": "res://assets/img/暗夜精灵哨兵/满月.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "sentinel_time_moonset",
+				"name": "月落",
+				"description": "暗夜精灵哨兵的时间状态：月落。",
+				"url": "res://assets/img/暗夜精灵哨兵/月落.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
 			}
 		]
 	},

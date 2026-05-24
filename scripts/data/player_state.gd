@@ -16,6 +16,11 @@ var faction_name := ""
 var selected_hero_card_id := ""
 var is_ai := false
 var ai_difficulty := "normal"
+var faction_runtime_state_config: Dictionary = {}
+var faction_runtime_state_id := ""
+var faction_runtime_state_name := ""
+var faction_runtime_state_card_id := ""
+var faction_runtime_state_cycle_index := -1
 
 # 资源分是玩家的长期胜利资源。达到战局目标值的玩家会赢得游戏。
 var resource_score := DEFAULT_RESOURCE_SCORE
@@ -58,6 +63,90 @@ func set_faction(new_faction_id: String, new_faction_name := "") -> void:
 func set_selected_hero(card_id: String) -> void:
 	selected_hero_card_id = card_id
 	state_changed.emit(self)
+
+
+func setup_faction_runtime_state(config: Dictionary) -> void:
+	faction_runtime_state_config = config.duplicate(true)
+	faction_runtime_state_id = ""
+	faction_runtime_state_name = ""
+	faction_runtime_state_card_id = ""
+	faction_runtime_state_cycle_index = -1
+
+	var cycle := get_faction_runtime_state_cycle()
+	if cycle.is_empty():
+		state_changed.emit(self)
+		return
+
+	var default_state_id := str(faction_runtime_state_config.get("default_state_id", ""))
+	var default_index := find_faction_runtime_state_index(default_state_id)
+	if default_index < 0:
+		default_index = 0
+
+	set_faction_runtime_state_by_index(default_index)
+	state_changed.emit(self)
+
+
+func has_faction_runtime_state() -> bool:
+	return not get_faction_runtime_state_cycle().is_empty()
+
+
+func get_faction_runtime_state_title() -> String:
+	return str(faction_runtime_state_config.get("name", ""))
+
+
+func should_advance_faction_runtime_state_on(trigger: String) -> bool:
+	if not has_faction_runtime_state():
+		return false
+
+	return str(faction_runtime_state_config.get("advance_trigger", "after_turn_end")) == trigger
+
+
+func get_faction_runtime_state_cycle() -> Array:
+	var raw_cycle: Variant = faction_runtime_state_config.get("cycle", [])
+	if raw_cycle is Array:
+		return raw_cycle
+
+	return []
+
+
+func find_faction_runtime_state_index(state_id: String) -> int:
+	if state_id == "":
+		return -1
+
+	var cycle := get_faction_runtime_state_cycle()
+	for index in range(cycle.size()):
+		var entry: Variant = cycle[index]
+		if not entry is Dictionary:
+			continue
+		if str(entry.get("id", "")) == state_id:
+			return index
+
+	return -1
+
+
+func set_faction_runtime_state_by_index(index: int) -> void:
+	var cycle := get_faction_runtime_state_cycle()
+	if cycle.is_empty():
+		return
+
+	var normalized_index := posmod(index, cycle.size())
+	var entry: Variant = cycle[normalized_index]
+	if not entry is Dictionary:
+		return
+
+	faction_runtime_state_cycle_index = normalized_index
+	faction_runtime_state_id = str(entry.get("id", ""))
+	faction_runtime_state_name = str(entry.get("name", faction_runtime_state_id))
+	faction_runtime_state_card_id = str(entry.get("card_id", ""))
+
+
+func advance_faction_runtime_state() -> bool:
+	if not has_faction_runtime_state():
+		return false
+
+	set_faction_runtime_state_by_index(faction_runtime_state_cycle_index + 1)
+	state_changed.emit(self)
+	return true
 
 
 func gain_resource_score(amount: int) -> void:

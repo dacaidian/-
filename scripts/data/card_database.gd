@@ -182,6 +182,18 @@ func get_faction_description(faction_id: String) -> String:
 	return ""
 
 
+func get_faction_runtime_state_config(faction_id: String) -> Dictionary:
+	var faction = factions_by_id.get(faction_id, {})
+	if not faction is Dictionary:
+		return {}
+
+	var runtime_state: Variant = faction.get("runtime_state", {})
+	if runtime_state is Dictionary:
+		return runtime_state.duplicate(true)
+
+	return {}
+
+
 func get_excluded_neutral_card_ids_for_factions(faction_ids: Array[String]) -> Array[String]:
 	var excluded_card_ids: Array[String] = []
 

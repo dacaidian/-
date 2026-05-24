@@ -421,3 +421,19 @@ rg --files scripts scenes data docs
 - 普通补牌必须走 `can_refill_ground_slot()`；普通随从放置、移动、格子型法术必须走 `can_place_ground_card_on_slot()`。
 - 交换单元格（例如奥术空间）不等同于普通放置或补牌，不应调用 `can_place_ground_card_on_slot()` 限制可交换格。交换后由被交换过去的 `BoardCell` 性质决定该位置后续能否补牌/放置。
 - 未来飞行单位应进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。
+### 种族运行时状态
+
+优先读：
+
+- `data/cards.json` 中目标种族的 `runtime_state` 配置。
+- `scripts/data/player_state.gd` 中 `setup_faction_runtime_state()`、`advance_faction_runtime_state()`。
+- `scripts/data/card_database.gd` 中 `get_faction_runtime_state_config()`。
+- `scripts/game/game_manager.gd` 中 `initialize_players()`、`end_turn()`、`advance_faction_runtime_state_for_player()`。
+- `scripts/ui/faction_time_panel_controller.gd`。
+
+常见修改：
+
+- 新增种族循环状态：在种族 JSON 上添加 `runtime_state`，并用 `cycle[].card_id` 指向 `type: "time"`、`count: 0` 的展示卡。
+- 修改状态推进时机：优先改 `runtime_state.advance_trigger` 和 `GameManager.advance_faction_runtime_state_for_player()` 的触发接入，不要把状态推进写进具体卡牌效果。
+- 修改展示样式：只改 `FactionTimePanelController`；它不参与规则结算。
+- 新增依赖时间的卡牌效果时，效果应读取 `PlayerState.faction_runtime_state_id`，不要从 UI 面板反查。
