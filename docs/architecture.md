@@ -15,6 +15,7 @@
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
 - `CardDatabase`：读取并缓存 JSON 静态数据。支持测试模式：通过 `data/test_config.json` 配置白名单卡牌、数量覆盖和游戏参数（`game_params` 节），提供 `get_test_game_param()` 通用参数查询；游戏参数由 `GameManager._apply_test_game_params()` 在初始化时读取并覆盖 `@export` 默认值。
 - `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。`count <= 0` 的卡不会被展开进牌池，便于未来保留“可被查表但不自然出现”的卡。
+- `tools/validate_cards.py`：卡牌数据校验器。它从 `EffectData`、`EffectRegistry`、`SpellTargetResolver`、`CardData`、`CardStatus` 等运行时代码中读取合法配置词汇，再校验 `data/cards.json` 的资源路径、卡牌引用、目标规则、效果 id、状态字段和英雄配套牌引用。新增或修改卡牌后应优先运行它。
 - 衍生牌（Token）：不进入牌池、仅由卡牌效果生成的卡牌。在 `cards.json` 中定义在对应种族的 `tokens[]` 字段下，结构和普通卡牌一致。`CardDatabase.load_faction()` 会把 token 注册到 `cards_by_id`（全局可查），但不加入 `cards_by_faction_id`，因此牌池构造链路天然跳过。
 - 入口选择会从 `CardDatabase.get_playable_faction_ids()` 读取可选种族，排除 `kind: "neutral_pool"` 的中立牌库；该列表保持 `cards.json` 中的加载顺序，避免默认种族选择被字典排序打乱。英雄列表优先读取种族层级 `heroes` 字段。
 
@@ -409,6 +410,7 @@
 
 ## 扩展约定
 
+- 新增或修改卡牌数据：先运行 `python tools/validate_cards.py`，再运行 JSON 和 Godot 校验。校验器只检查数据结构、引用和资源路径，不替代规则测试；如果新增了合法的 target rule、effect id、status tag、animation key，应优先把运行时代码里的常量或注册补齐，而不是在数据里绕过校验。
 - 新增行动：放在 `scripts/actions`，继承 `CardAction`。
 - 新增行动目标规则：实现该行动的 `get_valid_targets()`，由 `InteractionManager` 统一标记目标；如果需要相邻、正面单位、正面随从等棋盘通用查询，优先复用 `BoardQuery`。
 - 新增卡牌效果：放在 `scripts/effects`，继承 `CardEffect` 并注册到 `EffectRegistry`。

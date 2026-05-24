@@ -56,6 +56,7 @@
 
 验证：
 
+- `python tools/validate_cards.py`
 - `python -m json.tool data/cards.json`
 - `godot --headless --path . --check-only`
 
@@ -379,6 +380,7 @@
 基础验证：
 
 ```powershell
+python tools\validate_cards.py
 python -m json.tool data\cards.json
 godot --headless --path . --check-only
 godot --headless --path . --quit-after 1

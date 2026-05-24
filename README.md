@@ -72,6 +72,9 @@ war-card/
 ### 验证命令
 
 ```bash
+# 卡牌数据引用校验
+python tools/validate_cards.py
+
 # JSON 格式校验
 python -m json.tool data/cards.json
 

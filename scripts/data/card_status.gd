@@ -27,6 +27,7 @@ const TAG_ATTACK_MODIFIER := "attack_modifier"
 const TAG_HEALTH_MODIFIER := "health_modifier"
 const TAG_DAMAGE_OVER_TIME := "damage_over_time"
 const TAG_DEATH_LINK := "death_link"
+const TAG_MANA_GENERATION := "mana_generation"
 const STATUS_FREEZE := "freeze"
 
 var status_id := ""
