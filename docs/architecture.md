@@ -449,3 +449,9 @@
 - 多张 `精准射击` 会叠加到同一状态层数；触发效果配置 `scale_amount_by_status_stacks: true`，结算时会按状态层数放大伤害。触发完成后通过 `consume_on_trigger: true` 移除该状态实例，因此所有层数会在同一次普通攻击中一起释放。
 - `is_permanent` 只表示不按回合倒计时，不表示死亡后保留。泰兰德离场、进入英雄复活冷却或状态被驱散时，该状态仍应按普通附着状态处理。
 - 持续视觉由 `CardStatusOverlay` 读取当前状态绘制，不属于施法瞬间动画；施法瞬间仍由 `CardAnimationController` 根据卡牌的 `animation` key 处理。
+
+## 种族运行时状态跳转
+
+- `set_faction_runtime_state` 是通用玩家级效果，用于把效果拥有者的种族运行时状态设置到指定 `runtime_state_id`，当前用于暗夜精灵哨兵的 `满月之蔽`。
+- 该效果只改 `PlayerState.faction_runtime_state_cycle_index` 指向的当前节点，不修改 `runtime_state.cycle` 本身；因此跳到 `full_moon` 后，后续回合结束仍会按原顺序推进到 `moonset`。
+- 新增“跳到日出/跳到月升/进入特定季节”等卡牌时，优先复用这个效果，不要在具体卡牌或 UI 面板里手动改种族时间。

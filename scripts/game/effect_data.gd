@@ -66,6 +66,7 @@ const KEY_GRANTED_TRIGGER := "granted_trigger"
 const KEY_GRANTED_EFFECTS := "granted_effects"
 const KEY_LINK_ID := "link_id"
 const KEY_SCALE_AMOUNT_BY_STATUS_STACKS := "scale_amount_by_status_stacks"
+const KEY_RUNTIME_STATE_ID := "runtime_state_id"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -91,6 +92,7 @@ const EFFECT_SWAP_BOARD_SLOTS := "swap_board_slots"
 const EFFECT_DEVOUR := "devour"
 const EFFECT_LINK_UNITS := "link_units"
 const EFFECT_DESTROY_LINKED_UNITS := "destroy_linked_units"
+const EFFECT_SET_FACTION_RUNTIME_STATE := "set_faction_runtime_state"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 

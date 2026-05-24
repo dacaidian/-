@@ -30,6 +30,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_DEVOUR, DevourEffect.new())
 	register_effect(EffectData.EFFECT_LINK_UNITS, LinkUnitsEffect.new())
 	register_effect(EffectData.EFFECT_DESTROY_LINKED_UNITS, DestroyLinkedUnitsEffect.new())
+	register_effect(EffectData.EFFECT_SET_FACTION_RUNTIME_STATE, SetFactionRuntimeStateEffect.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

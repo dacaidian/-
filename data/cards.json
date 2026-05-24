@@ -1373,6 +1373,24 @@
 				]
 			},
 			{
+				"id": "full_moon_cover",
+				"name": "满月之蔽",
+				"description": "将暗夜精灵哨兵的时间直接推进到下一个满月，之后仍按原本时间循环继续推进。",
+				"url": "res://assets/img/暗夜精灵哨兵/满月之庇.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "arcane",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "set_faction_runtime_state",
+						"runtime_state_id": "full_moon"
+					}
+				]
+			},
+			{
 				"id": "sentinel_time_sunrise",
 				"name": "日出",
 				"description": "暗夜精灵哨兵的时间状态：日出。",

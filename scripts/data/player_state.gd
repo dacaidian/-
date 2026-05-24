@@ -124,6 +124,16 @@ func find_faction_runtime_state_index(state_id: String) -> int:
 	return -1
 
 
+func set_faction_runtime_state_by_id(state_id: String) -> bool:
+	var index := find_faction_runtime_state_index(state_id)
+	if index < 0:
+		return false
+
+	set_faction_runtime_state_by_index(index)
+	state_changed.emit(self)
+	return true
+
+
 func set_faction_runtime_state_by_index(index: int) -> void:
 	var cycle := get_faction_runtime_state_cycle()
 	if cycle.is_empty():

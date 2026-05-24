@@ -452,3 +452,18 @@ rg --files scripts scenes data docs
 - 如果效果需要随状态层数叠加，配置 `scale_amount_by_status_stacks: true`。
 - 如果状态触发后要消耗，配置 `consume_on_trigger: true`。
 - 如果触发效果要作用于本次普通攻击目标，使用 `target: "attack_target_unit"`。
+
+### 种族运行时状态跳转
+
+优先读：
+
+- `scripts/effects/set_faction_runtime_state_effect.gd`
+- `scripts/data/player_state.gd` 的 `set_faction_runtime_state_by_id()`。
+- `data/cards.json` 中目标种族的 `runtime_state` 配置。
+- `scripts/ui/faction_time_panel_controller.gd`
+
+常见修改：
+
+- 新增跳转时间/季节/仪式阶段的卡牌时，使用 `set_faction_runtime_state` + `runtime_state_id`。
+- 该效果只改变当前玩家的运行时状态索引，不改循环配置；后续推进仍按原 `cycle` 顺序。
+- UI 面板只读 `PlayerState` 当前状态，不参与规则结算。
