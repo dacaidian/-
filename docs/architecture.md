@@ -455,3 +455,4 @@
 - `set_faction_runtime_state` 是通用玩家级效果，用于把效果拥有者的种族运行时状态设置到指定 `runtime_state_id`，当前用于暗夜精灵哨兵的 `满月之蔽`。
 - 该效果只改 `PlayerState.faction_runtime_state_cycle_index` 指向的当前节点，不修改 `runtime_state.cycle` 本身；因此跳到 `full_moon` 后，后续回合结束仍会按原顺序推进到 `moonset`。
 - 新增“跳到日出/跳到月升/进入特定季节”等卡牌时，优先复用这个效果，不要在具体卡牌或 UI 面板里手动改种族时间。
+- `满月之蔽` 的施法表现使用 `animation: "full_moon_cover"`，由 `CardAnimationController` 绘制月盘、银蓝光环和星尘扩散；这是施法瞬间动画，不负责维持种族时间面板状态。

@@ -467,3 +467,4 @@ rg --files scripts scenes data docs
 - 新增跳转时间/季节/仪式阶段的卡牌时，使用 `set_faction_runtime_state` + `runtime_state_id`。
 - 该效果只改变当前玩家的运行时状态索引，不改循环配置；后续推进仍按原 `cycle` 顺序。
 - UI 面板只读 `PlayerState` 当前状态，不参与规则结算。
+- 这类卡牌需要施法瞬间表现时，优先在 `CardAnimationController` 中新增独立 `animation` key，例如 `full_moon_cover`。

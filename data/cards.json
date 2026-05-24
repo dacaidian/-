@@ -1343,7 +1343,7 @@
 				"type": "spell",
 				"count": 3,
 				"level": 1,
-				"animation": "arcane",
+				"animation": "full_moon_cover",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
