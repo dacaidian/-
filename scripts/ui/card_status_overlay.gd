@@ -27,6 +27,9 @@ var life_link_thread_color := Color(0.46, 1.0, 0.24, 0.78)
 var death_immunity_color := Color(0.05, 0.12, 0.07, 0.26)
 var death_immunity_edge_color := Color(0.74, 1.0, 0.42, 0.74)
 var death_immunity_thread_color := Color(0.40, 0.92, 0.24, 0.62)
+var precision_shot_color := Color(0.30, 0.78, 1.0, 0.16)
+var precision_shot_edge_color := Color(0.64, 0.94, 1.0, 0.86)
+var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
 
 
 func _ready() -> void:
@@ -45,7 +48,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot()
 
 
 func should_show_divine_shield() -> bool:
@@ -97,9 +100,18 @@ func should_show_death_immunity() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 
 
+func should_show_precision_shot() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_PRECISION_SHOT)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
+	if should_show_precision_shot():
+		draw_precision_shot_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -205,6 +217,29 @@ func draw_freeze_overlay() -> void:
 		draw_line(branch_mid, branch_mid + opposite_branch_dir * crystal_size * 0.32, crystal_color, 2.2)
 
 	draw_circle(center, crystal_size * 0.12, crystal_glow)
+
+
+func draw_precision_shot_overlay() -> void:
+	var aim_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
+	var center := aim_rect.get_center()
+	var radius := minf(aim_rect.size.x, aim_rect.size.y) * 0.28
+	var status := state.get_status(CardStatus.STATUS_PRECISION_SHOT) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 4)
+
+	draw_rect(aim_rect, precision_shot_color, true)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 5.0
+		var alpha := precision_shot_edge_color.a * (1.0 - float(index) * 0.14)
+		draw_arc(center, ring_radius, 0.0, TAU, 72, Color(precision_shot_edge_color.r, precision_shot_edge_color.g, precision_shot_edge_color.b, alpha), 2.5, true)
+
+	var line_length := radius * 1.55
+	var gap := radius * 0.34
+	draw_line(center + Vector2(-line_length, 0), center + Vector2(-gap, 0), precision_shot_mark_color, 2.4)
+	draw_line(center + Vector2(gap, 0), center + Vector2(line_length, 0), precision_shot_mark_color, 2.4)
+	draw_line(center + Vector2(0, -line_length), center + Vector2(0, -gap), precision_shot_mark_color, 2.4)
+	draw_line(center + Vector2(0, gap), center + Vector2(0, line_length), precision_shot_mark_color, 2.4)
+	draw_circle(center, radius * 0.13, precision_shot_mark_color)
 
 
 func draw_encourage_gu_overlay() -> void:

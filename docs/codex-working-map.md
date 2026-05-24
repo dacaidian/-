@@ -437,3 +437,18 @@ rg --files scripts scenes data docs
 - 修改状态推进时机：优先改 `runtime_state.advance_trigger` 和 `GameManager.advance_faction_runtime_state_for_player()` 的触发接入，不要把状态推进写进具体卡牌效果。
 - 修改展示样式：只改 `FactionTimePanelController`；它不参与规则结算。
 - 新增依赖时间的卡牌效果时，效果应读取 `PlayerState.faction_runtime_state_id`，不要从 UI 面板反查。
+### 一次性攻击状态
+
+优先读：
+
+- `data/cards.json` 中 `precision_shot` 这类手牌法术的 `apply_status` 配置。
+- `scripts/effects/effect_registry.gd` 的 `execute_status_triggers()`。
+- `scripts/effects/card_effect.gd` 的状态触发目标解析。
+- `scripts/data/card_status.gd` 和 `scripts/ui/card_status_overlay.gd`。
+
+常见修改：
+
+- 新增“下一次攻击附加效果”时，优先使用 `payload.trigger_effects` + `trigger: "after_attack"`，不要直接改 `AttackAction`。
+- 如果效果需要随状态层数叠加，配置 `scale_amount_by_status_stacks: true`。
+- 如果状态触发后要消耗，配置 `consume_on_trigger: true`。
+- 如果触发效果要作用于本次普通攻击目标，使用 `target: "attack_target_unit"`。

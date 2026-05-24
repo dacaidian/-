@@ -100,11 +100,22 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			targets = get_attack_target_enemy_unit(source_state, effect_data)
 		EffectData.TARGET_ATTACK_TARGET_ENEMY_MINION:
 			targets = get_attack_target_enemy_minion(source_state, effect_data)
+		EffectData.TARGET_ATTACK_TARGET_UNIT:
+			targets = get_attack_target_unit(effect_data)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
 			targets = []
 
 	return filter_spell_immune_targets(targets, effect_data)
+
+
+func get_attack_target_unit(effect_data: Dictionary) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	var attack_target := effect_data.get(EventContext.ATTACK_TARGET_STATE) as CardState
+	if BoardQuery.is_face_up_unit(attack_target):
+		targets.append(attack_target)
+
+	return targets
 
 
 func get_attack_target_enemy_unit(source_state: CardState, effect_data: Dictionary) -> Array[CardState]:

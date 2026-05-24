@@ -592,6 +592,20 @@ func remove_status(status_id: String) -> bool:
 	return false
 
 
+func remove_status_instance(status: CardStatus) -> bool:
+	if status == null:
+		return false
+
+	var index := statuses.find(status)
+	if index < 0:
+		return false
+
+	statuses.remove_at(index)
+	recalculate_status_modifiers(false)
+	state_changed.emit(self)
+	return true
+
+
 func has_status(status_id: String) -> bool:
 	return get_status(status_id) != null
 

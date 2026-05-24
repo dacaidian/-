@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1298,7 +1298,9 @@
 		"heroes": [
 			{
 				"card_id": "tyrande",
-				"attached_cards": []
+				"attached_cards": [
+					"precision_shot"
+				]
 			}
 		],
 		"cards": [
@@ -1317,6 +1319,58 @@
 				"attack": 1,
 				"health": 15,
 				"effects": []
+			},
+			{
+				"id": "sentinel_archer",
+				"name": "弓箭手",
+				"description": "暗夜精灵哨兵的一阶远程随从。",
+				"url": "res://assets/img/暗夜精灵哨兵/弓箭手.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 1,
+				"health": 3,
+				"effects": []
+			},
+			{
+				"id": "precision_shot",
+				"name": "精准射击",
+				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",
+				"url": "res://assets/img/暗夜精灵哨兵/精准射击.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"animation": "arcane",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "tyrande",
+						"status_id": "precision_shot",
+						"status_name": "精准射击",
+						"status_description": "下一次普通攻击额外造成4点伤害。",
+						"stacks": 1,
+						"permanent": true,
+						"payload": {
+							"consume_on_trigger": true,
+							"trigger_effects": [
+								{
+									"id": "damage",
+									"trigger": "after_attack",
+									"target": "attack_target_unit",
+									"amount": 4,
+									"scale_amount_by_status_stacks": true,
+									"death_reason": "effect"
+								}
+							]
+						}
+					}
+				]
 			},
 			{
 				"id": "sentinel_time_sunrise",

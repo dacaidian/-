@@ -77,9 +77,29 @@ func execute_status_triggers(source_state: CardState, trigger: String, game_mana
 		if status == null:
 			continue
 
+		var did_trigger := false
 		for effect_data in EffectData.get_status_trigger_effects(status, trigger):
 			var runtime_effect_data := EffectData.duplicate_with_context(effect_data, context)
+			scale_status_trigger_amount(runtime_effect_data, status)
 			EffectData.mark_effect_owner(runtime_effect_data, source_state.owner_id)
 			EffectData.mark_trigger_status(runtime_effect_data, status)
 			EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_EFFECT)
 			await execute_effect(source_state, runtime_effect_data, game_manager)
+			did_trigger = true
+
+		if did_trigger and bool(status.payload.get(EffectData.KEY_CONSUME_ON_TRIGGER, false)):
+			source_state.remove_status_instance(status)
+
+
+func scale_status_trigger_amount(effect_data: Dictionary, status: CardStatus) -> void:
+	if status == null:
+		return
+
+	if not bool(effect_data.get(EffectData.KEY_SCALE_AMOUNT_BY_STATUS_STACKS, false)):
+		return
+
+	var amount := EffectData.get_amount(effect_data)
+	if amount == 0:
+		return
+
+	effect_data[EffectData.KEY_AMOUNT] = amount * maxi(status.stacks, 1)
