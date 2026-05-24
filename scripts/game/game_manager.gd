@@ -1021,7 +1021,7 @@ func restore_minion_actions_for_player(player_id: String) -> void:
 		if state == null or state.is_empty():
 			continue
 
-		if not state.is_minion():
+		if not state.is_unit():
 			continue
 
 		if state.is_owned_by(player_id):
@@ -1068,10 +1068,10 @@ func can_select_card(state: CardState, current_player: PlayerState) -> bool:
 	if state.is_empty() or not state.is_face_up:
 		return false
 
-	if not state.is_minion():
+	if not state.is_unit():
 		return false
 
-	return state.is_owned_by(current_player.id)
+	return state.is_owned_by(current_player.id) and not action_registry.get_available_actions(state, self).is_empty()
 
 
 func handle_action_target_clicked(target_state: CardState) -> void:

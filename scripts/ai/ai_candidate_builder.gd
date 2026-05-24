@@ -84,7 +84,7 @@ func _consider_hand_candidates(best: Dictionary, gm: GameManager, player: Player
 
 
 func _consider_board_action_candidates(best: Dictionary, gm: GameManager, player: PlayerState, difficulty: String) -> void:
-	for user in AICommonScript.get_owned_minions(gm, player.id):
+	for user in AICommonScript.get_owned_action_sources(gm, player.id):
 		if user == null or user.is_empty():
 			continue
 

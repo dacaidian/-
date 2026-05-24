@@ -391,10 +391,16 @@ func get_poison_total_damage() -> int:
 		return 0
 
 	var poison_status := state.get_status(CardStatus.STATUS_POISON)
-	if poison_status == null:
-		return 0
+	var poison_damage := 0
+	if poison_status != null:
+		poison_damage = poison_status.get_poison_total_remaining_damage()
 
-	return poison_status.get_poison_total_remaining_damage()
+	var stored_venom_status := state.get_status(CardStatus.STATUS_STORED_VENOM)
+	var stored_venom_damage := 0
+	if stored_venom_status != null:
+		stored_venom_damage = stored_venom_status.get_stored_venom_damage()
+
+	return poison_damage + stored_venom_damage
 
 
 func position_status_number_texture(value_texture: TextureRect, stack_index: int) -> void:

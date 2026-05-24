@@ -6,11 +6,14 @@ class_name ActionRegistry
 
 var actions_by_id: Dictionary = {}
 var granted_spell_resolver := GrantedSpellResolver.new()
+var granted_action_resolver := GrantedActionResolver.new()
 
 
 func _init() -> void:
 	register_action(MoveAction.new())
 	register_action(AttackAction.new())
+	register_action(InjectVenomAction.new())
+	register_action(VenomBurstAction.new())
 
 
 func register_action(action: CardAction) -> void:
@@ -34,6 +37,9 @@ func get_available_actions(user: CardState, game_manager: GameManager) -> Array[
 		append_if_available(actions, get_action("move"), user, game_manager)
 		append_if_available(actions, get_action("attack"), user, game_manager)
 		append_spell_actions(actions, user, game_manager)
+
+	for granted_action in granted_action_resolver.get_granted_actions(user, game_manager):
+		append_if_available(actions, granted_action, user, game_manager)
 
 	return actions
 

@@ -30,7 +30,7 @@ func refresh(
 			var available_actions: Array[CardAction] = action_registry.get_available_actions(state, game_manager)
 			should_highlight = (
 				state.is_face_up
-				and state.is_minion()
+				and state.is_unit()
 				and state.is_owned_by(current_player_id)
 				and not available_actions.is_empty()
 			)

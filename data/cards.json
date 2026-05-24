@@ -800,6 +800,11 @@
 		"name": "miaoJiang",
 		"displayName": "苗疆族",
 		"description": "苗疆族种族的数据",
+		"pool_modifiers": {
+			"exclude_neutral_card_ids": [
+				"life_spring"
+			]
+		},
 		"heroes": [
 			{
 				"card_id": "chen_duo",
@@ -948,6 +953,19 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "venomous_fountain",
+				"name": "剧毒之泉",
+				"description": "苗疆族建筑。在场时，友方带有普攻附毒能力的毒虫可以将毒液注入其中；剧毒之泉可将储存毒性伤害爆发给相邻敌方随从。",
+				"url": "res://assets/img/苗疆族/剧毒之泉.png",
+				"type": "building",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"attack": 0,
+				"health": 20,
+				"effects": []
 			},
 			{
 				"id": "poison_burst",

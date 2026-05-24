@@ -182,6 +182,30 @@ func get_faction_description(faction_id: String) -> String:
 	return ""
 
 
+func get_excluded_neutral_card_ids_for_factions(faction_ids: Array[String]) -> Array[String]:
+	var excluded_card_ids: Array[String] = []
+
+	for faction_id in faction_ids:
+		var faction = factions_by_id.get(faction_id, {})
+		if not faction is Dictionary:
+			continue
+
+		var pool_modifiers: Variant = faction.get("pool_modifiers", {})
+		if not pool_modifiers is Dictionary:
+			continue
+
+		var raw_excluded_ids: Variant = pool_modifiers.get("exclude_neutral_card_ids", [])
+		if not raw_excluded_ids is Array:
+			continue
+
+		for card_id in raw_excluded_ids:
+			var normalized_id := str(card_id)
+			if normalized_id != "" and not excluded_card_ids.has(normalized_id):
+				excluded_card_ids.append(normalized_id)
+
+	return excluded_card_ids
+
+
 func get_faction_heroes(faction_id: String) -> Array[CardData]:
 	var heroes: Array[CardData] = []
 	var faction = factions_by_id.get(faction_id, {})

@@ -104,6 +104,20 @@ static func get_owned_minions(gm: GameManager, owner_id: String) -> Array:
 	return result
 
 
+static func get_owned_action_sources(gm: GameManager, owner_id: String) -> Array:
+	var result: Array = []
+	if gm == null:
+		return result
+	for state in gm.board_states:
+		if state == null or state.is_empty():
+			continue
+		if not state.is_face_up or not state.is_unit():
+			continue
+		if state.owner_id == owner_id:
+			result.append(state)
+	return result
+
+
 static func get_enemy_minions(gm: GameManager, owner_id: String) -> Array:
 	var result: Array = []
 	if gm == null:

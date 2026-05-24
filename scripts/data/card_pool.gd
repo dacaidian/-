@@ -33,6 +33,7 @@ static func from_match_selection(
 	card_database: CardDatabase
 ) -> CardPool:
 	var card_pool := CardPool.new("", card_database)
+	var excluded_neutral_card_ids := card_database.get_excluded_neutral_card_ids_for_factions(player_faction_ids)
 
 	for index in range(player_faction_ids.size()):
 		var faction_id := player_faction_ids[index]
@@ -49,7 +50,10 @@ static func from_match_selection(
 		if faction_id == "":
 			continue
 
-		card_pool.add_cards(card_database.build_weighted_pool(faction_id), false)
+		card_pool.add_cards(filter_cards_by_excluded_ids(
+			card_database.build_weighted_pool(faction_id),
+			excluded_neutral_card_ids
+		), false)
 
 	card_pool.shuffle()
 	return card_pool
@@ -97,6 +101,22 @@ func add_cards(cards: Array[CardData], should_shuffle := true) -> void:
 
 	if should_shuffle:
 		shuffle()
+
+
+static func filter_cards_by_excluded_ids(cards: Array[CardData], excluded_card_ids: Array[String]) -> Array[CardData]:
+	if excluded_card_ids.is_empty():
+		return cards
+
+	var filtered_cards: Array[CardData] = []
+	for card_data in cards:
+		if card_data == null:
+			continue
+		if excluded_card_ids.has(card_data.id):
+			continue
+
+		filtered_cards.append(card_data)
+
+	return filtered_cards
 
 
 func is_empty() -> bool:

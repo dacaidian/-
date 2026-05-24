@@ -83,6 +83,7 @@
 - 励蛊当前是 `encourage_gu` 状态；使用 `status_tags: ["attack_modifier"]` 和 `payload.attack_bonus` 提供持续攻击力修正，移除状态时由 `CardState.status_attack_bonus` 自动回滚。
 - 生命上限类状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，移除状态时由 `CardState.status_max_health_bonus` 自动回滚。吞噬这类“多次叠加但 payload 已累计”的状态需要配置/写入 `cumulative_status_modifier: true`，避免按 stacks 二次相乘。
 - 毒当前是 `poison` 唯一状态；使用 `status_tags: ["damage_over_time"]`、`payload.poison_damage` 和 `duration_turns`。新毒只在剩余总伤害更高时覆盖旧毒。毒伤害在 `after_turn_end` 普通触发前由 `StatusResolver.resolve_pre_trigger_status_effects()` 结算，早于回合结束治疗。
+- 剧毒之泉的储毒不是 DOT，使用 `stored_venom` + `payload.stored_venom_damage` 表示建筑储存资源，并复用毒性数字图标显示总量。
 - 状态施加前修正由 `StatusModifierResolver` 统一处理；`modify_applied_status` 可按 `status_ids` 修改己方施加的新状态，例如毒性爆发把毒的总伤害压缩到 1 回合内结算。
 - 同源同名状态默认叠层；需要刷新不叠层、替换或忽略时，在状态配置中使用 `stack_policy`（`stack` / `refresh` / `replace` / `ignore`）。例如蛇毒减攻使用 `refresh`，重复施加不继续叠加攻击惩罚。
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
@@ -209,6 +210,8 @@
 常见修改：
 
 - 新增行动、目标选择、行动资源消耗、动作菜单可见性。
+- 动态非施法行动优先接入 `GrantedActionResolver`，不要在 UI 或 `GameManager` 里按卡牌名临时添加按钮。当前剧毒之泉体系使用 `InjectVenomAction` 和 `VenomBurstAction`。
+- 判断“普攻附毒能力”优先读 `PoisonAttackResolver`，它会合并静态攻击触发、升级牌授予触发和状态 payload 触发；不要只靠卡牌 id 判定毒虫。
 - 行动规则不要写进 UI；优先新增或修改 `CardAction` 子类。
 - AOE 范围目标选择复用 `InteractionManager` 的目标选择状态：战场行动通过 `start_action_selection()` + `action.get_area_info()` 判断 area 模式，手牌法术通过 `start_hand_card_target_selection()` + `SpellTargetResolver.get_area_dimensions()` 判断 area 模式；area 模式下全棋盘格子为合法目标，悬停显示蓝色 area 预览。
 - 动态法术授予（例如学习最近一次法术）优先改 `GrantedSpellResolver` 和 `PlayerState` 的施法历史；`ActionRegistry` 只负责把解析出来的 spell data 转成动作。
@@ -349,6 +352,7 @@
 
 - 中立牌库 id 是 `neutral`，`kind: "neutral_pool"`。
 - 双方种族牌库和中立牌库一起洗入公共牌池。
+- 种族包可通过 `pool_modifiers.exclude_neutral_card_ids` 排除中立卡；当前苗疆族会让公共牌池去掉 `生命之泉`。
 - 中立手牌类卡牌翻开后进入当前玩家手牌。
 - 中立棋盘单位翻开后留在战场且通常无 owner。
 

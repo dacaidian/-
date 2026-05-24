@@ -11,7 +11,7 @@ func evaluate_and_execute_all(gm: GameManager, difficulty: String) -> void:
 	if player == null:
 		return
 
-	var owned: Array = AICommonScript.get_owned_minions(gm, player.id)
+	var owned: Array = AICommonScript.get_owned_action_sources(gm, player.id)
 	if owned.is_empty():
 		return
 
@@ -85,6 +85,8 @@ func _score_action(action: CardAction, user: CardState, target: CardState, gm: G
 	match action.id:
 		"move": return _score_move(user, target, gm)
 		"attack": return _score_attack(user, target, gm)
+		InjectVenomAction.ACTION_ID: return _score_inject_venom(user, target, gm)
+		VenomBurstAction.ACTION_ID: return _score_venom_burst(user, gm)
 		_: return _score_spell(action, user, target, gm) if action.id.begins_with("spell:") else 0.0
 
 
@@ -169,6 +171,40 @@ func _score_attack(user: CardState, target: CardState, gm: GameManager) -> float
 		score *= 0.15
 
 	return score
+
+
+func _score_inject_venom(user: CardState, target: CardState, gm: GameManager) -> float:
+	if user == null or target == null or gm == null:
+		return 0.0
+
+	var package := PoisonAttackResolver.new().get_poison_attack_package(user, gm)
+	var total_damage := int(package.get(PoisonAttackResolver.POISON_TOTAL_DAMAGE, 0))
+	if total_damage <= 0:
+		return 0.0
+
+	var current_storage := VenomBurstAction.new().get_stored_venom_damage(target)
+	return float(total_damage) * 1.4 + minf(float(current_storage) * 0.12, 3.0)
+
+
+func _score_venom_burst(user: CardState, gm: GameManager) -> float:
+	if user == null or gm == null:
+		return 0.0
+
+	var burst_action := VenomBurstAction.new()
+	var stored_damage := burst_action.get_stored_venom_damage(user)
+	if stored_damage <= 0:
+		return 0.0
+
+	var targets := burst_action.get_valid_targets(user, gm)
+	if targets.is_empty():
+		return 0.0
+
+	var total_threat := 0.0
+	for target in targets:
+		total_threat += AICommonScript.calc_threat_score(target)
+
+	var average_threat := total_threat / float(targets.size())
+	return float(stored_damage) * 2.2 + average_threat * 0.35
 
 
 func _score_after_attack_effects(user: CardState, target: CardState, player: PlayerState) -> float:

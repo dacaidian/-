@@ -17,6 +17,7 @@ const STATUS_SNAKE_VENOM := "snake_venom"
 const STATUS_DEVOUR := "devour"
 const STATUS_LIFE_LINK := "life_link"
 const STATUS_DEATH_IMMUNITY := "death_immunity"
+const STATUS_STORED_VENOM := "stored_venom"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -30,6 +31,7 @@ const TAG_DAMAGE_OVER_TIME := "damage_over_time"
 const TAG_DEATH_LINK := "death_link"
 const TAG_MANA_GENERATION := "mana_generation"
 const TAG_DEATH_PREVENTION := "death_prevention"
+const TAG_STORED_RESOURCE := "stored_resource"
 const STATUS_FREEZE := "freeze"
 
 var status_id := ""
@@ -160,6 +162,10 @@ func get_poison_total_remaining_damage() -> int:
 		return 0
 
 	return get_poison_damage() * maxi(remaining_turns, 0)
+
+
+func get_stored_venom_damage() -> int:
+	return int(payload.get(EffectData.KEY_STORED_VENOM_DAMAGE, 0))
 
 
 func is_stronger_poison_than(other: CardStatus) -> bool:

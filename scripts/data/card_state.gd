@@ -6,6 +6,7 @@ signal state_changed(state: CardState)
 const ACTION_GROUP_MOVE := "move"
 const ACTION_GROUP_ATTACK := "attack"
 const ACTION_GROUP_SPELL := "spell"
+const ACTION_GROUP_SPECIAL := "special"
 
 # CardState 是运行时状态。
 # 它引用 CardData，同时保存“这张具体卡牌的初始快照”和当前变化。
@@ -140,6 +141,15 @@ func set_card_data(value: CardData) -> void:
 			used_action_groups.clear()
 			allowed_action_group_pairs.clear()
 			apply_keyword_passives()
+		elif data.is_building():
+			max_movement = 0
+			current_movement = 0
+			max_attack_speed = 0
+			current_attacks = 0
+			max_main_actions = 1
+			current_main_actions = max_main_actions
+			used_action_groups.clear()
+			allowed_action_group_pairs.clear()
 		else:
 			max_movement = 0
 			current_movement = 0
@@ -529,6 +539,9 @@ func add_status(status: CardStatus) -> void:
 	if status.status_id == CardStatus.STATUS_POISON:
 		add_unique_poison_status(status)
 		return
+	if status.status_id == CardStatus.STATUS_STORED_VENOM:
+		add_stored_venom_status(status)
+		return
 
 	for existing_status in statuses:
 		if existing_status != null and existing_status.is_same_stack_key(status):
@@ -549,6 +562,19 @@ func add_unique_poison_status(status: CardStatus) -> void:
 			return
 
 		statuses.erase(existing_status)
+
+	statuses.append(status)
+	state_changed.emit(self)
+
+
+func add_stored_venom_status(status: CardStatus) -> void:
+	var existing_status := get_status(CardStatus.STATUS_STORED_VENOM)
+	if existing_status != null:
+		var current_damage := existing_status.get_stored_venom_damage()
+		var added_damage := status.get_stored_venom_damage()
+		existing_status.payload[EffectData.KEY_STORED_VENOM_DAMAGE] = current_damage + added_damage
+		state_changed.emit(self)
+		return
 
 	statuses.append(status)
 	state_changed.emit(self)

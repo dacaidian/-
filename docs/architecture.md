@@ -14,7 +14,7 @@
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
 - `CardDatabase`：读取并缓存 JSON 静态数据。支持测试模式：通过 `data/test_config.json` 配置白名单卡牌、数量覆盖和游戏参数（`game_params` 节），提供 `get_test_game_param()` 通用参数查询；游戏参数由 `GameManager._apply_test_game_params()` 在初始化时读取并覆盖 `@export` 默认值。
-- `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。`count <= 0` 的卡不会被展开进牌池，便于未来保留“可被查表但不自然出现”的卡。
+- `CardPool`：公共牌池，负责按 `count` 展开、洗牌、无放回抽取。`count <= 0` 的卡不会被展开进牌池，便于未来保留“可被查表但不自然出现”的卡。种族可以通过 `pool_modifiers.exclude_neutral_card_ids` 修改公共牌池，当前苗疆族用它移除中立 `生命之泉`。
 - `tools/validate_cards.py`：卡牌数据校验器。它从 `EffectData`、`EffectRegistry`、`SpellTargetResolver`、`CardData`、`CardStatus` 等运行时代码中读取合法配置词汇，再校验 `data/cards.json` 的资源路径、卡牌引用、目标规则、效果 id、状态字段和英雄配套牌引用。新增或修改卡牌后应优先运行它。
 - 衍生牌（Token）：不进入牌池、仅由卡牌效果生成的卡牌。在 `cards.json` 中定义在对应种族的 `tokens[]` 字段下，结构和普通卡牌一致。`CardDatabase.load_faction()` 会把 token 注册到 `cards_by_id`（全局可查），但不加入 `cards_by_faction_id`，因此牌池构造链路天然跳过。
 - 入口选择会从 `CardDatabase.get_playable_faction_ids()` 读取可选种族，排除 `kind: "neutral_pool"` 的中立牌库；该列表保持 `cards.json` 中的加载顺序，避免默认种族选择被字典排序打乱。英雄列表优先读取种族层级 `heroes` 字段。
@@ -52,7 +52,9 @@
 - `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
-- `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。
+- `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。动态非施法行动由 `GrantedActionResolver` 拼接，当前用于剧毒之泉体系的 `注入毒液` 和 `毒爆`。
+- `PoisonAttackResolver`：统一判断一个单位当前是否拥有“普攻附带毒性”的能力，来源可以是静态 `after_attack`、手牌升级授予触发或状态 payload 触发。剧毒之泉、AI 评估等不要用卡牌 id 直接猜测毒虫能力。
+- `RandomAllocationResolver`：通用整数随机分配工具。当前用于剧毒之泉“毒爆”把储存毒量逐点随机分配给相邻敌方随从；未来随机治疗、随机伤害也应优先复用。
 - `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions` 和 `grant_last_spell_action`，并根据 `card_ids` 判断哪些随从获得这些法术。`grant_last_spell_action` 通过 `source_card_ids` 限定可学习的施法来源，当前用于“好好学习”。
 - `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
@@ -184,7 +186,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -265,6 +267,7 @@
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。
 - `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
+- `储毒` 使用 `status_id: "stored_venom"` 和 `status_tags: ["stored_resource"]`，通过 `payload.stored_venom_damage` 保存剧毒之泉储存的总毒量。它不是持续伤害状态，不会在回合结束跳伤害；`Card` 复用毒性数字图标在状态数字栈中显示储毒量。
 - `同命蛊` 使用 `status_id: "life_link"` 和 `status_tags: ["death_link"]`。每次 `link_units` 施法都会生成唯一 `link_id`，分别给两个目标写入一层 `life_link` 状态；状态的 `payload.trigger_effects` 在 `on_destroyed` 时触发 `destroy_linked_units`，后者读取 `_trigger_status.payload.link_id` 找到同一链接的另一端并直接销毁。因为每次施法的 link id 独立，AB 和 CD 不互相影响；AB 与 BC 这种链式链接会通过死亡队列自然传播为 A 死亡、B 直接死亡、再触发 C 直接死亡。
 - `薄葬` 使用 `status_id: "death_immunity"` 和 `status_tags: ["death_prevention"]`。死亡解析器只看 tag，不绑定状态 id；因此后续“不灭”“濒死保护”等机制可以复用同一死亡门控。薄葬期间单位受到过量伤害时生命会停在 0，但不会入死亡队列；当状态在回合时点到期后，`StatusResolver` 会再次检查，若目标仍为 0 生命则按 `status_expired` 原因进入标准死亡/亡语/补牌流程。
 - 圣盾、辉煌光环、励蛊、同命蛊、薄葬和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光、链接绿纹、死亡庇护裹布或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
@@ -285,6 +288,7 @@
 - 当前玩家回合开始时，`GameManager.restore_minion_actions_for_player()` 清空行动类别锁，并恢复该玩家随从的移动力和攻击次数。
 - `CardAction.action_group` 表示行动所属类别，`main_action_cost` 表示是否需要登记类别，默认是 1。当前移动属于 `move`，攻击属于 `attack`。
 - `CardAction.can_reuse_action_group` 表示同一个行动类别在本回合是否可以重复执行。移动和攻击依靠移动力/攻速限制，所以可以重复；施法当前没有独立次数资源，所以治疗术不可重复施放。
+- `special` 行动组用于非移动、非攻击、非施法的主动能力，默认仍是主动作并与移动/攻击/施法互斥。当前 `注入毒液` 和 `毒爆` 都属于 `special`，其中毒爆是剧毒之泉自己的主动作，不走施法回合。
 - 攻击行动只有在 `current_attack > 0`、`current_attacks > 0` 且允许使用 `attack` 类别时可用；移动同理要求 `current_movement > 0` 且允许使用 `move` 类别。
 
 ## 翻牌资源约定
