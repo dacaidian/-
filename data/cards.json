@@ -971,6 +971,50 @@
 				]
 			},
 			{
+				"id": "thin_burial",
+				"name": "薄葬",
+				"description": "升级牌。允许巫医释放薄葬，使一个随从免疫死亡4回合。",
+				"url": "res://assets/img/苗疆族/薄葬.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_spell_actions",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"card_ids": [
+							"witch_doctor"
+						],
+						"spell_actions": [
+							{
+								"id": "thin_burial_spell",
+								"name": "薄葬",
+								"animation": "thin_burial",
+								"target_rule": "all_minions",
+								"effects": [
+									{
+										"id": "apply_status",
+										"status_id": "death_immunity",
+										"status_name": "薄葬",
+										"status_description": "免疫死亡。若状态结束时生命仍为0，则死亡。",
+										"status_tags": [
+											"death_prevention"
+										],
+										"duration_turns": 4,
+										"expires_on_trigger": "after_turn_end",
+										"duration_scope": "target_owner",
+										"stack_policy": "refresh",
+										"apply_animation": "thin_burial"
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "gu_poison_snake",
 				"name": "蛊毒蛇",
 				"description": "苗疆族随从。",

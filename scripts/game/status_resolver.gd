@@ -17,11 +17,21 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 	if game_manager == null or trigger == "" or turn_player_id == "":
 		return
 
+	var death_immunity_expired_states: Array[CardState] = []
 	for state in game_manager.board_states:
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 
-		state.expire_statuses_for_turn_timing(trigger, turn_player_id)
+		var expired_statuses := state.expire_statuses_for_turn_timing(trigger, turn_player_id)
+		if should_check_death_after_status_expiry(state, expired_statuses):
+			death_immunity_expired_states.append(state)
+
+	if not death_immunity_expired_states.is_empty():
+		await game_manager.resolve_dead_states(
+			death_immunity_expired_states,
+			EffectData.DEATH_REASON_STATUS_EXPIRED,
+			null
+		)
 
 
 func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
@@ -43,3 +53,16 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 
 	if not damaged_states.is_empty():
 		game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, null)
+
+
+func should_check_death_after_status_expiry(state: CardState, expired_statuses: Array[CardStatus]) -> bool:
+	if state == null or state.is_empty() or state.current_health > 0:
+		return false
+	if state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION):
+		return false
+
+	for status in expired_statuses:
+		if status != null and status.tags.has(CardStatus.TAG_DEATH_PREVENTION):
+			return true
+
+	return false

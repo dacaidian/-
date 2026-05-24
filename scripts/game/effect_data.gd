@@ -123,6 +123,7 @@ const DEATH_REASON_HAND_SPELL := "hand_spell"
 const DEATH_REASON_POISON := "poison"
 const DEATH_REASON_TRAP := "trap"
 const DEATH_REASON_LINKED := "linked_death"
+const DEATH_REASON_STATUS_EXPIRED := "status_expired"
 
 
 static func get_id(effect_data: Dictionary) -> String:

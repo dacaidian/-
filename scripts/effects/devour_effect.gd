@@ -50,6 +50,7 @@ func can_devour_target(source_state: CardState, target_state: CardState, allowed
 		and BoardQuery.is_face_up_board_card(target_state)
 		and target_state.is_minion()
 		and allowed_card_ids.has(target_state.card_id)
+		and not target_state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 	)
 
 

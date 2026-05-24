@@ -160,7 +160,7 @@ func _score_spell_on_target(effects: Array[Dictionary], target: CardState, playe
 					effective = 0
 				elif target.shield > 0:
 					effective = maxi(amount - target.shield, 0)
-				var will_kill := effective >= target.current_health
+				var will_kill := effective >= target.current_health and not target.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 				if will_kill:
 					score += AICommonScript.calc_threat_score(target) * 1.2 + 10.0
 				else:
@@ -215,6 +215,12 @@ func _score_spell_on_target(effects: Array[Dictionary], target: CardState, playe
 					score += poison_value * 1.8 + threat * 0.35
 				elif is_own:
 					score -= poison_value * 1.8 + threat * 0.35
+			elif status_tags.has(CardStatus.TAG_DEATH_PREVENTION):
+				if is_own:
+					var missing_health := target.max_health - target.current_health
+					score += threat * 0.55 + float(missing_health) * 0.8 + 3.0
+				elif is_enemy:
+					score -= threat * 0.45 + 3.0
 			elif status_tags.has(CardStatus.TAG_ATTACK_MODIFIER) or attack_bonus != 0:
 				if is_own:
 					score += float(attack_bonus) * 2.0 + threat * 0.5

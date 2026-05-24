@@ -24,6 +24,9 @@ var snake_venom_fang_color := Color(0.82, 1.0, 0.34, 0.80)
 var life_link_color := Color(0.10, 0.36, 0.08, 0.18)
 var life_link_edge_color := Color(0.62, 1.0, 0.32, 0.76)
 var life_link_thread_color := Color(0.46, 1.0, 0.24, 0.78)
+var death_immunity_color := Color(0.05, 0.12, 0.07, 0.26)
+var death_immunity_edge_color := Color(0.74, 1.0, 0.42, 0.74)
+var death_immunity_thread_color := Color(0.40, 0.92, 0.24, 0.62)
 
 
 func _ready() -> void:
@@ -42,7 +45,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity()
 
 
 func should_show_divine_shield() -> bool:
@@ -87,6 +90,13 @@ func should_show_life_link() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_LIFE_LINK)
 
 
+func should_show_death_immunity() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -96,6 +106,8 @@ func _draw() -> void:
 		draw_snake_venom_overlay()
 	if should_show_life_link():
 		draw_life_link_overlay()
+	if should_show_death_immunity():
+		draw_death_immunity_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -300,6 +312,40 @@ func draw_life_link_overlay() -> void:
 		var y := lerpf(left_anchor.y, right_anchor.y, t) - sin(t * TAU * 1.5) * size.y * 0.035 + size.y * 0.07
 		lower_points.append(Vector2(x, y))
 	draw_polyline(lower_points, Color(life_link_thread_color.r, life_link_thread_color.g, life_link_thread_color.b, life_link_thread_color.a * 0.70), 1.8, false)
+
+
+func draw_death_immunity_overlay() -> void:
+	var burial_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := burial_rect.get_center()
+	var edge_width := maxf(size.x * 0.026, 2.0)
+	var status := state.get_status(CardStatus.STATUS_DEATH_IMMUNITY) if state != null else null
+	var remaining_turns := status.remaining_turns if status != null else 0
+	var ring_count: int = mini(maxi(remaining_turns, 1), 4)
+
+	draw_rect(burial_rect, death_immunity_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 4.0
+		var alpha := death_immunity_edge_color.a * (1.0 - float(index) * 0.14)
+		draw_rect(burial_rect.grow(grow), Color(death_immunity_edge_color.r, death_immunity_edge_color.g, death_immunity_edge_color.b, alpha), false, edge_width, true)
+
+	var shroud_top := burial_rect.position.y + burial_rect.size.y * 0.18
+	var shroud_bottom := burial_rect.position.y + burial_rect.size.y * 0.82
+	var shroud_width := burial_rect.size.x * 0.34
+	var shroud_points := PackedVector2Array([
+		Vector2(center.x, shroud_top),
+		Vector2(center.x + shroud_width * 0.45, shroud_top + burial_rect.size.y * 0.18),
+		Vector2(center.x + shroud_width * 0.32, shroud_bottom),
+		Vector2(center.x - shroud_width * 0.32, shroud_bottom),
+		Vector2(center.x - shroud_width * 0.45, shroud_top + burial_rect.size.y * 0.18)
+	])
+	draw_colored_polygon(shroud_points, Color(0.08, 0.18, 0.07, 0.34))
+	draw_polyline(shroud_points, death_immunity_edge_color, 2.6, true)
+
+	for index in range(5):
+		var t := float(index) / 4.0
+		var x := lerpf(burial_rect.position.x + burial_rect.size.x * 0.24, burial_rect.position.x + burial_rect.size.x * 0.76, t)
+		var y := center.y + sin(t * TAU) * burial_rect.size.y * 0.10
+		draw_line(Vector2(x, y - burial_rect.size.y * 0.18), Vector2(x, y + burial_rect.size.y * 0.18), Color(death_immunity_thread_color.r, death_immunity_thread_color.g, death_immunity_thread_color.b, death_immunity_thread_color.a * (0.55 + t * 0.25)), 1.6)
 
 
 func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:

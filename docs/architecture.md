@@ -30,7 +30,7 @@
 - `BoardSlotResolver`：棋盘格填充与补位规则协作者，负责从公共牌池抽牌放入空格、清空格子、批量补空格；未来分级牌池或翻开进手牌后的补位策略优先在这里扩展。
 - `BoardSlotEffect` / `BoardSlotEffectResolver`：固定棋盘格上的临时效果，不随卡牌内容移动。当前用于“诱蛊”这类陷阱：法术把效果写到空格或背面格，之后随从通过移动、手牌放置或翻开进入该格时触发。未来地形、陷阱、格子光环优先扩展这里，不要把格子状态塞进 `CardState`。
 - `RevealResolver`：翻牌成功后的归属与区域路由协作者，负责判断当前玩家能否获得这张牌，并决定卡牌留在棋盘、进入手牌还是扣回背面。
-- `DeathResolver`：死亡、入坟、销毁和攻击击杀后占领结算协作者。`GameManager` 保留 `check_and_destroy_if_dead()` 等对外入口，具体死亡流程放在这里。
+- `DeathResolver`：死亡、入坟、销毁和攻击击杀后占领结算协作者。`GameManager` 保留 `check_and_destroy_if_dead()` 等对外入口，具体死亡流程放在这里。拥有 `death_prevention` 状态 tag 的单位不会进入死亡事件；状态到期后由 `StatusResolver` 再检查是否应死亡。
 - `TriggerResolver`：触发队列协作者。当前负责排队并结算 `on_reveal`、`on_destroyed`、`on_effective_heal`；后续亡语、受伤、召唤、施法等触发都应优先接入这里。
 - `StatusResolver`：状态规则和生命周期协作者。当前负责在普通回合时点前结算毒伤害，并在普通时点触发后推进临时状态的剩余回合；状态本身保存在 `CardState.statuses`。
 - `EventContext`：触发名和运行时上下文 key 的常量集合，例如 `TRIGGER_ON_DESTROYED`、`DESTROYER_PLAYER_ID`。规则层和效果层跨模块传上下文时优先使用这里的常量，避免字符串散落。
@@ -67,7 +67,7 @@
 位置：`scenes`、`scripts/ui`
 
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
-- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
+- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹、薄葬死亡庇护和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
 - `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
@@ -184,7 +184,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -266,7 +266,8 @@
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。
 - `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
 - `同命蛊` 使用 `status_id: "life_link"` 和 `status_tags: ["death_link"]`。每次 `link_units` 施法都会生成唯一 `link_id`，分别给两个目标写入一层 `life_link` 状态；状态的 `payload.trigger_effects` 在 `on_destroyed` 时触发 `destroy_linked_units`，后者读取 `_trigger_status.payload.link_id` 找到同一链接的另一端并直接销毁。因为每次施法的 link id 独立，AB 和 CD 不互相影响；AB 与 BC 这种链式链接会通过死亡队列自然传播为 A 死亡、B 直接死亡、再触发 C 直接死亡。
-- 圣盾、辉煌光环、励蛊、同命蛊和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光、链接绿纹或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
+- `薄葬` 使用 `status_id: "death_immunity"` 和 `status_tags: ["death_prevention"]`。死亡解析器只看 tag，不绑定状态 id；因此后续“不灭”“濒死保护”等机制可以复用同一死亡门控。薄葬期间单位受到过量伤害时生命会停在 0，但不会入死亡队列；当状态在回合时点到期后，`StatusResolver` 会再次检查，若目标仍为 0 生命则按 `status_expired` 原因进入标准死亡/亡语/补牌流程。
+- 圣盾、辉煌光环、励蛊、同命蛊、薄葬和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、奥术光环、绿色蛊虫强化背光、链接绿纹、死亡庇护裹布或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会按 `stack_policy` 合并：默认 `stack` 会叠层，`refresh` 会刷新持续信息但不额外叠层，`replace` 会用新状态替换旧状态，`ignore` 会忽略后续同源同名状态。蛇毒减攻使用 `refresh`，避免重复攻击把同一个“攻击-2”状态叠成无限减攻；毒状态仍走专门的强度比较逻辑。
@@ -368,7 +369,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 

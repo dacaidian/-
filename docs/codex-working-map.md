@@ -88,7 +88,8 @@
 - `apply_status` 效果支持可选 `apply_animation` 字段，指定状态施加瞬间的动画 key；没有该字段时不播放额外动画。
 - 状态自身也可以通过 `payload.trigger_effects` 提供触发效果，由 `EffectRegistry.execute_status_triggers()` 结算。当前用于蛊巨蜥“吞噬”继承最高级毒性攻击，以及子母蛊 `life_link` 在 `on_destroyed` 时触发 `destroy_linked_units`；不要把这种状态授予的触发效果写进 `AttackAction` 或 `DeathResolver`。
 - 同命/链接类状态读取 `EffectData.get_trigger_status()` 获取触发的具体状态层，再用 `payload.link_id` 找到同一链接另一端。AB、BC 链式链接依赖死亡队列自然传播，独立链接必须使用独立 link id。
-- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结、励蛊和同命蛊；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
+- 免疫死亡类状态使用 `status_tags: ["death_prevention"]`。`DeathResolver` 会跳过带该 tag 的单位；状态到期后由 `StatusResolver` 重新检查 0 生命单位并按标准死亡队列处理，不要在具体伤害效果里写“如果是薄葬”。
+- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结、励蛊、同命蛊和薄葬；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
 ### 翻牌与补牌
@@ -311,6 +312,7 @@
 - `summon` 是召唤水元素的水蓝法阵与水滴扩散表现，`gu_summon` 是苗疆蛊术召唤的暗绿蛊雾与蛇形脉冲表现，`medical_practice` 是巫医行医的草药光点与苗疆药雾脉冲；这些都属于无目标法术的 `play_spell_cast_at_rect()` / 自身施法分支。
 - `arcane_aura` 是辉煌光环的一次性施法/附着动画，持续视觉由 `CardStatusOverlay` 绘制。
 - `gu_life_link` 是子母蛊的双目标蛊环与生命线连接动画；持续链接视觉由 `CardStatusOverlay` 绘制。
+- `thin_burial` 是薄葬的一次性施法/附着动画；持续死亡庇护视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
 - `gu_lure` 是诱蛊释放到格子的暗绿法阵表现；`gu_trap_trigger` 是诱蛊触发时的毒红咬合和蛊孢爆散表现。
 - `blizzard` 是暴风雪的冰蓝色区域覆盖 + 消散特效，走 `play_area_spell_cast()` → `play_blizzard_area_spell()` 专用 AOE 动画入口。区域效果面板由 `create_blizzard_area_effect()` 创建。

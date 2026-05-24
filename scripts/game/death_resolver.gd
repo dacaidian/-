@@ -130,6 +130,7 @@ func can_state_die(state: CardState) -> bool:
 		and not state.is_empty()
 		and state.is_unit()
 		and not state.is_pending_death
+		and not state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 	)
 
 
@@ -249,6 +250,8 @@ func resolve_attack_kill(game_manager: GameManager, attacker_state: CardState, d
 		return
 
 	if defeated_state.is_empty() or defeated_state.current_health > 0:
+		return
+	if not can_state_die(defeated_state):
 		return
 
 	var should_occupy := false

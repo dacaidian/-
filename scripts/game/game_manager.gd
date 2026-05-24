@@ -776,7 +776,7 @@ func _set_end_turn_button_enabled(enabled: bool) -> void:
 func resolve_turn_timing_triggers(trigger: String, turn_player_id: String) -> void:
 	await status_resolver.resolve_pre_trigger_status_effects(self, trigger, turn_player_id)
 	await turn_trigger_resolver.queue_turn_timing_triggers(self, trigger, turn_player_id)
-	status_resolver.resolve_turn_timing(self, trigger, turn_player_id)
+	await status_resolver.resolve_turn_timing(self, trigger, turn_player_id)
 
 
 func activate_spell_turn() -> void:

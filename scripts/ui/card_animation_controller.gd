@@ -337,6 +337,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
+		"thin_burial":
+			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			if target_card == null:
 				return
@@ -373,6 +375,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_rect)
+		"thin_burial":
+			await play_thin_burial_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_rect)
 		"gu_summon":
@@ -407,6 +411,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
+		"thin_burial":
+			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_trap_trigger":
@@ -1138,6 +1144,41 @@ func play_gu_life_link_at_rect(owner: Node, effect_root: Control, target_rect: R
 	ring.queue_free()
 
 
+func play_thin_burial_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var shroud := create_thin_burial_effect_for_rect(target_rect)
+	var seal := create_rect_spell_effect(target_rect, "ThinBurialSealEffect", create_thin_burial_seal_style(), 0.92)
+	effect_root.add_child(shroud)
+	effect_root.add_child(seal)
+
+	var bind_tween := owner.create_tween()
+	bind_tween.set_parallel(true)
+	bind_tween.set_trans(Tween.TRANS_SINE)
+	bind_tween.set_ease(Tween.EASE_OUT)
+	bind_tween.tween_property(shroud, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.46)
+	bind_tween.tween_property(shroud, "modulate:a", 0.86, spell_animation_duration * 0.46)
+	bind_tween.tween_property(seal, "scale", Vector2(1.20, 1.20), spell_animation_duration * 0.46)
+	bind_tween.tween_property(seal, "rotation", -0.18, spell_animation_duration * 0.46)
+	bind_tween.tween_property(seal, "modulate:a", 0.72, spell_animation_duration * 0.46)
+	await bind_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(shroud, "scale", Vector2(1.38, 1.38), spell_animation_duration * 0.62)
+	fade_tween.tween_property(shroud, "modulate:a", 0.0, spell_animation_duration * 0.62)
+	fade_tween.tween_property(seal, "scale", Vector2(1.62, 1.62), spell_animation_duration * 0.62)
+	fade_tween.tween_property(seal, "rotation", -0.52, spell_animation_duration * 0.62)
+	fade_tween.tween_property(seal, "modulate:a", 0.0, spell_animation_duration * 0.62)
+	await fade_tween.finished
+
+	shroud.queue_free()
+	seal.queue_free()
+
+
 func play_life_link_spell(
 	owner: Node,
 	effect_root: Control,
@@ -1505,6 +1546,10 @@ func create_life_link_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "GuLifeLinkEffect", create_life_link_effect_style(), 1.20)
 
 
+func create_thin_burial_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "ThinBurialShroudEffect", create_thin_burial_effect_style(), 1.18)
+
+
 func create_gu_summon_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	var motes: Array[Panel] = []
 	var center: Vector2 = target_rect.get_center()
@@ -1727,6 +1772,28 @@ func create_life_link_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.36, 1.0, 0.18, 0.56)
 	style.shadow_size = 34
+	return style
+
+
+func create_thin_burial_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.12, 0.05, 0.30)
+	style.border_color = Color(0.72, 1.0, 0.34, 0.78)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(26)
+	style.shadow_color = Color(0.36, 0.90, 0.16, 0.48)
+	style.shadow_size = 36
+	return style
+
+
+func create_thin_burial_seal_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.02, 0.06, 0.03, 0.22)
+	style.border_color = Color(0.88, 1.0, 0.46, 0.82)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.58, 1.0, 0.20, 0.52)
+	style.shadow_size = 28
 	return style
 
 
