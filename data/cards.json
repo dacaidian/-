@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1041,8 +1041,8 @@
 				"count": 4,
 				"level": 2,
 				"keywords": [],
-				"attack": 4,
-				"health": 6,
+				"attack": 3,
+				"health": 8,
 				"effects": []
 			},
 			{
@@ -1152,7 +1152,7 @@
 				"description": "苗疆族随从。可以吞噬毒虫，获得其两倍攻击和生命，并继承最高级毒性攻击。",
 				"url": "res://assets/img/苗疆族/蛊巨蜥.png",
 				"type": "minion",
-				"count": 5,
+				"count": 6,
 				"level": 3,
 				"keywords": [],
 				"attack": 6,
