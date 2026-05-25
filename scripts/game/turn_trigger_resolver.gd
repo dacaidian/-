@@ -26,7 +26,7 @@ func get_trigger_sources(game_manager: GameManager, trigger: String) -> Array[Ca
 	if game_manager == null:
 		return sources
 
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not can_source_trigger(state, trigger):
 			continue
 
@@ -95,7 +95,7 @@ func get_status_trigger_sources(game_manager: GameManager, trigger: String, turn
 	if game_manager == null:
 		return sources
 
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 		if not has_status_turn_timing_effect(state, trigger, turn_player_id):

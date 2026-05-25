@@ -18,7 +18,7 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 		return
 
 	var death_immunity_expired_states: Array[CardState] = []
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 
@@ -36,7 +36,7 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 
 func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
 	var damaged_states: Array[CardState] = []
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 		if state.has_keyword(CardData.KEYWORD_MECHANICAL):

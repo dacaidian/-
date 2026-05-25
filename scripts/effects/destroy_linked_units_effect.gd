@@ -28,7 +28,7 @@ func get_link_id(effect_data: Dictionary) -> String:
 
 func get_linked_states(gm: GameManager, source_state: CardState, link_id: String) -> Array[CardState]:
 	var linked_states: Array[CardState] = []
-	for state in gm.board_states:
+	for state in gm.get_all_board_states():
 		if state == null or state == source_state:
 			continue
 		if state.is_empty() or not state.is_unit() or state.is_pending_death:

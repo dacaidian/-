@@ -172,13 +172,13 @@ func get_adjacent_turn_player_minions(source_state: CardState, effect_data: Dict
 	var adjacent_slots := BoardQuery.get_adjacent_slots(source_state.slot_index, board_columns, board_size)
 
 	for slot_index in adjacent_slots:
-		var target_state := game_manager.get_board_state(slot_index) as CardState
-		if not BoardQuery.is_face_up_minion(target_state):
-			continue
-		if target_state.owner_id != turn_player_id:
-			continue
+		for target_state in game_manager.get_board_states_at_slot(slot_index):
+			if not BoardQuery.is_face_up_minion(target_state):
+				continue
+			if target_state.owner_id != turn_player_id:
+				continue
 
-		targets.append(target_state)
+			targets.append(target_state)
 
 	return targets
 
@@ -196,7 +196,7 @@ func get_turn_player_minions_by_card_ids(effect_data: Dictionary, game_manager: 
 	if allowed_card_ids.is_empty():
 		return targets
 
-	for value in game_manager.board_states:
+	for value in game_manager.get_all_board_states():
 		var target_state := value as CardState
 		if not BoardQuery.is_face_up_minion(target_state):
 			continue
@@ -232,13 +232,13 @@ func get_selected_adjacent_enemy_minions(source_state: CardState, effect_data: D
 	var adjacent_slots := BoardQuery.get_adjacent_slots(selected_state.slot_index, board_columns, board_size)
 
 	for slot_index in adjacent_slots:
-		var target_state := game_manager.get_board_state(slot_index) as CardState
-		if not BoardQuery.is_face_up_minion(target_state):
-			continue
-		if target_state.owner_id == "" or target_state.owner_id == owner_id:
-			continue
+		for target_state in game_manager.get_board_states_at_slot(slot_index):
+			if not BoardQuery.is_face_up_minion(target_state):
+				continue
+			if target_state.owner_id == "" or target_state.owner_id == owner_id:
+				continue
 
-		targets.append(target_state)
+			targets.append(target_state)
 
 	return targets
 
@@ -253,7 +253,7 @@ func get_owner_cards_by_id(source_state: CardState, effect_data: Dictionary, gam
 	if owner_id == "" or target_card_id == "":
 		return targets
 
-	for value in game_manager.board_states:
+	for value in game_manager.get_all_board_states():
 		var target_state := value as CardState
 		if not BoardQuery.is_face_up_unit(target_state):
 			continue
@@ -291,17 +291,17 @@ func get_selected_area_targets(source_state: CardState, effect_data: Dictionary,
 	var owner_id := get_effect_owner_id(source_state, effect_data)
 
 	for slot_index in area_slots:
-		var target_state := game_manager.get_board_state(slot_index) as CardState
-		if not BoardQuery.is_face_up_minion(target_state):
-			continue
+		for target_state in game_manager.get_board_states_at_slot(slot_index):
+			if not BoardQuery.is_face_up_minion(target_state):
+				continue
 
-		match filter_type:
-			AreaFilter.ENEMY_MINIONS:
-				if target_state.owner_id == "" or target_state.owner_id == owner_id:
-					continue
-			AreaFilter.ALL_MINIONS:
-				pass
+			match filter_type:
+				AreaFilter.ENEMY_MINIONS:
+					if target_state.owner_id == "" or target_state.owner_id == owner_id:
+						continue
+				AreaFilter.ALL_MINIONS:
+					pass
 
-		targets.append(target_state)
+			targets.append(target_state)
 
 	return targets

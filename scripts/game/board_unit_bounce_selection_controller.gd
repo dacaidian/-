@@ -1,7 +1,7 @@
 extends RefCounted
 class_name BoardUnitBounceSelectionController
 
-signal slot_selected(slot_index: int)
+signal state_selected(state: CardState)
 
 var _game_manager: GameManager
 var _layer: CanvasLayer
@@ -10,7 +10,7 @@ var _title_label: Label
 var _hint_label: Label
 var _active := false
 var _first_state: CardState
-var _valid_second_slots: Array[int] = []
+var _valid_second_states: Array[CardState] = []
 
 
 func select_second_unit(
@@ -25,7 +25,7 @@ func select_second_unit(
 
 	_game_manager = game_manager
 	_first_state = first_state
-	_valid_second_slots = get_valid_slots(valid_second_states)
+	_valid_second_states = valid_second_states.duplicate()
 	_active = true
 
 	setup_ui(game_manager.get_parent(), title, hint)
@@ -33,26 +33,17 @@ func select_second_unit(
 	set_target_flags()
 
 	while _active:
-		var slot_index: int = await slot_selected
-		if slot_index < 0:
+		var selected_state: CardState = await state_selected
+		if selected_state == null:
 			break
-		if not _valid_second_slots.has(slot_index):
+		if not _valid_second_states.has(selected_state):
 			continue
 
-		var selected := _game_manager.get_board_state(slot_index) as CardState
 		cleanup()
-		return selected
+		return selected_state
 
 	cleanup()
 	return null
-
-
-func get_valid_slots(valid_states: Array[CardState]) -> Array[int]:
-	var slots: Array[int] = []
-	for state in valid_states:
-		if state != null and not slots.has(state.slot_index):
-			slots.append(state.slot_index)
-	return slots
 
 
 func setup_ui(parent: Node, title: String, hint: String) -> void:
@@ -116,6 +107,11 @@ func connect_board_cards() -> void:
 			continue
 		if not card.clicked.is_connected(_on_card_clicked):
 			card.clicked.connect(_on_card_clicked)
+	for card in _game_manager.aerial_board_cards:
+		if card == null:
+			continue
+		if not card.clicked.is_connected(_on_card_clicked):
+			card.clicked.connect(_on_card_clicked)
 
 
 func disconnect_board_cards() -> void:
@@ -127,31 +123,36 @@ func disconnect_board_cards() -> void:
 			continue
 		if card.clicked.is_connected(_on_card_clicked):
 			card.clicked.disconnect(_on_card_clicked)
+	for card in _game_manager.aerial_board_cards:
+		if card == null:
+			continue
+		if card.clicked.is_connected(_on_card_clicked):
+			card.clicked.disconnect(_on_card_clicked)
 
 
 func _on_card_clicked(card: Card) -> void:
 	if not _active or card == null or card.state == null:
 		return
 
-	slot_selected.emit(card.state.slot_index)
+	state_selected.emit(card.state)
 
 
 func set_target_flags() -> void:
 	if _game_manager == null:
 		return
 
-	for state in _game_manager.board_states:
+	for state in _game_manager.get_all_board_states():
 		if state == null:
 			continue
 		state.set_selected(state == _first_state)
-		state.set_valid_target(_valid_second_slots.has(state.slot_index))
+		state.set_valid_target(_valid_second_states.has(state))
 
 
 func clear_target_flags() -> void:
 	if _game_manager == null:
 		return
 
-	for state in _game_manager.board_states:
+	for state in _game_manager.get_all_board_states():
 		if state == null:
 			continue
 		state.set_selected(false)
@@ -170,7 +171,7 @@ func cleanup() -> void:
 	_hint_label = null
 	_game_manager = null
 	_first_state = null
-	_valid_second_slots.clear()
+	_valid_second_states.clear()
 
 
 func create_panel_style() -> StyleBoxFlat:

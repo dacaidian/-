@@ -141,7 +141,7 @@ func _on_hand_card_clicked(card_entry: Variant, source_control: Control, hand_in
 
 	game_manager.hide_action_menu()
 	capture_anchor(source_control)
-	game_manager.interaction_manager.toggle_hand_card_selection(card_data, current_player.id, hand_index, game_manager.board_states)
+	game_manager.interaction_manager.toggle_hand_card_selection(card_data, current_player.id, hand_index, game_manager.get_all_board_states())
 	if game_manager.interaction_manager.selected_hand_card_data == null:
 		clear_anchor()
 	game_manager.update_action_menu_after_layout()

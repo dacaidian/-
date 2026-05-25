@@ -41,12 +41,38 @@ func ensure_board_slots() -> void:
 		card.name = "Card"
 		slot.add_child(card)
 
+		var aerial_card := CardScene.instantiate()
+		aerial_card.name = "AerialCard"
+		aerial_card.allows_empty_clicks = false
+		aerial_card.z_index = 20
+		slot.add_child(aerial_card)
+
 	while grid_container.get_child_count() > desired_count:
 		var child := grid_container.get_child(grid_container.get_child_count() - 1)
 		grid_container.remove_child(child)
 		child.queue_free()
 
+	for slot in grid_container.get_children():
+		ensure_slot_layer_cards(slot)
+
 	apply_slot_styles()
+
+
+func ensure_slot_layer_cards(slot: Node) -> void:
+	if slot == null:
+		return
+
+	if slot.get_node_or_null("Card") == null:
+		var card := CardScene.instantiate()
+		card.name = "Card"
+		slot.add_child(card)
+
+	if slot.get_node_or_null("AerialCard") == null:
+		var aerial_card := CardScene.instantiate()
+		aerial_card.name = "AerialCard"
+		aerial_card.allows_empty_clicks = false
+		aerial_card.z_index = 20
+		slot.add_child(aerial_card)
 
 
 func create_slot_style() -> StyleBoxFlat:
@@ -147,7 +173,7 @@ func update_slot_sizes(board_size: Vector2) -> void:
 func resize_cards_in_slot(slot: Control, slot_size: Vector2) -> void:
 	for child in slot.get_children():
 		if child is Control:
-			if child.has_method("apply_card_size"):
+			if not Engine.is_editor_hint() and child.has_method("apply_card_size"):
 				child.apply_card_size(slot_size)
 			else:
 				child.custom_minimum_size = slot_size

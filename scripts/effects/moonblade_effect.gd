@@ -48,7 +48,7 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 			and not get_adjacent_bounce_targets(first_target, gm).is_empty()
 		)
 
-	for state in gm.board_states:
+	for state in gm.get_all_board_states():
 		if not is_valid_moonblade_target(state):
 			continue
 		if not get_adjacent_bounce_targets(state, gm).is_empty():
@@ -87,11 +87,11 @@ func get_adjacent_bounce_targets(first_target: CardState, gm: GameManager) -> Ar
 		return targets
 
 	for slot_index in BoardQuery.get_adjacent_slots(first_target.slot_index, gm.board_columns, gm.board_states.size()):
-		var state := gm.get_board_state(slot_index) as CardState
-		if state == first_target:
-			continue
-		if is_valid_moonblade_target(state):
-			targets.append(state)
+		for state in gm.get_board_states_at_slot(slot_index):
+			if state == first_target:
+				continue
+			if is_valid_moonblade_target(state):
+				targets.append(state)
 
 	return targets
 

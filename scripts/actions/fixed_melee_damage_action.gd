@@ -32,7 +32,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 	if not can_start(user, game_manager):
 		return targets
 
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if can_target(user, state, game_manager):
 			targets.append(state)
 

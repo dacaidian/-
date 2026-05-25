@@ -41,7 +41,11 @@ static func get_valid_targets(
 	if game_manager == null or not requires_target(target_rule):
 		return targets
 
-	for state in game_manager.board_states:
+	var candidate_states: Array[CardState] = game_manager.board_states
+	if target_rule != TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS and game_manager.has_method("get_all_board_states"):
+		candidate_states = game_manager.get_all_board_states()
+
+	for state in candidate_states:
 		if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS and game_manager.has_method("can_place_ground_card_on_slot"):
 			if not game_manager.can_place_ground_card_on_slot(state.slot_index):
 				continue

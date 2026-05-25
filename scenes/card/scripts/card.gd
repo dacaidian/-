@@ -22,6 +22,7 @@ signal face_changed(is_face_up: bool)
 
 # 卡牌在 UI 中的固定尺寸，TextureRect 会铺满这个区域。
 @export var card_size := Vector2(180, 252)
+@export var allows_empty_clicks := true
 
 # 血量数字图片所在目录。文件名按当前生命值命名，例如 7.png。
 @export var health_number_dir := "res://assets/img/血量数字"
@@ -202,6 +203,7 @@ func update_card_texture() -> void:
 
 	# 空格子不显示卡背，保留 Control 区域供后续放置、召唤等逻辑使用。
 	if state != null and state.is_empty():
+		mouse_filter = Control.MOUSE_FILTER_STOP if allows_empty_clicks else Control.MOUSE_FILTER_IGNORE
 		texture_rect.texture = null
 		health_texture.hide()
 		update_status_number_textures()
@@ -209,6 +211,8 @@ func update_card_texture() -> void:
 		update_status_overlay()
 		update_interaction_visual()
 		return
+
+	mouse_filter = Control.MOUSE_FILTER_STOP
 
 	# 正面朝上且正面图存在时显示正面，否则显示背面。
 	if is_face_up and get_front_texture() != null:

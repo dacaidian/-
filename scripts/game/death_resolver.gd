@@ -26,7 +26,7 @@ func resolve_dead_units(game_manager: GameManager, reason: String = "damage", so
 	if game_manager == null:
 		return false
 
-	return resolve_dead_states(game_manager, game_manager.board_states, reason, source_state)
+	return resolve_dead_states(game_manager, game_manager.get_all_board_states(), reason, source_state)
 
 
 func resolve_dead_states(
@@ -212,7 +212,7 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 	if should_cancel_interaction and not game_manager.is_resolving_card_action and not game_manager.is_executing_action:
 		game_manager.hide_action_menu()
-		game_manager.interaction_manager.cancel(game_manager.board_states)
+		game_manager.interaction_manager.cancel(game_manager.get_all_board_states())
 
 	game_manager.refresh_action_available_hints()
 	game_manager.refresh_debug_panel()

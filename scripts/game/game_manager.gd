@@ -27,9 +27,8 @@ const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
 const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 
 # GameManager 是战局编排入口。
-# 它持有玩家、棋盘、牌池和交互状态，负责串起回合、行动、死亡、补位等规则流程。
+# 它持有玩家、棋盘、牌池和交互状态，并串起回合、行动、死亡、补位等规则流程。
 # 具体 UI 和动画表现委托给独立 Controller，避免规则主类继续膨胀。
-
 @export var card_board_path: NodePath
 @export var debug_panel_path: NodePath
 @export var end_turn_button_path: NodePath
@@ -41,7 +40,7 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 # 静态卡牌配置文件路径。
 @export var cards_json_path := "res://data/cards.json"
 
-# 第一版固定参战种族：玩家 1 白银之手，玩家 2 达拉然议会。
+# 默认参战种族；入口选择页会覆盖这些值。
 @export var player_faction_ids: Array[String] = ["silver_hand", "dalaran_council"]
 
 # 入口选择页传入的英雄。为空时使用对应种族的第一个英雄。
@@ -53,7 +52,7 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 # 所有卡牌默认使用的背面图片。
 @export var default_back_texture_path := "res://assets/img/卡背/1.png"
 
-# 第一版两名玩家名称。启动时会转成 PlayerState。
+# 两名玩家名称。启动时会转成 PlayerState。
 @export var player_names: Array[String] = ["Player 1", "Player 2"]
 @export var player_ai_flags: Array[bool] = []
 @export var player_ai_difficulties: Array[String] = []
@@ -62,11 +61,11 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 @export var ai_turn_watchdog_seconds := 18.0
 @export var victory_resource_score := 80
 
-# 棋盘尺寸。当前物理棋盘为 7x7，外圈是战场边缘；中间 5x5 是普通地面牌池区域。
+# 棋盘尺寸。当前物理棋盘为 7x7；外圈是战场边缘，中间 5x5 是普通地面牌池区域。
 @export var board_columns := 7
 @export var board_rows := 7
 
-# 卡牌移动动画时长。移动规则仍然由 CardState 交换决定，这里只负责表现。
+# 卡牌移动动画时长。移动规则由 CardState / CardAction 决定，这里只负责表现。
 @export var move_animation_duration := 0.24
 
 # 卡牌攻击动画参数。攻击规则由 AttackAction 决定，这里只负责表现。
@@ -89,14 +88,16 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 # 攻击击杀后的占领选择面板。
 @export var occupy_choice_panel_size := Vector2(320, 132)
 
-# 物理棋盘单元格。当前只启用 ground_state；aerial_states 预留给未来飞行单位。
+# 物理棋盘单元格。每个 BoardCell 拥有 ground_state 和 aerial_states。
 var board_cells: Array[BoardCell] = []
 
-# 棋盘地面层状态，索引和 BoardCell / CardSlot 顺序一致；保留给现有规则兼容。
+# 棋盘地面层状态，索引与 BoardCell / CardSlot 顺序一致；保留给现有规则兼容。
 var board_states: Array[CardState] = []
+var aerial_board_states: Array[CardState] = []
 
-# 与 board_states 一一对应的卡牌节点。
+# 与 board_states / aerial_board_states 一一对应的卡牌节点。
 var board_cards: Array[Card] = []
+var aerial_board_cards: Array[Card] = []
 
 # 两名玩家的运行时状态。
 var players: Array[PlayerState] = []
@@ -107,13 +108,13 @@ var card_database := CardDatabase.new()
 # 卡牌效果注册表，负责把 JSON 中的效果 id 映射到代码逻辑。
 var effect_registry := EffectRegistry.new()
 
-# 卡牌行动注册表。第一版所有随从都拥有移动行动。
+# 卡牌行动注册表。
 var action_registry := ActionRegistry.new()
 
-# 玩家交互状态机，负责记录当前焦点牌和正在选择的操作目标。
+# 玩家交互状态机。
 var interaction_manager := InteractionManager.new()
 
-# 持久化卡牌池，游戏加载时构建，之后可被多处调用。
+# 持久化卡牌池。
 var card_pool: CardPool
 
 # 加载后的默认卡背资源。
@@ -143,14 +144,14 @@ var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
-# 当前操作人索引，只由 GameManager 修改。
+# 当前操作玩家索引，只由 GameManager 修改。
 var current_player_index := 0
 var turn_number := 1
 var is_spell_turn_active := false
 var is_game_over := false
 var winner_player_id := ""
 
-# 翻牌结算期间暂时锁住新的卡牌操作，避免动画中连续点击导致状态交错。
+# 翻牌结算期间锁住新的卡牌操作，避免动画中连续点击导致状态交错。
 var is_resolving_card_action := false
 
 # 行动执行期间由行动流程统一收尾，避免死亡结算和外层点击流程重复取消交互。
@@ -191,6 +192,9 @@ func _input(event: InputEvent) -> void:
 	if _is_ai_controlling():
 		return
 
+	# 回合结束后切换当前操作人。
+	# Switch the active player after ending the turn.
+	# Switch the active player after ending the turn.
 	if is_game_busy():
 		return
 
@@ -296,7 +300,7 @@ func load_static_card_data() -> bool:
 	card_database.load_test_config("res://data/test_config.json")
 	_apply_test_game_params()
 
-	# 卡背暂时作为统一运行时资源，由 GameManager 注入到每个 CardState。
+	# 卡背作为统一运行时资源，由 GameManager 注入到每个 CardState。
 	default_back_texture = load(default_back_texture_path) as Texture2D
 	return true
 
@@ -351,11 +355,13 @@ func get_player_ai_difficulty(player_index: int) -> String:
 func initialize_board() -> void:
 	prepare_card_board_view()
 	board_cards = find_board_cards()
+	aerial_board_cards = find_board_cards("AerialCard")
 	board_states.clear()
+	aerial_board_states.clear()
 	board_cells.clear()
 
 	if card_pool == null:
-		push_error("GameManager 初始化失败：牌池未创建")
+		push_error("GameManager initialization failed: card pool was not created.")
 		return
 
 	for index in range(board_cards.size()):
@@ -367,20 +373,37 @@ func initialize_board() -> void:
 
 		var state := create_initial_card_state(card_data, index)
 		state.is_interactable = is_land_slot(index)
+		var aerial_state := create_initial_card_state(null, index)
+		aerial_state.is_interactable = true
 		var cell := create_board_cell(index, state)
+		cell.aerial_states.append(aerial_state)
 
 		board_cells.append(cell)
 		board_states.append(state)
+		aerial_board_states.append(aerial_state)
 		state.state_changed.connect(_on_card_state_changed)
+		aerial_state.state_changed.connect(_on_card_state_changed)
 		card.bind_state(state)
+		var aerial_card: Card = aerial_board_cards[index] if index < aerial_board_cards.size() else null
+		if aerial_card != null:
+			aerial_card.bind_state(aerial_state)
 
-		# 点击事件统一进入 GameManager，Card 自己不改状态。
+		# Click events are routed through GameManager; Card does not mutate state directly.
 		if not card.clicked.is_connected(_on_card_clicked):
 			card.clicked.connect(_on_card_clicked)
 		if not card.mouse_entered_card.is_connected(_on_card_hovered):
 			card.mouse_entered_card.connect(_on_card_hovered)
 		if not card.mouse_exited_card.is_connected(_on_card_unhovered):
 			card.mouse_exited_card.connect(_on_card_unhovered)
+		if aerial_card != null:
+			if not aerial_card.clicked.is_connected(_on_card_clicked):
+				aerial_card.clicked.connect(_on_card_clicked)
+			if not aerial_card.mouse_entered_card.is_connected(_on_card_hovered):
+				aerial_card.mouse_entered_card.connect(_on_card_hovered)
+			if not aerial_card.mouse_exited_card.is_connected(_on_card_unhovered):
+				aerial_card.mouse_exited_card.connect(_on_card_unhovered)
+
+		sync_slot_card_layout(index)
 
 	sync_card_board_slot_styles()
 
@@ -425,6 +448,31 @@ func get_board_cell(slot_index: int) -> BoardCell:
 	return board_cells[slot_index]
 
 
+func get_aerial_state(slot_index: int) -> CardState:
+	if slot_index < 0 or slot_index >= aerial_board_states.size():
+		return null
+
+	return aerial_board_states[slot_index]
+
+
+func get_all_board_states() -> Array[CardState]:
+	var states: Array[CardState] = []
+	states.append_array(board_states)
+	states.append_array(aerial_board_states)
+	return states
+
+
+func get_board_states_at_slot(slot_index: int, include_empty := false) -> Array[CardState]:
+	var states: Array[CardState] = []
+	var ground_state := get_board_state(slot_index)
+	if ground_state != null and (include_empty or not ground_state.is_empty()):
+		states.append(ground_state)
+	var aerial_state := get_aerial_state(slot_index)
+	if aerial_state != null and (include_empty or not aerial_state.is_empty()):
+		states.append(aerial_state)
+	return states
+
+
 func can_refill_ground_slot(slot_index: int) -> bool:
 	var cell := get_board_cell(slot_index)
 	return cell != null and cell.can_refill_ground()
@@ -433,6 +481,11 @@ func can_refill_ground_slot(slot_index: int) -> bool:
 func can_place_ground_card_on_slot(slot_index: int) -> bool:
 	var cell := get_board_cell(slot_index)
 	return cell != null and cell.can_place_ground_card()
+
+
+func can_place_aerial_card_on_slot(slot_index: int) -> bool:
+	var cell := get_board_cell(slot_index)
+	return cell != null and cell.can_place_aerial_card()
 
 
 func sync_board_cell_state_flags(slot_index: int) -> void:
@@ -446,6 +499,41 @@ func sync_board_cell_state_flags(slot_index: int) -> void:
 	if state.is_interactable != can_interact:
 		state.is_interactable = can_interact
 		state.state_changed.emit(state)
+
+	var aerial_state := get_aerial_state(slot_index)
+	if aerial_state != null and aerial_state.is_interactable != true:
+		aerial_state.is_interactable = true
+		aerial_state.state_changed.emit(aerial_state)
+
+	sync_slot_card_layout(slot_index)
+
+
+func sync_slot_card_layout(slot_index: int) -> void:
+	var ground_card := get_card_by_slot(slot_index)
+	var aerial_card := get_aerial_card_by_slot(slot_index)
+	var ground_state := get_board_state(slot_index)
+	var aerial_state := get_aerial_state(slot_index)
+	if ground_card == null or aerial_card == null:
+		return
+
+	var slot_size := ground_card.card_size
+	ground_card.position = Vector2.ZERO
+	ground_card.scale = Vector2.ONE
+	ground_card.z_index = 0
+
+	if aerial_state == null or aerial_state.is_empty():
+		aerial_card.position = Vector2.ZERO
+		aerial_card.scale = Vector2.ONE
+		aerial_card.z_index = 20
+		return
+
+	if ground_state == null or ground_state.is_empty():
+		aerial_card.position = Vector2.ZERO
+		aerial_card.scale = Vector2.ONE
+	else:
+		aerial_card.scale = Vector2(0.62, 0.62)
+		aerial_card.position = Vector2(slot_size.x * 0.36, slot_size.y * 0.02)
+	aerial_card.z_index = 30
 
 
 func sync_card_board_slot_styles() -> void:
@@ -461,7 +549,7 @@ func sync_card_board_slot_styles() -> void:
 
 
 func create_initial_card_state(card_data: CardData, slot_index: int) -> CardState:
-	# 创建棋盘上某一个格子的运行时状态。
+	# 创建棋盘上某个格子的运行时状态。
 	var state := CardState.new()
 	state.slot_index = slot_index
 	state.owner_id = ""
@@ -469,10 +557,10 @@ func create_initial_card_state(card_data: CardData, slot_index: int) -> CardStat
 	state.is_selected = false
 	state.back_texture = default_back_texture
 
-	# 静态数据决定这张牌是什么，运行时状态复制当前攻击/生命等可变值。
+	# 静态数据决定这张牌是什么，运行时状态复制当前攻击、生命等可变值。
 	state.set_card_data(card_data)
 
-	# 初始全部背面朝上；之后只能通过 CardState 方法修改。
+	# 初始全部背面朝上；之后只通过 CardState 方法修改。
 	state.set_face_up(false)
 
 	return state
@@ -578,7 +666,7 @@ func get_card_pool_next_back_texture() -> Texture2D:
 
 
 func get_card_back_texture_for_level(level: int) -> Texture2D:
-	var card_back_path := "res://assets/img/卡背/%d.png" % maxi(level, 1)
+	var card_back_path := "res://assets/img/鍗¤儗/%d.png" % maxi(level, 1)
 	if ResourceLoader.exists(card_back_path):
 		return load(card_back_path) as Texture2D
 
@@ -615,7 +703,7 @@ func _on_card_hovered(card: Card) -> void:
 
 func _on_card_unhovered(_card: Card) -> void:
 	if interaction_manager.is_area_target_mode:
-		interaction_manager.clear_area_preview(board_states)
+		interaction_manager.clear_area_preview(get_all_board_states())
 
 
 func _on_card_clicked(card: Card) -> void:
@@ -628,11 +716,11 @@ func _on_card_clicked(card: Card) -> void:
 	if card.state == null:
 		return
 
-	if not card.state.is_interactable:
-		return
-
 	if interaction_manager.mode == InteractionManager.Mode.SELECTING_ACTION_TARGET:
 		handle_action_target_clicked(card.state)
+		return
+
+	if not card.state.is_interactable:
 		return
 
 	if card.state.is_empty():
@@ -682,7 +770,7 @@ func _on_card_clicked(card: Card) -> void:
 
 
 func end_turn() -> void:
-	# 回合结束后切换当前操作人。
+	# Switch the active player after ending the turn.
 	if is_game_busy():
 		return
 
@@ -690,8 +778,9 @@ func end_turn() -> void:
 		return
 
 	is_resolving_card_action = true
+	# Close transient interaction UI before switching turns.
 	hide_action_menu()
-	interaction_manager.cancel(board_states)
+	interaction_manager.cancel(get_all_board_states())
 
 	var current_player := get_current_player()
 	if current_player != null:
@@ -788,7 +877,7 @@ func resolve_ai_turn_watchdog(token: int) -> void:
 	is_resolving_card_action = false
 	is_ai_turn_scheduled = false
 	hide_action_menu()
-	interaction_manager.cancel(board_states)
+	interaction_manager.cancel(get_all_board_states())
 	refresh_action_available_hints()
 	update_turn_status_view()
 	update_hand_drawer_view()
@@ -897,7 +986,7 @@ func find_face_up_board_state(owner_id: String, card_id: String) -> CardState:
 	if owner_id == "" or card_id == "":
 		return null
 
-	for state in board_states:
+	for state in get_all_board_states():
 		if state == null or state.is_empty() or not state.is_face_up:
 			continue
 		if state.owner_id == owner_id and state.card_id == card_id:
@@ -944,7 +1033,7 @@ func check_victory() -> void:
 	is_game_over = true
 	winner_player_id = winner.id
 	hide_action_menu()
-	interaction_manager.cancel(board_states)
+	interaction_manager.cancel(get_all_board_states())
 	update_turn_status_view()
 	update_hand_drawer_view()
 	refresh_debug_panel()
@@ -967,7 +1056,7 @@ func _show_victory_screen(winner: PlayerState) -> void:
 func _transition_to_start_menu() -> void:
 	var start_menu_scene := load("res://scenes/start_menu/start_menu.tscn") as PackedScene
 	if start_menu_scene == null:
-		push_error("找不到主菜单场景: res://scenes/start_menu/start_menu.tscn")
+		push_error("鎵句笉鍒颁富鑿滃崟鍦烘櫙: res://scenes/start_menu/start_menu.tscn")
 		return
 
 	var start_menu := start_menu_scene.instantiate()
@@ -1046,7 +1135,7 @@ func restore_minion_actions_for_player(player_id: String) -> void:
 	if player_id == "":
 		return
 
-	for state in board_states:
+	for state in get_all_board_states():
 		if state == null or state.is_empty():
 			continue
 
@@ -1061,7 +1150,7 @@ func restore_minion_actions_for_player(player_id: String) -> void:
 
 func refresh_action_available_hints() -> void:
 	action_hint_resolver.refresh(
-		board_states,
+		get_all_board_states(),
 		get_current_player(),
 		interaction_manager,
 		action_registry,
@@ -1081,12 +1170,12 @@ func _on_interaction_changed() -> void:
 
 
 func handle_face_up_card_clicked(state: CardState, current_player: PlayerState) -> void:
-	# 玩家点击己方正面随从时，进入或切换焦点状态；不再把牌扣回去。
+	# 玩家点击己方正面随从时，进入或切换焦点状态。
 	if not can_select_card(state, current_player):
 		refresh_debug_panel()
 		return
 
-	interaction_manager.toggle_card_selection(state, board_states)
+	interaction_manager.toggle_card_selection(state, get_all_board_states())
 	update_action_menu()
 
 
@@ -1114,8 +1203,17 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 		return
 
 	if interaction_manager.selected_action != null:
+		if not interaction_manager.selected_action.can_target(interaction_manager.focused_state, target_state, self):
+			refresh_debug_panel()
+			return
 		await execute_selected_action(target_state)
 	elif interaction_manager.selected_hand_card_data != null:
+		if (
+			interaction_manager.selected_hand_action_id == HandPlayResolver.HAND_CAST_ACTION_ID
+			and not get_hand_play_resolver().can_target(interaction_manager.selected_hand_card_data, target_state, self)
+		):
+			refresh_debug_panel()
+			return
 		await execute_selected_hand_card(target_state)
 
 	refresh_action_available_hints()
@@ -1137,8 +1235,9 @@ func execute_selected_hand_card(target_state: CardState) -> void:
 
 
 func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
-	# 交换两个单元格：地面/边缘等单元格性质跟随单元格移动，
-	# 卡牌内容也随单元格一起移动；UI 物理坐标和 Card 节点仍保持原位。
+	# 浜ゆ崲涓や釜鍗曞厓鏍硷細鍦伴潰/杈圭紭绛夊崟鍏冩牸鎬ц川璺熼殢鍗曞厓鏍肩Щ鍔紝
+	# 交换两个单元格：地面/边缘等单元格性质跟随单元格移动。
+	# Swap fixed-slot card contents while preserving slot indices and UI bindings.
 	if first_state == null or second_state == null:
 		return
 
@@ -1157,7 +1256,7 @@ func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
 
 
 func swap_board_slot_contents(first_state: CardState, second_state: CardState) -> void:
-	# 交换两个固定格子的卡牌内容，但保留格子本身的 slot_index 和 UI 绑定关系。
+	# Swap fixed-slot card contents while preserving slot indices and UI bindings.
 	if first_state == null or second_state == null:
 		return
 
@@ -1210,8 +1309,8 @@ func play_card_attack_animation(attacker_state: CardState, target_state: CardSta
 	if attacker_state == null or target_state == null:
 		return
 
-	var attacker_card: Card = get_card_by_slot(attacker_state.slot_index)
-	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	var attacker_card: Card = get_card_for_state(attacker_state)
+	var target_card: Card = get_card_for_state(target_state)
 	if attacker_card == null or target_card == null:
 		return
 
@@ -1230,8 +1329,8 @@ func play_spell_cast_animation(caster_state: CardState, target_state: CardState,
 	if caster_state == null or target_state == null:
 		return
 
-	var caster_card: Card = get_card_by_slot(caster_state.slot_index)
-	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	var caster_card: Card = get_card_for_state(caster_state)
+	var target_card: Card = get_card_for_state(target_state)
 	if caster_card == null or target_card == null:
 		return
 
@@ -1250,8 +1349,8 @@ func play_area_spell_animation(caster_state: CardState, center_state: CardState,
 	if caster_state == null or center_state == null:
 		return
 
-	var caster_card: Card = get_card_by_slot(caster_state.slot_index)
-	var center_card: Card = get_card_by_slot(center_state.slot_index)
+	var caster_card: Card = get_card_for_state(caster_state)
+	var center_card: Card = get_card_for_state(center_state)
 	if caster_card == null or center_card == null:
 		return
 
@@ -1270,8 +1369,8 @@ func play_link_units_animation(first_state: CardState, second_state: CardState, 
 	if first_state == null or second_state == null:
 		return
 
-	var first_card: Card = get_card_by_slot(first_state.slot_index)
-	var second_card: Card = get_card_by_slot(second_state.slot_index)
+	var first_card: Card = get_card_for_state(first_state)
+	var second_card: Card = get_card_for_state(second_state)
 	if first_card == null or second_card == null:
 		return
 
@@ -1290,9 +1389,9 @@ func play_moonblade_animation(caster_state: CardState, first_state: CardState, s
 	if caster_state == null or first_state == null or second_state == null:
 		return
 
-	var caster_card: Card = get_card_by_slot(caster_state.slot_index)
-	var first_card: Card = get_card_by_slot(first_state.slot_index)
-	var second_card: Card = get_card_by_slot(second_state.slot_index)
+	var caster_card: Card = get_card_for_state(caster_state)
+	var first_card: Card = get_card_for_state(first_state)
+	var second_card: Card = get_card_for_state(second_state)
 	if caster_card == null or first_card == null or second_card == null:
 		return
 
@@ -1311,7 +1410,7 @@ func play_effect_heal_animation(target_state: CardState) -> void:
 	if target_state == null:
 		return
 
-	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	var target_card: Card = get_card_for_state(target_state)
 	if target_card == null:
 		return
 
@@ -1328,7 +1427,7 @@ func play_status_apply_animation(target_state: CardState, animation_key: String)
 	if target_state == null or animation_key == "":
 		return
 
-	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	var target_card: Card = get_card_for_state(target_state)
 	if target_card == null:
 		return
 
@@ -1345,7 +1444,7 @@ func play_slot_effect_animation(target_state: CardState, animation_key: String) 
 	if target_state == null or animation_key == "":
 		return
 
-	var target_card: Card = get_card_by_slot(target_state.slot_index)
+	var target_card: Card = get_card_for_state(target_state)
 	if target_card == null:
 		return
 
@@ -1446,6 +1545,53 @@ func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState)
 	refresh_debug_panel()
 
 
+func move_flying_card_to_slot(from_state: CardState, to_slot_index: int) -> void:
+	if from_state == null or from_state.is_empty() or not from_state.is_flying():
+		return
+
+	var to_state := get_aerial_state(to_slot_index)
+	if to_state == null or not to_state.is_empty():
+		return
+
+	var from_card := get_card_for_state(from_state)
+	var to_card := get_card_for_state(to_state)
+	var moving_snapshot := from_state.create_card_snapshot()
+	if from_card == null or to_card == null:
+		to_state.apply_card_snapshot(moving_snapshot)
+		from_state.clear_card()
+		await resolve_slot_unit_entered(to_state)
+		refresh_action_available_hints()
+		refresh_debug_panel()
+		return
+
+	is_resolving_card_action = true
+	await card_animation_controller.play_card_to_empty_slot(self, from_card, to_card)
+	to_state.apply_card_snapshot(moving_snapshot)
+	from_state.clear_card()
+	await resolve_slot_unit_entered(to_state)
+	is_resolving_card_action = false
+	refresh_action_available_hints()
+	refresh_debug_panel()
+
+
+func promote_ground_flying_to_aerial(source_state: CardState) -> CardState:
+	if source_state == null or source_state.is_empty() or not source_state.is_flying():
+		return source_state
+
+	var aerial_state := get_aerial_state(source_state.slot_index)
+	if aerial_state == null or not aerial_state.is_empty():
+		return source_state
+
+	var moving_snapshot := source_state.create_card_snapshot()
+	aerial_state.apply_card_snapshot(moving_snapshot)
+	source_state.clear_card()
+	refill_board_slot_from_pool(source_state.slot_index)
+	await resolve_slot_unit_entered(aerial_state)
+	refresh_action_available_hints()
+	refresh_debug_panel()
+	return aerial_state
+
+
 func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
 	var state: CardState = get_board_state(slot_index)
 	var target_card: Card = get_card_by_slot(slot_index)
@@ -1479,19 +1625,19 @@ func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
 
 
 func cancel_interaction() -> void:
-	# 预留给后续“取消”按钮或右键取消调用。
+	# Shared cancellation path for buttons and right click.
 	hide_action_menu()
 	hand_interaction_controller.clear_anchor()
-	interaction_manager.cancel(board_states)
+	interaction_manager.cancel(get_all_board_states())
 
 
 func return_to_action_menu() -> void:
-	# 目标选择阶段通过通用取消输入退回焦点菜单，不占用任何卡牌目标点击。
+	# 目标选择阶段通过通用取消输入退回焦点菜单。
 	if interaction_manager.focused_state == null and interaction_manager.selected_hand_card_data == null:
 		cancel_interaction()
 		return
 
-	interaction_manager.return_to_card_selection(board_states)
+	interaction_manager.return_to_card_selection(get_all_board_states())
 	update_action_menu_after_layout()
 
 
@@ -1547,7 +1693,7 @@ func start_action_selection(action_id: String) -> void:
 		cancel_interaction()
 		return
 
-	interaction_manager.start_action_selection(action, board_states, self)
+	interaction_manager.start_action_selection(action, get_all_board_states(), self)
 
 
 func get_card_by_slot(slot_index: int) -> Card:
@@ -1555,6 +1701,24 @@ func get_card_by_slot(slot_index: int) -> Card:
 		return null
 
 	return board_cards[slot_index]
+
+
+func get_aerial_card_by_slot(slot_index: int) -> Card:
+	if slot_index < 0 or slot_index >= aerial_board_cards.size():
+		return null
+
+	return aerial_board_cards[slot_index]
+
+
+func get_card_for_state(state: CardState) -> Card:
+	if state == null:
+		return null
+
+	var aerial_state := get_aerial_state(state.slot_index)
+	if aerial_state == state:
+		return get_aerial_card_by_slot(state.slot_index)
+
+	return get_card_by_slot(state.slot_index)
 
 
 func execute_action_without_target(action: CardAction) -> void:
@@ -1567,6 +1731,8 @@ func execute_action_without_target(action: CardAction) -> void:
 
 
 func _on_card_state_changed(state: CardState) -> void:
+	if state != null:
+		sync_slot_card_layout(state.slot_index)
 	refresh_debug_panel()
 
 
@@ -1600,7 +1766,7 @@ func refresh_debug_panel() -> void:
 	)
 
 
-func find_board_cards() -> Array[Card]:
+func find_board_cards(card_node_name := "Card") -> Array[Card]:
 	# 从指定的 CardBoard 节点开始递归查找所有卡牌实例。
 	var cards: Array[Card] = []
 	var card_board := get_node_or_null(card_board_path)
@@ -1608,14 +1774,15 @@ func find_board_cards() -> Array[Card]:
 	if card_board == null:
 		return cards
 
-	collect_cards(card_board, cards)
+	collect_cards(card_board, cards, card_node_name)
 	return cards
 
 
-func collect_cards(node: Node, cards: Array[Card]) -> void:
+func collect_cards(node: Node, cards: Array[Card], card_node_name := "Card") -> void:
 	# 深度优先遍历 CardBoard 下的所有节点。
 	if node is Card:
-		cards.append(node)
+		if node.name == card_node_name:
+			cards.append(node)
 
 	for child in node.get_children():
-		collect_cards(child, cards)
+		collect_cards(child, cards, card_node_name)

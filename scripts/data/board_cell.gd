@@ -41,6 +41,18 @@ func can_place_ground_card() -> bool:
 	return not ground_state.is_face_up
 
 
+func get_primary_aerial_state() -> CardState:
+	if aerial_states.is_empty():
+		return null
+
+	return aerial_states[0]
+
+
+func can_place_aerial_card() -> bool:
+	var aerial_state := get_primary_aerial_state()
+	return aerial_state != null and aerial_state.is_empty()
+
+
 func swap_cell_properties_with(other_cell: BoardCell) -> void:
 	if other_cell == null:
 		return

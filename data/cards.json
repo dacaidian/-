@@ -1561,6 +1561,22 @@
 				"level": 1,
 				"keywords": [],
 				"effects": []
+			},
+			{
+				"id": "hippogryph_rider",
+				"name": "角鹰骑士",
+				"description": "暗夜精灵哨兵的三阶飞行骑兵随从。飞行单位可以进入战场外圈，并可与地面单位或建筑共处同一单元格。",
+				"url": "res://assets/img/暗夜精灵哨兵/角鹰骑士.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"keywords": [
+					"cavalry",
+					"flying"
+				],
+				"attack": 2,
+				"health": 12,
+				"effects": []
 			}
 		]
 	},

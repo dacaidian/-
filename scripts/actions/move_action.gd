@@ -44,6 +44,10 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not user.spend_movement():
 		return
 
+	if user.is_flying():
+		await game_manager.move_flying_card_to_slot(user, target.slot_index)
+		return
+
 	await game_manager.swap_board_slot_contents(user, target)
 
 
@@ -54,11 +58,19 @@ func can_target(user: CardState, target: CardState, game_manager: GameManager) -
 	if user == target:
 		return false
 
-	if game_manager.has_method("can_place_ground_card_on_slot"):
+	if user.is_flying():
+		if not game_manager.has_method("can_place_aerial_card_on_slot"):
+			return false
+		if not game_manager.can_place_aerial_card_on_slot(target.slot_index):
+			return false
+	elif game_manager.has_method("can_place_ground_card_on_slot"):
 		if not game_manager.can_place_ground_card_on_slot(target.slot_index):
 			return false
 
 	if not is_neighbor(user.slot_index, target.slot_index, game_manager.board_columns):
 		return false
+
+	if user.is_flying():
+		return true
 
 	return target.is_empty() or not target.is_face_up

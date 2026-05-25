@@ -1,20 +1,22 @@
 extends RefCounted
 class_name BoardUnitPairSelectionController
 
-signal slot_selected(slot_index: int)
+signal state_selected(state: CardState)
 
-# BoardUnitPairSelectionController is a small modal selector for effects that
-# need exactly two board units after a spell has already been committed.
+# Modal selector for effects that need exactly two board units after a spell has
+# already been committed. It selects concrete CardState instances instead of
+# slots, so ground and flying units can coexist in one BoardCell and still be
+# selected independently.
 
 var _game_manager: GameManager
 var _layer: CanvasLayer
 var _panel: PanelContainer
 var _title_label: Label
 var _hint_label: Label
-var _first_slot := -1
+var _first_state: CardState
 var _active := false
-var _valid_slots: Array[int] = []
-var _selected_slots: Array[int] = []
+var _valid_states: Array[CardState] = []
+var _selected_states: Array[CardState] = []
 
 
 func select_unit_pair(
@@ -27,9 +29,9 @@ func select_unit_pair(
 		return result
 
 	_game_manager = game_manager
-	_valid_slots = get_valid_slots(valid_states)
-	_selected_slots.clear()
-	_first_slot = -1
+	_valid_states = valid_states.duplicate()
+	_selected_states.clear()
+	_first_state = null
 	_active = true
 
 	setup_ui(game_manager.get_parent(), title)
@@ -37,28 +39,19 @@ func select_unit_pair(
 	set_target_flags()
 	update_hint()
 
-	while _active and _selected_slots.size() < 2:
-		var slot_index: int = await slot_selected
-		if slot_index < 0:
+	while _active and _selected_states.size() < 2:
+		var selected_state: CardState = await state_selected
+		if selected_state == null:
 			break
 
-		handle_slot_selected(slot_index)
+		handle_state_selected(selected_state)
 
-	for slot_index in _selected_slots:
-		var state := _game_manager.get_board_state(slot_index) as CardState
+	for state in _selected_states:
 		if state != null:
 			result.append(state)
 
 	cleanup()
 	return result
-
-
-func get_valid_slots(valid_states: Array[CardState]) -> Array[int]:
-	var slots: Array[int] = []
-	for state in valid_states:
-		if state != null and not slots.has(state.slot_index):
-			slots.append(state.slot_index)
-	return slots
 
 
 func setup_ui(parent: Node, title: String) -> void:
@@ -117,10 +110,16 @@ func connect_board_cards() -> void:
 		return
 
 	for card in _game_manager.board_cards:
-		if card == null:
-			continue
-		if not card.clicked.is_connected(_on_card_clicked):
-			card.clicked.connect(_on_card_clicked)
+		connect_card(card)
+	for card in _game_manager.aerial_board_cards:
+		connect_card(card)
+
+
+func connect_card(card: Card) -> void:
+	if card == null:
+		return
+	if not card.clicked.is_connected(_on_card_clicked):
+		card.clicked.connect(_on_card_clicked)
 
 
 func disconnect_board_cards() -> void:
@@ -128,74 +127,76 @@ func disconnect_board_cards() -> void:
 		return
 
 	for card in _game_manager.board_cards:
-		if card == null:
-			continue
-		if card.clicked.is_connected(_on_card_clicked):
-			card.clicked.disconnect(_on_card_clicked)
+		disconnect_card(card)
+	for card in _game_manager.aerial_board_cards:
+		disconnect_card(card)
+
+
+func disconnect_card(card: Card) -> void:
+	if card == null:
+		return
+	if card.clicked.is_connected(_on_card_clicked):
+		card.clicked.disconnect(_on_card_clicked)
 
 
 func _on_card_clicked(card: Card) -> void:
 	if not _active or card == null or card.state == null:
 		return
 
-	slot_selected.emit(card.state.slot_index)
+	state_selected.emit(card.state)
 
 
-func handle_slot_selected(slot_index: int) -> void:
-	if not is_selectable_slot(slot_index):
+func handle_state_selected(state: CardState) -> void:
+	if not is_selectable_state(state):
 		return
 
-	if _first_slot < 0:
-		select_first_slot(slot_index)
+	if _first_state == null:
+		select_first_state(state)
 		return
 
-	if slot_index == _first_slot:
-		clear_first_slot()
+	if state == _first_state:
+		clear_first_state()
 		update_hint()
 		return
 
-	_selected_slots = [_first_slot, slot_index]
+	_selected_states = [_first_state, state]
 	_active = false
 
 
-func select_first_slot(slot_index: int) -> void:
-	clear_first_slot()
-	_first_slot = slot_index
-	var state := _game_manager.get_board_state(_first_slot) as CardState
-	if state != null:
-		state.set_selected(true)
+func select_first_state(state: CardState) -> void:
+	clear_first_state()
+	_first_state = state
+	if _first_state != null:
+		_first_state.set_selected(true)
 	update_hint()
 
 
-func clear_first_slot() -> void:
-	if _first_slot < 0 or _game_manager == null:
-		_first_slot = -1
+func clear_first_state() -> void:
+	if _first_state == null:
 		return
 
-	var state := _game_manager.get_board_state(_first_slot) as CardState
-	if state != null:
-		state.set_selected(false)
-	_first_slot = -1
+	_first_state.set_selected(false)
+	_first_state = null
 
 
-func is_selectable_slot(slot_index: int) -> bool:
-	return _valid_slots.has(slot_index)
+func is_selectable_state(state: CardState) -> bool:
+	return _valid_states.has(state)
 
 
 func set_target_flags() -> void:
 	if _game_manager == null:
 		return
 
-	for state in _game_manager.board_states:
+	for state in _game_manager.get_all_board_states():
 		if state != null:
-			state.set_valid_target(_valid_slots.has(state.slot_index))
+			state.set_valid_target(_valid_states.has(state))
 
 
 func clear_target_flags() -> void:
 	if _game_manager == null:
 		return
 
-	for state in _game_manager.board_states:
+	for state in _game_manager.get_all_board_states():
 		if state != null:
 			state.set_valid_target(false)
 
@@ -204,15 +205,15 @@ func update_hint() -> void:
 	if _hint_label == null:
 		return
 
-	if _first_slot >= 0:
-		_hint_label.text = "已选择第一个随从。请选择第二个随从建立链接。"
+	if _first_state != null:
+		_hint_label.text = "已选择第一个随从，请选择第二个随从。"
 	else:
-		_hint_label.text = "请选择两个随从建立同命链接。"
+		_hint_label.text = "请选择两个随从。"
 
 
 func cleanup() -> void:
 	_active = false
-	clear_first_slot()
+	clear_first_state()
 	clear_target_flags()
 	disconnect_board_cards()
 	if _layer != null:
@@ -222,7 +223,8 @@ func cleanup() -> void:
 	_title_label = null
 	_hint_label = null
 	_game_manager = null
-	_valid_slots.clear()
+	_valid_states.clear()
+	_selected_states.clear()
 
 
 func create_panel_style() -> StyleBoxFlat:

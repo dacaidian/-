@@ -266,7 +266,7 @@
 - `minions_by_card_ids` 使用 `spell_data.card_ids` 做目标白名单，并排除施法者自身；当前用于蛊巨蜥“吞噬”可选毒蝎、蛊毒蛇、生蛊王蛇和其他蛊巨蜥。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`non_hero_minions` 只选正面非英雄随从，适合火球术这类不能打英雄的法术；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
-- 多段棋盘格/单位选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子或单位，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程，`link_units` 通过 `BoardUnitPairSelectionController` 执行“双单位选择并建立状态链接”，`moonblade` 通过 `BoardUnitBounceSelectionController` 在第一目标确定后选择相邻弹射目标。
+- 多段棋盘格/单位选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子或单位，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程，`link_units` 通过 `BoardUnitPairSelectionController` 执行“双单位选择并建立状态链接”，`moonblade` 通过 `BoardUnitBounceSelectionController` 在第一目标确定后选择相邻弹射目标。单位选择控制器必须按 `CardState` 选择，不按 slot 选择，否则飞行单位与地面单位同格时会选错层。
 - 如果第一段目标还依赖效果内部条件（例如月刃要求第一目标附近存在可弹射随从），在对应 `CardEffect.can_execute()` 中实现校验；`SpellAction` 会把候选目标注入运行时效果并过滤掉不可执行目标。
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
@@ -423,7 +423,8 @@ rg --files scripts scenes data docs
 - 当前物理棋盘是 7x7，初始内圈 5x5 是普通地面格，初始外圈是战场边缘。奥术空间会交换 `BoardCell.is_land`，所以后续某个物理坐标是否可补牌/放置必须查当前 `BoardCell`，不要按几何位置重算。
 - 普通补牌必须走 `can_refill_ground_slot()`；普通随从放置、移动、格子型法术必须走 `can_place_ground_card_on_slot()`。
 - 交换单元格（例如奥术空间）不等同于普通放置或补牌，不应调用 `can_place_ground_card_on_slot()` 限制可交换格。交换后由被交换过去的 `BoardCell` 性质决定该位置后续能否补牌/放置。
-- 未来飞行单位应进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。
+- 飞行单位进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。需要“所有单位”的逻辑读 `GameManager.get_all_board_states()`；需要“同一格里的地面/飞行单位”的逻辑读 `GameManager.get_board_states_at_slot()`；补牌、未翻开牌、地面放置仍只走地面层。
+- 飞行随从手牌放置、移动、翻开提升分别走 `HandPlayResolver`、`MoveAction`、`RevealResolver.promote_ground_flying_to_aerial()` 相关入口；不要在具体卡牌里直接挪数组。
 ### 种族运行时状态
 
 优先读：

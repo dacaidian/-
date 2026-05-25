@@ -9,8 +9,8 @@
 位置：`scripts/data`
 
 - `CardData`：静态卡牌数据，来自 `data/cards.json`；卡牌所属的数据包通过 `faction_id` 记录，玩家种族包和中立牌库包都走同一读取结构。
-- `BoardCell`：当前占据某个棋盘坐标的单元格属性，记录坐标、是否为普通地面格、地面层 `ground_state` 和预留的飞行层 `aerial_states`。当前棋盘为 7x7，初始外圈是战场边缘，不补牌、不允许普通地面随从放置；初始中间 5x5 是现有地面牌池区域。奥术空间这类“交换单元格”效果会让 `is_land` 等单元格性质随单元格移动，而不是固定在屏幕坐标上。
-- `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。当前它仍作为 `BoardCell.ground_state` 的兼容地面层状态使用；未来飞行单位应进入 `BoardCell.aerial_states`，不要强行塞进地面层。`has_status_with_tag(tag)` 提供 tag 驱动的通用状态门控，不绑定特定 status_id；`is_area_preview` / `set_area_preview()` 用于 AOE 范围预览标记。
+- `BoardCell`：当前占据某个棋盘坐标的单元格属性，记录坐标、是否为普通地面格、地面层 `ground_state` 和飞行层 `aerial_states`。当前棋盘为 7x7，初始外圈是战场边缘，不补牌、不允许普通地面随从放置；初始中间 5x5 是现有地面牌池区域。奥术空间这类“交换单元格”效果会让 `is_land` 等单元格性质随单元格移动，而不是固定在屏幕坐标上。
+- `CardState`：运行时卡牌状态，例如归属、正反面、攻击、生命上限、已受伤害、主行动次数、移动力、攻速/剩余攻击次数、当前状态、交互提示标记；同时保存 `origin`，表示这张具体卡牌进入游戏时的初始属性快照。它可以作为 `BoardCell.ground_state` 的地面层状态，也可以作为 `BoardCell.aerial_states` 中的飞行层状态；判断飞行能力统一走 `CardState.is_flying()` / `CardData.KEYWORD_FLYING`。`has_status_with_tag(tag)` 提供 tag 驱动的通用状态门控，不绑定特定 status_id；`is_area_preview` / `set_area_preview()` 用于 AOE 范围预览标记。
 - `CardStatus`：附着在棋盘单位上的运行时状态，例如中毒、圣盾、冻结、临时增益等。它记录状态 id、名称、tag、层数、来源、持续时间和到期时点，不直接执行具体规则。
 - `PlayerState`：玩家运行时状态，例如所属种族、资源分、翻牌次数、法力、手牌/牌库预留区、独立坟场。
 - `CardDatabase`：读取并缓存 JSON 静态数据。支持测试模式：通过 `data/test_config.json` 配置白名单卡牌、数量覆盖和游戏参数（`game_params` 节），提供 `get_test_game_param()` 通用参数查询；游戏参数由 `GameManager._apply_test_game_params()` 在初始化时读取并覆盖 `@export` 默认值。
@@ -73,7 +73,7 @@
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
 - `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹、薄葬死亡庇护和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
-- `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。
+- `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card/AerialCard 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。地面层卡牌保持原尺寸；飞行层与地面层共格时由 `GameManager.sync_slot_card_layout()` 缩小并置于右上角显示。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
 - `ActionMenuController`：负责动作菜单 UI 的创建、显示、定位和按钮事件。
 - `CardPoolViewController`：负责公共牌池的表现，例如固定牌堆节点绑定、剩余数量显示、补位飞牌动画。
@@ -188,7 +188,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -197,7 +197,7 @@
 - 物理棋盘尺寸为 `board_columns x board_rows`，当前默认 `7x7`。`GameManager.board_cells` 是当前占据各坐标的单元格属性模型，`board_states` 继续作为地面层兼容视图存在，二者索引一致。
 - `BoardCell.is_land` 表示普通地面格。初始状态只有内圈 5x5 为地面格，外圈是战场边缘；但奥术空间可以交换两个单元格，使地面格移动到外圈坐标，或使边缘格移动到内圈坐标。补牌和普通随从放置永远读取当前位置上的 `BoardCell.is_land`。
 - 补牌入口统一使用 `GameManager.can_refill_ground_slot()`；普通地面放置入口统一使用 `GameManager.can_place_ground_card_on_slot()`。新增规则不要直接判断 `state.is_empty()` 就认为可放置，否则会绕过外圈/飞行层限制。
-- 飞行单位的未来扩展入口是 `BoardCell.aerial_states`。飞行单位可以在外圈存在，也可以和地面单位共存于同一 `BoardCell`；这类逻辑不应破坏现有 `ground_state` 和 `board_states` 的兼容规则。
+- 飞行单位进入 `BoardCell.aerial_states`，不占用 `ground_state`。飞行单位可以放置或移动到外圈边缘格，也可以和地面单位、建筑共存于同一 `BoardCell`；涉及“所有单位”的规则应使用 `GameManager.get_all_board_states()`，涉及“某格内所有单位”的规则应使用 `GameManager.get_board_states_at_slot()`。补牌、未翻开牌、地面放置和奥术空间的单元格性质仍只读写地面层，保持 `board_states` 的兼容语义。
 
 ## 回合时点触发
 
@@ -401,6 +401,7 @@
 - `cavalry` / 骑兵：单位每回合移动力为 3，并且本回合允许同时开启 `move` 与 `attack` 两个行动类别。因此骑兵可以先移动再攻击，也可以先攻击再移动；多次移动仍然消耗移动力，多次攻击仍然消耗攻速。
 - `ranged` / 远程：攻击范围由 `AttackAction` 计算。目标集合是自身相邻正面单位、所有友方正面随从、以及所有友方正面随从相邻的正面单位的并集。远程单位击杀远程目标时不触发占领；只有目标在攻击者自身相邻格时，才视为近战攻击并进入占领选择。
 - `mobile_assault` / 移动攻击：单位同一回合内可以移动并攻击。它通过 `CardState.apply_keyword_passives()` 增加主行动余量，并允许 `move` 与 `attack` 行动组在同回合共存；它不等同于移动施法，未来移动施法应使用独立关键词或升级效果。
+- `flying` / 飞行：单位使用飞行层，可进入外圈边缘格，并可与同格地面单位或建筑共存。飞行移动目标由 `MoveAction` 检查 `GameManager.can_place_aerial_card_on_slot()`；手牌放置由 `HandPlayResolver.can_place_minion_on_target()` 转入飞行层；翻开飞行随从时由 `RevealResolver` 调用 `GameManager.promote_ground_flying_to_aerial()`，先把飞行单位提升到飞行层，再补回地面牌池。
 - `can_attack_with_zero_attack`：允许 0 攻单位发起攻击，仅用于依赖 `after_attack` 被动的单位。是否真的有收益由该单位的触发效果决定。
 - `magic_immune` / 魔法免疫：单位不能成为法术牌、随从施法和区域法术的可选目标；法术效果结算时也会在 `CardEffect.get_target_states()` 再次过滤魔免单位，确保 AOE、自动施法和未来新增法术型效果不会影响它。新增法术目标规则时优先扩展 `SpellTargetResolver`，不要在具体卡牌中写死魔免判断。
 

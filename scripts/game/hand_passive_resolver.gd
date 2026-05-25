@@ -44,7 +44,7 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 		return
 
 	var movement_by_card_id := get_unit_movement_overrides(player)
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_minion(state):
 			continue
 		if state.owner_id != player.id:
@@ -63,7 +63,7 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 		return
 
 	var attack_bonus_by_card_id := get_unit_attack_bonuses(player)
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_minion(state):
 			continue
 		if state.owner_id != player.id:
@@ -81,7 +81,7 @@ func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameM
 		return
 
 	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player)
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_minion(state):
 			continue
 		if state.owner_id != player.id:

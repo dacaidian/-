@@ -33,6 +33,11 @@ func resolve_revealed_card(game_manager: GameManager, state: CardState, player: 
 		await move_revealed_card_to_hand(game_manager, state, player)
 		return
 
+	if state.is_flying() and game_manager.has_method("promote_ground_flying_to_aerial"):
+		state = await game_manager.promote_ground_flying_to_aerial(state)
+		if state == null or state.is_empty():
+			return
+
 	resolve_revealed_board_card(game_manager, state)
 
 

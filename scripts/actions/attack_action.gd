@@ -28,7 +28,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 	if not can_start(user, game_manager):
 		return targets
 
-	for state in game_manager.board_states:
+	for state in game_manager.get_all_board_states():
 		if get_attack_profile(user, state, game_manager)[PROFILE_CAN_ATTACK]:
 			targets.append(state)
 
@@ -97,7 +97,7 @@ func get_attack_profile(user: CardState, target: CardState, game_manager: GameMa
 	if is_melee_attack_target(user, target, game_manager.board_columns):
 		profile[PROFILE_CAN_ATTACK] = true
 		profile[PROFILE_IS_MELEE] = true
-		profile[PROFILE_CAN_OCCUPY] = target.is_unit()
+		profile[PROFILE_CAN_OCCUPY] = target.is_unit() and not user.is_flying()
 		return profile
 
 	if is_ranged_attack_target(user, target, game_manager):
@@ -133,7 +133,7 @@ func is_ranged_attack_target(user: CardState, target: CardState, game_manager: G
 	if not user.has_keyword(CardData.KEYWORD_RANGED):
 		return false
 
-	for anchor_state in game_manager.board_states:
+	for anchor_state in game_manager.get_all_board_states():
 		if not is_ranged_anchor(user, anchor_state):
 			continue
 

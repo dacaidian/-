@@ -208,6 +208,10 @@ func is_hero() -> bool:
 	return data != null and data.is_hero()
 
 
+func is_flying() -> bool:
+	return has_keyword(CardData.KEYWORD_FLYING)
+
+
 func uses_minion_action_resources() -> bool:
 	return is_minion()
 

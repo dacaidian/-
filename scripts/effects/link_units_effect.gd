@@ -55,7 +55,7 @@ func can_execute(_source_state: CardState, _effect_data: Dictionary, game_manage
 
 func get_linkable_minions(gm: GameManager) -> Array[CardState]:
 	var targets: Array[CardState] = []
-	for state in gm.board_states:
+	for state in gm.get_all_board_states():
 		if is_linkable_state(state):
 			targets.append(state)
 

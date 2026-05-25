@@ -27,7 +27,7 @@ func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: 
 		return not card_data.effects.is_empty() and has_playable_effects(player, card_data, game_manager)
 
 	if card_data.is_minion():
-		return not get_valid_placement_targets(game_manager).is_empty()
+		return not get_valid_placement_targets(game_manager, card_data).is_empty()
 
 	if card_data.is_equipment():
 		return true
@@ -89,7 +89,7 @@ func start_cast_target_selection(game_manager: GameManager, player: PlayerState,
 		hand_index,
 		HAND_CAST_ACTION_ID,
 		targets,
-		game_manager.board_states
+		game_manager.get_all_board_states()
 	)
 	return true
 
@@ -104,7 +104,7 @@ func start_place_target_selection(game_manager: GameManager, player: PlayerState
 	if not card_data.is_minion():
 		return false
 
-	var targets := get_valid_placement_targets(game_manager)
+	var targets := get_valid_placement_targets(game_manager, card_data)
 	if targets.is_empty():
 		return false
 
@@ -114,7 +114,7 @@ func start_place_target_selection(game_manager: GameManager, player: PlayerState
 		hand_index,
 		HAND_PLACE_ACTION_ID,
 		targets,
-		game_manager.board_states
+		game_manager.get_all_board_states()
 	)
 	return true
 
@@ -193,21 +193,24 @@ func get_valid_targets(card_data: CardData, game_manager: GameManager) -> Array[
 	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data), game_manager)
 
 
-func get_valid_placement_targets(game_manager: GameManager) -> Array[CardState]:
+func get_valid_placement_targets(game_manager: GameManager, card_data: CardData = null) -> Array[CardState]:
 	var targets: Array[CardState] = []
 	if game_manager == null:
 		return targets
 
 	for state in game_manager.board_states:
-		if can_place_minion_on_target(state, game_manager):
+		if can_place_minion_on_target(state, game_manager, card_data):
 			targets.append(state)
 
 	return targets
 
 
-func can_place_minion_on_target(target_state: CardState, game_manager: GameManager = null) -> bool:
+func can_place_minion_on_target(target_state: CardState, game_manager: GameManager = null, card_data: CardData = null) -> bool:
 	if target_state == null:
 		return false
+	if card_data != null and card_data.has_keyword(CardData.KEYWORD_FLYING):
+		return game_manager != null and game_manager.can_place_aerial_card_on_slot(target_state.slot_index)
+
 	if game_manager != null and game_manager.has_method("can_place_ground_card_on_slot"):
 		if not game_manager.can_place_ground_card_on_slot(target_state.slot_index):
 			return false
@@ -234,10 +237,24 @@ func execute_hand_minion_placement(
 	if not can_play_hand_card_at(player, hand_index, game_manager):
 		return
 
-	if not can_place_minion_on_target(target_state, game_manager):
+	if not can_place_minion_on_target(target_state, game_manager, card_data):
 		return
 
 	if not player.remove_from_hand_at(hand_index, card_data):
+		return
+
+	if card_data.has_keyword(CardData.KEYWORD_FLYING):
+		var aerial_state := game_manager.get_aerial_state(target_state.slot_index)
+		if aerial_state == null or not aerial_state.is_empty():
+			return
+		aerial_state.set_card_data(card_data)
+		aerial_state.set_owner(player.id)
+		aerial_state.set_face_up(true)
+		await game_manager.resolve_slot_unit_entered(aerial_state)
+		game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
+		game_manager.refresh_action_available_hints()
+		game_manager.update_hand_drawer_view()
+		game_manager.refresh_debug_panel()
 		return
 
 	if target_state.data != null and not target_state.is_face_up and game_manager.card_pool != null:
@@ -274,7 +291,7 @@ func execute_hand_equipment(
 		return
 
 	player.equip_card(card_data)
-	game_manager.interaction_manager.cancel(game_manager.board_states)
+	game_manager.interaction_manager.cancel(game_manager.get_all_board_states())
 	game_manager.update_hand_drawer_view()
 	game_manager.refresh_debug_panel()
 
@@ -316,7 +333,7 @@ func is_required_hero_on_board(player: PlayerState, card_data: CardData, game_ma
 	if player == null or game_manager == null:
 		return false
 
-	return BoardQuery.has_face_up_hero(game_manager.board_states, player.id, card_data.owner_hero_card_id)
+	return BoardQuery.has_face_up_hero(game_manager.get_all_board_states(), player.id, card_data.owner_hero_card_id)
 
 
 func has_playable_effects(player: PlayerState, card_data: CardData, game_manager: GameManager) -> bool:
