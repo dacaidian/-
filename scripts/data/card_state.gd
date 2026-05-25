@@ -211,6 +211,10 @@ func has_keyword(keyword: String) -> bool:
 	return data != null and data.has_keyword(keyword)
 
 
+func get_siege_bonus() -> int:
+	return data.get_siege_bonus() if data != null else 0
+
+
 func apply_keyword_passives() -> void:
 	if has_keyword(CardData.KEYWORD_CAVALRY):
 		apply_cavalry_passive()
@@ -537,6 +541,8 @@ func add_status(status: CardStatus) -> void:
 	if status == null or status.status_id == "":
 		return
 	if status.status_id == CardStatus.STATUS_POISON:
+		if has_keyword(CardData.KEYWORD_MECHANICAL):
+			return
 		add_unique_poison_status(status)
 		return
 	if status.status_id == CardStatus.STATUS_STORED_VENOM:
@@ -718,6 +724,8 @@ func restore_main_actions() -> void:
 func heal(amount: int) -> int:
 	# 治疗减少已受伤害，当前生命不会超过 max_health。
 	if amount <= 0:
+		return 0
+	if has_keyword(CardData.KEYWORD_MECHANICAL):
 		return 0
 
 	var previous_damage_taken := damage_taken

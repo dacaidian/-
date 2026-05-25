@@ -1336,6 +1336,23 @@
 				"effects": []
 			},
 			{
+				"id": "sentinel_ballista",
+				"name": "弩车",
+				"description": "暗夜精灵哨兵的二阶机械远程随从。攻城3，对建筑造成普通攻击伤害时额外造成3点伤害。",
+				"url": "res://assets/img/暗夜精灵哨兵/弩车.png",
+				"type": "minion",
+				"count": 2,
+				"level": 2,
+				"keywords": [
+					"mechanical",
+					"ranged",
+					"siege_3"
+				],
+				"attack": 1,
+				"health": 3,
+				"effects": []
+			},
+			{
 				"id": "precision_shot",
 				"name": "精准射击",
 				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",

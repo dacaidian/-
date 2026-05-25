@@ -39,6 +39,8 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 	for state in game_manager.board_states:
 		if not BoardQuery.is_face_up_unit(state):
 			continue
+		if state.has_keyword(CardData.KEYWORD_MECHANICAL):
+			continue
 
 		var poison := state.get_status(CardStatus.STATUS_POISON)
 		if poison == null or not poison.should_tick(trigger, turn_player_id):

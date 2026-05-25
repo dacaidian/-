@@ -55,7 +55,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var attacker_owner_id := user.owner_id
 	var attacker_card_id := user.card_id
 	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
-	target.take_damage(user.current_attack)
+	target.take_damage(calculate_attack_damage(user, target))
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 
@@ -68,6 +68,17 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
 	return bool(get_attack_profile(user, target, game_manager)[PROFILE_CAN_ATTACK])
+
+
+func calculate_attack_damage(user: CardState, target: CardState) -> int:
+	if user == null:
+		return 0
+
+	var damage := user.current_attack
+	if target != null and target.is_building():
+		damage += user.get_siege_bonus()
+
+	return maxi(damage, 0)
 
 
 func get_attack_profile(user: CardState, target: CardState, game_manager: GameManager) -> Dictionary:

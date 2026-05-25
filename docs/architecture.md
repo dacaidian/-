@@ -456,3 +456,9 @@
 - 该效果只改 `PlayerState.faction_runtime_state_cycle_index` 指向的当前节点，不修改 `runtime_state.cycle` 本身；因此跳到 `full_moon` 后，后续回合结束仍会按原顺序推进到 `moonset`。
 - 新增“跳到日出/跳到月升/进入特定季节”等卡牌时，优先复用这个效果，不要在具体卡牌或 UI 面板里手动改种族时间。
 - `满月之蔽` 的施法表现使用 `animation: "full_moon_cover"`，由 `CardAnimationController` 绘制月盘、银蓝光环和星尘扩散；这是施法瞬间动画，不负责维持种族时间面板状态。
+
+## 机械与攻城关键词
+
+- `mechanical` 是单位类型关键词。机械单位不会获得 `poison` 状态，毒性回合结算和剧毒之泉毒爆也会跳过机械单位；治疗入口 `CardState.heal()` 对机械返回 0，因此治疗法术可以正常结算但不会产生有效治疗量。
+- `siege_N` 是参数化攻城关键词，当前已有 `siege_3`。普通攻击结算时，如果目标是建筑，`AttackAction.calculate_attack_damage()` 会在攻击力之外追加 `N` 点伤害。
+- 新增其他数值的攻城时，优先继续使用 `siege_数字` 命名，并由 `CardData.get_siege_bonus()` 解析，不要为每个攻城数值写独立攻击逻辑。

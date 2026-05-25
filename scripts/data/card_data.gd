@@ -13,6 +13,9 @@ const KEYWORD_CAVALRY := "cavalry"
 const KEYWORD_RANGED := "ranged"
 const KEYWORD_MAGIC_IMMUNE := "magic_immune"
 const KEYWORD_CAN_ATTACK_WITH_ZERO_ATTACK := "can_attack_with_zero_attack"
+const KEYWORD_MECHANICAL := "mechanical"
+const KEYWORD_SIEGE_PREFIX := "siege_"
+const KEYWORD_SIEGE_3 := "siege_3"
 
 # CardData 是静态卡牌数据，来自 data/cards.json。
 # 它描述“这是什么牌”，不记录“这张牌当前怎么样”。
@@ -92,6 +95,20 @@ func is_unit() -> bool:
 
 func has_keyword(keyword: String) -> bool:
 	return keywords.has(keyword)
+
+
+func get_siege_bonus() -> int:
+	for keyword in keywords:
+		if not keyword.begins_with(KEYWORD_SIEGE_PREFIX):
+			continue
+
+		var amount_text := keyword.substr(KEYWORD_SIEGE_PREFIX.length())
+		if not amount_text.is_valid_int():
+			continue
+
+		return maxi(int(amount_text), 0)
+
+	return 0
 
 static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dictionary) -> CardData:
 	# 把 JSON 里的 Dictionary 转成代码里更好用的 CardData 对象。

@@ -468,3 +468,18 @@ rg --files scripts scenes data docs
 - 该效果只改变当前玩家的运行时状态索引，不改循环配置；后续推进仍按原 `cycle` 顺序。
 - UI 面板只读 `PlayerState` 当前状态，不参与规则结算。
 - 这类卡牌需要施法瞬间表现时，优先在 `CardAnimationController` 中新增独立 `animation` key，例如 `full_moon_cover`。
+
+### 关键词单位类型与攻城
+
+优先读：
+
+- `scripts/data/card_data.gd` 的 `KEYWORD_*` 和 `get_siege_bonus()`。
+- `scripts/data/card_state.gd` 的 `add_status()`、`heal()`。
+- `scripts/actions/attack_action.gd` 的 `calculate_attack_damage()`。
+- `scripts/game/status_resolver.gd` 的毒性结算。
+
+常见修改：
+
+- 新增机械单位：给卡牌配置 `mechanical`；机械不获得毒，不吃毒爆和毒结算，也无法被有效治疗。
+- 新增攻城单位：给卡牌配置 `siege_数字`；对建筑普攻时由攻击行动统一追加伤害。
+- 不要把机械免毒或攻城额外伤害写进具体卡牌效果里。

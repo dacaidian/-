@@ -97,6 +97,7 @@ func is_valid_burst_target(source_state: CardState, target_state: CardState) -> 
 	return (
 		target_state != null
 		and BoardQuery.is_face_up_minion(target_state)
+		and not target_state.has_keyword(CardData.KEYWORD_MECHANICAL)
 		and target_state.owner_id != ""
 		and target_state.owner_id != source_state.owner_id
 	)
