@@ -45,13 +45,14 @@
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
 - `BoardPairSelectionController`：效果内部的多段棋盘格选择协作者。它用于“选择第一个格子，再选择第二个格子”的重复流程，例如 `swap_board_slots`。这类流程发生在法术已经成功施放之后，不属于 `SpellTargetResolver` 的单次目标规则；因此它临时监听棋盘卡牌点击并在完成后清理目标提示和连接。
 - `BoardUnitPairSelectionController`：效果内部的双单位选择协作者。它用于“已成功施放后，再从当前合法单位中选择两个单位”的流程，例如苗疆族“子母蛊”。它接收一组 `CardState` 候选，不重新解释法术目标规则；AI 玩家不打开该 UI，由对应效果自行选择单位，避免 AI 回合等待人工点击。
+- `BoardUnitBounceSelectionController`：效果内部的二段单位选择协作者。它用于“第一目标已经通过普通法术目标流程选定，再从第一目标相邻单位中选择第二目标”的流程，例如女猎手“月刃”。它只负责第二段 UI、提示和临时目标高亮；第一目标是否合法仍由 `SpellAction` + `CardEffect.can_execute()` 过滤。
 - `VictoryResolver`：胜负检查协作者。当前检查玩家资源分是否达到胜利目标，后续其他胜利条件也应在这里扩展。
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
 - `InteractionManager`：只管理当前交互状态，例如当前焦点牌、当前选择的行动、合法目标格子。
 - `CardAction`：行动基类。
 - `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
-- `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
+- `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。`SpellAction` 会把候选目标注入运行时效果并调用 `CardEffect.can_execute()`，因此月刃这类“第一目标还必须存在第二段弹射目标”的法术可以过滤掉无效第一目标。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。动态非施法行动由 `GrantedActionResolver` 拼接，当前用于剧毒之泉体系的 `注入毒液` 和 `毒爆`。
 - `PoisonAttackResolver`：统一判断一个单位当前是否拥有“普攻附带毒性”的能力，来源可以是静态 `after_attack`、手牌升级授予触发或状态 payload 触发。剧毒之泉、AI 评估等不要用卡牌 id 直接猜测毒虫能力。
 - `RandomAllocationResolver`：通用整数随机分配工具。当前用于剧毒之泉“毒爆”把储存毒量逐点随机分配给相邻敌方随从；未来随机治疗、随机伤害也应优先复用。
@@ -59,7 +60,7 @@
 - `GrantedUnitTriggerResolver`：授予单位触发效果解析器，负责从当前玩家手牌升级牌中读取 `grant_unit_trigger_effects`，并根据 `card_ids` 和 `granted_trigger` 判断哪些战场单位在某个触发时点获得额外效果。当前用于苗疆族“蛇毒”给蛊毒蛇追加攻击后附毒和减攻。
 - `AddCardToHandEffect`：通用效果，通过 `card_id` 从 CardDatabase 查卡并置入效果归属玩家手牌；可选 `amount` 表示加入多张，省略时默认为 1。用于衍生牌、奖励牌等不进入牌池的卡牌获取。
 - `ChooseCardToHandEffect`：通用选择获取效果，通过 `card_ids` 生成候选列表，使用 `CardMultiSelectController` 让玩家选择，再把选中卡与 `bonus_cards` 中的固定奖励一起置入手牌。当前用于安东尼达斯的“学院召唤”。
-- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`、`devour`、`link_units`、`destroy_linked_units`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。单位自身状态也可以在 `payload.trigger_effects` 中提供触发效果，由 `EffectRegistry.execute_status_triggers()` 在同一触发入口结算；触发来源状态会以 `_trigger_status` 注入运行时效果，供“链接死亡”这类状态自身效果读取 link id。
+- `EffectRegistry`：效果注册表，负责触发 JSON 中配置的卡牌效果，并统一转发效果的施放前可用性判断。已注册效果包括 `heal`、`damage`、`shield`、`increase_max_health`、`set_attack_to_current_health`、`gain_flips`、`gain_resource_score`、`gain_mana`、`gain_attack`、`play_spell_action`、`apply_status`、`resurrect`、`add_card_to_hand`、`choose_card_to_hand`、`set_slot_trap`、`swap_board_slots`、`devour`、`link_units`、`destroy_linked_units`、`set_faction_runtime_state`、`moonblade`。玩家级效果统一通过 `CardEffect.get_target_player_id()` / `get_target_player()` 解析目标玩家，避免资源、法力、未来金币等效果各自维护一套 target 规则。触发上下文合并统一使用 `EffectData.duplicate_with_context()`，运行时法术目标注入统一使用 `EffectData.mark_selected_target()`；手牌法术会额外注入效果拥有者，供“目标周围敌方单位”这类规则判断敌我。单位自身状态也可以在 `payload.trigger_effects` 中提供触发效果，由 `EffectRegistry.execute_status_triggers()` 在同一触发入口结算；触发来源状态会以 `_trigger_status` 注入运行时效果，供“链接死亡”这类状态自身效果读取 link id。
 - 死亡解析：外部仍调用 `GameManager.check_and_destroy_if_dead()` / `destroy_card()`，内部委托 `DeathResolver` 统一处理死亡或销毁；死亡不作为玩家动作显示在动作菜单中。
 
 原则：新增攻击、施法、技能时，优先新增一个 `CardAction` 子类，再注册到 `ActionRegistry`。行动自己决定 `can_start()`、`get_valid_targets()` 和 `execute()`，不要把行动规则写进 UI。需要目标的行动只有在存在合法目标时才会显示在动作菜单中。行动基类提供通用判断，例如 `is_controlled_face_up_minion()`，避免每个行动重复写当前玩家归属和随从检查。
@@ -122,7 +123,7 @@
    - 施法回合开启后，`ActionRegistry` 才会从当前随从的 `CardData.spell_actions` 和当前玩家手牌升级牌授予的 `spell_actions` 动态创建 `SpellAction`。
    - `SpellAction` 根据 `target_rule` 计算合法目标，当前 `all_minions` 表示所有正面随从。
    - 点击目标后登记 `spell` 行动类别，通过 `GameManager.play_spell_cast_animation()` 委托 `CardAnimationController` 播放表现，再执行配置中的效果。
-   - 当前已配置的随从法术包括：牧师的治疗术，目标规则为 `all_minions`，治疗目标 7 点生命；火焰女巫的火球术，目标规则为 `all_minions`，对目标造成 6 点伤害；冰霜女巫的冰霜护盾，目标规则为 `all_minions`，使目标获得 6 点护盾；奥术法师的奥术智慧，目标规则为 `none`，使当前玩家本回合额外获得 2 次翻牌。
+   - 当前已配置的随从法术包括：牧师的治疗术，目标规则为 `all_minions`，治疗目标 7 点生命；火焰女巫的火球术，目标规则为 `non_hero_minions`，对目标造成 6 点伤害；冰霜女巫的冰霜护盾，目标规则为 `all_minions`，使目标获得 6 点护盾；奥术法师的奥术智慧，目标规则为 `none`，使当前玩家本回合额外获得 3 次翻牌；女猎手的月刃，目标规则为 `all_minions`，第一目标必须存在相邻弹射随从，随后由 `BoardUnitBounceSelectionController` 选择第二目标。
 14. 玩家使用手牌法术：
 	- `HandDrawerController` 只发出手牌点击信号，`HandInteractionController` 记录焦点与菜单锚点，并把当前玩家和卡牌数据交给 `HandPlayResolver`。
 	- 点击可用手牌先进入和棋盘卡一致的焦点态；手牌卡显示金色焦点柔光，动作菜单显示“施放”。
@@ -186,7 +187,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -373,7 +374,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`moonblade`（月刃：银蓝旋刃依次命中第一目标和弹射目标）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 
@@ -395,6 +396,7 @@
 - 关键词带来的基础属性修正集中在 `CardState.apply_keyword_passives()`，在卡牌数据绑定时一次性应用，并写入 `origin` 快照。
 - `cavalry` / 骑兵：单位每回合移动力为 3，并且本回合允许同时开启 `move` 与 `attack` 两个行动类别。因此骑兵可以先移动再攻击，也可以先攻击再移动；多次移动仍然消耗移动力，多次攻击仍然消耗攻速。
 - `ranged` / 远程：攻击范围由 `AttackAction` 计算。目标集合是自身相邻正面单位、所有友方正面随从、以及所有友方正面随从相邻的正面单位的并集。远程单位击杀远程目标时不触发占领；只有目标在攻击者自身相邻格时，才视为近战攻击并进入占领选择。
+- `mobile_assault` / 移动攻击：单位同一回合内可以移动并攻击。它通过 `CardState.apply_keyword_passives()` 增加主行动余量，并允许 `move` 与 `attack` 行动组在同回合共存；它不等同于移动施法，未来移动施法应使用独立关键词或升级效果。
 - `can_attack_with_zero_attack`：允许 0 攻单位发起攻击，仅用于依赖 `after_attack` 被动的单位。是否真的有收益由该单位的触发效果决定。
 - `magic_immune` / 魔法免疫：单位不能成为法术牌、随从施法和区域法术的可选目标；法术效果结算时也会在 `CardEffect.get_target_states()` 再次过滤魔免单位，确保 AOE、自动施法和未来新增法术型效果不会影响它。新增法术目标规则时优先扩展 `SpellTargetResolver`，不要在具体卡牌中写死魔免判断。
 

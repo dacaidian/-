@@ -218,11 +218,19 @@ func get_siege_bonus() -> int:
 func apply_keyword_passives() -> void:
 	if has_keyword(CardData.KEYWORD_CAVALRY):
 		apply_cavalry_passive()
+	if has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
+		apply_mobile_assault_passive()
 
 
 func apply_cavalry_passive() -> void:
 	max_movement = 3
 	current_movement = max_movement
+	max_main_actions = maxi(max_main_actions, 2)
+	current_main_actions = max_main_actions
+	allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)
+
+
+func apply_mobile_assault_passive() -> void:
 	max_main_actions = maxi(max_main_actions, 2)
 	current_main_actions = max_main_actions
 	allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)

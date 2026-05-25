@@ -159,7 +159,7 @@
 - 建筑当前不能作为施法目标。伤害、治疗、护盾等可选目标默认应使用 `all_minions`；只有明确设计为可影响建筑时，才扩展目标规则。
 - `area_3x3` 是 AOE 范围目标规则：选择棋盘格子作为范围中心，影响 `area_rows × area_cols` 区域。`SpellTargetResolver.is_area_rule()` 统一判断；新增 area 形状只在 `SpellTargetResolver` 注册常量和尺寸映射。
 - 升级牌授予法术仍走 `grant_spell_actions`，不要把授予逻辑写进具体随从。
-- 新法术动画优先新增 `animation` key，让 `CardAnimationController` 复用或扩展既有表现，例如 `pyroblast` 是放大版 `fireball`。AOE 法术使用专用动画入口 `play_area_spell_cast()`。
+- 新法术动画优先新增 `animation` key，让 `CardAnimationController` 复用或扩展既有表现，例如 `pyroblast` 是放大版 `fireball`、`moonblade` 是二段弹射投射物。AOE 法术使用专用动画入口 `play_area_spell_cast()`。
 
 ### 复活与坟场筛选
 
@@ -264,7 +264,8 @@
 - `minions_by_card_ids` 使用 `spell_data.card_ids` 做目标白名单，并排除施法者自身；当前用于蛊巨蜥“吞噬”可选毒蝎、蛊毒蛇、生蛊王蛇和其他蛊巨蜥。
 - `all_minions` 只选正面随从，是当前普通施法的默认目标规则；`non_hero_minions` 只选正面非英雄随从，适合火球术这类不能打英雄的法术；`all_units` 会选正面随从和建筑，只能在明确设计为“法术可影响建筑”时使用。
 - `empty_or_hidden_slots` 选空格或背面格，当前用于诱蛊这类设置到格子上的法术。格子效果不要写进 `CardState`，应通过 `set_slot_trap` 写入 `BoardSlotEffectResolver`，并在移动、手牌放置、翻开三个入口统一触发。
-- 多段棋盘格/单位选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子或单位，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程，`link_units` 通过 `BoardUnitPairSelectionController` 执行“双单位选择并建立状态链接”。
+- 多段棋盘格/单位选择不要硬塞进普通 `target_rule`。如果法术先成功施放、后续还要多次选择格子或单位，优先实现效果内部选择协作者；当前 `swap_board_slots` 通过 `BoardPairSelectionController` 执行“选格 A、选格 B、交换内容”的重复流程，`link_units` 通过 `BoardUnitPairSelectionController` 执行“双单位选择并建立状态链接”，`moonblade` 通过 `BoardUnitBounceSelectionController` 在第一目标确定后选择相邻弹射目标。
+- 如果第一段目标还依赖效果内部条件（例如月刃要求第一目标附近存在可弹射随从），在对应 `CardEffect.can_execute()` 中实现校验；`SpellAction` 会把候选目标注入运行时效果并过滤掉不可执行目标。
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。

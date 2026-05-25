@@ -1285,6 +1285,27 @@ func play_link_units_animation(first_state: CardState, second_state: CardState, 
 	is_resolving_card_action = false
 
 
+func play_moonblade_animation(caster_state: CardState, first_state: CardState, second_state: CardState) -> void:
+	if caster_state == null or first_state == null or second_state == null:
+		return
+
+	var caster_card: Card = get_card_by_slot(caster_state.slot_index)
+	var first_card: Card = get_card_by_slot(first_state.slot_index)
+	var second_card: Card = get_card_by_slot(second_state.slot_index)
+	if caster_card == null or first_card == null or second_card == null:
+		return
+
+	is_resolving_card_action = true
+	await card_animation_controller.play_moonblade_spell(
+		self,
+		get_overlay_animation_root(),
+		caster_card,
+		first_card,
+		second_card
+	)
+	is_resolving_card_action = false
+
+
 func play_effect_heal_animation(target_state: CardState) -> void:
 	if target_state == null:
 		return

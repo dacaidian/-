@@ -1353,6 +1353,37 @@
 				"effects": []
 			},
 			{
+				"id": "sentinel_huntress",
+				"name": "女猎手",
+				"description": "暗夜精灵哨兵的二阶远程随从。移动攻击。可施放月刃，对一个随从造成等同于自身攻击力的伤害，并弹射到相邻随从一次。",
+				"url": "res://assets/img/暗夜精灵哨兵/女猎手.png",
+				"type": "minion",
+				"count": 6,
+				"level": 2,
+				"keywords": [
+					"mobile_assault",
+					"ranged"
+				],
+				"attack": 1,
+				"health": 9,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "moonblade",
+						"name": "月刃",
+						"animation": "moonblade",
+						"target_rule": "all_minions",
+						"effect_handles_animation": true,
+						"second_selection_title": "选择月刃弹射目标",
+						"effects": [
+							{
+								"id": "moonblade"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "precision_shot",
 				"name": "精准射击",
 				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",

@@ -45,7 +45,10 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 	if not requires_target():
 		return targets
 
-	return SpellTargetResolver.get_valid_targets(target_rule, game_manager, target_card_ids, user)
+	for target in SpellTargetResolver.get_valid_targets(target_rule, game_manager, target_card_ids, user):
+		if can_effects_execute_with_target(user, target, game_manager):
+			targets.append(target)
+	return targets
 
 
 func execute(user: CardState, target: CardState, game_manager: GameManager) -> void:
@@ -61,11 +64,12 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not pay_action_cost(user):
 		return
 
-	if SpellTargetResolver.is_area_rule(target_rule):
-		await game_manager.play_area_spell_animation(user, target, spell_data)
-	else:
-		var animation_target := target if requires_target() else user
-		await game_manager.play_spell_cast_animation(user, animation_target, spell_data)
+	if not bool(spell_data.get(EffectData.KEY_EFFECT_HANDLES_ANIMATION, false)):
+		if SpellTargetResolver.is_area_rule(target_rule):
+			await game_manager.play_area_spell_animation(user, target, spell_data)
+		else:
+			var animation_target := target if requires_target() else user
+			await game_manager.play_spell_cast_animation(user, animation_target, spell_data)
 
 	for effect_data in effects:
 		var runtime_effect_data := effect_data.duplicate(true)
@@ -89,7 +93,24 @@ func get_area_info() -> Dictionary:
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
-	return SpellTargetResolver.can_target(target_rule, target, target_card_ids, user)
+	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user):
+		return false
+
+	return can_effects_execute_with_target(user, target, game_manager)
+
+
+func can_effects_execute_with_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
+	if game_manager == null or game_manager.effect_registry == null:
+		return false
+
+	for effect_data in effects:
+		var runtime_effect_data := effect_data.duplicate(true)
+		if target != null:
+			EffectData.mark_selected_target(runtime_effect_data, target)
+		if not game_manager.effect_registry.can_execute_effect(user, runtime_effect_data, game_manager):
+			return false
+
+	return true
 
 
 func record_successful_spell_cast(user: CardState, game_manager: GameManager) -> void:

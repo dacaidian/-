@@ -14,6 +14,7 @@ const KEYWORD_RANGED := "ranged"
 const KEYWORD_MAGIC_IMMUNE := "magic_immune"
 const KEYWORD_CAN_ATTACK_WITH_ZERO_ATTACK := "can_attack_with_zero_attack"
 const KEYWORD_MECHANICAL := "mechanical"
+const KEYWORD_MOBILE_ASSAULT := "mobile_assault"
 const KEYWORD_SIEGE_PREFIX := "siege_"
 const KEYWORD_SIEGE_3 := "siege_3"
 
