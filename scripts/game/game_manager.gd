@@ -518,20 +518,24 @@ func sync_slot_card_layout(slot_index: int) -> void:
 
 	var slot_size := ground_card.card_size
 	ground_card.position = Vector2.ZERO
-	ground_card.scale = Vector2.ONE
+	if not ground_card.is_animating:
+		ground_card.scale = Vector2.ONE
 	ground_card.z_index = 0
 
 	if aerial_state == null or aerial_state.is_empty():
 		aerial_card.position = Vector2.ZERO
-		aerial_card.scale = Vector2.ONE
+		if not aerial_card.is_animating:
+			aerial_card.scale = Vector2.ONE
 		aerial_card.z_index = 20
 		return
 
 	if ground_state == null or ground_state.is_empty():
 		aerial_card.position = Vector2.ZERO
-		aerial_card.scale = Vector2.ONE
+		if not aerial_card.is_animating:
+			aerial_card.scale = Vector2.ONE
 	else:
-		aerial_card.scale = Vector2(0.62, 0.62)
+		if not aerial_card.is_animating:
+			aerial_card.scale = Vector2(0.62, 0.62)
 		aerial_card.position = Vector2(slot_size.x * 0.36, slot_size.y * 0.02)
 	aerial_card.z_index = 30
 

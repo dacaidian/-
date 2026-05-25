@@ -123,6 +123,9 @@ func is_melee_attack_target(user: CardState, target: CardState, board_columns: i
 	if user == null or target == null or board_columns <= 0:
 		return false
 
+	if user.slot_index == target.slot_index:
+		return user != target
+
 	return is_neighbor(user.slot_index, target.slot_index, board_columns)
 
 

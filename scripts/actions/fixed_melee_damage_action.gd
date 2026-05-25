@@ -45,6 +45,9 @@ func can_target(user: CardState, target: CardState, game_manager: GameManager) -
 	if not AttackAction.new().is_attackable_unit_target(user, target):
 		return false
 
+	if user.slot_index == target.slot_index:
+		return user != target
+
 	return is_neighbor(user.slot_index, target.slot_index, game_manager.board_columns)
 
 
