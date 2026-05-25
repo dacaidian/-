@@ -39,6 +39,7 @@ func get_available_actions(user: CardState, game_manager: GameManager) -> Array[
 		append_spell_actions(actions, user, game_manager)
 
 	for granted_action in granted_action_resolver.get_granted_actions(user, game_manager):
+		register_action(granted_action)
 		append_if_available(actions, granted_action, user, game_manager)
 
 	return actions
