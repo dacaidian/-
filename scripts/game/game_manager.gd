@@ -144,17 +144,12 @@ var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
-# 当前操作玩家索引，只由 GameManager 修改。
 var current_player_index := 0
 var turn_number := 1
 var is_spell_turn_active := false
 var is_game_over := false
 var winner_player_id := ""
-
-# 翻牌结算期间锁住新的卡牌操作，避免动画中连续点击导致状态交错。
 var is_resolving_card_action := false
-
-# 行动执行期间由行动流程统一收尾，避免死亡结算和外层点击流程重复取消交互。
 var is_executing_action := false
 var is_ai_turn_scheduled := false
 var ai_turn_watchdog_token := 0
@@ -192,8 +187,7 @@ func _input(event: InputEvent) -> void:
 	if _is_ai_controlling():
 		return
 
-	# 回合结束后切换当前操作人。
-	# Switch the active player after ending the turn.
+	# 鍥炲悎缁撴潫鍚庡垏鎹㈠綋鍓嶆搷浣滀汉銆?	# Switch the active player after ending the turn.
 	# Switch the active player after ending the turn.
 	if is_game_busy():
 		return
@@ -293,14 +287,14 @@ func initialize_players() -> void:
 
 
 func load_static_card_data() -> bool:
-	# CardDatabase 负责解析 JSON 并缓存 CardData。
+	# CardDatabase parses JSON and caches CardData.
 	if not card_database.load_from_json(cards_json_path):
 		return false
 
 	card_database.load_test_config("res://data/test_config.json")
 	_apply_test_game_params()
 
-	# 卡背作为统一运行时资源，由 GameManager 注入到每个 CardState。
+	# Runtime card back resource injected into each CardState.
 	default_back_texture = load(default_back_texture_path) as Texture2D
 	return true
 
@@ -313,7 +307,7 @@ func _apply_test_game_params() -> void:
 
 
 func create_initial_card_pool() -> CardPool:
-	# 公共牌池由双方选中种族、选中英雄和中立牌库一起组成。
+	# Build the shared pool from selected factions, heroes, and neutral pools.
 	return CardPool.from_match_selection(
 		player_faction_ids,
 		selected_hero_card_ids,
@@ -553,7 +547,7 @@ func sync_card_board_slot_styles() -> void:
 
 
 func create_initial_card_state(card_data: CardData, slot_index: int) -> CardState:
-	# 创建棋盘上某个格子的运行时状态。
+	# Create runtime state for one board slot.
 	var state := CardState.new()
 	state.slot_index = slot_index
 	state.owner_id = ""
@@ -561,10 +555,10 @@ func create_initial_card_state(card_data: CardData, slot_index: int) -> CardStat
 	state.is_selected = false
 	state.back_texture = default_back_texture
 
-	# 静态数据决定这张牌是什么，运行时状态复制当前攻击、生命等可变值。
+	# Static card data defines identity; runtime state copies mutable values.
 	state.set_card_data(card_data)
 
-	# 初始全部背面朝上；之后只通过 CardState 方法修改。
+	# Cards start face down and are changed through CardState methods.
 	state.set_face_up(false)
 
 	return state
@@ -670,7 +664,7 @@ func get_card_pool_next_back_texture() -> Texture2D:
 
 
 func get_card_back_texture_for_level(level: int) -> Texture2D:
-	var card_back_path := "res://assets/img/鍗¤儗/%d.png" % maxi(level, 1)
+	var card_back_path := "res://assets/img/卡背/%d.png" % maxi(level, 1)
 	if ResourceLoader.exists(card_back_path):
 		return load(card_back_path) as Texture2D
 
@@ -743,7 +737,7 @@ func _on_card_clicked(card: Card) -> void:
 		refresh_debug_panel()
 		return
 
-	# 单向数据流：点击只进入 GameManager，GameManager 只修改 CardState。
+	# Clicks enter GameManager; GameManager mutates CardState.
 	var was_face_up := card.state.is_face_up
 	if was_face_up:
 		handle_face_up_card_clicked(card.state, current_player)
@@ -759,7 +753,7 @@ func _on_card_clicked(card: Card) -> void:
 	await card.play_flip_animation(Callable(card.state, "set_face_up").bind(true))
 
 	if not reveal_resolver.can_player_claim_card(self, current_player, card.state):
-		# 翻到对方种族时，本次翻牌失败，卡牌自动扣回背面且不产生归属。
+		# If this belongs to the opponent faction, flip it back without taking ownership.
 		await card.play_flip_animation(Callable(card.state, "set_face_up").bind(false))
 		is_resolving_card_action = false
 		refresh_debug_panel()
@@ -1060,7 +1054,7 @@ func _show_victory_screen(winner: PlayerState) -> void:
 func _transition_to_start_menu() -> void:
 	var start_menu_scene := load("res://scenes/start_menu/start_menu.tscn") as PackedScene
 	if start_menu_scene == null:
-		push_error("鎵句笉鍒颁富鑿滃崟鍦烘櫙: res://scenes/start_menu/start_menu.tscn")
+		push_error("閹靛彞绗夐崚棰佸瘜閼挎粌宕熼崷鐑樻珯: res://scenes/start_menu/start_menu.tscn")
 		return
 
 	var start_menu := start_menu_scene.instantiate()
@@ -1174,7 +1168,7 @@ func _on_interaction_changed() -> void:
 
 
 func handle_face_up_card_clicked(state: CardState, current_player: PlayerState) -> void:
-	# 玩家点击己方正面随从时，进入或切换焦点状态。
+	# Clicking an owned face-up unit enters or switches focus state.
 	if not can_select_card(state, current_player):
 		refresh_debug_panel()
 		return
@@ -1197,12 +1191,17 @@ func can_select_card(state: CardState, current_player: PlayerState) -> bool:
 
 
 func handle_action_target_clicked(target_state: CardState) -> void:
-	# 行动目标阶段只响应合法目标；点其他格子不会误触发翻牌。
+	# 行动目标阶段只响应合法目标；点同格飞行层时会解析到真正可用的地面层目标。
 	if target_state == null:
 		refresh_debug_panel()
 		return
 
 	if not interaction_manager.is_valid_target_slot(target_state.slot_index):
+		refresh_debug_panel()
+		return
+
+	target_state = resolve_clicked_target_state(target_state)
+	if target_state == null:
 		refresh_debug_panel()
 		return
 
@@ -1225,6 +1224,42 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 	cancel_interaction()
 
 
+func resolve_clicked_target_state(clicked_state: CardState) -> CardState:
+	if clicked_state == null:
+		return null
+
+	if interaction_manager.selected_action != null:
+		if interaction_manager.selected_action.can_target(interaction_manager.focused_state, clicked_state, self):
+			return clicked_state
+
+		for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
+			if interaction_manager.selected_action.can_target(interaction_manager.focused_state, candidate, self):
+				return candidate
+		return null
+
+	if interaction_manager.selected_hand_card_data != null:
+		var card_data := interaction_manager.selected_hand_card_data
+		var hand_action_id := interaction_manager.selected_hand_action_id
+		var hand_resolver := get_hand_play_resolver()
+		match hand_action_id:
+			HandPlayResolver.HAND_CAST_ACTION_ID:
+				if hand_resolver.can_target(card_data, clicked_state, self):
+					return clicked_state
+				for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
+					if hand_resolver.can_target(card_data, candidate, self):
+						return candidate
+			HandPlayResolver.HAND_PLACE_ACTION_ID:
+				if hand_resolver.can_place_minion_on_target(clicked_state, self, card_data):
+					return clicked_state
+				for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
+					if hand_resolver.can_place_minion_on_target(candidate, self, card_data):
+						return candidate
+			_:
+				return clicked_state
+
+	return clicked_state
+
+
 func execute_selected_action(target_state: CardState) -> void:
 	if interaction_manager.selected_action == null:
 		return
@@ -1233,15 +1268,12 @@ func execute_selected_action(target_state: CardState) -> void:
 	await interaction_manager.selected_action.execute(interaction_manager.focused_state, target_state, self)
 	is_executing_action = false
 
-
 func execute_selected_hand_card(target_state: CardState) -> void:
 	await hand_interaction_controller.execute_selected_hand_card(self, target_state)
 
 
 func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
-	# 浜ゆ崲涓や釜鍗曞厓鏍硷細鍦伴潰/杈圭紭绛夊崟鍏冩牸鎬ц川璺熼殢鍗曞厓鏍肩Щ鍔紝
-	# 交换两个单元格：地面/边缘等单元格性质跟随单元格移动。
-	# Swap fixed-slot card contents while preserving slot indices and UI bindings.
+	# Swap two board cells; cell properties move with the cell.
 	if first_state == null or second_state == null:
 		return
 
@@ -1636,7 +1668,7 @@ func cancel_interaction() -> void:
 
 
 func return_to_action_menu() -> void:
-	# 目标选择阶段通过通用取消输入退回焦点菜单。
+	# Return from target selection to the focus menu.
 	if interaction_manager.focused_state == null and interaction_manager.selected_hand_card_data == null:
 		cancel_interaction()
 		return
@@ -1771,7 +1803,7 @@ func refresh_debug_panel() -> void:
 
 
 func find_board_cards(card_node_name := "Card") -> Array[Card]:
-	# 从指定的 CardBoard 节点开始递归查找所有卡牌实例。
+	# Recursively collect card instances under CardBoard.
 	var cards: Array[Card] = []
 	var card_board := get_node_or_null(card_board_path)
 
@@ -1783,7 +1815,7 @@ func find_board_cards(card_node_name := "Card") -> Array[Card]:
 
 
 func collect_cards(node: Node, cards: Array[Card], card_node_name := "Card") -> void:
-	# 深度优先遍历 CardBoard 下的所有节点。
+	# Depth-first traversal under CardBoard.
 	if node is Card:
 		if node.name == card_node_name:
 			cards.append(node)
