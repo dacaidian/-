@@ -85,6 +85,7 @@ func _score_action(action: CardAction, user: CardState, target: CardState, gm: G
 	match action.id:
 		"move": return _score_move(user, target, gm)
 		"attack": return _score_attack(user, target, gm)
+		"claw_strike": return _score_fixed_damage_action(user, target, 1, gm)
 		InjectVenomAction.ACTION_ID: return _score_inject_venom(user, target, gm)
 		VenomBurstAction.ACTION_ID: return _score_venom_burst(user, gm)
 		_: return _score_spell(action, user, target, gm) if action.id.begins_with("spell:") else 0.0
@@ -169,6 +170,30 @@ func _score_attack(user: CardState, target: CardState, gm: GameManager) -> float
 	score -= retaliation * 2.0
 	if combat["will_kill_attacker"]:
 		score *= 0.15
+
+	return score
+
+
+func _score_fixed_damage_action(user: CardState, target: CardState, damage: int, gm: GameManager) -> float:
+	if user == null or target == null or gm == null:
+		return 0.0
+
+	var player := gm.get_current_player()
+	if player == null:
+		return 0.0
+	if target.owner_id == player.id:
+		return -50.0
+
+	var score := float(damage) * 2.4
+	var target_threat: float = AICommonScript.calc_threat_score(target)
+	if target.current_health <= damage:
+		score += target_threat * 1.1 + 8.0
+		if target.is_hero():
+			score += 8.0
+	elif target.is_building():
+		score -= 1.0
+	else:
+		score += target_threat * 0.2
 
 	return score
 

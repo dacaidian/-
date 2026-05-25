@@ -54,6 +54,7 @@
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。`SpellAction` 会把候选目标注入运行时效果并调用 `CardEffect.can_execute()`，因此月刃这类“第一目标还必须存在第二段弹射目标”的法术可以过滤掉无效第一目标。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。动态非施法行动由 `GrantedActionResolver` 拼接，当前用于剧毒之泉体系的 `注入毒液` 和 `毒爆`。
+- `GrantedActionResolver`：动态非施法行动解析器。它读取当前战场状态和当前玩家手牌升级牌，把符合条件的非施法行动拼接到行动列表；配置型授予使用 `grant_actions` + `active_zone: "hand"` + `card_ids` + `actions`。当前暗夜精灵哨兵“精英月刃豹”通过这套机制让女猎手获得副动作“爪击”。
 - `PoisonAttackResolver`：统一判断一个单位当前是否拥有“普攻附带毒性”的能力，来源可以是静态 `after_attack`、手牌升级授予触发或状态 payload 触发。剧毒之泉、AI 评估等不要用卡牌 id 直接猜测毒虫能力。
 - `RandomAllocationResolver`：通用整数随机分配工具。当前用于剧毒之泉“毒爆”把储存毒量逐点随机分配给相邻敌方随从；未来随机治疗、随机伤害也应优先复用。
 - `GrantedSpellResolver`：授予法术解析器，负责从当前玩家手牌升级牌中读取 `grant_spell_actions` 和 `grant_last_spell_action`，并根据 `card_ids` 判断哪些随从获得这些法术。`grant_last_spell_action` 通过 `source_card_ids` 限定可学习的施法来源，当前用于“好好学习”。
@@ -187,7 +188,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -287,9 +288,10 @@
 - `CardState.allowed_action_group_pairs` 记录允许同时使用的行动类别组合。普通随从默认没有组合，所以移动、攻击、施法三选一；未来“移动攻击”“移动施法”“战斗法师”可以通过开放 `move|attack`、`move|spell`、`attack|spell` 组合实现。
 - 所有随从默认主行动 1、移动力 1、攻速 1；非随从为 0。
 - 当前玩家回合开始时，`GameManager.restore_minion_actions_for_player()` 清空行动类别锁，并恢复该玩家随从的移动力和攻击次数。
-- `CardAction.action_group` 表示行动所属类别，`main_action_cost` 表示是否需要登记类别，默认是 1。当前移动属于 `move`，攻击属于 `attack`。
+- `CardAction.action_group` 表示行动所属类别，`main_action_cost` 表示是否需要登记类别，默认是 1。当前移动属于 `move`，攻击属于 `attack`。`main_action_cost = 0` 的副动作不登记主行动类别；如果仍需要限制频率，设置 `once_per_turn = true`，由 `CardState.used_action_ids` 在回合恢复时统一清空。
 - `CardAction.can_reuse_action_group` 表示同一个行动类别在本回合是否可以重复执行。移动和攻击依靠移动力/攻速限制，所以可以重复；施法当前没有独立次数资源，所以治疗术不可重复施放。
 - `special` 行动组用于非移动、非攻击、非施法的主动能力，默认仍是主动作并与移动/攻击/施法互斥。当前 `注入毒液` 和 `毒爆` 都属于 `special`，其中毒爆是剧毒之泉自己的主动作，不走施法回合。
+- `爪击` 是配置型副动作示例：`FixedMeleeDamageAction` 使用近战相邻单位目标，造成配置的固定伤害，不消耗主行动力，也不消耗攻速，但每回合只能使用一次。
 - 攻击行动只有在 `current_attack > 0`、`current_attacks > 0` 且允许使用 `attack` 类别时可用；移动同理要求 `current_movement > 0` 且允许使用 `move` 类别。
 
 ## 翻牌资源约定

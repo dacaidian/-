@@ -211,6 +211,8 @@
 
 - 新增行动、目标选择、行动资源消耗、动作菜单可见性。
 - 动态非施法行动优先接入 `GrantedActionResolver`，不要在 UI 或 `GameManager` 里按卡牌名临时添加按钮。当前剧毒之泉体系使用 `InjectVenomAction` 和 `VenomBurstAction`。
+- 手牌升级牌授予非施法行动使用 `grant_actions` + `active_zone: "hand"` + `card_ids` + `actions`；具体行动由 `GrantedActionResolver.create_action_from_data()` 创建。当前“精英月刃豹”授予女猎手副动作 `claw_strike`。
+- 副动作不消耗主行动力时设置 `main_action_cost = 0`；需要每回合限次时设置 `once_per_turn = true`，不要把限次状态写进 UI。
 - 判断“普攻附毒能力”优先读 `PoisonAttackResolver`，它会合并静态攻击触发、升级牌授予触发和状态 payload 触发；不要只靠卡牌 id 判定毒虫。
 - 行动规则不要写进 UI；优先新增或修改 `CardAction` 子类。
 - AOE 范围目标选择复用 `InteractionManager` 的目标选择状态：战场行动通过 `start_action_selection()` + `action.get_area_info()` 判断 area 模式，手牌法术通过 `start_hand_card_target_selection()` + `SpellTargetResolver.get_area_dimensions()` 判断 area 模式；area 模式下全棋盘格子为合法目标，悬停显示蓝色 area 预览。

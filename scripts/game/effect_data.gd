@@ -10,6 +10,8 @@ const KEY_ACTIVE_ZONE := "active_zone"
 const KEY_CARD_IDS := "card_ids"
 const KEY_SOURCE_CARD_IDS := "source_card_ids"
 const KEY_SPELL_ACTIONS := "spell_actions"
+const KEY_ACTIONS := "actions"
+const KEY_ACTION_ID := "action_id"
 const KEY_AMOUNT := "amount"
 const KEY_TARGET := "target"
 const KEY_SELECTED_TARGET_STATE := "_selected_target_state"
@@ -74,6 +76,7 @@ const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
 
 const EFFECT_GRANT_SPELL_ACTIONS := "grant_spell_actions"
+const EFFECT_GRANT_ACTIONS := "grant_actions"
 const EFFECT_GRANT_LAST_SPELL_ACTION := "grant_last_spell_action"
 const EFFECT_MODIFY_FLIP_CAPACITY := "modify_flip_capacity"
 const EFFECT_PASSIVE_FLIP_BONUS := "passive_flip_bonus"
@@ -297,6 +300,21 @@ static func get_spell_actions(effect_data: Dictionary) -> Array[Dictionary]:
 				spell_actions.append(spell_data)
 
 	return spell_actions
+
+
+static func get_actions(effect_data: Dictionary) -> Array[Dictionary]:
+	var actions: Array[Dictionary] = []
+	var raw_actions: Variant = effect_data.get(KEY_ACTIONS, [])
+	if raw_actions is Array:
+		for action_data in raw_actions:
+			if action_data is Dictionary:
+				actions.append(action_data)
+
+	return actions
+
+
+static func get_action_id(action_data: Dictionary) -> String:
+	return str(action_data.get(KEY_ACTION_ID, action_data.get(KEY_ID, "")))
 
 
 static func duplicate_with_context(effect_data: Dictionary, context: Dictionary) -> Dictionary:

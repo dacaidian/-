@@ -1384,6 +1384,42 @@
 				]
 			},
 			{
+				"id": "elite_moonblade_panther",
+				"name": "精英月刃豹",
+				"description": "升级牌。所有己方女猎手移动力变为3，并获得副动作：爪击。",
+				"url": "res://assets/img/暗夜精灵哨兵/精英夜刃豹.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "set_unit_movement",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"card_ids": [
+							"sentinel_huntress"
+						],
+						"amount": 3
+					},
+					{
+						"id": "grant_actions",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"card_ids": [
+							"sentinel_huntress"
+						],
+						"actions": [
+							{
+								"action_id": "claw_strike",
+								"name": "爪击",
+								"amount": 1
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "precision_shot",
 				"name": "精准射击",
 				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",
