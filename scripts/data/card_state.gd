@@ -720,7 +720,21 @@ func set_max_movement(value: int, should_preserve_spent_movement := true) -> voi
 	if should_preserve_spent_movement:
 		current_movement = maxi(max_movement - spent_movement, 0)
 	else:
-		current_movement = max_movement
+	current_movement = max_movement
+	state_changed.emit(self)
+
+
+func set_max_attack_speed(value: int, should_preserve_spent_attacks := true) -> void:
+	var normalized_value: int = maxi(value, 0)
+	if max_attack_speed == normalized_value:
+		return
+
+	var spent_attacks: int = maxi(max_attack_speed - current_attacks, 0)
+	max_attack_speed = normalized_value
+	if should_preserve_spent_attacks:
+		current_attacks = maxi(max_attack_speed - spent_attacks, 0)
+	else:
+		current_attacks = max_attack_speed
 	state_changed.emit(self)
 
 

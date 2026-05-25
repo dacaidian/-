@@ -17,6 +17,8 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if not player.set_faction_runtime_state_by_id(state_id):
 		return
 
+	if game_manager.has_method("refresh_hand_passives_for_player"):
+		game_manager.refresh_hand_passives_for_player(player, false)
 	if game_manager.has_method("update_faction_time_panel_view"):
 		game_manager.update_faction_time_panel_view()
 	if game_manager.has_method("refresh_debug_panel"):

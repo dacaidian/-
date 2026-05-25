@@ -727,6 +727,7 @@ func advance_faction_runtime_state_for_player(player: PlayerState) -> void:
 		return
 
 	if player.advance_faction_runtime_state():
+		refresh_hand_passives_for_player(player, false)
 		update_faction_time_panel_view()
 
 

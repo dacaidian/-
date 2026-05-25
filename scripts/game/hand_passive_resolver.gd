@@ -13,6 +13,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	player.set_flip_capacity_bonus(flip_bonus)
 	refresh_unit_movement_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
+	refresh_unit_attack_speed_passives(player, game_manager)
 
 	if should_adjust_remaining_flips:
 		var delta := player.max_flips_per_turn - previous_capacity
@@ -75,12 +76,33 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 		state.set_passive_attack_bonus(attack_bonus)
 
 
+func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null:
+		return
+
+	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player)
+	for state in game_manager.board_states:
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != player.id:
+			continue
+
+		var base_attack_speed := get_origin_attack_speed(state)
+		var attack_speed_bonus := 0
+		if attack_speed_bonus_by_card_id.has(state.card_id):
+			attack_speed_bonus = int(attack_speed_bonus_by_card_id[state.card_id])
+
+		state.set_max_attack_speed(base_attack_speed + attack_speed_bonus, true)
+
+
 func get_unit_movement_overrides(player: PlayerState) -> Dictionary:
 	var movement_by_card_id := {}
 	if player == null:
 		return movement_by_card_id
 
 	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_SET_UNIT_MOVEMENT:
 			continue
 
@@ -100,6 +122,8 @@ func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
 		return attack_bonus_by_card_id
 
 	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ATTACK:
 			continue
 
@@ -108,6 +132,32 @@ func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
 			attack_bonus_by_card_id[card_id] = int(attack_bonus_by_card_id.get(card_id, 0)) + amount
 
 	return attack_bonus_by_card_id
+
+
+func get_unit_attack_speed_bonuses(player: PlayerState) -> Dictionary:
+	var attack_speed_bonus_by_card_id := {}
+	if player == null:
+		return attack_speed_bonus_by_card_id
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ATTACK_SPEED:
+			continue
+
+		var amount := EffectData.get_amount(effect_data)
+		for card_id in EffectData.get_card_ids(effect_data):
+			attack_speed_bonus_by_card_id[card_id] = int(attack_speed_bonus_by_card_id.get(card_id, 0)) + amount
+
+	return attack_speed_bonus_by_card_id
+
+
+func is_effect_condition_met(effect_data: Dictionary, player: PlayerState) -> bool:
+	var required_runtime_state_id := str(effect_data.get(EffectData.KEY_REQUIRED_RUNTIME_STATE_ID, ""))
+	if required_runtime_state_id != "" and player.faction_runtime_state_id != required_runtime_state_id:
+		return false
+
+	return true
 
 
 func get_hand_passive_effects(player: PlayerState) -> Array[Dictionary]:
@@ -132,6 +182,13 @@ func get_origin_movement(state: CardState) -> int:
 		return 0
 
 	return int(state.origin.get("movement", state.max_movement))
+
+
+func get_origin_attack_speed(state: CardState) -> int:
+	if state == null:
+		return 0
+
+	return int(state.origin.get("attack_speed", state.max_attack_speed))
 
 
 func get_card_data_from_hand_entry(card_entry: Variant) -> CardData:

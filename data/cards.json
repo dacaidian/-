@@ -1420,6 +1420,28 @@
 				]
 			},
 			{
+				"id": "swift_bow",
+				"name": "迅捷之弓",
+				"description": "升级牌。满月时，所有己方弓箭手攻速+1。",
+				"url": "res://assets/img/暗夜精灵哨兵/迅捷之弓.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_unit_attack_speed",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"required_runtime_state_id": "full_moon",
+						"card_ids": [
+							"sentinel_archer"
+						],
+						"amount": 1
+					}
+				]
+			},
+			{
 				"id": "precision_shot",
 				"name": "精准射击",
 				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",
