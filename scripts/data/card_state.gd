@@ -720,7 +720,7 @@ func set_max_movement(value: int, should_preserve_spent_movement := true) -> voi
 	if should_preserve_spent_movement:
 		current_movement = maxi(max_movement - spent_movement, 0)
 	else:
-	current_movement = max_movement
+		current_movement = max_movement
 	state_changed.emit(self)
 
 
