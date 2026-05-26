@@ -12,11 +12,14 @@
       "arcane_mage",
       "arcane_space_upgrade"
     ],
+    "miao_jiang": [
+      "chen_duo",
+      "mother_child_gu"
+    ],
     "night_elf_sentinels": [
       "tyrande",
-      "sentinel_archer",
-      "precision_shot",
-      "full_moon_cover"
+      "sentinel_huntress",
+      "hippogryph_rider"
     ]
   },
   "include_neutral_pool": false,

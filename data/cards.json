@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1362,8 +1362,7 @@
 				"count": 6,
 				"level": 2,
 				"keywords": [
-					"mobile_assault",
-					"ranged"
+					"mobile_assault"
 				],
 				"attack": 1,
 				"health": 9,
