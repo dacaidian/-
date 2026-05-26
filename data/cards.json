@@ -1356,7 +1356,7 @@
 			{
 				"id": "sentinel_huntress",
 				"name": "女猎手",
-				"description": "暗夜精灵哨兵的二阶远程随从。移动攻击。可施放月刃，对一个随从造成等同于自身攻击力的伤害，并弹射到相邻随从一次。",
+				"description": "暗夜精灵哨兵的二阶远程随从。移动攻击。可施放月刃，对一个单位造成等同于自身攻击力的伤害，并弹射到相邻单位一次。",
 				"url": "res://assets/img/暗夜精灵哨兵/女猎手.png",
 				"type": "minion",
 				"count": 6,
@@ -1373,7 +1373,7 @@
 						"id": "moonblade",
 						"name": "月刃",
 						"animation": "moonblade",
-						"target_rule": "all_minions",
+						"target_rule": "all_units",
 						"effect_handles_animation": true,
 						"second_selection_title": "选择月刃弹射目标",
 						"effects": [

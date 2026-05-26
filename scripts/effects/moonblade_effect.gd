@@ -77,7 +77,7 @@ func choose_second_target(
 		first_target,
 		candidates,
 		str(effect_data.get(EffectData.KEY_SECOND_SELECTION_TITLE, "选择月刃弹射目标")),
-		"请选择第一个目标相邻的随从。"
+		"请选择第一个目标相邻的单位。"
 	)
 
 
@@ -100,7 +100,7 @@ func is_valid_moonblade_target(state: CardState) -> bool:
 	return (
 		state != null
 		and not state.is_pending_death
-		and BoardQuery.is_face_up_minion(state)
+		and BoardQuery.is_face_up_unit(state)
 		and SpellTargetResolver.can_spell_affect(state)
 	)
 
