@@ -426,6 +426,7 @@ rg --files scripts scenes data docs
 - 飞行单位进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。需要“所有单位”的逻辑读 `GameManager.get_all_board_states()`；需要“同一格里的地面/飞行单位”的逻辑读 `GameManager.get_board_states_at_slot()`；补牌、未翻开牌、地面放置仍只走地面层。
 - 地面/飞行层查询和落位判断集中在 `scripts/game/board_layer_resolver.gd`，`GameManager` 只保留兼容入口。后续扩展 7x7 外圈、飞行层容量、特殊地形时，优先改这个 resolver。
 - 同格多层目标点击由 `scripts/game/target_state_resolver.gd` 解析。玩家可能视觉上点到飞行牌，但当前行动真正需要的是同格地面层；不要把这种层解析逻辑写回 `GameManager` 或具体 UI 节点。
+- 会移动棋盘内容且可能播放移动动画的流程集中在 `scripts/game/board_movement_resolver.gd`。普通移入空格、飞行层移动、翻开飞行随从后的提升都走这里；行动或死亡结算只调用 `GameManager` 的语义入口。
 - 飞行随从手牌放置、移动、翻开提升分别走 `HandPlayResolver`、`MoveAction`、`RevealResolver.promote_ground_flying_to_aerial()` 相关入口；不要在具体卡牌里直接挪数组。
 ### 种族运行时状态
 

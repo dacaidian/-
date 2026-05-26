@@ -22,6 +22,7 @@ const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_tr
 const BoardSlotEffectResolverScript := preload("res://scripts/game/board_slot_effect_resolver.gd")
 const TargetStateResolverScript := preload("res://scripts/game/target_state_resolver.gd")
 const BoardLayerResolverScript := preload("res://scripts/game/board_layer_resolver.gd")
+const BoardMovementResolverScript := preload("res://scripts/game/board_movement_resolver.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
@@ -145,6 +146,7 @@ var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
 var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
 var target_state_resolver := TargetStateResolverScript.new()
 var board_layer_resolver := BoardLayerResolverScript.new()
+var board_movement_resolver := BoardMovementResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
@@ -1506,78 +1508,15 @@ func get_overlay_animation_root() -> Control:
 	return get_parent() as Control
 
 func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState) -> void:
-	if from_state == null or to_state == null:
-		return
-
-	if from_state.is_empty() or not to_state.is_empty():
-		return
-
-	var from_card: Card = get_card_by_slot(from_state.slot_index)
-	var to_card: Card = get_card_by_slot(to_state.slot_index)
-	var moving_snapshot := from_state.create_card_snapshot()
-	if from_card == null or to_card == null:
-		to_state.apply_card_snapshot(moving_snapshot)
-		from_state.clear_card()
-		await resolve_slot_unit_entered(to_state)
-		refresh_action_available_hints()
-		refresh_debug_panel()
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_card_to_empty_slot(self, from_card, to_card)
-	to_state.apply_card_snapshot(moving_snapshot)
-	from_state.clear_card()
-	await resolve_slot_unit_entered(to_state)
-	is_resolving_card_action = false
-	refresh_action_available_hints()
-	refresh_debug_panel()
+	await board_movement_resolver.move_card_content_to_empty_slot(self, from_state, to_state)
 
 
 func move_flying_card_to_slot(from_state: CardState, to_slot_index: int) -> void:
-	if from_state == null or from_state.is_empty() or not from_state.is_flying():
-		return
-
-	var to_state := get_aerial_state(to_slot_index)
-	if to_state == null or not to_state.is_empty():
-		return
-
-	var from_card := get_card_for_state(from_state)
-	var to_card := get_card_for_state(to_state)
-	var moving_snapshot := from_state.create_card_snapshot()
-	if from_card == null or to_card == null:
-		to_state.apply_card_snapshot(moving_snapshot)
-		from_state.clear_card()
-		await resolve_slot_unit_entered(to_state)
-		refresh_action_available_hints()
-		refresh_debug_panel()
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_card_to_empty_slot(self, from_card, to_card)
-	to_state.apply_card_snapshot(moving_snapshot)
-	from_state.clear_card()
-	await resolve_slot_unit_entered(to_state)
-	is_resolving_card_action = false
-	refresh_action_available_hints()
-	refresh_debug_panel()
+	await board_movement_resolver.move_flying_card_to_slot(self, from_state, to_slot_index)
 
 
 func promote_ground_flying_to_aerial(source_state: CardState) -> CardState:
-	if source_state == null or source_state.is_empty() or not source_state.is_flying():
-		return source_state
-
-	var aerial_state := get_aerial_state(source_state.slot_index)
-	if aerial_state == null or not aerial_state.is_empty():
-		return source_state
-
-	var moving_snapshot := source_state.create_card_snapshot()
-	aerial_state.apply_card_snapshot(moving_snapshot)
-	source_state.clear_card()
-	refill_board_slot_from_pool(source_state.slot_index)
-	await resolve_slot_unit_entered(aerial_state)
-	refresh_action_available_hints()
-	refresh_debug_panel()
-	return aerial_state
+	return await board_movement_resolver.promote_ground_flying_to_aerial(self, source_state)
 
 
 func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
