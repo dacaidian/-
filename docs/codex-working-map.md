@@ -424,6 +424,8 @@ rg --files scripts scenes data docs
 - 普通补牌必须走 `can_refill_ground_slot()`；普通随从放置、移动、格子型法术必须走 `can_place_ground_card_on_slot()`。
 - 交换单元格（例如奥术空间）不等同于普通放置或补牌，不应调用 `can_place_ground_card_on_slot()` 限制可交换格。交换后由被交换过去的 `BoardCell` 性质决定该位置后续能否补牌/放置。
 - 飞行单位进入 `BoardCell.aerial_states`，不要改变现有地面层 `board_states` 的兼容语义。需要“所有单位”的逻辑读 `GameManager.get_all_board_states()`；需要“同一格里的地面/飞行单位”的逻辑读 `GameManager.get_board_states_at_slot()`；补牌、未翻开牌、地面放置仍只走地面层。
+- 地面/飞行层查询和落位判断集中在 `scripts/game/board_layer_resolver.gd`，`GameManager` 只保留兼容入口。后续扩展 7x7 外圈、飞行层容量、特殊地形时，优先改这个 resolver。
+- 同格多层目标点击由 `scripts/game/target_state_resolver.gd` 解析。玩家可能视觉上点到飞行牌，但当前行动真正需要的是同格地面层；不要把这种层解析逻辑写回 `GameManager` 或具体 UI 节点。
 - 飞行随从手牌放置、移动、翻开提升分别走 `HandPlayResolver`、`MoveAction`、`RevealResolver.promote_ground_flying_to_aerial()` 相关入口；不要在具体卡牌里直接挪数组。
 ### 种族运行时状态
 

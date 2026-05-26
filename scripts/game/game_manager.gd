@@ -20,6 +20,8 @@ const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_reso
 const StatusResolverScript := preload("res://scripts/game/status_resolver.gd")
 const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_trigger_resolver.gd")
 const BoardSlotEffectResolverScript := preload("res://scripts/game/board_slot_effect_resolver.gd")
+const TargetStateResolverScript := preload("res://scripts/game/target_state_resolver.gd")
+const BoardLayerResolverScript := preload("res://scripts/game/board_layer_resolver.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
@@ -141,6 +143,8 @@ var turn_trigger_resolver := TurnTriggerResolverScript.new()
 var status_resolver := StatusResolverScript.new()
 var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
 var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
+var target_state_resolver := TargetStateResolverScript.new()
+var board_layer_resolver := BoardLayerResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
@@ -443,43 +447,27 @@ func get_board_cell(slot_index: int) -> BoardCell:
 
 
 func get_aerial_state(slot_index: int) -> CardState:
-	if slot_index < 0 or slot_index >= aerial_board_states.size():
-		return null
-
-	return aerial_board_states[slot_index]
+	return board_layer_resolver.get_aerial_state(self, slot_index)
 
 
 func get_all_board_states() -> Array[CardState]:
-	var states: Array[CardState] = []
-	states.append_array(board_states)
-	states.append_array(aerial_board_states)
-	return states
+	return board_layer_resolver.get_all_board_states(self)
 
 
 func get_board_states_at_slot(slot_index: int, include_empty := false) -> Array[CardState]:
-	var states: Array[CardState] = []
-	var ground_state := get_board_state(slot_index)
-	if ground_state != null and (include_empty or not ground_state.is_empty()):
-		states.append(ground_state)
-	var aerial_state := get_aerial_state(slot_index)
-	if aerial_state != null and (include_empty or not aerial_state.is_empty()):
-		states.append(aerial_state)
-	return states
+	return board_layer_resolver.get_board_states_at_slot(self, slot_index, include_empty)
 
 
 func can_refill_ground_slot(slot_index: int) -> bool:
-	var cell := get_board_cell(slot_index)
-	return cell != null and cell.can_refill_ground()
+	return board_layer_resolver.can_refill_ground_slot(self, slot_index)
 
 
 func can_place_ground_card_on_slot(slot_index: int) -> bool:
-	var cell := get_board_cell(slot_index)
-	return cell != null and cell.can_place_ground_card()
+	return board_layer_resolver.can_place_ground_card_on_slot(self, slot_index)
 
 
 func can_place_aerial_card_on_slot(slot_index: int) -> bool:
-	var cell := get_board_cell(slot_index)
-	return cell != null and cell.can_place_aerial_card()
+	return board_layer_resolver.can_place_aerial_card_on_slot(self, slot_index)
 
 
 func sync_board_cell_state_flags(slot_index: int) -> void:
@@ -1200,7 +1188,7 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 		refresh_debug_panel()
 		return
 
-	target_state = resolve_clicked_target_state(target_state)
+	target_state = target_state_resolver.resolve_clicked_target_state(target_state, self)
 	if target_state == null:
 		refresh_debug_panel()
 		return
@@ -1222,42 +1210,6 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 	refresh_action_available_hints()
 	refresh_debug_panel()
 	cancel_interaction()
-
-
-func resolve_clicked_target_state(clicked_state: CardState) -> CardState:
-	if clicked_state == null:
-		return null
-
-	if interaction_manager.selected_action != null:
-		if interaction_manager.selected_action.can_target(interaction_manager.focused_state, clicked_state, self):
-			return clicked_state
-
-		for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
-			if interaction_manager.selected_action.can_target(interaction_manager.focused_state, candidate, self):
-				return candidate
-		return null
-
-	if interaction_manager.selected_hand_card_data != null:
-		var card_data := interaction_manager.selected_hand_card_data
-		var hand_action_id := interaction_manager.selected_hand_action_id
-		var hand_resolver := get_hand_play_resolver()
-		match hand_action_id:
-			HandPlayResolver.HAND_CAST_ACTION_ID:
-				if hand_resolver.can_target(card_data, clicked_state, self):
-					return clicked_state
-				for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
-					if hand_resolver.can_target(card_data, candidate, self):
-						return candidate
-			HandPlayResolver.HAND_PLACE_ACTION_ID:
-				if hand_resolver.can_place_minion_on_target(clicked_state, self, card_data):
-					return clicked_state
-				for candidate in get_board_states_at_slot(clicked_state.slot_index, true):
-					if hand_resolver.can_place_minion_on_target(candidate, self, card_data):
-						return candidate
-			_:
-				return clicked_state
-
-	return clicked_state
 
 
 func execute_selected_action(target_state: CardState) -> void:

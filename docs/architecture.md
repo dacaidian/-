@@ -26,6 +26,7 @@
 位置：`scripts/game`、`scripts/actions`、`scripts/effects`
 
 - `GameManager`：战局编排者，管理回合、玩家、棋盘、行动执行入口等核心流程；复杂规则和表现编排通过协作者拆分，避免继续膨胀。
+- `BoardLayerResolver`：棋盘地面层/飞行层查询与落位判断协作者。`GameManager` 保留 `get_all_board_states()`、`get_board_states_at_slot()`、`can_place_*()` 等兼容入口，但内部委托给它，避免 7x7 外圈、地面层和飞行层语义继续散落在主编排类里。
 - `MatchSetup`：战局配置数据对象，保存玩家名称、双方选择的种族和英雄，并负责“双方种族不可重复”和开始游戏合法性校验。入口 UI 修改它，战斗场景只读取最终结果。
 - `BoardSlotResolver`：棋盘格填充与补位规则协作者，负责从公共牌池抽牌放入空格、清空格子、批量补空格；未来分级牌池或翻开进手牌后的补位策略优先在这里扩展。
 - `BoardSlotEffect` / `BoardSlotEffectResolver`：固定棋盘格上的临时效果，不随卡牌内容移动。当前用于“诱蛊”这类陷阱：法术把效果写到空格或背面格，之后随从通过移动、手牌放置或翻开进入该格时触发。未来地形、陷阱、格子光环优先扩展这里，不要把格子状态塞进 `CardState`。
@@ -43,6 +44,7 @@
 - `HandSpellModifierResolver`：手牌法术运行时修正规则协作者。它读取手牌中 `modify_hand_spell_effects` 这类升级牌效果，根据目标关系、被影响的 `card_ids` 等条件，在手牌法术结算前替换或追加运行时效果与动画；静态法术牌本身不被改写。
 - `StatusModifierResolver`：状态施加前的运行时修正规则协作者。它读取施加者手牌中的 `modify_applied_status` 升级效果，在 `CardStatus.from_effect_data()` 前改写状态数据；当前用于“毒性爆发”把己方施加的毒压缩到 1 回合爆发。
 - `SpellTargetResolver`：法术目标规则解释器。随从施法和手牌法术都通过它解释 `target_rule`，避免未来扩展目标限制时出现两套规则。
+- `TargetStateResolver`：目标点击解析协作者。它把玩家视觉上点击到的 `CardState` 映射为当前行动真正需要的规则目标；例如飞行单位覆盖同一格时，地面移动/手牌放置可以解析到同格地面层，飞行目标或法术目标仍解析到飞行层。`GameManager` 只负责接收点击和执行动作，不直接处理同格多层目标选择。
 - `BoardPairSelectionController`：效果内部的多段棋盘格选择协作者。它用于“选择第一个格子，再选择第二个格子”的重复流程，例如 `swap_board_slots`。这类流程发生在法术已经成功施放之后，不属于 `SpellTargetResolver` 的单次目标规则；因此它临时监听棋盘卡牌点击并在完成后清理目标提示和连接。
 - `BoardUnitPairSelectionController`：效果内部的双单位选择协作者。它用于“已成功施放后，再从当前合法单位中选择两个单位”的流程，例如苗疆族“子母蛊”。它接收一组 `CardState` 候选，不重新解释法术目标规则；AI 玩家不打开该 UI，由对应效果自行选择单位，避免 AI 回合等待人工点击。
 - `BoardUnitBounceSelectionController`：效果内部的二段单位选择协作者。它用于“第一目标已经通过普通法术目标流程选定，再从第一目标相邻单位中选择第二目标”的流程，例如女猎手“月刃”。它只负责第二段 UI、提示和临时目标高亮；第一目标是否合法仍由 `SpellAction` + `CardEffect.can_execute()` 过滤。
