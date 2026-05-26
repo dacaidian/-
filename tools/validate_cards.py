@@ -367,6 +367,7 @@ class CardValidator:
 
         self.validate_effect_list(card.get("effects", []), f"{path}.effects")
         self.validate_spell_actions(card.get("spell_actions", []), f"{path}.spell_actions")
+        self.validate_mounted_attacks(card.get("mounted_attacks", []), f"{path}.mounted_attacks")
 
     def validate_keywords(self, card: dict[str, Any], path: str) -> None:
         raw_keywords = card.get("keywords", [])
@@ -396,6 +397,29 @@ class CardValidator:
                 self.reporter.error(f"{action_path}.target_rule", f"unknown target rule '{target_rule}'")
             self.validate_animation(action, action_path)
             self.validate_effect_list(action.get("effects", []), f"{action_path}.effects")
+
+    def validate_mounted_attacks(self, raw_actions: Any, path: str) -> None:
+        if raw_actions in (None, []):
+            return
+        if not isinstance(raw_actions, list):
+            self.reporter.error(path, "must be an array")
+            return
+        for index, action in enumerate(raw_actions):
+            action_path = f"{path}[{index}]"
+            if not isinstance(action, dict):
+                self.reporter.error(action_path, "mounted attack must be an object")
+                continue
+
+            self.require_string(action, "id", action_path)
+            self.require_string(action, "name", action_path)
+            self.validate_card_id_reference(str(action.get("rider_card_id", "")), f"{action_path}.rider_card_id")
+
+            if not isinstance(action.get("amount", None), int):
+                self.reporter.error(f"{action_path}.amount", "must be an integer")
+            if "attack_speed" in action and not isinstance(action["attack_speed"], int):
+                self.reporter.error(f"{action_path}.attack_speed", "must be an integer")
+            if str(action.get("range", "melee")) not in {"melee", "ranged"}:
+                self.reporter.error(f"{action_path}.range", "must be one of melee, ranged")
 
     def validate_effect_list(self, raw_effects: Any, path: str) -> None:
         if raw_effects in (None, []):

@@ -74,6 +74,8 @@ var current_movement := 0
 # 当前攻击次数。攻速决定每回合最多可以攻击几次，第一版随从默认 1。
 var max_attack_speed := 0
 var current_attacks := 0
+var mounted_attack_max_uses: Dictionary = {}
+var mounted_attack_uses: Dictionary = {}
 
 # 当前可开启的行动类别数量。普通随从每回合只能移动、攻击、施法三选一；后续敏捷等能力可扩展。
 var max_main_actions := 0
@@ -108,6 +110,8 @@ func set_card_data(value: CardData) -> void:
 		current_movement = 0
 		max_attack_speed = 0
 		current_attacks = 0
+		mounted_attack_max_uses.clear()
+		mounted_attack_uses.clear()
 		max_main_actions = 0
 		current_main_actions = 0
 		used_action_groups.clear()
@@ -138,6 +142,8 @@ func set_card_data(value: CardData) -> void:
 			current_movement = max_movement
 			max_attack_speed = maxi(data.attack_speed, 0)
 			current_attacks = max_attack_speed
+			mounted_attack_max_uses = create_initial_mounted_attack_uses()
+			mounted_attack_uses = mounted_attack_max_uses.duplicate(true)
 			max_main_actions = 1
 			current_main_actions = max_main_actions
 			used_action_groups.clear()
@@ -149,6 +155,8 @@ func set_card_data(value: CardData) -> void:
 			current_movement = 0
 			max_attack_speed = 0
 			current_attacks = 0
+			mounted_attack_max_uses.clear()
+			mounted_attack_uses.clear()
 			max_main_actions = 1
 			current_main_actions = max_main_actions
 			used_action_groups.clear()
@@ -159,6 +167,8 @@ func set_card_data(value: CardData) -> void:
 			current_movement = 0
 			max_attack_speed = 0
 			current_attacks = 0
+			mounted_attack_max_uses.clear()
+			mounted_attack_uses.clear()
 			max_main_actions = 0
 			current_main_actions = 0
 			used_action_groups.clear()
@@ -282,6 +292,8 @@ func create_card_snapshot() -> Dictionary:
 		"current_movement": current_movement,
 		"max_attack_speed": max_attack_speed,
 		"current_attacks": current_attacks,
+		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
+		"mounted_attack_uses": mounted_attack_uses.duplicate(true),
 		"max_main_actions": max_main_actions,
 		"current_main_actions": current_main_actions,
 		"used_action_groups": used_action_groups.duplicate(),
@@ -316,6 +328,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	current_movement = int(snapshot.get("current_movement", 0))
 	max_attack_speed = int(snapshot.get("max_attack_speed", 0))
 	current_attacks = int(snapshot.get("current_attacks", 0))
+	mounted_attack_max_uses = normalize_int_dictionary(snapshot.get("mounted_attack_max_uses", {}))
+	mounted_attack_uses = normalize_int_dictionary(snapshot.get("mounted_attack_uses", {}))
 	max_main_actions = int(snapshot.get("max_main_actions", 0))
 	current_main_actions = int(snapshot.get("current_main_actions", 0))
 	used_action_groups = normalize_string_array(snapshot.get("used_action_groups", []))
@@ -353,6 +367,8 @@ func create_origin_snapshot() -> Dictionary:
 		"health": data.health,
 		"movement": max_movement,
 		"attack_speed": max_attack_speed,
+		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
+		"mounted_attack_uses": mounted_attack_uses.duplicate(true),
 		"main_actions": max_main_actions,
 		"allowed_action_group_pairs": allowed_action_group_pairs.duplicate(),
 		"front_texture_path": data.front_texture_path,
@@ -379,6 +395,8 @@ func create_last_state_snapshot() -> Dictionary:
 		"current_movement": current_movement,
 		"max_attack_speed": max_attack_speed,
 		"current_attacks": current_attacks,
+		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
+		"mounted_attack_uses": mounted_attack_uses.duplicate(true),
 		"max_main_actions": max_main_actions,
 		"current_main_actions": current_main_actions,
 		"used_action_groups": used_action_groups.duplicate(),
@@ -543,6 +561,30 @@ func normalize_string_array(value: Variant) -> Array[String]:
 	if value is Array:
 		for item in value:
 			result.append(str(item))
+
+	return result
+
+
+func normalize_int_dictionary(value: Variant) -> Dictionary:
+	var result := {}
+	if value is Dictionary:
+		for key in value:
+			result[str(key)] = int(value[key])
+
+	return result
+
+
+func create_initial_mounted_attack_uses() -> Dictionary:
+	var result := {}
+	if data == null:
+		return result
+
+	for mounted_attack in data.mounted_attacks:
+		var action_id := EffectData.get_action_id(mounted_attack)
+		if action_id == "":
+			continue
+
+		result[action_id] = maxi(EffectData.get_attack_speed(mounted_attack), 0)
 
 	return result
 
@@ -759,6 +801,52 @@ func restore_attacks() -> void:
 		return
 
 	current_attacks = max_attack_speed
+	state_changed.emit(self)
+
+
+func restore_mounted_attack_uses() -> void:
+	var next_uses := mounted_attack_max_uses.duplicate(true)
+	if mounted_attack_uses == next_uses:
+		return
+
+	mounted_attack_uses = next_uses
+	state_changed.emit(self)
+
+
+func get_mounted_attack_uses(action_id: String) -> int:
+	return int(mounted_attack_uses.get(action_id, 0))
+
+
+func spend_mounted_attack_use(action_id: String) -> bool:
+	if action_id == "":
+		return false
+
+	var remaining := get_mounted_attack_uses(action_id)
+	if remaining <= 0:
+		return false
+
+	mounted_attack_uses[action_id] = remaining - 1
+	state_changed.emit(self)
+	return true
+
+
+func set_mounted_attack_max_uses(action_id: String, value: int, should_preserve_spent_uses := true) -> void:
+	if action_id == "":
+		return
+
+	var normalized_value := maxi(value, 0)
+	var previous_max := int(mounted_attack_max_uses.get(action_id, 0))
+	var previous_current := int(mounted_attack_uses.get(action_id, previous_max))
+	if previous_max == normalized_value:
+		return
+
+	var spent_uses := maxi(previous_max - previous_current, 0)
+	mounted_attack_max_uses[action_id] = normalized_value
+	if should_preserve_spent_uses:
+		mounted_attack_uses[action_id] = maxi(normalized_value - spent_uses, 0)
+	else:
+		mounted_attack_uses[action_id] = normalized_value
+
 	state_changed.emit(self)
 
 

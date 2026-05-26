@@ -37,6 +37,7 @@ func get_available_actions(user: CardState, game_manager: GameManager) -> Array[
 		append_if_available(actions, get_action("move"), user, game_manager)
 		append_if_available(actions, get_action("attack"), user, game_manager)
 		append_spell_actions(actions, user, game_manager)
+		append_mounted_attack_actions(actions, user, game_manager)
 
 	for granted_action in granted_action_resolver.get_granted_actions(user, game_manager):
 		register_action(granted_action)
@@ -56,6 +57,16 @@ func append_spell_actions(actions: Array[CardAction], user: CardState, game_mana
 		var spell_action := SpellAction.new().setup(spell_data)
 		register_action(spell_action)
 		append_if_available(actions, spell_action, user, game_manager)
+
+
+func append_mounted_attack_actions(actions: Array[CardAction], user: CardState, game_manager: GameManager) -> void:
+	if user == null or user.data == null:
+		return
+
+	for mounted_attack_data in EffectData.get_mounted_attacks(user.data):
+		var mounted_attack := MountedAttackAction.new().setup(mounted_attack_data)
+		register_action(mounted_attack)
+		append_if_available(actions, mounted_attack, user, game_manager)
 
 
 func get_spell_action_data_for_user(user: CardState, game_manager: GameManager) -> Array[Dictionary]:

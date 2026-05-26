@@ -1133,6 +1133,7 @@ func restore_minion_actions_for_player(player_id: String) -> void:
 		if state.is_owned_by(player_id):
 			state.restore_movement()
 			state.restore_attacks()
+			state.restore_mounted_attack_uses()
 			state.restore_main_actions()
 
 

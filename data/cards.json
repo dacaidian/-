@@ -1577,7 +1577,17 @@
 				],
 				"attack": 2,
 				"health": 12,
-				"effects": []
+				"effects": [],
+				"mounted_attacks": [
+					{
+						"id": "hippogryph_archer_attack",
+						"name": "骑射",
+						"rider_card_id": "sentinel_archer",
+						"amount": 1,
+						"attack_speed": 1,
+						"range": "ranged"
+					}
+				]
 			},
 			{
 				"id": "elune_grace",

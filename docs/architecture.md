@@ -55,6 +55,7 @@
 - `CardAction`：行动基类。
 - `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
+- `MountedAttackAction`：骑乘攻击行动。它从 `CardData.mounted_attacks` 读取骑乘者 `rider_card_id`、基础伤害、攻速和射程；攻击次数独立保存在 `CardState.mounted_attack_uses`，不消耗本体普通攻击次数，也不把本体关键字强行改成远程。骑乘者的攻击力、攻速、攻城等增益按 `rider_card_id` 读取，使角鹰骑士这类“坐骑近战 + 骑手远程”的单位可以分别受益。
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。`SpellAction` 会把候选目标注入运行时效果并调用 `CardEffect.can_execute()`，因此月刃这类“第一目标还必须存在第二段弹射目标”的法术可以过滤掉无效第一目标。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
 - `ActionRegistry`：行动注册表，决定一张牌当前拥有哪些行动；它只把静态或授予的 spell data 转成 `SpellAction`，不直接解释升级牌 JSON。动态非施法行动由 `GrantedActionResolver` 拼接，当前用于剧毒之泉体系的 `注入毒液` 和 `毒爆`。
 - `GrantedActionResolver`：动态非施法行动解析器。它读取当前战场状态和当前玩家手牌升级牌，把符合条件的非施法行动拼接到行动列表；配置型授予使用 `grant_actions` + `active_zone: "hand"` + `card_ids` + `actions`。当前暗夜精灵哨兵“精英月刃豹”通过这套机制让女猎手获得副动作“爪击”。
@@ -168,6 +169,7 @@
 - 普通攻击本体只负责校验、消耗行动资源、播放攻击动画和造成伤害。
 - `AttackAction.get_attack_profile()` 是攻击规则的汇总点，目前包含 `can_attack`、`is_melee`、`can_occupy`。动画表现和击杀后副作用都读取这份 profile，避免各自重复推断攻击类型。
 - 攻击后的单位自身触发效果统一走 `TriggerResolver` 的 `after_attack`，上下文包含 `EventContext.ATTACK_TARGET_STATE`。需要作用于被攻击敌方单位时，效果目标使用 `target: "attack_target_enemy_unit"`；只作用于被攻击敌方随从时使用 `target: "attack_target_enemy_minion"`。当前毒蝎的“蝎毒”、蛊毒蛇受升级牌“蛇毒”授予的攻击附毒、生蛊王蛇的“王毒”都走 `after_attack + apply_status`，不要在 `AttackAction` 中写死卡牌名。
+- 骑乘攻击不是普通攻击的重命名，而是独立的行动资源。`mounted_attacks` 中的每个条目都拥有自己的 `id`、`rider_card_id`、`amount`、`attack_speed` 和 `range`；回合开始恢复对应次数，手牌被动可以按骑乘者 card id 调整伤害或攻速。远程骑乘攻击复用远程锚点规则，但不要求承载单位本身拥有 `ranged` 关键字，避免把坐骑本体攻击也变成远程。
 - `can_attack_with_zero_attack` 关键词允许 0 攻单位发起攻击，用于毒蝎这类“攻击不造成战斗伤害，但攻击后触发效果”的单位。普通 0 攻单位仍不能攻击。
 - 攻击造成击杀后，统一进入 `GameManager.resolve_attack_kill()`，内部委托 `DeathResolver.resolve_attack_kill()` 处理攻击击杀后的副作用结算。攻击击杀仍保留占领选择；效果伤害走批量死亡结算，不触发占领。
 - 当前内置副作用是“可选占领”：攻击者可以移动到被击杀目标的格子。

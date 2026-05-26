@@ -12,6 +12,10 @@ const KEY_SOURCE_CARD_IDS := "source_card_ids"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_ACTIONS := "actions"
 const KEY_ACTION_ID := "action_id"
+const KEY_MOUNTED_ATTACKS := "mounted_attacks"
+const KEY_RIDER_CARD_ID := "rider_card_id"
+const KEY_ATTACK_SPEED := "attack_speed"
+const KEY_RANGE := "range"
 const KEY_AMOUNT := "amount"
 const KEY_TARGET := "target"
 const KEY_SELECTED_TARGET_STATE := "_selected_target_state"
@@ -133,6 +137,9 @@ const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
 const TARGET_RELATION_ANY := "any"
 const TARGET_RELATION_FRIENDLY := "friendly"
 const TARGET_RELATION_ENEMY := "enemy"
+
+const RANGE_MELEE := "melee"
+const RANGE_RANGED := "ranged"
 
 const DEATH_REASON_EFFECT := "effect"
 const DEATH_REASON_SPELL := "spell"
@@ -335,8 +342,27 @@ static func get_actions(effect_data: Dictionary) -> Array[Dictionary]:
 	return actions
 
 
+static func get_mounted_attacks(card_data: CardData) -> Array[Dictionary]:
+	if card_data == null:
+		return []
+
+	return card_data.mounted_attacks
+
+
 static func get_action_id(action_data: Dictionary) -> String:
 	return str(action_data.get(KEY_ACTION_ID, action_data.get(KEY_ID, "")))
+
+
+static func get_rider_card_id(action_data: Dictionary) -> String:
+	return str(action_data.get(KEY_RIDER_CARD_ID, ""))
+
+
+static func get_attack_speed(action_data: Dictionary) -> int:
+	return int(action_data.get(KEY_ATTACK_SPEED, 1))
+
+
+static func get_range(action_data: Dictionary) -> String:
+	return str(action_data.get(KEY_RANGE, RANGE_MELEE))
 
 
 static func duplicate_with_context(effect_data: Dictionary, context: Dictionary) -> Dictionary:

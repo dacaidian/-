@@ -15,6 +15,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	refresh_unit_movement_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
 	refresh_unit_attack_speed_passives(player, game_manager)
+	refresh_mounted_attack_speed_passives(player, game_manager)
 
 	if should_adjust_remaining_flips:
 		var delta := player.max_flips_per_turn - previous_capacity
@@ -113,6 +114,31 @@ func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameM
 			attack_speed_bonus = int(attack_speed_bonus_by_card_id[state.card_id])
 
 		state.set_max_attack_speed(base_attack_speed + attack_speed_bonus, true)
+
+
+func refresh_mounted_attack_speed_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null:
+		return
+
+	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player)
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != player.id or state.data == null:
+			continue
+
+		for mounted_attack in state.data.mounted_attacks:
+			var action_id := EffectData.get_action_id(mounted_attack)
+			var rider_card_id := EffectData.get_rider_card_id(mounted_attack)
+			if action_id == "":
+				continue
+
+			var base_attack_speed := maxi(EffectData.get_attack_speed(mounted_attack), 0)
+			var attack_speed_bonus := 0
+			if attack_speed_bonus_by_card_id.has(rider_card_id):
+				attack_speed_bonus = int(attack_speed_bonus_by_card_id[rider_card_id])
+
+			state.set_mounted_attack_max_uses(action_id, base_attack_speed + attack_speed_bonus, true)
 
 
 func get_unit_movement_overrides(player: PlayerState) -> Dictionary:

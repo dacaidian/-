@@ -82,6 +82,9 @@ func score_action(action: CardAction, user: CardState, target: CardState, gm: Ga
 
 
 func _score_action(action: CardAction, user: CardState, target: CardState, gm: GameManager) -> float:
+	if action is MountedAttackAction:
+		return _score_mounted_attack_action(action as MountedAttackAction, user, target, gm)
+
 	match action.id:
 		"move": return _score_move(user, target, gm)
 		"attack": return _score_attack(user, target, gm)
@@ -89,6 +92,31 @@ func _score_action(action: CardAction, user: CardState, target: CardState, gm: G
 		InjectVenomAction.ACTION_ID: return _score_inject_venom(user, target, gm)
 		VenomBurstAction.ACTION_ID: return _score_venom_burst(user, gm)
 		_: return _score_spell(action, user, target, gm) if action.id.begins_with("spell:") else 0.0
+
+
+func _score_mounted_attack_action(action: MountedAttackAction, user: CardState, target: CardState, gm: GameManager) -> float:
+	if action == null or user == null or target == null or gm == null:
+		return 0.0
+
+	var player := gm.get_current_player()
+	if player == null:
+		return 0.0
+	if target.owner_id == player.id:
+		return -50.0
+
+	var damage := action.calculate_damage(user, target, gm)
+	var score := float(damage) * 2.4
+	var target_threat: float = AICommonScript.calc_threat_score(target)
+	if target.current_health <= damage:
+		score += target_threat * 1.1 + 8.0
+		if target.is_hero():
+			score += 8.0
+	elif target.is_building():
+		score += _score_destroyed_building_value(target) * 0.25 - 1.0
+	else:
+		score += target_threat * 0.2
+
+	return score
 
 
 func _score_move(user: CardState, target: CardState, gm: GameManager) -> float:
