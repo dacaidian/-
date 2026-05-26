@@ -69,6 +69,8 @@ const KEY_GRANTED_EFFECTS := "granted_effects"
 const KEY_LINK_ID := "link_id"
 const KEY_SCALE_AMOUNT_BY_STATUS_STACKS := "scale_amount_by_status_stacks"
 const KEY_RUNTIME_STATE_ID := "runtime_state_id"
+const KEY_RUNTIME_STATE_IDS := "runtime_state_ids"
+const KEY_FALLBACK_RUNTIME_STATE_ID := "fallback_runtime_state_id"
 const KEY_REQUIRED_RUNTIME_STATE_ID := "required_runtime_state_id"
 const KEY_EFFECT_HANDLES_ANIMATION := "effect_handles_animation"
 const KEY_SECOND_SELECTION_TITLE := "second_selection_title"
@@ -100,6 +102,7 @@ const EFFECT_DEVOUR := "devour"
 const EFFECT_LINK_UNITS := "link_units"
 const EFFECT_DESTROY_LINKED_UNITS := "destroy_linked_units"
 const EFFECT_SET_FACTION_RUNTIME_STATE := "set_faction_runtime_state"
+const EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE := "restrict_faction_runtime_cycle"
 const EFFECT_MOONBLADE := "moonblade"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
@@ -231,6 +234,22 @@ static func get_source_card_ids(effect_data: Dictionary) -> Array[String]:
 				card_ids.append(normalized_card_id)
 
 	return card_ids
+
+
+static func get_runtime_state_ids(effect_data: Dictionary) -> Array[String]:
+	var state_ids: Array[String] = []
+	var raw_state_ids: Variant = effect_data.get(KEY_RUNTIME_STATE_IDS, [])
+	if raw_state_ids is Array:
+		for state_id in raw_state_ids:
+			var normalized_state_id := str(state_id)
+			if normalized_state_id != "":
+				state_ids.append(normalized_state_id)
+
+	var single_state_id := str(effect_data.get(KEY_RUNTIME_STATE_ID, ""))
+	if single_state_id != "" and not state_ids.has(single_state_id):
+		state_ids.append(single_state_id)
+
+	return state_ids
 
 
 static func get_card_id(effect_data: Dictionary) -> String:

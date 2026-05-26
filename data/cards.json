@@ -1577,6 +1577,77 @@
 				"attack": 2,
 				"health": 12,
 				"effects": []
+			},
+			{
+				"id": "elune_grace",
+				"name": "艾露恩之优雅",
+				"description": "升级牌。月升和月落时，弓箭手、泰兰德、女猎手攻击力+1；满月时攻击力+2。",
+				"url": "res://assets/img/暗夜精灵哨兵/艾露恩之优雅.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"required_runtime_state_id": "moonrise",
+						"card_ids": [
+							"sentinel_archer",
+							"tyrande",
+							"sentinel_huntress"
+						],
+						"amount": 1
+					},
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"required_runtime_state_id": "full_moon",
+						"card_ids": [
+							"sentinel_archer",
+							"tyrande",
+							"sentinel_huntress"
+						],
+						"amount": 2
+					},
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"required_runtime_state_id": "moonset",
+						"card_ids": [
+							"sentinel_archer",
+							"tyrande",
+							"sentinel_huntress"
+						],
+						"amount": 1
+					}
+				]
+			},
+			{
+				"id": "elune_blessing",
+				"name": "艾露恩之庇佑",
+				"description": "升级牌。月夜降临：时间将仅在月升、满月、月落之间循环；若当前是白天，则立即切换到月升。",
+				"url": "res://assets/img/暗夜精灵哨兵/艾露恩之庇佑.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "restrict_faction_runtime_cycle",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"runtime_state_ids": [
+							"moonrise",
+							"full_moon",
+							"moonset"
+						],
+						"fallback_runtime_state_id": "moonrise"
+					}
+				]
 			}
 		]
 	},

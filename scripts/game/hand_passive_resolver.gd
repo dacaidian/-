@@ -11,6 +11,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	var previous_capacity := player.max_flips_per_turn
 	var flip_bonus := get_flip_capacity_bonus(player)
 	player.set_flip_capacity_bonus(flip_bonus)
+	refresh_faction_runtime_cycle_passives(player, game_manager)
 	refresh_unit_movement_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
 	refresh_unit_attack_speed_passives(player, game_manager)
@@ -32,6 +33,25 @@ func get_flip_capacity_bonus(player: PlayerState) -> int:
 				bonus += EffectData.get_amount(effect_data)
 
 	return bonus
+
+
+func refresh_faction_runtime_cycle_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null:
+		return
+
+	var override_state_ids: Array[String] = []
+	var fallback_state_id := ""
+	for effect_data in get_hand_passive_effects(player):
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE:
+			continue
+
+		override_state_ids = EffectData.get_runtime_state_ids(effect_data)
+		fallback_state_id = str(effect_data.get(EffectData.KEY_FALLBACK_RUNTIME_STATE_ID, ""))
+		break
+
+	var changed := player.set_faction_runtime_state_cycle_override(override_state_ids, fallback_state_id)
+	if changed and game_manager != null:
+		game_manager.update_faction_time_panel_view()
 
 
 func is_hand_passive_effect(effect_data: Dictionary) -> bool:

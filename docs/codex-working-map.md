@@ -122,6 +122,7 @@
 - 手牌焦点、动作菜单、手牌法术使用、手牌被动、手牌 UI 展示。
 - 英雄配套手牌的可用性统一由 `HandPlayResolver` 判断；手牌绿光、动作菜单和真正执行都应传入 `GameManager` 上下文，不要只看卡牌自身效果。
 - 手牌持续被动由 `HandPassiveResolver` 统一刷新；`modify_flip_capacity` 改翻牌上限，`set_unit_movement` 按 `card_ids` 改己方战场单位移动力，`modify_unit_attack` 按 `card_ids` 给己方战场单位叠加可刷新的攻击力光环，`modify_unit_attack_speed` 改攻速。需要绑定种族时间/季节时使用 `required_runtime_state_id`。
+- 限制种族运行时状态循环也属于手牌持续被动：使用 `restrict_faction_runtime_cycle` + `runtime_state_ids` + `fallback_runtime_state_id`，保持回合推进流程通用，不按卡牌名分支。
 - 手牌法术运行时修正由 `HandSpellModifierResolver` 统一处理；`modify_hand_spell_effects` 可按 `card_ids` 和 `target_relation` 替换/追加效果，不要在某张法术牌或 `HandPlayResolver` 里写死卡牌名。
 - 手牌抽屉高度由 `HandDrawerController` 根据视窗动态设置；各分区内部用 `ScrollContainer` 承载 `HFlowContainer`，手牌变多时应滚动而不是撑出外边框。
 - 同名手牌仍依赖 `selected_hand_index` 区分；需要冷却、来源、标签等运行时字段的手牌已使用 `HandCardState`，未来可继续演进为更完整的 `CardInstance` / Zone。
@@ -442,6 +443,7 @@ rg --files scripts scenes data docs
 
 - 新增种族循环状态：在种族 JSON 上添加 `runtime_state`，并用 `cycle[].card_id` 指向 `type: "time"`、`count: 0` 的展示卡。
 - 修改状态推进时机：优先改 `runtime_state.advance_trigger` 和 `GameManager.advance_faction_runtime_state_for_player()` 的触发接入，不要把状态推进写进具体卡牌效果。
+- 如果要收窄种族运行时状态循环，在升级牌手牌被动中添加 `restrict_faction_runtime_cycle`；有效循环和兜底状态由 `PlayerState` 维护。
 - 修改展示样式：只改 `FactionTimePanelController`；它不参与规则结算。
 - 新增依赖时间的卡牌效果时，效果应读取 `PlayerState.faction_runtime_state_id`，不要从 UI 面板反查。
 ### 一次性攻击状态

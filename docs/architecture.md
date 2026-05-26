@@ -310,7 +310,7 @@
 - `set_unit_movement` 是手牌持续单位光环效果，按 `card_ids` 过滤己方战场正面随从，并把其移动力上限设为 `amount`。刷新时会保留本回合已消耗的移动点，避免中途获得光环直接回满移动力。
 - `modify_unit_attack` 是手牌持续单位光环效果，按 `card_ids` 过滤己方战场正面随从，并给其 `current_attack` 增加 `amount`。`CardState.passive_attack_bonus` 单独记录这层光环，刷新时先移除旧光环再应用新光环，避免反复刷新导致攻击力无限叠加，也不会覆盖“心灵之火”这类一次性攻击力修改。
 - `modify_unit_attack_speed` 是手牌持续单位光环效果，按 `card_ids` 过滤己方战场正面随从，并在原始攻速上增加 `amount`。刷新时会保留本回合已消耗的攻击次数；当光环失效或时间条件不满足时，攻速会回落到 `origin.attack_speed`。
-- 手牌持续被动可以通过 `required_runtime_state_id` 绑定玩家种族运行时状态，例如“满月时生效”。种族状态跳转或推进后，`GameManager` 会刷新该玩家手牌被动，避免 UI 时间变化但战场数值未更新。
+- 手牌持续被动可以通过 `required_runtime_state_id` 绑定玩家种族运行时状态，例如“满月时生效”。种族状态跳转或推进后，`GameManager` 会刷新该玩家手牌被动，避免 UI 时间变化但战场数值未更新。需要改变后续循环范围时，使用 `restrict_faction_runtime_cycle` + `runtime_state_ids` + `fallback_runtime_state_id`，由 `PlayerState` 维护有效循环。
 
 ## 英雄、手牌与冷却设计约定
 

@@ -21,6 +21,7 @@ var faction_runtime_state_id := ""
 var faction_runtime_state_name := ""
 var faction_runtime_state_card_id := ""
 var faction_runtime_state_cycle_index := -1
+var faction_runtime_state_cycle_override_ids: Array[String] = []
 
 # 资源分是玩家的长期胜利资源。达到战局目标值的玩家会赢得游戏。
 var resource_score := DEFAULT_RESOURCE_SCORE
@@ -71,6 +72,7 @@ func setup_faction_runtime_state(config: Dictionary) -> void:
 	faction_runtime_state_name = ""
 	faction_runtime_state_card_id = ""
 	faction_runtime_state_cycle_index = -1
+	faction_runtime_state_cycle_override_ids.clear()
 
 	var cycle := get_faction_runtime_state_cycle()
 	if cycle.is_empty():
@@ -87,7 +89,7 @@ func setup_faction_runtime_state(config: Dictionary) -> void:
 
 
 func has_faction_runtime_state() -> bool:
-	return not get_faction_runtime_state_cycle().is_empty()
+	return not get_effective_faction_runtime_state_cycle().is_empty()
 
 
 func get_faction_runtime_state_title() -> String:
@@ -109,11 +111,27 @@ func get_faction_runtime_state_cycle() -> Array:
 	return []
 
 
+func get_effective_faction_runtime_state_cycle() -> Array:
+	var cycle := get_faction_runtime_state_cycle()
+	if faction_runtime_state_cycle_override_ids.is_empty():
+		return cycle
+
+	var filtered_cycle: Array = []
+	for entry in cycle:
+		if not entry is Dictionary:
+			continue
+		var state_id := str(entry.get("id", ""))
+		if faction_runtime_state_cycle_override_ids.has(state_id):
+			filtered_cycle.append(entry)
+
+	return filtered_cycle
+
+
 func find_faction_runtime_state_index(state_id: String) -> int:
 	if state_id == "":
 		return -1
 
-	var cycle := get_faction_runtime_state_cycle()
+	var cycle := get_effective_faction_runtime_state_cycle()
 	for index in range(cycle.size()):
 		var entry: Variant = cycle[index]
 		if not entry is Dictionary:
@@ -135,7 +153,7 @@ func set_faction_runtime_state_by_id(state_id: String) -> bool:
 
 
 func set_faction_runtime_state_by_index(index: int) -> void:
-	var cycle := get_faction_runtime_state_cycle()
+	var cycle := get_effective_faction_runtime_state_cycle()
 	if cycle.is_empty():
 		return
 
@@ -157,6 +175,38 @@ func advance_faction_runtime_state() -> bool:
 	set_faction_runtime_state_by_index(faction_runtime_state_cycle_index + 1)
 	state_changed.emit(self)
 	return true
+
+
+func set_faction_runtime_state_cycle_override(state_ids: Array[String], fallback_state_id := "") -> bool:
+	var normalized_state_ids: Array[String] = []
+	for state_id in state_ids:
+		if state_id != "" and not normalized_state_ids.has(state_id):
+			normalized_state_ids.append(state_id)
+
+	var changed := normalized_state_ids != faction_runtime_state_cycle_override_ids
+	faction_runtime_state_cycle_override_ids = normalized_state_ids
+
+	if not has_faction_runtime_state():
+		if changed:
+			state_changed.emit(self)
+		return changed
+
+	var current_index := find_faction_runtime_state_index(faction_runtime_state_id)
+	if current_index >= 0:
+		set_faction_runtime_state_by_index(current_index)
+	else:
+		var fallback_index := find_faction_runtime_state_index(fallback_state_id)
+		if fallback_state_id != "" and fallback_index >= 0:
+			set_faction_runtime_state_by_index(fallback_index)
+			changed = true
+		elif not get_effective_faction_runtime_state_cycle().is_empty():
+			set_faction_runtime_state_by_index(0)
+			changed = true
+
+	if changed:
+		state_changed.emit(self)
+
+	return changed
 
 
 func gain_resource_score(amount: int) -> void:
