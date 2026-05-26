@@ -1299,7 +1299,8 @@
 			{
 				"card_id": "tyrande",
 				"attached_cards": [
-					"precision_shot"
+					"precision_shot",
+					"meteor_fall"
 				]
 			}
 		],
@@ -1646,6 +1647,47 @@
 							"moonset"
 						],
 						"fallback_runtime_state_id": "moonrise"
+					}
+				]
+			},
+			{
+				"id": "meteor_fall",
+				"name": "流星陨落",
+				"description": "泰兰德获得流星光环。每个自己的回合结束时，召唤流星陨落，对所有敌方单位和中立单位造成6点伤害。",
+				"url": "res://assets/img/暗夜精灵哨兵/流星陨落.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "meteor_aura",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "tyrande",
+						"status_id": "meteor_aura",
+						"apply_animation": "meteor_aura",
+						"status_name": "流星光环",
+						"status_description": "每个自己的回合结束时，对所有敌方单位和中立单位造成6点伤害。",
+						"status_tags": [
+							"aura"
+						],
+						"permanent": true,
+						"persists_after_death": false,
+						"payload": {
+							"turn_effects": [
+								{
+									"id": "damage",
+									"trigger": "after_turn_end",
+									"trigger_player": "source_owner",
+									"target": "enemy_and_neutral_units",
+									"amount": 6,
+									"animation": "meteor_strike",
+									"death_reason": "spell"
+								}
+							]
+						}
 					}
 				]
 			}

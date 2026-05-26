@@ -321,6 +321,10 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
 			await play_arcane_aura_spell(owner, effect_root, target_card)
+		"meteor_aura":
+			await play_meteor_aura_at_rect(owner, effect_root, target_card.get_global_rect())
+		"meteor_strike":
+			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"full_moon_cover":
 			await play_full_moon_cover_at_rect(owner, effect_root, target_card.get_global_rect())
 		"baptism":
@@ -375,6 +379,10 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_summon_spell_at_rect(owner, effect_root, target_rect)
 		"arcane_aura":
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
+		"meteor_aura":
+			await play_meteor_aura_at_rect(owner, effect_root, target_rect)
+		"meteor_strike":
+			await play_meteor_strike_at_rect(owner, effect_root, target_rect)
 		"full_moon_cover":
 			await play_full_moon_cover_at_rect(owner, effect_root, target_rect)
 		"baptism":
@@ -415,6 +423,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"medical_practice":
 			await play_medical_practice_spell(owner, effect_root, target_card)
+		"meteor_strike":
+			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"gu_life_link":
@@ -757,6 +767,75 @@ func play_arcane_aura_spell_at_rect(owner: Node, effect_root: Control, target_re
 
 	aura_effect.queue_free()
 	pulse_effect.queue_free()
+
+
+func play_meteor_aura_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var aura_effect := create_rect_spell_effect(target_rect, "MeteorAuraEffect", create_meteor_aura_effect_style(), 1.34)
+	var star_effect := create_rect_spell_effect(target_rect, "MeteorAuraStarEffect", create_meteor_star_effect_style(), 0.44)
+	effect_root.add_child(aura_effect)
+	effect_root.add_child(star_effect)
+
+	var gather_tween := owner.create_tween()
+	gather_tween.set_parallel(true)
+	gather_tween.set_trans(Tween.TRANS_SINE)
+	gather_tween.set_ease(Tween.EASE_OUT)
+	gather_tween.tween_property(aura_effect, "rotation", 0.52, spell_animation_duration * 0.48)
+	gather_tween.tween_property(aura_effect, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.48)
+	gather_tween.tween_property(aura_effect, "modulate:a", 0.92, spell_animation_duration * 0.48)
+	gather_tween.tween_property(star_effect, "scale", Vector2(1.36, 1.36), spell_animation_duration * 0.48)
+	gather_tween.tween_property(star_effect, "modulate:a", 0.94, spell_animation_duration * 0.48)
+	await gather_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(aura_effect, "rotation", 1.12, spell_animation_duration * 0.68)
+	fade_tween.tween_property(aura_effect, "scale", Vector2(1.82, 1.82), spell_animation_duration * 0.68)
+	fade_tween.tween_property(aura_effect, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	fade_tween.tween_property(star_effect, "scale", Vector2(0.82, 0.82), spell_animation_duration * 0.68)
+	fade_tween.tween_property(star_effect, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	await fade_tween.finished
+
+	aura_effect.queue_free()
+	star_effect.queue_free()
+
+
+func play_meteor_strike_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var meteor := create_rect_spell_effect(target_rect, "MeteorStrikeMeteor", create_meteor_star_effect_style(), 0.34)
+	var impact := create_rect_spell_effect(target_rect, "MeteorStrikeImpact", create_meteor_impact_effect_style(), 0.92)
+	var target_center := target_rect.get_center()
+	meteor.global_position = target_center + Vector2(-target_rect.size.x * 0.82, -target_rect.size.y * 1.25) - meteor.pivot_offset
+	meteor.modulate.a = 0.98
+	effect_root.add_child(meteor)
+	effect_root.add_child(impact)
+
+	var fall_tween := owner.create_tween()
+	fall_tween.set_parallel(true)
+	fall_tween.set_trans(Tween.TRANS_CUBIC)
+	fall_tween.set_ease(Tween.EASE_IN)
+	fall_tween.tween_property(meteor, "global_position", target_center - meteor.pivot_offset, spell_animation_duration * 0.42)
+	fall_tween.tween_property(meteor, "scale", Vector2(1.28, 1.28), spell_animation_duration * 0.42)
+	await fall_tween.finished
+
+	var impact_tween := owner.create_tween()
+	impact_tween.set_parallel(true)
+	impact_tween.set_trans(Tween.TRANS_SINE)
+	impact_tween.set_ease(Tween.EASE_OUT)
+	impact_tween.tween_property(meteor, "modulate:a", 0.0, spell_animation_duration * 0.38)
+	impact_tween.tween_property(impact, "modulate:a", 0.88, spell_animation_duration * 0.16)
+	impact_tween.tween_property(impact, "scale", Vector2(1.55, 1.55), spell_animation_duration * 0.38)
+	impact_tween.tween_property(impact, "modulate:a", 0.0, spell_animation_duration * 0.38)
+	await impact_tween.finished
+
+	meteor.queue_free()
+	impact.queue_free()
 
 
 func play_full_moon_cover_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -1950,6 +2029,39 @@ func create_arcane_aura_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.46, 0.72, 1.0, 0.54)
 	style.shadow_size = 38
+	return style
+
+
+func create_meteor_aura_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.36, 0.14, 0.68, 0.22)
+	style.border_color = Color(0.92, 0.80, 1.0, 0.84)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.68, 0.42, 1.0, 0.58)
+	style.shadow_size = 40
+	return style
+
+
+func create_meteor_star_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.78, 0.22, 0.78)
+	style.border_color = Color(1.0, 0.96, 0.64, 0.96)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.52, 0.12, 0.74)
+	style.shadow_size = 30
+	return style
+
+
+func create_meteor_impact_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.36, 0.16, 0.34)
+	style.border_color = Color(1.0, 0.82, 0.34, 0.90)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(16)
+	style.shadow_color = Color(1.0, 0.30, 0.08, 0.62)
+	style.shadow_size = 34
 	return style
 
 

@@ -125,6 +125,7 @@ const TARGET_OWNER_CARD_BY_ID := "owner_card_by_id"
 const TARGET_ATTACK_TARGET_ENEMY_UNIT := "attack_target_enemy_unit"
 const TARGET_ATTACK_TARGET_ENEMY_MINION := "attack_target_enemy_minion"
 const TARGET_ATTACK_TARGET_UNIT := "attack_target_unit"
+const TARGET_ENEMY_AND_NEUTRAL_UNITS := "enemy_and_neutral_units"
 
 const TRIGGER_PLAYER_ANY := "any"
 const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"

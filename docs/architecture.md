@@ -191,7 +191,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、流星陨落、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -245,6 +245,7 @@
 - `target` 为空的目标型手牌法术或随从法术，会在执行前由 `EffectData.mark_selected_target()` 默认注入为 `selected`。
 - 如果一张牌的多段效果需要不同目标，应在对应效果上显式写 `target`；运行时仍会保存选中目标上下文，但不会覆盖显式目标。
 - `selected_adjacent_enemy_minions` 表示：以本次选中的目标为中心，取其 8 方向相邻、正面、敌方、类型为随从的单位。敌我判断优先使用效果拥有者；手牌法术会由 `HandPlayResolver` 注入拥有者，棋盘法术则使用来源随从 owner。
+- `enemy_and_neutral_units` 表示：取战场上所有正面单位，排除效果拥有者的己方单位，保留敌方单位和中立单位；单位包括随从和建筑。当前用于“流星陨落”这类状态回合触发型全场伤害。
 - `selected_area_enemy_minions` 表示：以本次选中的格子为中心，按效果配置的 `area_rows` × `area_cols` 展开区域，取区域内正面敌方随从。`selected_area_all_minions` 同理但不区分敌我。区域展开由 `BoardQuery.get_area_slots()` 计算，自动处理棋盘边缘裁剪；过滤逻辑在 `CardEffect.get_selected_area_targets()` 中统一处理。新增过滤类型（友方、全部单位等）只需扩展 `CardEffect.AreaFilter` 枚举。
 
 ## 生命值约定
@@ -381,7 +382,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`moonblade`（月刃：银蓝旋刃依次命中第一目标和弹射目标）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`meteor_aura`（流星光环：星环附着脉冲）、`meteor_strike`（流星命中：陨石坠落和爆裂冲击）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`moonblade`（月刃：银蓝旋刃依次命中第一目标和弹射目标）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
 
 ## 玩家资源约定
 

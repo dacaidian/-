@@ -272,6 +272,7 @@
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
 - `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
+- `enemy_and_neutral_units` 用于全场效果：选择所有非己方正面单位，包含敌方单位和中立随从/建筑；当前用于流星陨落的回合结束状态伤害。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
 - 固定授予法术用 `grant_spell_actions`；根据玩家历史动态授予法术用 `grant_last_spell_action` + `source_card_ids`，不要在 UI 或具体卡牌名分支里拼动作。
 

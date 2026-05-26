@@ -30,6 +30,9 @@ var death_immunity_thread_color := Color(0.40, 0.92, 0.24, 0.62)
 var precision_shot_color := Color(0.30, 0.78, 1.0, 0.16)
 var precision_shot_edge_color := Color(0.64, 0.94, 1.0, 0.86)
 var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
+var meteor_aura_color := Color(0.42, 0.16, 0.72, 0.18)
+var meteor_aura_edge_color := Color(0.92, 0.78, 1.0, 0.80)
+var meteor_aura_star_color := Color(1.0, 0.86, 0.42, 0.88)
 
 
 func _ready() -> void:
@@ -48,7 +51,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot()
 
 
 func should_show_divine_shield() -> bool:
@@ -63,6 +66,13 @@ func should_show_arcane_aura() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ARCANE_AURA)
+
+
+func should_show_meteor_aura() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_METEOR_AURA)
 
 
 func should_show_freeze() -> bool:
@@ -110,6 +120,8 @@ func should_show_precision_shot() -> bool:
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
+	if should_show_meteor_aura():
+		draw_meteor_aura()
 	if should_show_precision_shot():
 		draw_precision_shot_overlay()
 	if should_show_encourage_gu():
@@ -146,6 +158,27 @@ func draw_arcane_aura() -> void:
 		draw_line(from_point, to_point, arcane_aura_glow_color, 2.0)
 
 	draw_circle(center, radius * 0.74, arcane_aura_color)
+
+
+func draw_meteor_aura() -> void:
+	var aura_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.05)
+	var center := aura_rect.get_center()
+	var radius := minf(aura_rect.size.x, aura_rect.size.y) * 0.42
+	var status := state.get_status(CardStatus.STATUS_METEOR_AURA) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 5)
+
+	draw_circle(center, radius * 0.82, meteor_aura_color)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 4.5
+		var alpha := meteor_aura_edge_color.a * (1.0 - float(index) * 0.12)
+		draw_arc(center, ring_radius, -PI * 0.18, TAU - PI * 0.18, 80, Color(meteor_aura_edge_color.r, meteor_aura_edge_color.g, meteor_aura_edge_color.b, alpha), 2.2, true)
+
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0 + 0.28
+		var pos := center + Vector2(cos(angle), sin(angle)) * radius * 0.78
+		draw_line(pos + Vector2(-4.0, 0.0), pos + Vector2(4.0, 0.0), meteor_aura_star_color, 1.8)
+		draw_line(pos + Vector2(0.0, -4.0), pos + Vector2(0.0, 4.0), meteor_aura_star_color, 1.8)
 
 
 func draw_divine_shield() -> void:

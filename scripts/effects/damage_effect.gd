@@ -7,9 +7,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	# 从 JSON 效果定义里读取伤害数值。
 	var amount := get_spell_scaled_amount(source_state, effect_data, game_manager)
 	var damaged_targets: Array[CardState] = []
+	var animation_key := str(effect_data.get("animation", ""))
 
 	# 对所有目标状态造成伤害。
 	for target_state in get_target_states(source_state, effect_data, game_manager):
+		if animation_key != "" and game_manager != null and game_manager.has_method("play_status_apply_animation"):
+			await game_manager.play_status_apply_animation(target_state, animation_key)
 		target_state.take_damage(amount)
 		damaged_targets.append(target_state)
 
