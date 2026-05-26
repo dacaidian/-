@@ -176,12 +176,14 @@ func create_snake_venom_status_effect() -> Dictionary:
 		EffectData.KEY_TARGET: EffectData.TARGET_ATTACK_TARGET_ENEMY_MINION,
 		EffectData.KEY_STATUS_ID: CardStatus.STATUS_SNAKE_VENOM,
 		EffectData.KEY_STATUS_NAME: "蛇毒",
-		EffectData.KEY_STATUS_DESCRIPTION: "攻击-2。",
+		EffectData.KEY_STATUS_DESCRIPTION: "攻击-1，持续3回合。",
 		EffectData.KEY_STATUS_TAGS: [CardStatus.TAG_ATTACK_MODIFIER],
-		EffectData.KEY_STATUS_PERMANENT: true,
+		EffectData.KEY_STATUS_DURATION_TURNS: 3,
+		EffectData.KEY_STATUS_EXPIRES_ON_TRIGGER: EventContext.TRIGGER_AFTER_TURN_END,
+		EffectData.KEY_STATUS_DURATION_SCOPE: CardStatus.DURATION_SCOPE_TARGET_OWNER,
 		"apply_animation": "gu_infusion",
 		EffectData.KEY_STATUS_PAYLOAD: {
-			EffectData.KEY_ATTACK_BONUS: -2
+			EffectData.KEY_ATTACK_BONUS: -1
 		},
 		EffectData.KEY_STATUS_STACK_POLICY: CardStatus.STACK_POLICY_REFRESH
 	}

@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1077,7 +1077,7 @@
 			{
 				"id": "snake_venom_upgrade",
 				"name": "蛇毒",
-				"description": "升级牌。蛊毒蛇攻击后对敌方随从施加2×3的毒性伤害，并使敌方随从获得蛇毒状态，攻击-2。",
+				"description": "升级牌。蛊毒蛇攻击后对敌方随从施加2×3的毒性伤害，并使敌方随从获得蛇毒状态，攻击-1，持续3回合。",
 				"url": "res://assets/img/苗疆族/蛇毒.png",
 				"type": "upgrade",
 				"count": 1,
@@ -1113,14 +1113,16 @@
 								"target": "attack_target_enemy_minion",
 								"status_id": "snake_venom",
 								"status_name": "蛇毒",
-								"status_description": "攻击-2。",
+								"status_description": "攻击-1，持续3回合。",
 								"status_tags": [
 									"attack_modifier"
 								],
-								"permanent": true,
+								"duration_turns": 3,
+								"expires_on_trigger": "after_turn_end",
+								"duration_scope": "target_owner",
 								"apply_animation": "gu_infusion",
 								"payload": {
-									"attack_bonus": -2
+									"attack_bonus": -1
 								},
 								"stack_policy": "refresh"
 							}
