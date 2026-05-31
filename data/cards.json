@@ -1845,6 +1845,47 @@
 				]
 			},
 			{
+				"id": "yousu_fox_spirit",
+				"name": "有苏氏狐妖",
+				"description": "狐妖仙二阶随从。狐念之术可以短暂控制属性较低的非英雄随从。",
+				"url": "res://assets/img/狐妖仙/有苏氏狐妖.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 4,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "fox_mind_art",
+						"name": "狐念之术",
+						"animation": "charm",
+						"target_rule": "low_stat_non_hero_minions",
+						"effects": [
+							{
+								"id": "apply_status",
+								"status_id": "charm",
+								"status_name": "狐念之术",
+								"status_description": "控制权暂时变为施法者，持续到施法者回合结束。",
+								"status_tags": [
+									"control"
+								],
+								"stack_policy": "replace",
+								"duration_turns": 1,
+								"duration_scope": "source_owner",
+								"expires_on_trigger": "after_turn_end",
+								"persists_after_death": false,
+								"apply_animation": "charm",
+								"payload": {}
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "six_tails_upgrade",
 				"name": "六尾",
 				"description": "默认入手并生效：当尾数至少为6时，苏妲己和涂山氏禁卫获得魔法免疫。",

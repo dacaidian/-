@@ -545,3 +545,9 @@
 
 - 玩家回合开始时会恢复全场所有单位的行动资源（移动力、攻击次数、骑乘/副动作次数、主行动力）。这保证被魅惑控制过来的随从能在当前回合使用自己的行动资源，而不等到原拥有者的下个回合。
 - 临时攻击修正使用 `status_attack_floor_debt` 记录被 0 下限截断的攻击差值。例如 3 攻单位被勾魄 -4 后显示 0，移除勾魄时会回到 3，不会固定 +4 变成 4。
+
+## 狐念之术与短暂控制
+
+- `有苏氏狐妖` 是狐妖仙 2 级随从牌，4 张，2/4，带 `ranged`，并拥有随从施法动作 `狐念之术`。
+- `狐念之术` 复用 `low_stat_non_hero_minions` 目标规则和 `charm` 控制状态，但配置为非永久状态：`duration_turns: 1`、`duration_scope: "source_owner"`、`expires_on_trigger: "after_turn_end"`。因此它会在施法者回合结束时回滚控制权。
+- 永久魅惑和短暂控制共享 `status_tags: ["control"]`，归属切换统一由 `CardState.recalculate_status_modifiers()` 处理。新增短暂控制类卡牌时，应优先通过状态持续时间表达，不要直接调用 `set_owner()`。

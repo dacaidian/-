@@ -569,3 +569,9 @@ rg --files scripts scenes data docs
 
 - 回合开始恢复行动资源走 `GameManager.restore_unit_actions_for_all_players()`，不再只恢复当前玩家单位，以支持魅惑/控制权变化。
 - 攻击力被状态减到 0 以下时，`CardState.status_attack_floor_debt` 会保留被截断的部分，状态移除时用它恢复真实基础值。
+
+### 随从施法与短暂控制
+
+- 随从自带的施法动作写在卡牌 `spell_actions` 中，由 `SpellAction` / `SpellTargetResolver` / `EffectRegistry` 走同一套流程。
+- 短暂控制类效果复用 `apply_status` + `status_tags: ["control"]`，并用 `duration_turns` / `duration_scope` / `expires_on_trigger` 描述回滚时点。
+- `狐念之术` 的范例：目标规则 `low_stat_non_hero_minions`，控制状态持续到施法者回合结束。
