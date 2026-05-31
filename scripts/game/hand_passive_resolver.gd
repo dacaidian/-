@@ -78,6 +78,10 @@ func is_hand_passive_effect(effect_data: Dictionary) -> bool:
 	return trigger == EffectData.TRIGGER_WHILE_IN_HAND or trigger == EffectData.TRIGGER_PASSIVE
 
 
+func is_board_passive_effect(effect_data: Dictionary) -> bool:
+	return EffectData.get_trigger(effect_data) == EffectData.TRIGGER_WHILE_ON_BOARD
+
+
 func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManager) -> void:
 	if player == null or game_manager == null:
 		return
@@ -133,6 +137,7 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 		var attack_bonus := 0
 		if attack_bonus_by_card_id.has(state.card_id):
 			attack_bonus = int(attack_bonus_by_card_id[state.card_id])
+		attack_bonus += get_board_attack_resource_bonus(state, player)
 
 		state.set_passive_attack_bonus(attack_bonus)
 
@@ -252,6 +257,29 @@ func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
 			attack_bonus_by_card_id[card_id] = int(attack_bonus_by_card_id.get(card_id, 0)) + amount
 
 	return attack_bonus_by_card_id
+
+
+func get_board_attack_resource_bonus(state: CardState, player: PlayerState) -> int:
+	if state == null or state.data == null or player == null:
+		return 0
+
+	var bonus := 0
+	for effect_data in state.data.effects:
+		if not effect_data is Dictionary:
+			continue
+		if not is_board_passive_effect(effect_data):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_SET_UNIT_ATTACK_TO_RESOURCE:
+			continue
+
+		var resource_id := EffectData.get_resource_id(effect_data)
+		if resource_id == "":
+			continue
+
+		var origin_attack := int(state.origin.get("attack", state.data.attack))
+		bonus += player.get_faction_resource_value(resource_id) - origin_attack
+
+	return bonus
 
 
 func get_unit_attack_speed_bonuses(player: PlayerState) -> Dictionary:

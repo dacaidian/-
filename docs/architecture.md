@@ -534,3 +534,9 @@
 - 控制权通过 `status_id: "charm"` + `status_tags: ["control"]` 实现，而不是一次性改静态归属。`CardState` 在首次控制时记录 `status_control_base_owner_id`，状态存在时归属为状态来源玩家，状态被驱散/移除后回到原归属。
 - `charm` 是不按回合倒计的永久状态，但 `persists_after_death: false`，离场/死亡后不保留。后续驱散只需移除该状态即可触发归属回滚。
 - `勾魄` 已收窄为 `all_minions`，不再对建筑生效。
+
+## 战场持续被动与资源数值
+
+- 战场单位可以在自身 `effects` 中配置 `trigger: "while_on_board"` 的持续被动。这类被动由 `HandPassiveResolver.refresh_player_passives()` 的战场刷新段统一重算，不在单张卡牌行动里直接改数值。
+- `set_unit_attack_to_resource` 用于让战场单位的基础攻击力同步到某个玩家种族资源值。它使用被动攻击修正表达 `resource_value - origin.attack`，因此可与其他攻击加成/减成叠加并可回滚。
+- 当前苏妲己使用 `set_unit_attack_to_resource` + `resource_id: "tail"`，表示她的基础攻击力等于当前尾数。献祭增加尾数后已会调用 `refresh_hand_passives_for_player()`，所以数值会立即刷新。

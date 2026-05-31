@@ -558,3 +558,9 @@ rg --files scripts scenes data docs
 - 目标规则在 `scripts/game/spell_target_resolver.gd`：`low_stat_non_hero_minions` = 非英雄随从且当前攻击力+当前生命值 < 8。
 - 控制效果是状态：`CardStatus.STATUS_CHARM` + `TAG_CONTROL`。新增类似控制/反控效果时优先复用 `CardState.recalculate_status_modifiers()` 的归属回滚机制，不直接在法术效果里写 `set_owner()` 后就结束。
 - 表现：`CardAnimationController` 中 `charm` key 跑施加动画；`CardStatusOverlay` 持续绘制魅惑光环。
+
+### 战场持续被动与种族资源数值
+
+- 数据入口：卡牌 `effects` 配置 `trigger: "while_on_board"`。当前苏妲己用 `set_unit_attack_to_resource` 让攻击力等于 `tail`。
+- 规则入口：`scripts/game/hand_passive_resolver.gd` 的 `refresh_unit_attack_passives()` 会同时合并手牌持续被动和战场单位自身的 `while_on_board` 被动。
+- 新增类似“数值等于资源”效果时，优先复用 `set_unit_attack_to_resource` 或扩展同类战场被动，不要在献祭/资源变动效果里写死某张卡的数值修改。

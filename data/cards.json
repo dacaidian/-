@@ -1743,7 +1743,7 @@
 			{
 				"id": "su_daji",
 				"name": "苏妲己",
-				"description": "狐妖仙英雄。暂时用于测试基础种族逻辑。",
+				"description": "狐妖仙英雄。基础攻击力等于当前尾数。",
 				"url": "res://assets/img/狐妖仙/苏妲己.png",
 				"type": "minion",
 				"role": "hero",
@@ -1752,7 +1752,13 @@
 				"keywords": [],
 				"attack": 1,
 				"health": 9,
-				"effects": []
+				"effects": [
+					{
+						"id": "set_unit_attack_to_resource",
+						"trigger": "while_on_board",
+						"resource_id": "tail"
+					}
+				]
 			},
 			{
 				"id": "little_fox_spirit",
