@@ -16,6 +16,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	refresh_unit_attack_passives(player, game_manager)
 	refresh_unit_attack_speed_passives(player, game_manager)
 	refresh_mounted_attack_speed_passives(player, game_manager)
+	refresh_faction_skill_passives(player)
 
 	if should_adjust_remaining_flips:
 		var delta := player.max_flips_per_turn - previous_capacity
@@ -34,6 +35,22 @@ func get_flip_capacity_bonus(player: PlayerState) -> int:
 				bonus += EffectData.get_amount(effect_data)
 
 	return bonus
+
+
+func refresh_faction_skill_passives(player: PlayerState) -> void:
+	if player == null:
+		return
+
+	var skill_ids: Array[String] = []
+	for effect_data in get_hand_passive_effects(player):
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_FACTION_SKILLS:
+			continue
+
+		for skill_id in EffectData.get_skill_ids(effect_data):
+			if not skill_ids.has(skill_id):
+				skill_ids.append(skill_id)
+
+	player.set_unlocked_faction_skills(skill_ids)
 
 
 func refresh_faction_runtime_cycle_passives(player: PlayerState, game_manager: GameManager) -> void:

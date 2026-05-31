@@ -78,6 +78,9 @@ const KEY_FALLBACK_RUNTIME_STATE_ID := "fallback_runtime_state_id"
 const KEY_REQUIRED_RUNTIME_STATE_ID := "required_runtime_state_id"
 const KEY_EFFECT_HANDLES_ANIMATION := "effect_handles_animation"
 const KEY_SECOND_SELECTION_TITLE := "second_selection_title"
+const KEY_SKILL_IDS := "skill_ids"
+const KEY_RESOURCE_ID := "resource_id"
+const KEY_MAX_AMOUNT := "max_amount"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -108,6 +111,7 @@ const EFFECT_DESTROY_LINKED_UNITS := "destroy_linked_units"
 const EFFECT_SET_FACTION_RUNTIME_STATE := "set_faction_runtime_state"
 const EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE := "restrict_faction_runtime_cycle"
 const EFFECT_MOONBLADE := "moonblade"
+const EFFECT_GRANT_FACTION_SKILLS := "grant_faction_skills"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -258,6 +262,30 @@ static func get_runtime_state_ids(effect_data: Dictionary) -> Array[String]:
 		state_ids.append(single_state_id)
 
 	return state_ids
+
+
+static func get_skill_ids(effect_data: Dictionary) -> Array[String]:
+	var skill_ids: Array[String] = []
+	var raw_skill_ids: Variant = effect_data.get(KEY_SKILL_IDS, [])
+	if raw_skill_ids is Array:
+		for skill_id in raw_skill_ids:
+			var normalized_skill_id := str(skill_id)
+			if normalized_skill_id != "":
+				skill_ids.append(normalized_skill_id)
+
+	var single_skill_id := str(effect_data.get("skill_id", ""))
+	if single_skill_id != "" and not skill_ids.has(single_skill_id):
+		skill_ids.append(single_skill_id)
+
+	return skill_ids
+
+
+static func get_resource_id(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_RESOURCE_ID, ""))
+
+
+static func get_max_amount(effect_data: Dictionary, default_value := 0) -> int:
+	return int(effect_data.get(KEY_MAX_AMOUNT, default_value))
 
 
 static func get_card_id(effect_data: Dictionary) -> String:

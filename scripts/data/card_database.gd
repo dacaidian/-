@@ -194,6 +194,60 @@ func get_faction_runtime_state_config(faction_id: String) -> Dictionary:
 	return {}
 
 
+func get_faction_resource_configs(faction_id: String) -> Array[Dictionary]:
+	var resource_configs: Array[Dictionary] = []
+	var faction = factions_by_id.get(faction_id, {})
+	if not faction is Dictionary:
+		return resource_configs
+
+	var raw_resources: Variant = faction.get("faction_resources", [])
+	if not raw_resources is Array:
+		return resource_configs
+
+	for resource_config in raw_resources:
+		if resource_config is Dictionary:
+			resource_configs.append(resource_config.duplicate(true))
+
+	return resource_configs
+
+
+func get_faction_skill_configs(faction_id: String) -> Array[Dictionary]:
+	var skill_configs: Array[Dictionary] = []
+	var faction = factions_by_id.get(faction_id, {})
+	if not faction is Dictionary:
+		return skill_configs
+
+	var raw_skills: Variant = faction.get("faction_skills", [])
+	if not raw_skills is Array:
+		return skill_configs
+
+	for skill_config in raw_skills:
+		if skill_config is Dictionary:
+			skill_configs.append(skill_config.duplicate(true))
+
+	return skill_configs
+
+
+func get_starting_hand_cards(faction_id: String, selected_hero_card_id := "") -> Array[CardData]:
+	var cards: Array[CardData] = []
+	var selected_hero_id := selected_hero_card_id
+	if selected_hero_id == "":
+		selected_hero_id = get_default_hero_id(faction_id)
+
+	var selected_attached_card_ids := get_attached_card_ids(faction_id, selected_hero_id)
+	var all_attached_card_ids := get_all_attached_card_ids(faction_id)
+
+	for card_data in get_faction_cards(faction_id):
+		if card_data == null or not card_data.start_in_hand:
+			continue
+		if all_attached_card_ids.has(card_data.id) and not selected_attached_card_ids.has(card_data.id):
+			continue
+
+		cards.append(card_data)
+
+	return cards
+
+
 func get_excluded_neutral_card_ids_for_factions(faction_ids: Array[String]) -> Array[String]:
 	var excluded_card_ids: Array[String] = []
 
@@ -362,6 +416,8 @@ func build_weighted_pool(faction_id: String) -> Array[CardData]:
 	for card_data in get_faction_cards(faction_id):
 		if is_test_mode and not is_card_allowed_in_test_mode(card_data.id, faction_id):
 			continue
+		if card_data.start_in_hand:
+			continue
 		append_card_copies_to_pool(pool, card_data)
 
 	return pool
@@ -391,6 +447,8 @@ func build_weighted_pool_for_selection(faction_id: String, selected_hero_card_id
 			continue
 
 		if all_attached_card_ids.has(card_data.id) and not selected_attached_card_ids.has(card_data.id):
+			continue
+		if card_data.start_in_hand:
 			continue
 
 		append_card_copies_to_pool(pool, card_data)

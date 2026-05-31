@@ -22,6 +22,11 @@ var faction_runtime_state_name := ""
 var faction_runtime_state_card_id := ""
 var faction_runtime_state_cycle_index := -1
 var faction_runtime_state_cycle_override_ids: Array[String] = []
+var faction_resource_configs: Dictionary = {}
+var faction_resource_values: Dictionary = {}
+var faction_skill_configs: Dictionary = {}
+var unlocked_faction_skill_ids: Array[String] = []
+var used_faction_skill_ids: Array[String] = []
 
 # 资源分是玩家的长期胜利资源。达到战局目标值的玩家会赢得游戏。
 var resource_score := DEFAULT_RESOURCE_SCORE
@@ -86,6 +91,99 @@ func setup_faction_runtime_state(config: Dictionary) -> void:
 
 	set_faction_runtime_state_by_index(default_index)
 	state_changed.emit(self)
+
+
+func setup_faction_resources(configs: Array[Dictionary]) -> void:
+	faction_resource_configs.clear()
+	faction_resource_values.clear()
+
+	for config in configs:
+		var resource_id := str(config.get("id", ""))
+		if resource_id == "":
+			continue
+
+		var normalized_config := config.duplicate(true)
+		var initial_value := int(normalized_config.get("initial", 0))
+		var max_value := int(normalized_config.get("max", initial_value))
+		faction_resource_configs[resource_id] = normalized_config
+		faction_resource_values[resource_id] = clampi(initial_value, 0, max_value)
+
+	state_changed.emit(self)
+
+
+func setup_faction_skills(configs: Array[Dictionary]) -> void:
+	faction_skill_configs.clear()
+	unlocked_faction_skill_ids.clear()
+	used_faction_skill_ids.clear()
+
+	for config in configs:
+		var skill_id := str(config.get("id", ""))
+		if skill_id == "":
+			continue
+
+		faction_skill_configs[skill_id] = config.duplicate(true)
+
+	state_changed.emit(self)
+
+
+func get_faction_resource_config(resource_id: String) -> Dictionary:
+	var config: Dictionary = faction_resource_configs.get(resource_id, {})
+	return config.duplicate(true)
+
+
+func get_faction_resource_value(resource_id: String) -> int:
+	return int(faction_resource_values.get(resource_id, 0))
+
+
+func gain_faction_resource(resource_id: String, amount: int) -> void:
+	if resource_id == "" or amount == 0:
+		return
+
+	var config := get_faction_resource_config(resource_id)
+	var max_value := int(config.get("max", 999999))
+	var current_value := get_faction_resource_value(resource_id)
+	faction_resource_values[resource_id] = clampi(current_value + amount, 0, max_value)
+	state_changed.emit(self)
+
+
+func set_unlocked_faction_skills(skill_ids: Array[String]) -> void:
+	var normalized_skill_ids: Array[String] = []
+	for skill_id in skill_ids:
+		if skill_id == "" or not faction_skill_configs.has(skill_id):
+			continue
+		if normalized_skill_ids.has(skill_id):
+			continue
+		normalized_skill_ids.append(skill_id)
+
+	unlocked_faction_skill_ids = normalized_skill_ids
+	for index in range(used_faction_skill_ids.size() - 1, -1, -1):
+		if not unlocked_faction_skill_ids.has(used_faction_skill_ids[index]):
+			used_faction_skill_ids.remove_at(index)
+
+	state_changed.emit(self)
+
+
+func get_unlocked_faction_skill_configs() -> Array[Dictionary]:
+	var configs: Array[Dictionary] = []
+	for skill_id in unlocked_faction_skill_ids:
+		var config: Dictionary = faction_skill_configs.get(skill_id, {})
+		if config.is_empty():
+			continue
+		configs.append(config.duplicate(true))
+	return configs
+
+
+func can_use_faction_skill(skill_id: String) -> bool:
+	return unlocked_faction_skill_ids.has(skill_id) and not used_faction_skill_ids.has(skill_id)
+
+
+func register_faction_skill_use(skill_id: String) -> bool:
+	if not can_use_faction_skill(skill_id):
+		return false
+
+	used_faction_skill_ids.append(skill_id)
+	state_changed.emit(self)
+	return true
 
 
 func has_faction_runtime_state() -> bool:
@@ -225,6 +323,7 @@ func set_resource_score(value: int) -> void:
 func start_turn() -> void:
 	# 进入玩家回合时，获得 1 点法力，不会自动回满。
 	remaining_flips = max_flips_per_turn
+	used_faction_skill_ids.clear()
 	tick_hand_cooldowns()
 	gain_mana(1)
 	state_changed.emit(self)

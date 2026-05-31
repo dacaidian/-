@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1700,6 +1700,74 @@
 								}
 							]
 						}
+					}
+				]
+			}
+		]
+	},
+	{
+		"id": "fox_spirit",
+		"name": "foxSpirit",
+		"displayName": "狐妖仙",
+		"description": "狐妖仙以尾为灵力根基，尾数越多，妖术越强。苏妲己擅长以献祭换取妖尾，让族群在牺牲与魅惑中逐步逼近九尾之境。",
+		"heroes": [
+			{
+				"card_id": "su_daji",
+				"attached_cards": []
+			}
+		],
+		"faction_resources": [
+			{
+				"id": "tail",
+				"name": "尾",
+				"initial": 1,
+				"max": 9
+			}
+		],
+		"faction_skills": [
+			{
+				"id": "sacrifice",
+				"name": "献祭",
+				"description": "每回合一次，选择一个友方非英雄随从献祭，使其死亡并获得1条尾。",
+				"action_id": "sacrifice",
+				"resource_id": "tail",
+				"amount": 1,
+				"once_per_turn": true,
+				"target_rule": "friendly_non_hero_minions"
+			}
+		],
+		"cards": [
+			{
+				"id": "su_daji",
+				"name": "苏妲己",
+				"description": "狐妖仙英雄。暂时用于测试基础种族逻辑。",
+				"url": "res://assets/img/狐妖仙/苏妲己.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"attack": 1,
+				"health": 9,
+				"effects": []
+			},
+			{
+				"id": "fox_sacrifice_upgrade",
+				"name": "献祭",
+				"description": "默认入手并生效：获得种族技能献祭。",
+				"url": "res://assets/img/狐妖仙/献祭.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_faction_skills",
+						"trigger": "while_in_hand",
+						"skill_ids": [
+							"sacrifice"
+						]
 					}
 				]
 			}

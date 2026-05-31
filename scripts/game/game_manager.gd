@@ -4,6 +4,7 @@ class_name GameManager
 const CardPoolViewControllerScript := preload("res://scripts/ui/card_pool_view_controller.gd")
 const TurnStatusControllerScript := preload("res://scripts/ui/turn_status_controller.gd")
 const FactionTimePanelControllerScript := preload("res://scripts/ui/faction_time_panel_controller.gd")
+const FactionSkillPanelControllerScript := preload("res://scripts/ui/faction_skill_panel_controller.gd")
 const HandDrawerControllerScript := preload("res://scripts/ui/hand_drawer_controller.gd")
 const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_display_controller.gd")
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
@@ -28,6 +29,7 @@ const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
 const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
 const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
+const SacrificeFactionSkillActionScript := preload("res://scripts/actions/sacrifice_faction_skill_action.gd")
 
 # GameManager 是战局编排入口。
 # 它持有玩家、棋盘、牌池和交互状态，并串起回合、行动、死亡、补位等规则流程。
@@ -128,6 +130,7 @@ var action_menu_controller := ActionMenuController.new()
 var card_pool_view_controller := CardPoolViewControllerScript.new()
 var turn_status_controller := TurnStatusControllerScript.new()
 var faction_time_panel_controller := FactionTimePanelControllerScript.new()
+var faction_skill_panel_controller := FactionSkillPanelControllerScript.new()
 var hand_drawer_controller := HandDrawerControllerScript.new()
 var equipment_display_controller := EquipmentDisplayControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
@@ -173,10 +176,12 @@ func _ready() -> void:
 	setup_card_animation_controller()
 	setup_turn_status_view()
 	setup_faction_time_panel_view()
+	setup_faction_skill_panel_view()
 	setup_hand_drawer_view()
 	setup_equipment_display_view()
 	update_turn_status_view()
 	update_faction_time_panel_view()
+	update_faction_skill_panel_view()
 	update_hand_drawer_view()
 	update_equipment_display_view()
 	card_pool = create_initial_card_pool()
@@ -249,6 +254,8 @@ func connect_viewport_resize() -> void:
 		viewport.size_changed.connect(update_equipment_display_view)
 	if not viewport.size_changed.is_connected(update_faction_time_panel_view):
 		viewport.size_changed.connect(update_faction_time_panel_view)
+	if not viewport.size_changed.is_connected(update_faction_skill_panel_view):
+		viewport.size_changed.connect(update_faction_skill_panel_view)
 
 
 func connect_end_turn_button() -> void:
@@ -279,6 +286,8 @@ func initialize_players() -> void:
 			player.set_faction(player_faction_ids[index], get_faction_display_name(player_faction_ids[index]))
 			player.set_selected_hero(get_selected_hero_for_player(index))
 			player.setup_faction_runtime_state(card_database.get_faction_runtime_state_config(player_faction_ids[index]))
+			player.setup_faction_resources(card_database.get_faction_resource_configs(player_faction_ids[index]))
+			player.setup_faction_skills(card_database.get_faction_skill_configs(player_faction_ids[index]))
 		player.is_ai = get_player_ai_flag(index)
 		player.ai_difficulty = get_player_ai_difficulty(index)
 		player.set_base_flips_per_turn(player_max_flips_per_turn)
@@ -288,8 +297,22 @@ func initialize_players() -> void:
 		player.state_changed.connect(_on_player_state_changed)
 		players.append(player)
 
+	for index in range(players.size()):
+		add_starting_hand_cards_for_player(players[index], index)
+		refresh_hand_passives_for_player(players[index], false)
+
 	if not players.is_empty():
 		players[current_player_index].start_turn()
+
+
+func add_starting_hand_cards_for_player(player: PlayerState, player_index: int) -> void:
+	if player == null or player_index < 0 or player_index >= player_faction_ids.size():
+		return
+
+	var faction_id := player_faction_ids[player_index]
+	var hero_id := get_selected_hero_for_player(player_index)
+	for card_data in card_database.get_starting_hand_cards(faction_id, hero_id):
+		player.add_to_hand(card_data)
 
 
 func load_static_card_data() -> bool:
@@ -615,6 +638,16 @@ func update_faction_time_panel_view() -> void:
 	faction_time_panel_controller.update(players, card_database, get_parent() as Control)
 
 
+func setup_faction_skill_panel_view() -> void:
+	faction_skill_panel_controller.setup(get_parent() as Control)
+	if not faction_skill_panel_controller.skill_requested.is_connected(_on_faction_skill_requested):
+		faction_skill_panel_controller.skill_requested.connect(_on_faction_skill_requested)
+
+
+func update_faction_skill_panel_view() -> void:
+	faction_skill_panel_controller.update(get_current_player(), get_parent() as Control)
+
+
 func setup_hand_drawer_view() -> void:
 	hand_interaction_controller.setup(self)
 
@@ -791,6 +824,7 @@ func end_turn() -> void:
 	refresh_action_available_hints()
 	update_turn_status_view()
 	update_faction_time_panel_view()
+	update_faction_skill_panel_view()
 	update_hand_drawer_view()
 	refresh_debug_panel()
 	schedule_ai_turn_if_needed()
@@ -994,6 +1028,7 @@ func resolve_queued_triggers() -> void:
 func refresh_hand_passives_for_player(player: PlayerState, should_adjust_remaining_flips := false) -> void:
 	hand_passive_resolver.refresh_player_passives(player, should_adjust_remaining_flips, self)
 	update_turn_status_view()
+	update_faction_skill_panel_view()
 	refresh_action_available_hints()
 	refresh_debug_panel()
 
@@ -1658,6 +1693,65 @@ func execute_action_without_target(action: CardAction) -> void:
 	is_executing_action = false
 
 
+func _on_faction_skill_requested(skill_id: String) -> void:
+	if is_game_busy() or skill_id == "":
+		return
+	if _is_ai_controlling():
+		return
+
+	var player := get_current_player()
+	if player == null or not player.can_use_faction_skill(skill_id):
+		refresh_debug_panel()
+		return
+
+	var skill_config: Dictionary = player.faction_skill_configs.get(skill_id, {})
+	if skill_config.is_empty():
+		refresh_debug_panel()
+		return
+
+	var action := create_faction_skill_action(skill_config)
+	if action == null:
+		refresh_debug_panel()
+		return
+
+	var source_state := get_faction_skill_source_state(player)
+	if source_state == null:
+		refresh_debug_panel()
+		return
+
+	if action.get_valid_targets(source_state, self).is_empty():
+		refresh_debug_panel()
+		return
+
+	action_registry.register_action(action)
+	hide_action_menu()
+	interaction_manager.select_card(source_state, get_all_board_states())
+	interaction_manager.start_action_selection(action, get_all_board_states(), self)
+
+
+func create_faction_skill_action(skill_config: Dictionary) -> CardAction:
+	match str(skill_config.get("action_id", skill_config.get("id", ""))):
+		"sacrifice":
+			return SacrificeFactionSkillActionScript.new().setup(skill_config)
+		_:
+			return null
+
+
+func get_faction_skill_source_state(player: PlayerState) -> CardState:
+	if player == null:
+		return null
+
+	for state in get_all_board_states():
+		if BoardQuery.is_face_up_unit(state) and state.is_owned_by(player.id) and state.is_hero():
+			return state
+
+	for state in get_all_board_states():
+		if BoardQuery.is_face_up_unit(state) and state.is_owned_by(player.id):
+			return state
+
+	return null
+
+
 func _on_card_state_changed(state: CardState) -> void:
 	if state != null:
 		sync_slot_card_layout(state.slot_index)
@@ -1668,6 +1762,7 @@ func _on_player_state_changed(state: PlayerState) -> void:
 	check_victory()
 	update_turn_status_view()
 	update_faction_time_panel_view()
+	update_faction_skill_panel_view()
 	if state == get_current_player():
 		update_hand_drawer_view()
 	refresh_debug_panel()
