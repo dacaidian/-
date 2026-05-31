@@ -510,3 +510,8 @@
 - 手牌持续被动可以通过 `required_resource_id` 与 `required_resource_min` 绑定种族资源阈值。
 - `HandPassiveResolver.is_effect_condition_met()` 会实时读取玩家种族资源；资源变化后相关效果应调用 `refresh_hand_passives_for_player()` 重新刷新战场单位运行时属性。
 - 当前狐妖仙“三尾”使用 `tail >= 3` 后才授予苏妲己、小狐精 `ranged`。
+
+### 狐妖仙尾数升级
+
+- 狐妖仙默认入手升级牌可以按尾数阈值实时开启：`三尾` 在 `tail >= 3` 时授予苏妲己、小狐精 `ranged`；`六尾` 在 `tail >= 6` 时授予苏妲己、涂山氏禁卫 `magic_immune`。
+- 这类升级统一使用 `grant_unit_keywords` 与 `required_resource_id` / `required_resource_min`，由 `HandPassiveResolver` 刷新到 `CardState.passive_keywords`。

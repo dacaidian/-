@@ -535,3 +535,8 @@ rg --files scripts scenes data docs
 
 - 需要按种族资源实时开关的手牌被动，配置 `required_resource_id` 和 `required_resource_min`。
 - 资源变动后要刷新手牌被动；当前“献祭”增加尾数后会调用 `refresh_hand_passives_for_player()`，让“三尾”在尾数达到 3 时立刻生效。
+
+### 狐妖仙尾数升级
+
+- 新增狐妖仙尾数门槛升级时，优先复用 `grant_unit_keywords` + `required_resource_id: "tail"` + `required_resource_min`。
+- 当前 `三尾` 授予远程，`六尾` 授予魔法免疫；尾数变化后依赖 `refresh_hand_passives_for_player()` 实时生效或失效。
