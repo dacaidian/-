@@ -81,6 +81,7 @@ const KEY_SECOND_SELECTION_TITLE := "second_selection_title"
 const KEY_SKILL_IDS := "skill_ids"
 const KEY_RESOURCE_ID := "resource_id"
 const KEY_MAX_AMOUNT := "max_amount"
+const KEY_KEYWORDS := "keywords"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -112,6 +113,7 @@ const EFFECT_SET_FACTION_RUNTIME_STATE := "set_faction_runtime_state"
 const EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE := "restrict_faction_runtime_cycle"
 const EFFECT_MOONBLADE := "moonblade"
 const EFFECT_GRANT_FACTION_SKILLS := "grant_faction_skills"
+const EFFECT_GRANT_UNIT_KEYWORDS := "grant_unit_keywords"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -278,6 +280,18 @@ static func get_skill_ids(effect_data: Dictionary) -> Array[String]:
 		skill_ids.append(single_skill_id)
 
 	return skill_ids
+
+
+static func get_keywords(effect_data: Dictionary) -> Array[String]:
+	var keywords: Array[String] = []
+	var raw_keywords: Variant = effect_data.get(KEY_KEYWORDS, [])
+	if raw_keywords is Array:
+		for keyword in raw_keywords:
+			var normalized_keyword := str(keyword)
+			if normalized_keyword != "" and not keywords.has(normalized_keyword):
+				keywords.append(normalized_keyword)
+
+	return keywords
 
 
 static func get_resource_id(effect_data: Dictionary) -> String:

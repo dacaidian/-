@@ -58,6 +58,7 @@ var back_texture: Texture2D
 # 当前攻击、生命上限、已受伤害和护盾。当前生命由 max_health - damage_taken 计算得出。
 var current_attack := 0
 var passive_attack_bonus := 0
+var passive_keywords: Array[String] = []
 var status_attack_bonus := 0
 var status_max_health_bonus := 0
 var max_health := 0
@@ -101,6 +102,7 @@ func set_card_data(value: CardData) -> void:
 		origin.clear()
 		current_attack = 0
 		passive_attack_bonus = 0
+		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_max_health_bonus = 0
 		max_health = 0
@@ -130,6 +132,7 @@ func set_card_data(value: CardData) -> void:
 		back_texture = data.back_texture
 		current_attack = data.attack
 		passive_attack_bonus = 0
+		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_max_health_bonus = 0
 		max_health = data.health
@@ -227,11 +230,22 @@ func uses_minion_action_resources() -> bool:
 
 
 func has_keyword(keyword: String) -> bool:
-	return data != null and data.has_keyword(keyword)
+	return (data != null and data.has_keyword(keyword)) or passive_keywords.has(keyword)
 
 
 func get_siege_bonus() -> int:
-	return data.get_siege_bonus() if data != null else 0
+	var bonus := data.get_siege_bonus() if data != null else 0
+	for keyword in passive_keywords:
+		if not keyword.begins_with(CardData.KEYWORD_SIEGE_PREFIX):
+			continue
+
+		var amount_text := keyword.substr(CardData.KEYWORD_SIEGE_PREFIX.length())
+		if not amount_text.is_valid_int():
+			continue
+
+		bonus = maxi(bonus, int(amount_text))
+
+	return bonus
 
 
 func apply_keyword_passives() -> void:
@@ -283,6 +297,7 @@ func create_card_snapshot() -> Dictionary:
 		"back_texture": back_texture,
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
+		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_max_health_bonus": status_max_health_bonus,
 		"max_health": max_health,
@@ -319,6 +334,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	back_texture = snapshot.get("back_texture") as Texture2D
 	current_attack = int(snapshot.get("current_attack", 0))
 	passive_attack_bonus = int(snapshot.get("passive_attack_bonus", 0))
+	passive_keywords = normalize_string_array(snapshot.get("passive_keywords", []))
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
 	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
@@ -385,6 +401,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"is_face_up": is_face_up,
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
+		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_max_health_bonus": status_max_health_bonus,
 		"max_health": max_health,
@@ -930,6 +947,22 @@ func set_passive_attack_bonus(value: int) -> void:
 
 	current_attack = maxi(current_attack - passive_attack_bonus + normalized_value, 0)
 	passive_attack_bonus = normalized_value
+	state_changed.emit(self)
+
+
+func set_passive_keywords(keywords: Array[String]) -> void:
+	var normalized_keywords: Array[String] = []
+	for keyword in keywords:
+		if keyword != "" and not normalized_keywords.has(keyword):
+			normalized_keywords.append(keyword)
+
+	normalized_keywords.sort()
+	var current_keywords := passive_keywords.duplicate()
+	current_keywords.sort()
+	if current_keywords == normalized_keywords:
+		return
+
+	passive_keywords = normalized_keywords
 	state_changed.emit(self)
 
 

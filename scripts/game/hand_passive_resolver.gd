@@ -13,6 +13,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	player.set_flip_capacity_bonus(flip_bonus)
 	refresh_faction_runtime_cycle_passives(player, game_manager)
 	refresh_unit_movement_passives(player, game_manager)
+	refresh_unit_keyword_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
 	refresh_unit_attack_speed_passives(player, game_manager)
 	refresh_mounted_attack_speed_passives(player, game_manager)
@@ -96,6 +97,28 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 		state.set_max_movement(target_movement, true)
 
 
+func refresh_unit_keyword_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null:
+		return
+
+	var keywords_by_card_id := get_unit_keyword_grants(player)
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != player.id:
+			continue
+
+		var keywords: Array[String] = []
+		var raw_keywords: Variant = keywords_by_card_id.get(state.card_id, [])
+		if raw_keywords is Array:
+			for keyword in raw_keywords:
+				var normalized_keyword := str(keyword)
+				if normalized_keyword != "" and not keywords.has(normalized_keyword):
+					keywords.append(normalized_keyword)
+
+		state.set_passive_keywords(keywords)
+
+
 func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager) -> void:
 	if player == null or game_manager == null:
 		return
@@ -177,6 +200,40 @@ func get_unit_movement_overrides(player: PlayerState) -> Dictionary:
 				movement_by_card_id[card_id] = maxi(int(movement_by_card_id[card_id]), amount)
 
 	return movement_by_card_id
+
+
+func get_unit_keyword_grants(player: PlayerState) -> Dictionary:
+	var keywords_by_card_id := {}
+	if player == null:
+		return keywords_by_card_id
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_UNIT_KEYWORDS:
+			continue
+
+		var keywords := EffectData.get_keywords(effect_data)
+		if keywords.is_empty():
+			continue
+
+		for card_id in EffectData.get_card_ids(effect_data):
+			if not keywords_by_card_id.has(card_id):
+				keywords_by_card_id[card_id] = []
+
+			var merged_keywords: Array[String] = []
+			var raw_existing_keywords: Variant = keywords_by_card_id[card_id]
+			if raw_existing_keywords is Array:
+				for existing_keyword in raw_existing_keywords:
+					var normalized_existing_keyword := str(existing_keyword)
+					if normalized_existing_keyword != "" and not merged_keywords.has(normalized_existing_keyword):
+						merged_keywords.append(normalized_existing_keyword)
+			for keyword in keywords:
+				if not merged_keywords.has(keyword):
+					merged_keywords.append(keyword)
+			keywords_by_card_id[card_id] = merged_keywords
+
+	return keywords_by_card_id
 
 
 func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:

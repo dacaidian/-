@@ -1752,6 +1752,43 @@
 				"effects": []
 			},
 			{
+				"id": "little_fox_spirit",
+				"name": "小狐精",
+				"description": "狐妖仙一阶随从。",
+				"url": "res://assets/img/狐妖仙/小狐精.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [],
+				"attack": 1,
+				"health": 4,
+				"effects": []
+			},
+			{
+				"id": "three_tails_upgrade",
+				"name": "三尾",
+				"description": "默认入手并生效：苏妲己和小狐精获得远程攻击能力。",
+				"url": "res://assets/img/狐妖仙/三尾.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_unit_keywords",
+						"trigger": "while_in_hand",
+						"card_ids": [
+							"su_daji",
+							"little_fox_spirit"
+						],
+						"keywords": [
+							"ranged"
+						]
+					}
+				]
+			},
+			{
 				"id": "fox_sacrifice_upgrade",
 				"name": "献祭",
 				"description": "默认入手并生效：获得种族技能献祭。",
