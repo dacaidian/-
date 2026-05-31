@@ -520,3 +520,10 @@
 
 - 狐妖仙种族技能 `献祭` 使用 `play_status_apply_animation(target, "sacrifice")` 播放专属目标特效。
 - `CardAnimationController` 中的 `sacrifice` key 表现为血红狐火法阵、收束灵力核心与上浮灵魂粒子；规则仍由 `SacrificeFactionSkillAction` 负责，动画层不修改死亡或尾数。
+
+## 勾魄
+
+- `勾魄` 是狐妖仙英雄苏妲己的 1 级英雄配套法术牌，配置在 `su_daji.attached_cards` 中，只有选择苏妲己且苏妲己在场时可释放。
+- 法术目标规则为 `all_units`，通过通用 `apply_status` 给目标施加 `status_id: "soul_hook"`。该状态使用 `status_tags: ["attack_modifier"]` 与 `payload.attack_bonus: -4` 表示攻击力 -4；移除或到期后由 `CardState.recalculate_status_modifiers()` 自动回滚，不写一次性永久减攻。
+- `勾魄` 使用 `stack_policy: "refresh"`，重复施加只刷新持续状态，不叠加成无限减攻。
+- `soul_hook` 的施加瞬间动画由 `CardAnimationController` 的 `soul_hook` key 处理；持续视觉由 `CardStatusOverlay` 绘制暗红紫锁链/钩魂覆盖层。

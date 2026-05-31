@@ -351,6 +351,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
+		"soul_hook":
+			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			if target_card == null:
 				return
@@ -397,6 +399,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_thin_burial_at_rect(owner, effect_root, target_rect)
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
+		"soul_hook":
+			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_rect)
 		"gu_summon":
@@ -437,6 +441,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
+		"soul_hook":
+			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_trap_trigger":
@@ -1492,6 +1498,49 @@ func play_sacrifice_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 		mote.queue_free()
 
 
+func play_soul_hook_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var snare := create_rect_spell_effect(target_rect, "SoulHookSnareEffect", create_soul_hook_snare_style(), 1.16)
+	var core := create_rect_spell_effect(target_rect, "SoulHookCoreEffect", create_soul_hook_core_style(), 0.54)
+	var motes: Array[Panel] = create_soul_hook_motes_for_rect(target_rect)
+	effect_root.add_child(snare)
+	effect_root.add_child(core)
+	for mote in motes:
+		effect_root.add_child(mote)
+
+	var bind_tween := owner.create_tween()
+	bind_tween.set_parallel(true)
+	bind_tween.set_trans(Tween.TRANS_CUBIC)
+	bind_tween.set_ease(Tween.EASE_OUT)
+	bind_tween.tween_property(snare, "modulate:a", 0.92, spell_animation_duration * 0.36)
+	bind_tween.tween_property(snare, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.36)
+	bind_tween.tween_property(core, "modulate:a", 0.80, spell_animation_duration * 0.36)
+	bind_tween.tween_property(core, "scale", Vector2(0.92, 0.92), spell_animation_duration * 0.36)
+	await bind_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN_OUT)
+	fade_tween.tween_property(snare, "scale", Vector2(1.38, 1.38), spell_animation_duration * 0.64)
+	fade_tween.tween_property(snare, "rotation", -0.28, spell_animation_duration * 0.64)
+	fade_tween.tween_property(snare, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	fade_tween.tween_property(core, "scale", Vector2(0.26, 0.26), spell_animation_duration * 0.64)
+	fade_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	for mote in motes:
+		var offset: Vector2 = mote.get_meta("soul_hook_offset", Vector2.ZERO)
+		fade_tween.tween_property(mote, "global_position", mote.global_position + offset, spell_animation_duration * 0.64)
+		fade_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	await fade_tween.finished
+
+	snare.queue_free()
+	core.queue_free()
+	for mote in motes:
+		mote.queue_free()
+
+
 func play_life_link_spell(
 	owner: Node,
 	effect_root: Control,
@@ -1965,6 +2014,33 @@ func create_sacrifice_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	return motes
 
 
+func create_soul_hook_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var motes: Array[Panel] = []
+	var center := target_rect.get_center()
+	var offsets := [
+		Vector2(-target_rect.size.x * 0.24, -target_rect.size.y * 0.28),
+		Vector2(target_rect.size.x * 0.26, -target_rect.size.y * 0.22),
+		Vector2(-target_rect.size.x * 0.12, target_rect.size.y * 0.28),
+		Vector2(target_rect.size.x * 0.16, target_rect.size.y * 0.24)
+	]
+
+	for index in range(offsets.size()):
+		var mote := Panel.new()
+		mote.name = "SoulHookMote_%d" % index
+		var mote_size := Vector2(9, 9) if index % 2 == 0 else Vector2(7, 7)
+		mote.size = mote_size
+		mote.pivot_offset = mote_size * 0.5
+		mote.global_position = center - mote.pivot_offset
+		mote.modulate = Color(1.0, 1.0, 1.0, 0.82)
+		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mote.z_index = 2310
+		mote.set_meta("soul_hook_offset", offsets[index])
+		mote.add_theme_stylebox_override("panel", create_soul_hook_mote_style())
+		motes.append(mote)
+
+	return motes
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -2282,6 +2358,39 @@ func create_sacrifice_mote_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(1.0, 0.16, 0.34, 0.58)
 	style.shadow_size = 14
+	return style
+
+
+func create_soul_hook_snare_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.20, 0.02, 0.20, 0.22)
+	style.border_color = Color(1.0, 0.26, 0.62, 0.82)
+	style.set_border_width_all(7)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.90, 0.18, 0.68, 0.56)
+	style.shadow_size = 34
+	return style
+
+
+func create_soul_hook_core_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.86, 0.10, 0.36, 0.30)
+	style.border_color = Color(1.0, 0.78, 0.92, 0.78)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.20, 0.62, 0.58)
+	style.shadow_size = 24
+	return style
+
+
+func create_soul_hook_mote_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.34, 0.72, 0.90)
+	style.border_color = Color(1.0, 0.82, 1.0, 0.70)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.90, 0.18, 0.70, 0.52)
+	style.shadow_size = 12
 	return style
 
 

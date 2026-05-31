@@ -1713,7 +1713,9 @@
 		"heroes": [
 			{
 				"card_id": "su_daji",
-				"attached_cards": []
+				"attached_cards": [
+					"gou_po"
+				]
 			}
 		],
 		"faction_resources": [
@@ -1763,6 +1765,36 @@
 				"attack": 1,
 				"health": 4,
 				"effects": []
+			},
+			{
+				"id": "gou_po",
+				"name": "勾魄",
+				"description": "使一个单位攻击力-4，持续一回合。",
+				"url": "res://assets/img/狐妖仙/勾魄.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"animation": "soul_hook",
+				"target_rule": "all_units",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"status_id": "soul_hook",
+						"status_name": "勾魄",
+						"status_description": "攻击力-4，持续一回合。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"stack_policy": "refresh",
+						"duration_turns": 1,
+						"expires_on_trigger": "after_turn_end",
+						"apply_animation": "soul_hook",
+						"payload": {
+							"attack_bonus": -4
+						}
+					}
+				]
 			},
 			{
 				"id": "tushan_guard",

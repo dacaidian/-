@@ -33,6 +33,9 @@ var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
 var meteor_aura_color := Color(0.42, 0.16, 0.72, 0.18)
 var meteor_aura_edge_color := Color(0.92, 0.78, 1.0, 0.80)
 var meteor_aura_star_color := Color(1.0, 0.86, 0.42, 0.88)
+var soul_hook_color := Color(0.45, 0.04, 0.18, 0.20)
+var soul_hook_edge_color := Color(1.0, 0.24, 0.56, 0.74)
+var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
 
 
 func _ready() -> void:
@@ -51,7 +54,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook()
 
 
 func should_show_divine_shield() -> bool:
@@ -117,6 +120,13 @@ func should_show_precision_shot() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_PRECISION_SHOT)
 
 
+func should_show_soul_hook() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_SOUL_HOOK)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -124,6 +134,8 @@ func _draw() -> void:
 		draw_meteor_aura()
 	if should_show_precision_shot():
 		draw_precision_shot_overlay()
+	if should_show_soul_hook():
+		draw_soul_hook_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -273,6 +285,38 @@ func draw_precision_shot_overlay() -> void:
 	draw_line(center + Vector2(0, -line_length), center + Vector2(0, -gap), precision_shot_mark_color, 2.4)
 	draw_line(center + Vector2(0, gap), center + Vector2(0, line_length), precision_shot_mark_color, 2.4)
 	draw_circle(center, radius * 0.13, precision_shot_mark_color)
+
+
+func draw_soul_hook_overlay() -> void:
+	var hook_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := hook_rect.get_center()
+	var edge_width := maxf(size.x * 0.024, 2.0)
+	var status := state.get_status(CardStatus.STATUS_SOUL_HOOK) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 3)
+
+	draw_rect(hook_rect, soul_hook_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 4.0
+		var alpha := soul_hook_edge_color.a * (1.0 - float(index) * 0.14)
+		draw_rect(hook_rect.grow(grow), Color(soul_hook_edge_color.r, soul_hook_edge_color.g, soul_hook_edge_color.b, alpha), false, edge_width, true)
+
+	var left_anchor := center + Vector2(-hook_rect.size.x * 0.28, -hook_rect.size.y * 0.16)
+	var right_anchor := center + Vector2(hook_rect.size.x * 0.28, hook_rect.size.y * 0.16)
+	var chain_points := PackedVector2Array()
+	for index in range(9):
+		var t := float(index) / 8.0
+		var x := lerpf(left_anchor.x, right_anchor.x, t)
+		var y := lerpf(left_anchor.y, right_anchor.y, t) + sin(t * TAU * 1.4) * hook_rect.size.y * 0.055
+		chain_points.append(Vector2(x, y))
+
+	draw_polyline(chain_points, soul_hook_chain_color, 2.8, false)
+	for point in chain_points:
+		draw_circle(point, 2.1, Color(soul_hook_edge_color.r, soul_hook_edge_color.g, soul_hook_edge_color.b, 0.52))
+
+	var hook_tip := center + Vector2(hook_rect.size.x * 0.18, -hook_rect.size.y * 0.24)
+	draw_arc(hook_tip, hook_rect.size.x * 0.08, PI * 0.20, PI * 1.62, 18, soul_hook_edge_color, 2.8, true)
+	draw_line(hook_tip + Vector2(-hook_rect.size.x * 0.04, hook_rect.size.y * 0.055), hook_tip + Vector2(-hook_rect.size.x * 0.12, hook_rect.size.y * 0.13), soul_hook_edge_color, 2.4)
 
 
 func draw_encourage_gu_overlay() -> void:

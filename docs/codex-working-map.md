@@ -545,3 +545,10 @@ rg --files scripts scenes data docs
 
 - `献祭` 的规则入口在 `scripts/actions/sacrifice_faction_skill_action.gd`，动画 key 为 `sacrifice`。
 - 表现层在 `scripts/ui/card_animation_controller.gd` 的 `play_sacrifice_at_rect()`；新增狐妖仙献祭类表现时只扩展动画控制器，不要把死亡/尾数规则写进动画层。
+
+### 勾魄与临时减攻状态
+
+- 数据入口：`data/cards.json` 中的 `gou_po`，属于苏妲己英雄配套牌。
+- 规则入口：复用 `apply_status` + `attack_modifier` + `payload.attack_bonus`，不直接修改静态攻击力。
+- 持续表现：`scripts/ui/card_status_overlay.gd` 绘制 `soul_hook` 锁链覆盖层；施加瞬间表现在 `scripts/ui/card_animation_controller.gd` 的 `soul_hook` key。
+- 新增类似减攻/增攻状态时，优先复用这套状态修正机制，便于后续驱散统一回滚。
