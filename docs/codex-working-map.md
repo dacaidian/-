@@ -540,3 +540,8 @@ rg --files scripts scenes data docs
 
 - 新增狐妖仙尾数门槛升级时，优先复用 `grant_unit_keywords` + `required_resource_id: "tail"` + `required_resource_min`。
 - 当前 `三尾` 授予远程，`六尾` 授予魔法免疫；尾数变化后依赖 `refresh_hand_passives_for_player()` 实时生效或失效。
+
+### 献祭动画
+
+- `献祭` 的规则入口在 `scripts/actions/sacrifice_faction_skill_action.gd`，动画 key 为 `sacrifice`。
+- 表现层在 `scripts/ui/card_animation_controller.gd` 的 `play_sacrifice_at_rect()`；新增狐妖仙献祭类表现时只扩展动画控制器，不要把死亡/尾数规则写进动画层。

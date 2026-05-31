@@ -515,3 +515,8 @@
 
 - 狐妖仙默认入手升级牌可以按尾数阈值实时开启：`三尾` 在 `tail >= 3` 时授予苏妲己、小狐精 `ranged`；`六尾` 在 `tail >= 6` 时授予苏妲己、涂山氏禁卫 `magic_immune`。
 - 这类升级统一使用 `grant_unit_keywords` 与 `required_resource_id` / `required_resource_min`，由 `HandPassiveResolver` 刷新到 `CardState.passive_keywords`。
+
+### 献祭表现
+
+- 狐妖仙种族技能 `献祭` 使用 `play_status_apply_animation(target, "sacrifice")` 播放专属目标特效。
+- `CardAnimationController` 中的 `sacrifice` key 表现为血红狐火法阵、收束灵力核心与上浮灵魂粒子；规则仍由 `SacrificeFactionSkillAction` 负责，动画层不修改死亡或尾数。
