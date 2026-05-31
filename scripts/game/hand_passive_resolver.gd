@@ -277,6 +277,12 @@ func is_effect_condition_met(effect_data: Dictionary, player: PlayerState) -> bo
 	if required_runtime_state_id != "" and player.faction_runtime_state_id != required_runtime_state_id:
 		return false
 
+	var required_resource_id := EffectData.get_required_resource_id(effect_data)
+	if required_resource_id != "":
+		var required_min := EffectData.get_required_resource_min(effect_data)
+		if player.get_faction_resource_value(required_resource_id) < required_min:
+			return false
+
 	return true
 
 

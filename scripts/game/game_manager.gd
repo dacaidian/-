@@ -1280,7 +1280,7 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 		return
 
 	if interaction_manager.selected_action != null:
-		if not interaction_manager.selected_action.can_target(interaction_manager.focused_state, target_state, self):
+		if not interaction_manager.selected_action.can_target(interaction_manager.selected_action_user_state, target_state, self):
 			refresh_debug_panel()
 			return
 		await execute_selected_action(target_state)
@@ -1303,7 +1303,7 @@ func execute_selected_action(target_state: CardState) -> void:
 		return
 
 	is_executing_action = true
-	await interaction_manager.selected_action.execute(interaction_manager.focused_state, target_state, self)
+	await interaction_manager.selected_action.execute(interaction_manager.selected_action_user_state, target_state, self)
 	is_executing_action = false
 
 func execute_selected_hand_card(target_state: CardState) -> void:
@@ -1772,11 +1772,26 @@ func _on_faction_skill_requested(skill_id: String) -> void:
 		refresh_debug_panel()
 		return
 
+	var source_hand_index := get_faction_skill_source_hand_index(player, skill_id)
+	var source_hand_card_data := HandCardState.get_card_data(player.hand[source_hand_index]) if source_hand_index >= 0 else null
+	if source_hand_card_data == null:
+		refresh_debug_panel()
+		return
+
 	cancel_interaction()
 	action_registry.register_action(action)
 	hide_action_menu()
-	interaction_manager.select_card(source_state, get_all_board_states())
-	interaction_manager.start_action_selection(action, get_all_board_states(), self)
+	hand_interaction_controller.capture_anchor(hand_drawer_controller.get_hand_card_control(source_hand_index))
+	interaction_manager.start_hand_anchored_action_selection(
+		action,
+		source_state,
+		source_hand_card_data,
+		player.id,
+		source_hand_index,
+		get_all_board_states(),
+		self
+	)
+	update_hand_drawer_view()
 	refresh_debug_panel()
 
 
@@ -1802,6 +1817,24 @@ func get_usable_faction_skill_ids(player: PlayerState) -> Array[String]:
 			usable_skill_ids.append(skill_id)
 
 	return usable_skill_ids
+
+
+func get_faction_skill_source_hand_index(player: PlayerState, skill_id: String) -> int:
+	if player == null or skill_id == "":
+		return -1
+
+	for hand_index in range(player.hand.size()):
+		var card_data := HandCardState.get_card_data(player.hand[hand_index])
+		if card_data == null:
+			continue
+
+		for effect_data in card_data.effects:
+			if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_FACTION_SKILLS:
+				continue
+			if EffectData.get_skill_ids(effect_data).has(skill_id):
+				return hand_index
+
+	return -1
 
 
 func create_faction_skill_action(skill_config: Dictionary) -> CardAction:

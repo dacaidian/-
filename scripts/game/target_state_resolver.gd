@@ -28,11 +28,12 @@ func _resolve_action_target(
 	game_manager: GameManager,
 	interaction: InteractionManager
 ) -> CardState:
-	if interaction.selected_action.can_target(interaction.focused_state, clicked_state, game_manager):
+	var user_state := interaction.selected_action_user_state
+	if interaction.selected_action.can_target(user_state, clicked_state, game_manager):
 		return clicked_state
 
 	for candidate in game_manager.get_board_states_at_slot(clicked_state.slot_index, true):
-		if interaction.selected_action.can_target(interaction.focused_state, candidate, game_manager):
+		if interaction.selected_action.can_target(user_state, candidate, game_manager):
 			return candidate
 
 	return null

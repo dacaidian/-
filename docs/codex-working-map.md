@@ -525,3 +525,13 @@ rg --files scripts scenes data docs
 - 右侧 HUD 位置统一由 `GameManager.update_right_side_hud_layout()` 排布，不要在新增面板里单独写会与装备/时间/回合 HUD 重叠的固定位置。
 - 种族技能按钮的启用状态由 `GameManager.get_usable_faction_skill_ids()` 计算：已解锁、未使用、且当前存在合法目标时才可点击。
 - 新增种族技能时，优先实现 `CardAction` 子类，并让 `GameManager.create_faction_skill_action()` 创建它；UI 面板只发出 `skill_requested`，不直接改规则数据。
+
+### 种族技能手牌锚点
+
+- 如果种族技能来自默认入手升级牌，点击技能后用 `InteractionManager.start_hand_anchored_action_selection()`，让手牌升级牌保持焦点，同时把实际规则执行者放到 `selected_action_user_state`。
+- 目标解析和执行行动时读取 `selected_action_user_state`，不要再默认用 `focused_state`，否则手牌锚点行动会丢失执行上下文。
+
+### 手牌被动资源门槛
+
+- 需要按种族资源实时开关的手牌被动，配置 `required_resource_id` 和 `required_resource_min`。
+- 资源变动后要刷新手牌被动；当前“献祭”增加尾数后会调用 `refresh_hand_passives_for_player()`，让“三尾”在尾数达到 3 时立刻生效。

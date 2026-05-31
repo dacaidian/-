@@ -62,6 +62,8 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	game_manager.destroy_card_with_refill(target, "faction_skill_sacrifice", user, true)
 	player.gain_faction_resource(str(skill_data.get("resource_id", RESOURCE_TAIL)), int(skill_data.get("amount", 1)))
+	if game_manager.has_method("refresh_hand_passives_for_player"):
+		game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 
 
 func get_skill_id() -> String:

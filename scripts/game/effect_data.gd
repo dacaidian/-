@@ -82,6 +82,8 @@ const KEY_SKILL_IDS := "skill_ids"
 const KEY_RESOURCE_ID := "resource_id"
 const KEY_MAX_AMOUNT := "max_amount"
 const KEY_KEYWORDS := "keywords"
+const KEY_REQUIRED_RESOURCE_ID := "required_resource_id"
+const KEY_REQUIRED_RESOURCE_MIN := "required_resource_min"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -296,6 +298,14 @@ static func get_keywords(effect_data: Dictionary) -> Array[String]:
 
 static func get_resource_id(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_RESOURCE_ID, ""))
+
+
+static func get_required_resource_id(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_REQUIRED_RESOURCE_ID, ""))
+
+
+static func get_required_resource_min(effect_data: Dictionary) -> int:
+	return int(effect_data.get(KEY_REQUIRED_RESOURCE_MIN, 0))
 
 
 static func get_max_amount(effect_data: Dictionary, default_value := 0) -> int:

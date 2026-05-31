@@ -498,3 +498,15 @@
 - 右侧信息区由 `GameManager.update_right_side_hud_layout()` 统一排布，顺序为：回合 HUD、种族技能/资源面板、种族时间面板、装备面板。
 - 各 UI Controller 仍只负责创建和刷新自己的内容；最终位置由 GameManager 在每次刷新后 deferred 统一计算，避免多个面板各自固定坐标导致互相遮挡。
 - 种族技能按钮不仅检查本回合是否已使用，还会由 GameManager 根据当前棋盘状态计算是否存在合法目标；没有合法目标时按钮置灰，不进入空目标选择流程。
+
+## 种族技能的手牌锚点
+
+- 种族技能由默认入手升级牌解锁时，目标选择状态应保留这张升级牌作为手牌焦点，而不是临时聚焦某个战场单位。
+- `InteractionManager.start_hand_anchored_action_selection()` 支持“手牌锚点 + CardAction 目标选择”的组合：UI 焦点来自手牌，规则执行者可独立保存为 `selected_action_user_state`。
+- 这让“献祭”等种族技能可以复用普通行动目标选择、白色目标背光和目标解析，同时保持玩家看到的焦点来源正确。
+
+## 手牌被动的资源条件
+
+- 手牌持续被动可以通过 `required_resource_id` 与 `required_resource_min` 绑定种族资源阈值。
+- `HandPassiveResolver.is_effect_condition_met()` 会实时读取玩家种族资源；资源变化后相关效果应调用 `refresh_hand_passives_for_player()` 重新刷新战场单位运行时属性。
+- 当前狐妖仙“三尾”使用 `tail >= 3` 后才授予苏妲己、小狐精 `ranged`。

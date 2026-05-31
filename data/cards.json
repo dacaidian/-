@@ -1784,7 +1784,9 @@
 						],
 						"keywords": [
 							"ranged"
-						]
+						],
+						"required_resource_id": "tail",
+						"required_resource_min": 3
 					}
 				]
 			},

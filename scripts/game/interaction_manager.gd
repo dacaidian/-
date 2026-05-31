@@ -13,6 +13,7 @@ enum Mode {
 var mode := Mode.IDLE
 var focused_state: CardState
 var selected_action: CardAction
+var selected_action_user_state: CardState
 var selected_hand_card_data: CardData
 var selected_hand_owner_id := ""
 var selected_hand_index := -1
@@ -31,6 +32,7 @@ func select_card(state: CardState, board_states: Array[CardState]) -> void:
 	mode = Mode.CARD_SELECTED
 	focused_state = state
 	selected_action = null
+	selected_action_user_state = null
 	selected_hand_card_data = null
 	selected_hand_owner_id = ""
 	selected_hand_index = -1
@@ -54,6 +56,7 @@ func select_hand_card(card_data: CardData, owner_id: String, hand_index: int, bo
 	mode = Mode.CARD_SELECTED
 	focused_state = null
 	selected_action = null
+	selected_action_user_state = null
 	selected_hand_card_data = card_data
 	selected_hand_owner_id = owner_id
 	selected_hand_index = hand_index
@@ -78,6 +81,7 @@ func start_action_selection(action: CardAction, board_states: Array[CardState], 
 	clear_area_preview(board_states)
 	mode = Mode.SELECTING_ACTION_TARGET
 	selected_action = action
+	selected_action_user_state = focused_state
 	selected_hand_card_data = null
 	selected_hand_owner_id = ""
 	selected_hand_index = -1
@@ -91,6 +95,43 @@ func start_action_selection(action: CardAction, board_states: Array[CardState], 
 	_area_cols = area_info.get("cols", 0)
 
 	for state in action.get_valid_targets(focused_state, game_manager):
+		state.set_valid_target(true)
+		valid_target_slots.append(state.slot_index)
+
+	interaction_changed.emit()
+
+
+func start_hand_anchored_action_selection(
+	action: CardAction,
+	user_state: CardState,
+	card_data: CardData,
+	owner_id: String,
+	hand_index: int,
+	board_states: Array[CardState],
+	game_manager: GameManager
+) -> void:
+	if action == null or card_data == null:
+		return
+
+	clear_focus_and_targets(board_states)
+	clear_area_preview(board_states)
+	mode = Mode.SELECTING_ACTION_TARGET
+	focused_state = null
+	selected_action = action
+	selected_action_user_state = user_state
+	selected_hand_card_data = card_data
+	selected_hand_owner_id = owner_id
+	selected_hand_index = hand_index
+	selected_hand_action_id = action.id
+	valid_target_slots.clear()
+	area_preview_slots.clear()
+
+	var area_info := action.get_area_info()
+	is_area_target_mode = not area_info.is_empty()
+	_area_rows = area_info.get("rows", 0)
+	_area_cols = area_info.get("cols", 0)
+
+	for state in action.get_valid_targets(user_state, game_manager):
 		state.set_valid_target(true)
 		valid_target_slots.append(state.slot_index)
 
@@ -111,6 +152,7 @@ func start_hand_card_target_selection(
 	mode = Mode.SELECTING_ACTION_TARGET
 	focused_state = null
 	selected_action = null
+	selected_action_user_state = null
 	selected_hand_card_data = card_data
 	selected_hand_owner_id = owner_id
 	selected_hand_index = hand_index
@@ -172,6 +214,7 @@ func cancel(board_states: Array[CardState]) -> void:
 	mode = Mode.IDLE
 	focused_state = null
 	selected_action = null
+	selected_action_user_state = null
 	selected_hand_card_data = null
 	selected_hand_owner_id = ""
 	selected_hand_index = -1
@@ -189,6 +232,7 @@ func return_to_card_selection(board_states: Array[CardState]) -> void:
 	clear_targets(board_states)
 	mode = Mode.CARD_SELECTED
 	selected_action = null
+	selected_action_user_state = null
 	if focused_state != null:
 		selected_hand_card_data = null
 		selected_hand_owner_id = ""
