@@ -137,11 +137,10 @@ func applies_to_spell(
 
 	var card_ids := EffectData.get_card_ids(modifier_data)
 	var spell_ids := EffectData.get_spell_ids(modifier_data)
-	if not card_ids.is_empty() or not spell_ids.is_empty():
-		if not card_ids.has(card_data.id) and not spell_ids.has(card_data.id):
+	if not card_ids.is_empty():
+		if not card_ids.has(card_data.id):
 			return false
-
-	if card_ids.is_empty() and not spell_ids.is_empty() and not spell_ids.has(card_data.id):
+	elif not spell_ids.is_empty():
 		return false
 
 	return matches_target_relation(EffectData.get_target_relation(modifier_data), player, target_state)

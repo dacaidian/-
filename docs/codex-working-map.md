@@ -581,6 +581,7 @@ rg --files scripts scenes data docs
 - 优先读：`scripts/game/hand_spell_modifier_resolver.gd`、`scripts/game/hand_play_resolver.gd`、`scripts/actions/action_registry.gd`、`scripts/actions/spell_action.gd`。
 - 新增改目标规则、动画、效果列表的升级牌时，优先使用 `modify_spell_ability`。手牌法术用 `card_ids` 命中，随从施法动作用 `spell_ids` 命中。
 - `魅影` 是首个范例：把 `charm_spell` 和 `fox_mind_art` 的 `target_rule` 改成 `non_hero_minions`。
+- 检查手牌法术目标规则时，目标预览、点击解析和最终执行都要带上 `selected_hand_owner_id` 对应的玩家；否则会绕过 `HandSpellModifierResolver` 的动态改写。
 
 
 ### Reborn And Faction Skill Modifiers

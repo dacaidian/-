@@ -47,10 +47,11 @@ func _resolve_hand_target(
 	var card_data := interaction.selected_hand_card_data
 	var hand_action_id := interaction.selected_hand_action_id
 	var hand_resolver := game_manager.get_hand_play_resolver()
+	var hand_owner := game_manager.get_player_by_id(interaction.selected_hand_owner_id)
 
 	match hand_action_id:
 		HandPlayResolver.HAND_CAST_ACTION_ID:
-			return _resolve_hand_cast_target(clicked_state, game_manager, hand_resolver, card_data)
+			return _resolve_hand_cast_target(clicked_state, game_manager, hand_resolver, card_data, hand_owner)
 		HandPlayResolver.HAND_PLACE_ACTION_ID:
 			return _resolve_hand_place_target(clicked_state, game_manager, hand_resolver, card_data)
 		_:
@@ -61,13 +62,14 @@ func _resolve_hand_cast_target(
 	clicked_state: CardState,
 	game_manager: GameManager,
 	hand_resolver: HandPlayResolver,
-	card_data: CardData
+	card_data: CardData,
+	hand_owner: PlayerState
 ) -> CardState:
-	if hand_resolver.can_target(card_data, clicked_state, game_manager):
+	if hand_resolver.can_target(card_data, clicked_state, game_manager, hand_owner):
 		return clicked_state
 
 	for candidate in game_manager.get_board_states_at_slot(clicked_state.slot_index, true):
-		if hand_resolver.can_target(card_data, candidate, game_manager):
+		if hand_resolver.can_target(card_data, candidate, game_manager, hand_owner):
 			return candidate
 
 	return null

@@ -1299,9 +1299,15 @@ func handle_action_target_clicked(target_state: CardState) -> void:
 			return
 		await execute_selected_action(target_state)
 	elif interaction_manager.selected_hand_card_data != null:
+		var selected_hand_owner := get_player_by_id(interaction_manager.selected_hand_owner_id)
 		if (
 			interaction_manager.selected_hand_action_id == HandPlayResolver.HAND_CAST_ACTION_ID
-			and not get_hand_play_resolver().can_target(interaction_manager.selected_hand_card_data, target_state, self)
+			and not get_hand_play_resolver().can_target(
+				interaction_manager.selected_hand_card_data,
+				target_state,
+				self,
+				selected_hand_owner
+			)
 		):
 			refresh_debug_panel()
 			return

@@ -557,6 +557,7 @@
 - `modify_spell_ability` 是手牌升级牌提供的通用被动修正。它由 `HandSpellModifierResolver` 统一解析，可以修正手牌法术牌，也可以修正随从 `spell_actions`。
 - 命中手牌法术时使用 `card_ids`，命中随从施法动作时使用 `spell_ids`。两者可在同一张升级牌中同时配置，但不应在 `SpellAction` 或 `HandPlayResolver` 中写死卡名判断。
 - 当前 `魅影` 使用 `modify_spell_ability` 将 `魅惑`（`charm_spell`）和 `狐念之术`（`fox_mind_art`）的目标规则改为 `non_hero_minions`，即不再限定属性小于 8，但仍不能选英雄，仍遵守魔法免疫。
+- 手牌法术的目标预览、点击层解析和最终执行校验都必须把手牌拥有者传入 `HandPlayResolver`，因为目标规则可能被拥有者手牌中的升级牌实时改写。
 
 
 ## Reborn And Nine Tails
