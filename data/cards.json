@@ -3,7 +3,7 @@
 		"id": "silver_hand",
 		"name": "silverHand",
 		"displayName": "白银之手",
-		"description": "白银之手种族的数据",
+		"description": "圣光的守护者，白银之手骑士团以坚定的信仰与治愈之力驰骋战场。乌瑟尔率圣骑士与牧师，以神圣之火净化黑暗。",
 		"heroes": [
 			{
 				"card_id": "uther",
@@ -19,7 +19,7 @@
 			{
 				"id": "uther",
 				"name": "乌瑟尔",
-				"description": "乌瑟尔",
+				"description": "作为白银之手骑士团首位圣骑士，乌瑟尔·光明使者是圣光的化身。他的战锤能粉碎黑暗，他的圣光能治愈最深的创伤，是圣骑士永远追随的信仰之光。",
 				"url": "res://assets/img/白银之手/乌瑟尔.png",
 				"type": "minion",
 				"role": "hero",
@@ -310,7 +310,7 @@
 		"id": "dalaran_council",
 		"name": "dalaranCouncil",
 		"displayName": "达拉然议会",
-		"description": "达拉然议会种族的数据",
+		"description": "达拉然议会汇聚艾泽拉斯最杰出的施法者，掌控元素与奥术之力。安东尼达斯带领学徒与女巫，以冰火魔法改写战场规则。",
 		"heroes": [
 			{
 				"card_id": "antonidas",
@@ -326,7 +326,7 @@
 			{
 				"id": "antonidas",
 				"name": "安东尼达斯",
-				"description": "安东尼达斯",
+				"description": "大法师安东尼达斯是达拉然议会的最高领袖，精通冰火奥术三门学派。他能召唤水元素协战，以辉煌光环为友军注入源源不断的法力。",
 				"url": "res://assets/img/达拉然议会/安东尼达斯.png",
 				"type": "minion",
 				"role": "hero",
@@ -799,7 +799,7 @@
 		"id": "miao_jiang",
 		"name": "miaoJiang",
 		"displayName": "苗疆族",
-		"description": "苗疆族种族的数据",
+		"description": "来自西南密林的神秘蛊术部落，以毒虫与巫蛊操控生死。陈朵率领蛊童与巫医，将蛊毒的诅咒蔓延至整个战场。",
 		"pool_modifiers": {
 			"exclude_neutral_card_ids": [
 				"life_spring"
@@ -820,7 +820,7 @@
 			{
 				"id": "chen_duo",
 				"name": "陈朵",
-				"description": "陈朵",
+				"description": "陈朵是苗疆族最年轻的蛊王，从小被蛊术浸染，体内容纳着万千蛊虫。她以蛊为兵，能布下子母蛊链接生死、召唤蛊王蛇撕裂敌阵，唯有真正的蛊术宗师才敢直面她的巫毒。",
 				"url": "res://assets/img/苗疆族/陈朵.png",
 				"type": "minion",
 				"role": "hero",
@@ -1258,7 +1258,7 @@
 		"id": "night_elf_sentinels",
 		"name": "暗夜精灵哨兵",
 		"displayName": "暗夜精灵哨兵",
-		"description": "暗夜精灵哨兵种族的数据。该种族拥有时间循环：日出、正午、黄昏、月升、满月、月落。",
+		"description": "暗夜精灵哨兵信奉月神艾露恩，在日月交替的循环中积蓄力量。泰兰德与她的哨兵部队以精准的箭术与月刃撕裂敌阵，满月降临之时便是敌方覆灭之日。",
 		"runtime_state": {
 			"id": "time",
 			"name": "时间",
@@ -1310,7 +1310,7 @@
 			{
 				"id": "tyrande",
 				"name": "泰兰德",
-				"description": "暗夜精灵哨兵英雄。",
+				"description": "泰兰德·语风是艾露恩的高阶女祭司，万年来守护着暗夜精灵一族。她的精准射击能洞穿最厚的甲胄，当流星陨落降临战场，整个敌军阵线都将被月神之怒吞没。",
 				"url": "res://assets/img/暗夜精灵哨兵/泰兰德.png",
 				"type": "minion",
 				"role": "hero",

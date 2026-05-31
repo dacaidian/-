@@ -76,7 +76,7 @@
 
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
 - `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹、薄葬死亡庇护和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
-- `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。
+- `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。入口页的背景微光由 `_add_ambient_lighting()` 动态创建，保持在 UI 后方，只做低透明度氛围层，不承担交互或规则逻辑。
 - `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card/AerialCard 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。地面层卡牌保持原尺寸；飞行层与地面层共格时由 `GameManager.sync_slot_card_layout()` 缩小并置于右上角显示。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
 - `ActionMenuController`：负责动作菜单 UI 的创建、显示、定位和按钮事件。

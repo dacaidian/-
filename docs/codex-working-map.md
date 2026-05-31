@@ -26,6 +26,7 @@
 
 - `scenes/start_menu/start_menu.tscn`
 - `scripts/ui/start_menu.gd`
+- `scenes/start_menu/player_panel.tscn` 和 `scenes/start_menu/scripts/player_panel.gd`，如果修改种族选择面板样式。
 - `scripts/game/match_setup.gd`
 - `scripts/data/card_database.gd`
 - `scripts/game/board_query.gd`，如果规则需要确认英雄是否在战场。
@@ -38,6 +39,7 @@
 - 英雄 `attached_cards` 是否进入本局牌池。
 - 英雄配套手牌是否需要英雄在战场才能使用：优先查 `CardData.owner_hero_card_id`、`CardDatabase.apply_hero_attachment_metadata()`、`HandPlayResolver.is_required_hero_on_board()`。
 - 进入战斗场景前传入玩家配置。
+- 入口页背景氛围使用 `StartMenu._add_ambient_lighting()` 动态创建低透明度微光层。调整质感时优先改粒子数量、透明度、速度和尺寸；避免把明显装饰圆点放到 UI 上层，也不要让氛围层接管任何点击。
 
 ### 卡牌静态数据
 

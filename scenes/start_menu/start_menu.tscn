@@ -1,8 +1,34 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdqwu2fx5ky0m"]
+[gd_scene format=3 uid="uid://bdqwu2fx5ky0m"]
 
-[ext_resource type="Script" path="res://scripts/ui/start_menu.gd" id="1_start"]
+[ext_resource type="Script" uid="uid://c8ygid5l221lc" path="res://scripts/ui/start_menu.gd" id="1_start"]
+[ext_resource type="Texture2D" uid="uid://bbcc6efxe54ad" path="res://assets/img/startPanel/back.png" id="2_ujype"]
+[ext_resource type="Texture2D" uid="uid://dnohgkjjbfc4s" path="res://assets/img/startPanel/title.png" id="3_ifyap"]
+[ext_resource type="PackedScene" uid="uid://dqsl66201sla" path="res://scenes/start_menu/player_panel.tscn" id="3_panel"]
+[ext_resource type="Shader" uid="uid://b75ttho0qthjj" path="res://scenes/start_menu/gradient_text.gdshader" id="4_gradient"]
+[ext_resource type="Texture2D" uid="uid://sjks2nmwk560" path="res://assets/img/startPanel/vs.png" id="6_tj3dw"]
+[ext_resource type="Texture2D" uid="uid://bicgvsh31sj67" path="res://assets/img/startPanel/startBtn.png" id="7_rudpn"]
+[ext_resource type="Texture2D" uid="uid://dpumnxqog6opq" path="res://assets/img/startPanel/startBtn-pressed.png" id="8_ceur5"]
+[ext_resource type="Texture2D" uid="uid://4t665uhf22hb" path="res://assets/img/startPanel/startBtn-hover.png" id="9_ei0w5"]
+[ext_resource type="Texture2D" uid="uid://de72hr01o35lq" path="res://assets/img/startPanel/startBtn-disabled.png" id="10_uihle"]
 
-[node name="StartMenu" type="Control"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4v5wy"]
+shader = ExtResource("4_gradient")
+shader_parameter/color_start = Color(0.65317214, 0.32427147, 0.054589763, 1)
+shader_parameter/color_end = Color(0.17196289, 0.10813705, 0.014069858, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_oyfgn"]
+texture = ExtResource("7_rudpn")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_b6bd1"]
+texture = ExtResource("8_ceur5")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_eum3g"]
+texture = ExtResource("9_ei0w5")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ceur5"]
+texture = ExtResource("10_uihle")
+
+[node name="StartMenu" type="Control" unique_id=1840426940]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -10,3 +36,129 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_start")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1656575877]
+
+[node name="Background" type="TextureRect" parent="." unique_id=1275845770]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_ujype")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Shade" type="ColorRect" parent="." unique_id=151811301]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03137255, 0.023529412, 0.019607844, 0.21960784)
+
+[node name="RootMargin" type="MarginContainer" parent="." unique_id=725258963]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 78
+theme_override_constants/margin_top = 56
+theme_override_constants/margin_right = 78
+theme_override_constants/margin_bottom = 56
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RootMargin" unique_id=894033639]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="Header" type="VBoxContainer" parent="RootMargin/VBoxContainer" unique_id=924217829]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TextureRect" type="TextureRect" parent="RootMargin/VBoxContainer/Header" unique_id=564281034]
+clip_contents = true
+custom_minimum_size = Vector2(651, 216)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("3_ifyap")
+expand_mode = 1
+
+[node name="SubtitleLabel" type="Label" parent="RootMargin/VBoxContainer/Header/TextureRect" unique_id=87216940]
+layout_mode = 0
+offset_left = -558.0
+offset_top = 153.0
+offset_right = 1206.0
+offset_bottom = 184.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "双方选择不同种族与英雄后，即可进入战局"
+horizontal_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="RootMargin/VBoxContainer/Header/TextureRect" unique_id=2013956576]
+material = SubResource("ShaderMaterial_4v5wy")
+layout_mode = 0
+offset_left = -496.0
+offset_top = 65.5
+offset_right = 1144.0
+offset_bottom = 139.5
+theme_override_colors/font_color = Color(0.9611067, 0.5493847, 0.29796714, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 54
+text = "选择你的阵营"
+horizontal_alignment = 1
+
+[node name="SelectionArea" type="HBoxContainer" parent="RootMargin/VBoxContainer" unique_id=338416544]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 2
+theme_override_constants/separation = 38
+alignment = 1
+
+[node name="PlayerPanel0" parent="RootMargin/VBoxContainer/SelectionArea" unique_id=2120478261 instance=ExtResource("3_panel")]
+layout_mode = 2
+
+[node name="vs" type="TextureRect" parent="RootMargin/VBoxContainer/SelectionArea" unique_id=1374603674]
+clip_contents = true
+custom_minimum_size = Vector2(155.711, 300.444)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("6_tj3dw")
+expand_mode = 1
+
+[node name="PlayerPanel1" parent="RootMargin/VBoxContainer/SelectionArea" unique_id=1334514618 instance=ExtResource("3_panel")]
+layout_mode = 2
+
+[node name="Footer" type="VBoxContainer" parent="RootMargin/VBoxContainer" unique_id=267849875]
+custom_minimum_size = Vector2(410, 96)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="WarningLabel" type="Label" parent="RootMargin/VBoxContainer/Footer" unique_id=965317861]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="RootMargin/VBoxContainer/Footer" unique_id=1881221941]
+custom_minimum_size = Vector2(640, 136)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.8765699, 0.68879205, 0.500122, 1)
+theme_override_colors/font_disabled_color = Color(0.62, 0.55, 0.48, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxTexture_oyfgn")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_b6bd1")
+theme_override_styles/hover = SubResource("StyleBoxTexture_eum3g")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_ceur5")
+text = "开始游戏"
