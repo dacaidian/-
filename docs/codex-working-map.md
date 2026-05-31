@@ -519,3 +519,9 @@ rg --files scripts scenes data docs
 - 默认入手升级牌授予单位关键词时，使用 `grant_unit_keywords` + `card_ids` + `keywords`。
 - `HandPassiveResolver` 将这类手牌持续被动刷新到 `CardState.passive_keywords`，`CardState.has_keyword()` 会同时读取静态关键词和被动关键词。
 - 当前狐妖仙“三尾”用它让苏妲己和小狐精获得 `ranged`；不要直接改静态 `CardData.keywords`，避免升级牌失效或离手时无法回滚。
+
+### 右侧 HUD 与种族技能按钮
+
+- 右侧 HUD 位置统一由 `GameManager.update_right_side_hud_layout()` 排布，不要在新增面板里单独写会与装备/时间/回合 HUD 重叠的固定位置。
+- 种族技能按钮的启用状态由 `GameManager.get_usable_faction_skill_ids()` 计算：已解锁、未使用、且当前存在合法目标时才可点击。
+- 新增种族技能时，优先实现 `CardAction` 子类，并让 `GameManager.create_faction_skill_action()` 创建它；UI 面板只发出 `skill_requested`，不直接改规则数据。

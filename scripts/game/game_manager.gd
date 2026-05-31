@@ -30,6 +30,8 @@ const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd"
 const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
 const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 const SacrificeFactionSkillActionScript := preload("res://scripts/actions/sacrifice_faction_skill_action.gd")
+const RIGHT_HUD_MARGIN := 16.0
+const RIGHT_HUD_GAP := 12.0
 
 # GameManager 是战局编排入口。
 # 它持有玩家、棋盘、牌池和交互状态，并串起回合、行动、死亡、补位等规则流程。
@@ -256,6 +258,8 @@ func connect_viewport_resize() -> void:
 		viewport.size_changed.connect(update_faction_time_panel_view)
 	if not viewport.size_changed.is_connected(update_faction_skill_panel_view):
 		viewport.size_changed.connect(update_faction_skill_panel_view)
+	if not viewport.size_changed.is_connected(update_right_side_hud_layout):
+		viewport.size_changed.connect(update_right_side_hud_layout)
 
 
 func connect_end_turn_button() -> void:
@@ -628,6 +632,7 @@ func update_turn_status_view() -> void:
 		is_game_over,
 		get_winner_player()
 	)
+	call_deferred("update_right_side_hud_layout")
 
 
 func setup_faction_time_panel_view() -> void:
@@ -636,6 +641,7 @@ func setup_faction_time_panel_view() -> void:
 
 func update_faction_time_panel_view() -> void:
 	faction_time_panel_controller.update(players, card_database, get_parent() as Control)
+	call_deferred("update_right_side_hud_layout")
 
 
 func setup_faction_skill_panel_view() -> void:
@@ -645,7 +651,13 @@ func setup_faction_skill_panel_view() -> void:
 
 
 func update_faction_skill_panel_view() -> void:
-	faction_skill_panel_controller.update(get_current_player(), get_parent() as Control)
+	var current_player := get_current_player()
+	faction_skill_panel_controller.update(
+		current_player,
+		get_parent() as Control,
+		get_usable_faction_skill_ids(current_player)
+	)
+	call_deferred("update_right_side_hud_layout")
 
 
 func setup_hand_drawer_view() -> void:
@@ -663,6 +675,42 @@ func setup_equipment_display_view() -> void:
 
 func update_equipment_display_view() -> void:
 	equipment_display_controller.update(get_current_player())
+	call_deferred("update_right_side_hud_layout")
+
+
+func update_right_side_hud_layout() -> void:
+	var root := get_parent() as Control
+	if root == null:
+		return
+
+	var viewport := root.get_viewport()
+	if viewport == null:
+		return
+
+	var viewport_size: Vector2 = viewport.get_visible_rect().size
+	var next_y := RIGHT_HUD_MARGIN
+	next_y = layout_right_side_panel(turn_status_controller.panel, viewport_size, next_y)
+	next_y = layout_right_side_panel(faction_skill_panel_controller.panel, viewport_size, next_y)
+	next_y = layout_right_side_panel(faction_time_panel_controller.panel, viewport_size, next_y)
+	layout_right_side_panel(equipment_display_controller.panel, viewport_size, next_y)
+
+
+func layout_right_side_panel(panel: Control, viewport_size: Vector2, y_position: float) -> float:
+	if panel == null or not panel.visible:
+		return y_position
+
+	var panel_size := panel.size
+	var minimum_size := panel.get_combined_minimum_size()
+	if panel_size.x <= 0.0:
+		panel_size.x = minimum_size.x
+	if panel_size.y <= 0.0:
+		panel_size.y = minimum_size.y
+
+	panel.position = Vector2(
+		maxf(RIGHT_HUD_MARGIN, viewport_size.x - panel_size.x - RIGHT_HUD_MARGIN),
+		clampf(y_position, RIGHT_HUD_MARGIN, maxf(RIGHT_HUD_MARGIN, viewport_size.y - panel_size.y - RIGHT_HUD_MARGIN))
+	)
+	return panel.position.y + panel_size.y + RIGHT_HUD_GAP
 
 
 func update_card_pool_view() -> void:
@@ -1720,13 +1768,40 @@ func _on_faction_skill_requested(skill_id: String) -> void:
 		return
 
 	if action.get_valid_targets(source_state, self).is_empty():
+		update_faction_skill_panel_view()
 		refresh_debug_panel()
 		return
 
+	cancel_interaction()
 	action_registry.register_action(action)
 	hide_action_menu()
 	interaction_manager.select_card(source_state, get_all_board_states())
 	interaction_manager.start_action_selection(action, get_all_board_states(), self)
+	refresh_debug_panel()
+
+
+func get_usable_faction_skill_ids(player: PlayerState) -> Array[String]:
+	var usable_skill_ids: Array[String] = []
+	if player == null:
+		return usable_skill_ids
+
+	for skill_config in player.get_unlocked_faction_skill_configs():
+		var skill_id := str(skill_config.get("id", ""))
+		if skill_id == "" or not player.can_use_faction_skill(skill_id):
+			continue
+
+		var action := create_faction_skill_action(skill_config)
+		if action == null:
+			continue
+
+		var source_state := get_faction_skill_source_state(player)
+		if source_state == null:
+			continue
+
+		if not action.get_valid_targets(source_state, self).is_empty():
+			usable_skill_ids.append(skill_id)
+
+	return usable_skill_ids
 
 
 func create_faction_skill_action(skill_config: Dictionary) -> CardAction:

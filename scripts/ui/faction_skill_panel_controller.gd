@@ -64,7 +64,7 @@ func setup(root: Control) -> void:
 	panel.hide()
 
 
-func update(current_player: PlayerState, root: Control = null) -> void:
+func update(current_player: PlayerState, root: Control = null, usable_skill_ids: Array[String] = []) -> void:
 	if panel == null:
 		return
 
@@ -83,7 +83,7 @@ func update(current_player: PlayerState, root: Control = null) -> void:
 
 	if has_skills:
 		for skill_config in current_player.get_unlocked_faction_skill_configs():
-			skill_list.add_child(create_skill_button(current_player, skill_config))
+			skill_list.add_child(create_skill_button(current_player, skill_config, usable_skill_ids))
 
 	if root != null:
 		call_deferred("position_panel", root)
@@ -136,12 +136,12 @@ func create_resource_row(player: PlayerState, resource_id: String) -> Control:
 	return row
 
 
-func create_skill_button(player: PlayerState, skill_config: Dictionary) -> Button:
+func create_skill_button(player: PlayerState, skill_config: Dictionary, usable_skill_ids: Array[String]) -> Button:
 	var button := Button.new()
 	var skill_id := str(skill_config.get("id", ""))
 	button.name = "%sSkillButton" % skill_id
 	button.text = str(skill_config.get("name", skill_id))
-	button.disabled = not player.can_use_faction_skill(skill_id)
+	button.disabled = not player.can_use_faction_skill(skill_id) or not usable_skill_ids.has(skill_id)
 	button.mouse_filter = Control.MOUSE_FILTER_STOP
 	button.add_theme_font_size_override("font_size", 15)
 	button.add_theme_color_override("font_color", Color(1.0, 0.92, 0.82, 1.0))

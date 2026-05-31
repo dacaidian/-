@@ -492,3 +492,9 @@
 - 配置格式为 `id: "grant_unit_keywords"`、`trigger: "while_in_hand"`、`card_ids`、`keywords`。
 - 运行时关键词保存在 `CardState.passive_keywords`，由 `HandPassiveResolver` 统一刷新；`CardState.has_keyword()` 同时读取静态关键词和运行时关键词。
 - 当前狐妖仙“三尾”默认入手，不进入牌池，使苏妲己和小狐精获得 `ranged`。后续若需要授予会改变数值结构的关键词（如骑兵、飞行），应在该刷新路径中补充对应的派生属性重算，而不是在卡牌数据层写死。
+
+## 右侧 HUD 布局
+
+- 右侧信息区由 `GameManager.update_right_side_hud_layout()` 统一排布，顺序为：回合 HUD、种族技能/资源面板、种族时间面板、装备面板。
+- 各 UI Controller 仍只负责创建和刷新自己的内容；最终位置由 GameManager 在每次刷新后 deferred 统一计算，避免多个面板各自固定坐标导致互相遮挡。
+- 种族技能按钮不仅检查本回合是否已使用，还会由 GameManager 根据当前棋盘状态计算是否存在合法目标；没有合法目标时按钮置灰，不进入空目标选择流程。
