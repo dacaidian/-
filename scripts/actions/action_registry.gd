@@ -7,6 +7,7 @@ class_name ActionRegistry
 var actions_by_id: Dictionary = {}
 var granted_spell_resolver := GrantedSpellResolver.new()
 var granted_action_resolver := GrantedActionResolver.new()
+var spell_modifier_resolver := HandSpellModifierResolver.new()
 
 
 func _init() -> void:
@@ -81,7 +82,16 @@ func get_spell_action_data_for_user(user: CardState, game_manager: GameManager) 
 		known_spell_ids,
 		granted_spell_resolver.get_granted_spell_actions(user, game_manager)
 	)
-	return spell_actions
+
+	var owner := game_manager.get_player_by_id(user.owner_id) as PlayerState
+	if owner == null:
+		return spell_actions
+
+	var resolved_spell_actions: Array[Dictionary] = []
+	for spell_data in spell_actions:
+		resolved_spell_actions.append(spell_modifier_resolver.resolve_spell_action(owner, spell_data))
+
+	return resolved_spell_actions
 
 
 func append_unique_spell_data(

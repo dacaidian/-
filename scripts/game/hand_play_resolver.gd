@@ -75,11 +75,11 @@ func start_cast_target_selection(game_manager: GameManager, player: PlayerState,
 	if game_manager == null or not can_play_hand_card_at(player, hand_index, game_manager):
 		return false
 
-	if not requires_target(card_data):
+	if not requires_target(card_data, player):
 		await execute_hand_card(game_manager, player, card_data, hand_index, null)
 		return true
 
-	var targets := get_valid_targets(card_data, game_manager)
+	var targets := get_valid_targets(card_data, game_manager, player)
 	if targets.is_empty():
 		return false
 
@@ -146,17 +146,18 @@ func execute_hand_card(
 	if game_manager == null or not can_play_hand_card_at(player, hand_index, game_manager):
 		return
 
-	if requires_target(card_data) and not can_target(card_data, target_state, game_manager):
+	var resolved_spell := resolve_hand_spell(player, card_data, target_state)
+	var resolved_target_rule := str(resolved_spell.get("target_rule", get_target_rule(card_data, player)))
+	if SpellTargetResolver.requires_target(resolved_target_rule) and not can_target(card_data, target_state, game_manager, player):
 		return
 
-	var resolved_spell := resolve_hand_spell(player, card_data, target_state)
 	var resolved_animation := str(resolved_spell.get("animation", card_data.animation))
 	await game_manager.play_hand_spell_card_animation(card_data, target_state, resolved_animation)
 
 	for effect_data in get_resolved_effects(resolved_spell):
 		var runtime_effect_data := effect_data.duplicate(true)
 		EffectData.mark_effect_owner(runtime_effect_data, player.id)
-		if requires_target(card_data):
+		if SpellTargetResolver.requires_target(resolved_target_rule):
 			EffectData.mark_selected_target(runtime_effect_data, target_state)
 		EffectData.mark_spell_power_enabled(runtime_effect_data)
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_HAND_SPELL)
@@ -186,11 +187,11 @@ func get_resolved_spell_effects(player: PlayerState, card_data: CardData, target
 	return get_resolved_effects(resolve_hand_spell(player, card_data, target_state))
 
 
-func get_valid_targets(card_data: CardData, game_manager: GameManager) -> Array[CardState]:
+func get_valid_targets(card_data: CardData, game_manager: GameManager, player: PlayerState = null) -> Array[CardState]:
 	if card_data == null or game_manager == null:
 		return []
 
-	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data), game_manager)
+	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data, player), game_manager)
 
 
 func get_valid_placement_targets(game_manager: GameManager, card_data: CardData = null) -> Array[CardState]:
@@ -312,18 +313,22 @@ func refill_one_empty_slot_after_replacing_hidden_card(game_manager: GameManager
 		return
 
 
-func requires_target(card_data: CardData) -> bool:
-	return SpellTargetResolver.requires_target(get_target_rule(card_data))
+func requires_target(card_data: CardData, player: PlayerState = null) -> bool:
+	return SpellTargetResolver.requires_target(get_target_rule(card_data, player))
 
 
-func can_target(card_data: CardData, target: CardState, game_manager: GameManager) -> bool:
+func can_target(card_data: CardData, target: CardState, game_manager: GameManager, player: PlayerState = null) -> bool:
 	if card_data == null:
 		return false
 
-	return SpellTargetResolver.can_target(get_target_rule(card_data), target)
+	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target)
 
 
-func get_target_rule(card_data: CardData) -> String:
+func get_target_rule(card_data: CardData, player: PlayerState = null) -> String:
+	if player != null and card_data != null and card_data.is_spell():
+		var resolved_spell := resolve_hand_spell(player, card_data, null)
+		return str(resolved_spell.get("target_rule", SpellTargetResolver.get_rule_from_card_data(card_data)))
+
 	return SpellTargetResolver.get_rule_from_card_data(card_data)
 
 

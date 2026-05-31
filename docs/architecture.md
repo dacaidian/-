@@ -551,3 +551,9 @@
 - `有苏氏狐妖` 是狐妖仙 2 级随从牌，4 张，2/4，带 `ranged`，并拥有随从施法动作 `狐念之术`。
 - `狐念之术` 复用 `low_stat_non_hero_minions` 目标规则和 `charm` 控制状态，但配置为非永久状态：`duration_turns: 1`、`duration_scope: "source_owner"`、`expires_on_trigger: "after_turn_end"`。因此它会在施法者回合结束时回滚控制权。
 - 永久魅惑和短暂控制共享 `status_tags: ["control"]`，归属切换统一由 `CardState.recalculate_status_modifiers()` 处理。新增短暂控制类卡牌时，应优先通过状态持续时间表达，不要直接调用 `set_owner()`。
+
+## 法术能力修正
+
+- `modify_spell_ability` 是手牌升级牌提供的通用被动修正。它由 `HandSpellModifierResolver` 统一解析，可以修正手牌法术牌，也可以修正随从 `spell_actions`。
+- 命中手牌法术时使用 `card_ids`，命中随从施法动作时使用 `spell_ids`。两者可在同一张升级牌中同时配置，但不应在 `SpellAction` 或 `HandPlayResolver` 中写死卡名判断。
+- 当前 `魅影` 使用 `modify_spell_ability` 将 `魅惑`（`charm_spell`）和 `狐念之术`（`fox_mind_art`）的目标规则改为 `non_hero_minions`，即不再限定属性小于 8，但仍不能选英雄，仍遵守魔法免疫。

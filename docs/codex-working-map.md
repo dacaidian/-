@@ -575,3 +575,9 @@ rg --files scripts scenes data docs
 - 随从自带的施法动作写在卡牌 `spell_actions` 中，由 `SpellAction` / `SpellTargetResolver` / `EffectRegistry` 走同一套流程。
 - 短暂控制类效果复用 `apply_status` + `status_tags: ["control"]`，并用 `duration_turns` / `duration_scope` / `expires_on_trigger` 描述回滚时点。
 - `狐念之术` 的范例：目标规则 `low_stat_non_hero_minions`，控制状态持续到施法者回合结束。
+
+### 法术能力修正
+
+- 优先读：`scripts/game/hand_spell_modifier_resolver.gd`、`scripts/game/hand_play_resolver.gd`、`scripts/actions/action_registry.gd`、`scripts/actions/spell_action.gd`。
+- 新增改目标规则、动画、效果列表的升级牌时，优先使用 `modify_spell_ability`。手牌法术用 `card_ids` 命中，随从施法动作用 `spell_ids` 命中。
+- `魅影` 是首个范例：把 `charm_spell` 和 `fox_mind_art` 的 `target_rule` 改成 `non_hero_minions`。

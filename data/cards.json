@@ -1886,6 +1886,29 @@
 				]
 			},
 			{
+				"id": "mirage",
+				"name": "魅影",
+				"description": "升级牌。魅惑和狐念之术不再限定目标属性小于8，仍不能选择英雄。",
+				"url": "res://assets/img/狐妖仙/魅影.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_spell_ability",
+						"trigger": "while_in_hand",
+						"card_ids": [
+							"charm_spell"
+						],
+						"spell_ids": [
+							"fox_mind_art"
+						],
+						"target_rule": "non_hero_minions"
+					}
+				]
+			},
+			{
 				"id": "six_tails_upgrade",
 				"name": "六尾",
 				"description": "默认入手并生效：当尾数至少为6时，苏妲己和涂山氏禁卫获得魔法免疫。",

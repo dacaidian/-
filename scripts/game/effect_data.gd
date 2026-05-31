@@ -9,6 +9,7 @@ const KEY_TRIGGER := "trigger"
 const KEY_ACTIVE_ZONE := "active_zone"
 const KEY_CARD_IDS := "card_ids"
 const KEY_SOURCE_CARD_IDS := "source_card_ids"
+const KEY_SPELL_IDS := "spell_ids"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_ACTIONS := "actions"
 const KEY_ACTION_ID := "action_id"
@@ -57,6 +58,7 @@ const KEY_SELECTION_TITLE := "selection_title"
 const KEY_REPLACE_EFFECTS := "replace_effects"
 const KEY_APPEND_EFFECTS := "append_effects"
 const KEY_TARGET_RELATION := "target_relation"
+const KEY_TARGET_RULE := "target_rule"
 const KEY_AREA_ROWS := "area_rows"
 const KEY_AREA_COLS := "area_cols"
 const KEY_SLOT_EFFECT_ID := "slot_effect_id"
@@ -100,6 +102,7 @@ const EFFECT_MODIFY_UNIT_ATTACK := "modify_unit_attack"
 const EFFECT_MODIFY_UNIT_ATTACK_SPEED := "modify_unit_attack_speed"
 const EFFECT_MODIFY_SPELL_POWER := "modify_spell_power"
 const EFFECT_MODIFY_HAND_SPELL_EFFECTS := "modify_hand_spell_effects"
+const EFFECT_MODIFY_SPELL_ABILITY := "modify_spell_ability"
 const EFFECT_MODIFY_APPLIED_STATUS := "modify_applied_status"
 const EFFECT_GRANT_UNIT_TRIGGER_EFFECTS := "grant_unit_trigger_effects"
 const EFFECT_RESURRECT := "resurrect"
@@ -254,6 +257,18 @@ static func get_source_card_ids(effect_data: Dictionary) -> Array[String]:
 	return card_ids
 
 
+static func get_spell_ids(effect_data: Dictionary) -> Array[String]:
+	var spell_ids: Array[String] = []
+	var raw_spell_ids: Variant = effect_data.get(KEY_SPELL_IDS, [])
+	if raw_spell_ids is Array:
+		for spell_id in raw_spell_ids:
+			var normalized_spell_id := str(spell_id)
+			if normalized_spell_id != "":
+				spell_ids.append(normalized_spell_id)
+
+	return spell_ids
+
+
 static func get_runtime_state_ids(effect_data: Dictionary) -> Array[String]:
 	var state_ids: Array[String] = []
 	var raw_state_ids: Variant = effect_data.get(KEY_RUNTIME_STATE_IDS, [])
@@ -372,6 +387,10 @@ static func get_granted_effects(effect_data: Dictionary) -> Array[Dictionary]:
 
 static func get_target_relation(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TARGET_RELATION, TARGET_RELATION_ANY))
+
+
+static func get_target_rule(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_TARGET_RULE, ""))
 
 
 static func get_spell_actions(effect_data: Dictionary) -> Array[Dictionary]:

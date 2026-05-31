@@ -70,12 +70,12 @@ func evaluate_hand_card(card_data: CardData, hand_index: int, player: PlayerStat
 
 
 func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, hpr: HandPlayResolver) -> Dictionary:
-	var target_rule := hpr.get_target_rule(card_data)
+	var target_rule := hpr.get_target_rule(card_data, player)
 	if not SpellTargetResolver.requires_target(target_rule):
 		var no_target_effects := get_resolved_spell_effects(card_data, player, null, hpr)
 		return {"target": null, "score": _score_no_target_spell(no_target_effects, player, gm)}
 
-	var valid_targets: Array = hpr.get_valid_targets(card_data, gm)
+	var valid_targets: Array = hpr.get_valid_targets(card_data, gm, player)
 	var best_target = null
 	var best_score := 0.0
 
