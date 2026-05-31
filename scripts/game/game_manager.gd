@@ -866,7 +866,7 @@ func end_turn() -> void:
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_BEFORE_TURN_START, current_player.id)
 		refresh_hand_passives_for_player(current_player, false)
 		current_player.start_turn()
-		restore_minion_actions_for_player(current_player.id)
+		restore_unit_actions_for_all_players()
 
 	is_resolving_card_action = false
 	refresh_action_available_hints()
@@ -1218,6 +1218,20 @@ func restore_minion_actions_for_player(player_id: String) -> void:
 			state.restore_attacks()
 			state.restore_mounted_attack_uses()
 			state.restore_main_actions()
+
+
+func restore_unit_actions_for_all_players() -> void:
+	for state in get_all_board_states():
+		if state == null or state.is_empty():
+			continue
+
+		if not state.is_unit():
+			continue
+
+		state.restore_movement()
+		state.restore_attacks()
+		state.restore_mounted_attack_uses()
+		state.restore_main_actions()
 
 
 func refresh_action_available_hints() -> void:

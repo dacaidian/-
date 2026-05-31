@@ -540,3 +540,8 @@
 - 战场单位可以在自身 `effects` 中配置 `trigger: "while_on_board"` 的持续被动。这类被动由 `HandPassiveResolver.refresh_player_passives()` 的战场刷新段统一重算，不在单张卡牌行动里直接改数值。
 - `set_unit_attack_to_resource` 用于让战场单位的基础攻击力同步到某个玩家种族资源值。它使用被动攻击修正表达 `resource_value - origin.attack`，因此可与其他攻击加成/减成叠加并可回滚。
 - 当前苏妲己使用 `set_unit_attack_to_resource` + `resource_id: "tail"`，表示她的基础攻击力等于当前尾数。献祭增加尾数后已会调用 `refresh_hand_passives_for_player()`，所以数值会立即刷新。
+
+## 行动恢复与临时减攻回滚
+
+- 玩家回合开始时会恢复全场所有单位的行动资源（移动力、攻击次数、骑乘/副动作次数、主行动力）。这保证被魅惑控制过来的随从能在当前回合使用自己的行动资源，而不等到原拥有者的下个回合。
+- 临时攻击修正使用 `status_attack_floor_debt` 记录被 0 下限截断的攻击差值。例如 3 攻单位被勾魄 -4 后显示 0，移除勾魄时会回到 3，不会固定 +4 变成 4。

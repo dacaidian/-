@@ -564,3 +564,8 @@ rg --files scripts scenes data docs
 - 数据入口：卡牌 `effects` 配置 `trigger: "while_on_board"`。当前苏妲己用 `set_unit_attack_to_resource` 让攻击力等于 `tail`。
 - 规则入口：`scripts/game/hand_passive_resolver.gd` 的 `refresh_unit_attack_passives()` 会同时合并手牌持续被动和战场单位自身的 `while_on_board` 被动。
 - 新增类似“数值等于资源”效果时，优先复用 `set_unit_attack_to_resource` 或扩展同类战场被动，不要在献祭/资源变动效果里写死某张卡的数值修改。
+
+### 行动恢复与攻击修正截断
+
+- 回合开始恢复行动资源走 `GameManager.restore_unit_actions_for_all_players()`，不再只恢复当前玩家单位，以支持魅惑/控制权变化。
+- 攻击力被状态减到 0 以下时，`CardState.status_attack_floor_debt` 会保留被截断的部分，状态移除时用它恢复真实基础值。

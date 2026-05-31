@@ -60,6 +60,7 @@ var current_attack := 0
 var passive_attack_bonus := 0
 var passive_keywords: Array[String] = []
 var status_attack_bonus := 0
+var status_attack_floor_debt := 0
 var status_max_health_bonus := 0
 var status_control_base_owner_id := ""
 var max_health := 0
@@ -105,6 +106,7 @@ func set_card_data(value: CardData) -> void:
 		passive_attack_bonus = 0
 		passive_keywords.clear()
 		status_attack_bonus = 0
+		status_attack_floor_debt = 0
 		status_max_health_bonus = 0
 		status_control_base_owner_id = ""
 		max_health = 0
@@ -136,6 +138,7 @@ func set_card_data(value: CardData) -> void:
 		passive_attack_bonus = 0
 		passive_keywords.clear()
 		status_attack_bonus = 0
+		status_attack_floor_debt = 0
 		status_max_health_bonus = 0
 		status_control_base_owner_id = ""
 		max_health = data.health
@@ -302,6 +305,7 @@ func create_card_snapshot() -> Dictionary:
 		"passive_attack_bonus": passive_attack_bonus,
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
+		"status_attack_floor_debt": status_attack_floor_debt,
 		"status_max_health_bonus": status_max_health_bonus,
 		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
@@ -340,6 +344,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	passive_attack_bonus = int(snapshot.get("passive_attack_bonus", 0))
 	passive_keywords = normalize_string_array(snapshot.get("passive_keywords", []))
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
+	status_attack_floor_debt = int(snapshot.get("status_attack_floor_debt", 0))
 	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
 	status_control_base_owner_id = str(snapshot.get("status_control_base_owner_id", ""))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
@@ -359,6 +364,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	apply_status_snapshots(snapshot.get("statuses", []))
 	if not snapshot.has("status_attack_bonus"):
 		status_attack_bonus = calculate_status_attack_bonus()
+	if not snapshot.has("status_attack_floor_debt"):
+		status_attack_floor_debt = 0
 	if not snapshot.has("status_max_health_bonus"):
 		status_max_health_bonus = calculate_status_max_health_bonus()
 	if not snapshot.has("status_control_base_owner_id"):
@@ -410,6 +417,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"passive_attack_bonus": passive_attack_bonus,
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
+		"status_attack_floor_debt": status_attack_floor_debt,
 		"status_max_health_bonus": status_max_health_bonus,
 		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
@@ -956,7 +964,10 @@ func set_passive_attack_bonus(value: int) -> void:
 	if passive_attack_bonus == normalized_value:
 		return
 
-	current_attack = maxi(current_attack - passive_attack_bonus + normalized_value, 0)
+	var base_attack := current_attack - passive_attack_bonus - status_attack_bonus + status_attack_floor_debt
+	var raw_attack := base_attack + normalized_value + status_attack_bonus
+	current_attack = maxi(raw_attack, 0)
+	status_attack_floor_debt = mini(raw_attack - current_attack, 0)
 	passive_attack_bonus = normalized_value
 	state_changed.emit(self)
 
@@ -1046,7 +1057,10 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	):
 		return
 
-	current_attack = maxi(current_attack - status_attack_bonus + next_status_attack_bonus, 0)
+	var base_attack := current_attack - status_attack_bonus + status_attack_floor_debt
+	var raw_attack := base_attack + next_status_attack_bonus
+	current_attack = maxi(raw_attack, 0)
+	status_attack_floor_debt = mini(raw_attack - current_attack, 0)
 	status_attack_bonus = next_status_attack_bonus
 	owner_id = next_owner_id
 
