@@ -215,6 +215,11 @@ func _score_spell_on_target(effects: Array[Dictionary], target: CardState, playe
 					score += poison_value * 1.8 + threat * 0.35
 				elif is_own:
 					score -= poison_value * 1.8 + threat * 0.35
+			elif status_tags.has(CardStatus.TAG_CONTROL):
+				if is_enemy:
+					score += threat * 2.0 + 7.0
+				elif is_own:
+					score -= threat * 2.0 + 7.0
 			elif status_tags.has(CardStatus.TAG_DEATH_PREVENTION):
 				if is_own:
 					var missing_health := target.max_health - target.current_health

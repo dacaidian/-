@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1714,7 +1714,8 @@
 			{
 				"card_id": "su_daji",
 				"attached_cards": [
-					"gou_po"
+					"gou_po",
+					"charm_spell"
 				]
 			}
 		],
@@ -1769,13 +1770,13 @@
 			{
 				"id": "gou_po",
 				"name": "勾魄",
-				"description": "使一个单位攻击力-4，持续一回合。",
+				"description": "使一个随从攻击力-4，持续一回合。",
 				"url": "res://assets/img/狐妖仙/勾魄.png",
 				"type": "spell",
 				"count": 3,
 				"level": 1,
 				"animation": "soul_hook",
-				"target_rule": "all_units",
+				"target_rule": "all_minions",
 				"keywords": [],
 				"effects": [
 					{
@@ -1808,6 +1809,34 @@
 				"attack": 3,
 				"health": 7,
 				"effects": []
+			},
+			{
+				"id": "charm_spell",
+				"name": "魅惑",
+				"description": "控制一个属性低于8的非英雄随从。",
+				"url": "res://assets/img/狐妖仙/魅惑.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "charm",
+				"target_rule": "low_stat_non_hero_minions",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"status_id": "charm",
+						"status_name": "魅惑",
+						"status_description": "控制权变为施法者。",
+						"status_tags": [
+							"control"
+						],
+						"stack_policy": "replace",
+						"permanent": true,
+						"persists_after_death": false,
+						"apply_animation": "charm",
+						"payload": {}
+					}
+				]
 			},
 			{
 				"id": "six_tails_upgrade",

@@ -6,6 +6,7 @@ class_name SpellTargetResolver
 
 const TARGET_RULE_ALL_MINIONS := "all_minions"
 const TARGET_RULE_NON_HERO_MINIONS := "non_hero_minions"
+const TARGET_RULE_LOW_STAT_NON_HERO_MINIONS := "low_stat_non_hero_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
 const TARGET_RULE_AREA_3X3 := "area_3x3"
@@ -81,6 +82,8 @@ static func can_target(
 			return target.is_minion()
 		TARGET_RULE_NON_HERO_MINIONS:
 			return target.is_minion() and not target.is_hero()
+		TARGET_RULE_LOW_STAT_NON_HERO_MINIONS:
+			return target.is_minion() and not target.is_hero() and get_current_attribute_total(target) < 8
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
 		TARGET_RULE_MINIONS_BY_CARD_IDS:
@@ -92,6 +95,13 @@ static func can_target(
 		_:
 			push_warning("暂不支持的法术目标规则: %s" % target_rule)
 			return false
+
+
+static func get_current_attribute_total(target: CardState) -> int:
+	if target == null:
+		return 0
+
+	return target.current_attack + target.current_health
 
 
 static func can_select_area_center(target: CardState) -> bool:

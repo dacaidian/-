@@ -36,6 +36,9 @@ var meteor_aura_star_color := Color(1.0, 0.86, 0.42, 0.88)
 var soul_hook_color := Color(0.45, 0.04, 0.18, 0.20)
 var soul_hook_edge_color := Color(1.0, 0.24, 0.56, 0.74)
 var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
+var charm_color := Color(0.82, 0.18, 0.70, 0.18)
+var charm_edge_color := Color(1.0, 0.42, 0.86, 0.78)
+var charm_rune_color := Color(1.0, 0.78, 0.96, 0.86)
 
 
 func _ready() -> void:
@@ -54,7 +57,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm()
 
 
 func should_show_divine_shield() -> bool:
@@ -127,6 +130,13 @@ func should_show_soul_hook() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_SOUL_HOOK)
 
 
+func should_show_charm() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.has_status(CardStatus.STATUS_CHARM)
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -136,6 +146,8 @@ func _draw() -> void:
 		draw_precision_shot_overlay()
 	if should_show_soul_hook():
 		draw_soul_hook_overlay()
+	if should_show_charm():
+		draw_charm_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -317,6 +329,34 @@ func draw_soul_hook_overlay() -> void:
 	var hook_tip := center + Vector2(hook_rect.size.x * 0.18, -hook_rect.size.y * 0.24)
 	draw_arc(hook_tip, hook_rect.size.x * 0.08, PI * 0.20, PI * 1.62, 18, soul_hook_edge_color, 2.8, true)
 	draw_line(hook_tip + Vector2(-hook_rect.size.x * 0.04, hook_rect.size.y * 0.055), hook_tip + Vector2(-hook_rect.size.x * 0.12, hook_rect.size.y * 0.13), soul_hook_edge_color, 2.4)
+
+
+func draw_charm_overlay() -> void:
+	var charm_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
+	var center := charm_rect.get_center()
+	var radius := minf(charm_rect.size.x, charm_rect.size.y) * 0.38
+
+	draw_rect(charm_rect, charm_color, true)
+	for index in range(3):
+		var grow := float(index) * 3.5
+		var alpha := charm_edge_color.a * (1.0 - float(index) * 0.18)
+		draw_rect(charm_rect.grow(grow), Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, alpha), false, maxf(size.x * 0.018, 2.0), true)
+
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0 + PI * 0.18
+		var point := center + Vector2(cos(angle), sin(angle)) * radius
+		draw_circle(point, maxf(size.x * 0.012, 2.0), charm_rune_color)
+		draw_line(center.lerp(point, 0.74), point, Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, 0.42), 1.4)
+
+	var heart_top := center + Vector2(0, -radius * 0.18)
+	draw_circle(heart_top + Vector2(-radius * 0.13, 0), radius * 0.12, charm_rune_color)
+	draw_circle(heart_top + Vector2(radius * 0.13, 0), radius * 0.12, charm_rune_color)
+	var points := PackedVector2Array([
+		heart_top + Vector2(-radius * 0.25, radius * 0.03),
+		heart_top + Vector2(radius * 0.25, radius * 0.03),
+		heart_top + Vector2(0, radius * 0.34)
+	])
+	draw_polygon(points, PackedColorArray([charm_rune_color, charm_rune_color, charm_rune_color]))
 
 
 func draw_encourage_gu_overlay() -> void:

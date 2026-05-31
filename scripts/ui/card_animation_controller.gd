@@ -353,6 +353,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
+		"charm":
+			await play_charm_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			if target_card == null:
 				return
@@ -401,6 +403,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
+		"charm":
+			await play_charm_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_rect)
 		"gu_summon":
@@ -443,6 +447,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
+		"charm":
+			await play_charm_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
 			await play_gu_lure_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_trap_trigger":
@@ -1541,6 +1547,49 @@ func play_soul_hook_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 		mote.queue_free()
 
 
+func play_charm_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var halo := create_rect_spell_effect(target_rect, "CharmHaloEffect", create_charm_halo_style(), 1.24)
+	var heart := create_rect_spell_effect(target_rect, "CharmHeartEffect", create_charm_heart_style(), 0.34)
+	var motes: Array[Panel] = create_charm_motes_for_rect(target_rect)
+	effect_root.add_child(halo)
+	effect_root.add_child(heart)
+	for mote in motes:
+		effect_root.add_child(mote)
+
+	var bloom_tween := owner.create_tween()
+	bloom_tween.set_parallel(true)
+	bloom_tween.set_trans(Tween.TRANS_BACK)
+	bloom_tween.set_ease(Tween.EASE_OUT)
+	bloom_tween.tween_property(halo, "modulate:a", 0.90, spell_animation_duration * 0.35)
+	bloom_tween.tween_property(halo, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.35)
+	bloom_tween.tween_property(heart, "modulate:a", 0.92, spell_animation_duration * 0.35)
+	bloom_tween.tween_property(heart, "scale", Vector2(1.20, 1.20), spell_animation_duration * 0.35)
+	await bloom_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN_OUT)
+	fade_tween.tween_property(halo, "scale", Vector2(1.42, 1.42), spell_animation_duration * 0.65)
+	fade_tween.tween_property(halo, "modulate:a", 0.0, spell_animation_duration * 0.65)
+	fade_tween.tween_property(heart, "global_position", heart.global_position + Vector2(0, -target_rect.size.y * 0.28), spell_animation_duration * 0.65)
+	fade_tween.tween_property(heart, "scale", Vector2(0.62, 0.62), spell_animation_duration * 0.65)
+	fade_tween.tween_property(heart, "modulate:a", 0.0, spell_animation_duration * 0.65)
+	for mote in motes:
+		var offset: Vector2 = mote.get_meta("charm_offset", Vector2.ZERO)
+		fade_tween.tween_property(mote, "global_position", mote.global_position + offset, spell_animation_duration * 0.65)
+		fade_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.65)
+	await fade_tween.finished
+
+	halo.queue_free()
+	heart.queue_free()
+	for mote in motes:
+		mote.queue_free()
+
+
 func play_life_link_spell(
 	owner: Node,
 	effect_root: Control,
@@ -2041,6 +2090,31 @@ func create_soul_hook_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	return motes
 
 
+func create_charm_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var motes: Array[Panel] = []
+	var center := target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.34
+
+	for index in range(8):
+		var angle := TAU * float(index) / 8.0 + PI * 0.10
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.28
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * 0.92 + Vector2(0, -target_rect.size.y * 0.12)
+		var mote := Panel.new()
+		mote.name = "CharmMote_%d" % index
+		var mote_size := Vector2(8, 8) if index % 2 == 0 else Vector2(6, 6)
+		mote.size = mote_size
+		mote.pivot_offset = mote_size * 0.5
+		mote.global_position = center + start_offset - mote.pivot_offset
+		mote.modulate = Color(1.0, 1.0, 1.0, 0.78)
+		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mote.z_index = 2315
+		mote.set_meta("charm_offset", burst_offset)
+		mote.add_theme_stylebox_override("panel", create_charm_mote_style())
+		motes.append(mote)
+
+	return motes
+
+
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "SummonSpellEffect", create_summon_spell_effect_style(), 1.18)
 
@@ -2390,6 +2464,39 @@ func create_soul_hook_mote_style() -> StyleBoxFlat:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.90, 0.18, 0.70, 0.52)
+	style.shadow_size = 12
+	return style
+
+
+func create_charm_halo_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.72, 0.12, 0.64, 0.20)
+	style.border_color = Color(1.0, 0.42, 0.88, 0.84)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.22, 0.72, 0.58)
+	style.shadow_size = 38
+	return style
+
+
+func create_charm_heart_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.24, 0.62, 0.82)
+	style.border_color = Color(1.0, 0.82, 0.96, 0.94)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.32, 0.76, 0.72)
+	style.shadow_size = 24
+	return style
+
+
+func create_charm_mote_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.52, 0.90, 0.88)
+	style.border_color = Color(1.0, 0.88, 1.0, 0.76)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.26, 0.82, 0.56)
 	style.shadow_size = 12
 	return style
 

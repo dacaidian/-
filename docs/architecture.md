@@ -527,3 +527,10 @@
 - 法术目标规则为 `all_units`，通过通用 `apply_status` 给目标施加 `status_id: "soul_hook"`。该状态使用 `status_tags: ["attack_modifier"]` 与 `payload.attack_bonus: -4` 表示攻击力 -4；移除或到期后由 `CardState.recalculate_status_modifiers()` 自动回滚，不写一次性永久减攻。
 - `勾魄` 使用 `stack_policy: "refresh"`，重复施加只刷新持续状态，不叠加成无限减攻。
 - `soul_hook` 的施加瞬间动画由 `CardAnimationController` 的 `soul_hook` key 处理；持续视觉由 `CardStatusOverlay` 绘制暗红紫锁链/钩魂覆盖层。
+
+## 魅惑与控制状态
+
+- `魅惑` 是狐妖仙英雄苏妲己的 2 级英雄配套法术牌，目标规则为 `low_stat_non_hero_minions`：只能选择正面、非英雄、当前攻击力+当前生命值小于 8 的随从，并继续遵守魔法免疫。
+- 控制权通过 `status_id: "charm"` + `status_tags: ["control"]` 实现，而不是一次性改静态归属。`CardState` 在首次控制时记录 `status_control_base_owner_id`，状态存在时归属为状态来源玩家，状态被驱散/移除后回到原归属。
+- `charm` 是不按回合倒计的永久状态，但 `persists_after_death: false`，离场/死亡后不保留。后续驱散只需移除该状态即可触发归属回滚。
+- `勾魄` 已收窄为 `all_minions`，不再对建筑生效。

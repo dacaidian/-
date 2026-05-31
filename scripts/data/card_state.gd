@@ -61,6 +61,7 @@ var passive_attack_bonus := 0
 var passive_keywords: Array[String] = []
 var status_attack_bonus := 0
 var status_max_health_bonus := 0
+var status_control_base_owner_id := ""
 var max_health := 0
 var damage_taken := 0
 var shield := 0
@@ -105,6 +106,7 @@ func set_card_data(value: CardData) -> void:
 		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_max_health_bonus = 0
+		status_control_base_owner_id = ""
 		max_health = 0
 		damage_taken = 0
 		shield = 0
@@ -135,6 +137,7 @@ func set_card_data(value: CardData) -> void:
 		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_max_health_bonus = 0
+		status_control_base_owner_id = ""
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
@@ -300,6 +303,7 @@ func create_card_snapshot() -> Dictionary:
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_max_health_bonus": status_max_health_bonus,
+		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -337,6 +341,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	passive_keywords = normalize_string_array(snapshot.get("passive_keywords", []))
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
 	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
+	status_control_base_owner_id = str(snapshot.get("status_control_base_owner_id", ""))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
@@ -356,6 +361,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		status_attack_bonus = calculate_status_attack_bonus()
 	if not snapshot.has("status_max_health_bonus"):
 		status_max_health_bonus = calculate_status_max_health_bonus()
+	if not snapshot.has("status_control_base_owner_id"):
+		status_control_base_owner_id = ""
 	is_action_available_hint = bool(snapshot.get("is_action_available_hint", false))
 	is_pending_death = false
 	is_selected = false
@@ -404,6 +411,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_max_health_bonus": status_max_health_bonus,
+		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
@@ -620,6 +628,7 @@ func create_status_snapshots() -> Array[Dictionary]:
 func apply_status_snapshots(value: Variant) -> void:
 	statuses.clear()
 	if not value is Array:
+		recalculate_status_modifiers(false)
 		return
 
 	for item in value:
@@ -630,6 +639,8 @@ func apply_status_snapshots(value: Variant) -> void:
 		status.apply_snapshot(item)
 		if status.status_id != "":
 			statuses.append(status)
+
+	recalculate_status_modifiers(false)
 
 
 func add_status(status: CardStatus) -> void:
@@ -988,6 +999,19 @@ func calculate_status_max_health_bonus() -> int:
 	return bonus
 
 
+func get_status_control_owner_id() -> String:
+	var control_owner_id := ""
+	for status in statuses:
+		if status == null or not status.tags.has(CardStatus.TAG_CONTROL):
+			continue
+		if status.source_owner_id == "":
+			continue
+
+		control_owner_id = status.source_owner_id
+
+	return control_owner_id
+
+
 func calculate_status_numeric_modifier(status: CardStatus, payload_key: String) -> int:
 	if status == null:
 		return 0
@@ -1005,14 +1029,26 @@ func calculate_status_numeric_modifier(status: CardStatus, payload_key: String) 
 func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	var next_status_attack_bonus := calculate_status_attack_bonus()
 	var next_status_max_health_bonus := calculate_status_max_health_bonus()
+	var next_control_owner_id := get_status_control_owner_id()
+	var next_owner_id := owner_id
+	if next_control_owner_id != "":
+		if status_control_base_owner_id == "":
+			status_control_base_owner_id = owner_id
+		next_owner_id = next_control_owner_id
+	elif status_control_base_owner_id != "":
+		next_owner_id = status_control_base_owner_id
+		status_control_base_owner_id = ""
+
 	if (
 		status_attack_bonus == next_status_attack_bonus
 		and status_max_health_bonus == next_status_max_health_bonus
+		and owner_id == next_owner_id
 	):
 		return
 
 	current_attack = maxi(current_attack - status_attack_bonus + next_status_attack_bonus, 0)
 	status_attack_bonus = next_status_attack_bonus
+	owner_id = next_owner_id
 
 	var health_bonus_delta := next_status_max_health_bonus - status_max_health_bonus
 	if health_bonus_delta != 0:

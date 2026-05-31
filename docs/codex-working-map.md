@@ -552,3 +552,9 @@ rg --files scripts scenes data docs
 - 规则入口：复用 `apply_status` + `attack_modifier` + `payload.attack_bonus`，不直接修改静态攻击力。
 - 持续表现：`scripts/ui/card_status_overlay.gd` 绘制 `soul_hook` 锁链覆盖层；施加瞬间表现在 `scripts/ui/card_animation_controller.gd` 的 `soul_hook` key。
 - 新增类似减攻/增攻状态时，优先复用这套状态修正机制，便于后续驱散统一回滚。
+
+### 魅惑与控制状态
+
+- 目标规则在 `scripts/game/spell_target_resolver.gd`：`low_stat_non_hero_minions` = 非英雄随从且当前攻击力+当前生命值 < 8。
+- 控制效果是状态：`CardStatus.STATUS_CHARM` + `TAG_CONTROL`。新增类似控制/反控效果时优先复用 `CardState.recalculate_status_modifiers()` 的归属回滚机制，不直接在法术效果里写 `set_owner()` 后就结束。
+- 表现：`CardAnimationController` 中 `charm` key 跑施加动画；`CardStatusOverlay` 持续绘制魅惑光环。

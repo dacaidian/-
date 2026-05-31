@@ -461,6 +461,13 @@ func _score_apply_status_effect(target: CardState, effect_data: Dictionary, play
 			return -poison_value * 1.8 - threat * 0.35
 		return 0.0
 
+	if status_tags.has(CardStatus.TAG_CONTROL):
+		if is_enemy:
+			return threat * 2.0 + 7.0
+		elif is_own:
+			return -threat * 2.0 - 7.0
+		return 0.0
+
 	if status_tags.has(CardStatus.TAG_ATTACK_MODIFIER) or attack_bonus != 0:
 		if is_own:
 			return float(attack_bonus) * 2.0 + threat * 0.5
