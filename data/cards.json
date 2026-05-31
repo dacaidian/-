@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -1302,6 +1302,7 @@
 				"card_id": "tyrande",
 				"attached_cards": [
 					"precision_shot",
+					"full_moon_cover",
 					"meteor_fall"
 				]
 			}
