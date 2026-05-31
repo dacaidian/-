@@ -252,14 +252,18 @@ func get_owner_cards_by_id(source_state: CardState, effect_data: Dictionary, gam
 
 	var owner_id := get_effect_owner_id(source_state, effect_data)
 	var target_card_id := EffectData.get_target_card_id(effect_data)
-	if owner_id == "" or target_card_id == "":
+	var target_card_ids := EffectData.get_card_ids(effect_data)
+	if target_card_id != "" and not target_card_ids.has(target_card_id):
+		target_card_ids.append(target_card_id)
+
+	if owner_id == "" or target_card_ids.is_empty():
 		return targets
 
 	for value in game_manager.get_all_board_states():
 		var target_state := value as CardState
 		if not BoardQuery.is_face_up_unit(target_state):
 			continue
-		if target_state.owner_id == owner_id and target_state.card_id == target_card_id:
+		if target_state.owner_id == owner_id and target_card_ids.has(target_state.card_id):
 			targets.append(target_state)
 
 	return targets

@@ -1983,7 +1983,7 @@
 			{
 				"id": "nine_tails_upgrade",
 				"name": "九尾",
-				"description": "默认入手并生效：当尾数等于9时，献祭不再增加尾数，而是为被献祭的随从增加一次复生。",
+				"description": "默认入手并生效：当尾数等于9时，献祭不再增加尾数，而是为生效范围内的己方随从增加一次复生。",
 				"url": "res://assets/img/狐妖仙/九尾.png",
 				"type": "upgrade",
 				"count": 0,
@@ -2003,11 +2003,14 @@
 						"before_target_effects": [
 							{
 								"id": "grant_reborn",
-								"target": "selected",
+								"target": "owner_card_by_id",
 								"health_values": [
 									0
 								]
 							}
+						],
+						"card_ids": [
+							"su_daji"
 						]
 					}
 				]

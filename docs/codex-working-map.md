@@ -597,4 +597,4 @@ Common changes:
 
 - New reborn sources should prefer `grant_reborn`; `health_values: [0]` means full-health revival, positive values mean exact current health after revival.
 - Reborn is real death followed by in-place revival: death triggers still happen, but successful reborn does not enter graveyard, refill the slot, or allow occupy.
-- Faction skill rewrites should use `modify_faction_skill` with `before_target_effects` and/or `suppress_resource_gain`, not UI-specific branches.
+- Faction skill rewrites should use `modify_faction_skill` with `card_ids` as the affected scope plus `before_target_effects` and/or `suppress_resource_gain`, not UI-specific branches.

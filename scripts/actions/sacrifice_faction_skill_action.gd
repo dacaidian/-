@@ -139,9 +139,27 @@ func execute_before_target_effects(
 	for modifier in modifiers:
 		for effect_data in EffectData.get_before_target_effects(modifier):
 			var runtime_effect_data := effect_data.duplicate(true)
+			apply_modifier_scope_to_runtime_effect(modifier, runtime_effect_data)
 			EffectData.mark_effect_owner(runtime_effect_data, player.id)
 			EffectData.mark_selected_target(runtime_effect_data, target)
 			await game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
+
+
+func apply_modifier_scope_to_runtime_effect(modifier: Dictionary, runtime_effect_data: Dictionary) -> void:
+	if EffectData.get_target(runtime_effect_data, "") != EffectData.TARGET_OWNER_CARD_BY_ID:
+		return
+
+	if EffectData.get_target_card_id(runtime_effect_data) != "":
+		return
+
+	if not EffectData.get_card_ids(runtime_effect_data).is_empty():
+		return
+
+	var scoped_card_ids := EffectData.get_card_ids(modifier)
+	if scoped_card_ids.is_empty():
+		return
+
+	runtime_effect_data[EffectData.KEY_CARD_IDS] = scoped_card_ids
 
 
 func should_suppress_resource_gain(modifiers: Array[Dictionary]) -> bool:
