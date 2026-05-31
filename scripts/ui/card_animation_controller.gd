@@ -351,6 +351,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
+		"reborn":
+			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"charm":
@@ -401,6 +403,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_thin_burial_at_rect(owner, effect_root, target_rect)
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
+		"reborn":
+			await play_reborn_at_rect(owner, effect_root, target_rect)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"charm":
@@ -445,6 +449,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_thin_burial_at_rect(owner, effect_root, target_card.get_global_rect())
 		"sacrifice":
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
+		"reborn":
+			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"charm":
@@ -1504,6 +1510,42 @@ func play_sacrifice_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 		mote.queue_free()
 
 
+func play_reborn_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var halo := create_rect_spell_effect(target_rect, "RebornHaloEffect", create_reborn_halo_style(), 1.30)
+	var core := create_rect_spell_effect(target_rect, "RebornCoreEffect", create_reborn_core_style(), 0.58)
+	effect_root.add_child(halo)
+	effect_root.add_child(core)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_BACK)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(halo, "modulate:a", 0.90, spell_animation_duration * 0.36)
+	rise_tween.tween_property(halo, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.36)
+	rise_tween.tween_property(halo, "rotation", -0.16, spell_animation_duration * 0.36)
+	rise_tween.tween_property(core, "modulate:a", 0.96, spell_animation_duration * 0.36)
+	rise_tween.tween_property(core, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
+	await rise_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN_OUT)
+	fade_tween.tween_property(halo, "scale", Vector2(1.56, 1.56), spell_animation_duration * 0.72)
+	fade_tween.tween_property(halo, "rotation", 0.36, spell_animation_duration * 0.72)
+	fade_tween.tween_property(halo, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	fade_tween.tween_property(core, "global_position", core.global_position + Vector2(0.0, -target_rect.size.y * 0.22), spell_animation_duration * 0.72)
+	fade_tween.tween_property(core, "scale", Vector2(0.42, 0.42), spell_animation_duration * 0.72)
+	fade_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await fade_tween.finished
+
+	halo.queue_free()
+	core.queue_free()
+
+
 func play_soul_hook_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -2432,6 +2474,28 @@ func create_sacrifice_mote_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(1.0, 0.16, 0.34, 0.58)
 	style.shadow_size = 14
+	return style
+
+
+func create_reborn_halo_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.42, 0.20, 0.24)
+	style.border_color = Color(0.82, 1.0, 0.48, 0.86)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.46, 1.0, 0.24, 0.60)
+	style.shadow_size = 38
+	return style
+
+
+func create_reborn_core_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.84, 0.32, 0.74)
+	style.border_color = Color(1.0, 0.98, 0.66, 0.94)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.72, 1.0, 0.30, 0.72)
+	style.shadow_size = 28
 	return style
 
 

@@ -39,6 +39,9 @@ var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
 var charm_color := Color(0.82, 0.18, 0.70, 0.18)
 var charm_edge_color := Color(1.0, 0.42, 0.86, 0.78)
 var charm_rune_color := Color(1.0, 0.78, 0.96, 0.86)
+var reborn_color := Color(0.18, 0.78, 0.44, 0.16)
+var reborn_edge_color := Color(0.76, 1.0, 0.58, 0.82)
+var reborn_core_color := Color(1.0, 0.92, 0.48, 0.88)
 
 
 func _ready() -> void:
@@ -57,7 +60,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm()
+	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
 
 
 func should_show_divine_shield() -> bool:
@@ -137,6 +140,13 @@ func should_show_charm() -> bool:
 	return state.is_face_up and state.is_minion() and state.has_status(CardStatus.STATUS_CHARM)
 
 
+func should_show_reborn() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.get_reborn_count() > 0
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -148,6 +158,8 @@ func _draw() -> void:
 		draw_soul_hook_overlay()
 	if should_show_charm():
 		draw_charm_overlay()
+	if should_show_reborn():
+		draw_reborn_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -357,6 +369,32 @@ func draw_charm_overlay() -> void:
 		heart_top + Vector2(0, radius * 0.34)
 	])
 	draw_polygon(points, PackedColorArray([charm_rune_color, charm_rune_color, charm_rune_color]))
+
+
+func draw_reborn_overlay() -> void:
+	var reborn_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
+	var center := reborn_rect.get_center()
+	var radius := minf(reborn_rect.size.x, reborn_rect.size.y) * 0.34
+	var reborn_count: int = state.get_reborn_count() if state != null else 0
+	var ring_count: int = mini(maxi(reborn_count, 1), 5)
+
+	draw_circle(center, radius * 0.84, reborn_color)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 4.2
+		var alpha := reborn_edge_color.a * (1.0 - float(index) * 0.12)
+		draw_arc(center, ring_radius, -PI * 0.5, TAU - PI * 0.5, 88, Color(reborn_edge_color.r, reborn_edge_color.g, reborn_edge_color.b, alpha), 2.4, true)
+
+	for index in range(ring_count):
+		var angle := TAU * float(index) / float(ring_count) - PI * 0.5
+		var point := center + Vector2(cos(angle), sin(angle)) * radius * 0.90
+		draw_circle(point, maxf(size.x * 0.018, 2.5), reborn_core_color)
+
+	var wing_span := radius * 0.46
+	var wing_top := center + Vector2(0.0, -radius * 0.10)
+	draw_line(wing_top, wing_top + Vector2(-wing_span, -radius * 0.18), reborn_core_color, 2.4)
+	draw_line(wing_top, wing_top + Vector2(wing_span, -radius * 0.18), reborn_core_color, 2.4)
+	draw_line(wing_top + Vector2(-wing_span, -radius * 0.18), center + Vector2(-wing_span * 0.36, radius * 0.22), Color(reborn_core_color.r, reborn_core_color.g, reborn_core_color.b, 0.62), 1.8)
+	draw_line(wing_top + Vector2(wing_span, -radius * 0.18), center + Vector2(wing_span * 0.36, radius * 0.22), Color(reborn_core_color.r, reborn_core_color.g, reborn_core_color.b, 0.62), 1.8)
 
 
 func draw_encourage_gu_overlay() -> void:

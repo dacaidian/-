@@ -150,6 +150,7 @@ func create_death_event(
 		"reason": reason,
 		"source_state": source_state,
 		"should_refill_slot": should_refill_slot,
+		"has_reborn": state.has_reborn(),
 		"death_metadata": death_metadata,
 		"graveyard_snapshot": state.create_graveyard_snapshot(death_metadata),
 		"destroy_context": destroy_context
@@ -190,7 +191,8 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		if is_interaction_related_to_state(game_manager, state):
 			should_cancel_interaction = true
 
-		move_death_event_to_owner_zone(game_manager, death_event, state)
+		if not should_reborn_death_event(death_event, state):
+			move_death_event_to_owner_zone(game_manager, death_event, state)
 
 		game_manager.trigger_resolver.queue_trigger(
 			state,
@@ -205,6 +207,10 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		if state == null or state.is_empty():
 			continue
 
+		var did_reborn := await resolve_reborn_death_event(game_manager, death_event, state)
+		if did_reborn:
+			continue
+
 		var removed_slot_index := int(death_event.get("slot_index", state.slot_index))
 		state.clear_card()
 		if bool(death_event.get("should_refill_slot", true)):
@@ -216,6 +222,40 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 	game_manager.refresh_action_available_hints()
 	game_manager.refresh_debug_panel()
+
+
+func should_reborn_death_event(death_event: Dictionary, state: CardState) -> bool:
+	return bool(death_event.get("has_reborn", false)) and state != null and state.has_reborn()
+
+
+func resolve_reborn_death_event(game_manager: GameManager, death_event: Dictionary, state: CardState) -> bool:
+	if game_manager == null or state == null or state.is_empty():
+		return false
+
+	if not should_reborn_death_event(death_event, state):
+		return false
+
+	var health_value := state.consume_next_reborn_health_value()
+	if health_value < 0:
+		return false
+
+	if game_manager.has_method("play_status_apply_animation"):
+		await game_manager.play_status_apply_animation(state, "reborn")
+
+	state.revive_from_reborn(health_value)
+	refresh_reborn_owner_passives(game_manager, state.owner_id)
+	return true
+
+
+func refresh_reborn_owner_passives(game_manager: GameManager, owner_id: String) -> void:
+	if game_manager == null or owner_id == "":
+		return
+
+	var owner := game_manager.get_player_by_id(owner_id)
+	if owner == null:
+		return
+
+	game_manager.refresh_hand_passives_for_player(owner, owner == game_manager.get_current_player())
 
 
 func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dictionary, state: CardState) -> void:
@@ -284,6 +324,9 @@ func can_offer_attack_occupy(attacker_state: CardState, defeated_state: CardStat
 		return false
 
 	if defeated_state.current_health > 0:
+		return false
+
+	if defeated_state.has_reborn():
 		return false
 
 	return true

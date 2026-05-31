@@ -581,3 +581,20 @@ rg --files scripts scenes data docs
 - 优先读：`scripts/game/hand_spell_modifier_resolver.gd`、`scripts/game/hand_play_resolver.gd`、`scripts/actions/action_registry.gd`、`scripts/actions/spell_action.gd`。
 - 新增改目标规则、动画、效果列表的升级牌时，优先使用 `modify_spell_ability`。手牌法术用 `card_ids` 命中，随从施法动作用 `spell_ids` 命中。
 - `魅影` 是首个范例：把 `charm_spell` 和 `fox_mind_art` 的 `target_rule` 改成 `non_hero_minions`。
+
+
+### Reborn And Faction Skill Modifiers
+
+Read first:
+
+- `scripts/data/card_state.gd` for reborn layer storage and in-place revival reset.
+- `scripts/game/death_resolver.gd` for reborn death events, death trigger timing, and skipped refill/occupy.
+- `scripts/effects/grant_reborn_effect.gd` for the reusable reborn-granting effect.
+- `scripts/actions/sacrifice_faction_skill_action.gd` for faction skill modifiers.
+- `scripts/ui/card_status_overlay.gd` and `scripts/ui/card_animation_controller.gd` for reborn visuals.
+
+Common changes:
+
+- New reborn sources should prefer `grant_reborn`; `health_values: [0]` means full-health revival, positive values mean exact current health after revival.
+- Reborn is real death followed by in-place revival: death triggers still happen, but successful reborn does not enter graveyard, refill the slot, or allow occupy.
+- Faction skill rewrites should use `modify_faction_skill` with `before_target_effects` and/or `suppress_resource_gain`, not UI-specific branches.

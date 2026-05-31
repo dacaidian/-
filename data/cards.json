@@ -1979,6 +1979,38 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "nine_tails_upgrade",
+				"name": "九尾",
+				"description": "默认入手并生效：当尾数等于9时，献祭不再增加尾数，而是为被献祭的随从增加一次复生。",
+				"url": "res://assets/img/狐妖仙/九尾.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 3,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_faction_skill",
+						"trigger": "while_in_hand",
+						"skill_ids": [
+							"sacrifice"
+						],
+						"required_resource_id": "tail",
+						"required_resource_min": 9,
+						"suppress_resource_gain": true,
+						"before_target_effects": [
+							{
+								"id": "grant_reborn",
+								"target": "selected",
+								"health_values": [
+									0
+								]
+							}
+						]
+					}
+				]
 			}
 		]
 	},

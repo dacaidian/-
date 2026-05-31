@@ -86,6 +86,9 @@ const KEY_MAX_AMOUNT := "max_amount"
 const KEY_KEYWORDS := "keywords"
 const KEY_REQUIRED_RESOURCE_ID := "required_resource_id"
 const KEY_REQUIRED_RESOURCE_MIN := "required_resource_min"
+const KEY_HEALTH_VALUES := "health_values"
+const KEY_BEFORE_TARGET_EFFECTS := "before_target_effects"
+const KEY_SUPPRESS_RESOURCE_GAIN := "suppress_resource_gain"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -120,6 +123,8 @@ const EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE := "restrict_faction_runtime_cycle"
 const EFFECT_MOONBLADE := "moonblade"
 const EFFECT_GRANT_FACTION_SKILLS := "grant_faction_skills"
 const EFFECT_GRANT_UNIT_KEYWORDS := "grant_unit_keywords"
+const EFFECT_GRANT_REBORN := "grant_reborn"
+const EFFECT_MODIFY_FACTION_SKILL := "modify_faction_skill"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 
@@ -311,6 +316,31 @@ static func get_keywords(effect_data: Dictionary) -> Array[String]:
 				keywords.append(normalized_keyword)
 
 	return keywords
+
+
+static func get_health_values(effect_data: Dictionary) -> Array[int]:
+	var values: Array[int] = []
+	var raw_values: Variant = effect_data.get(KEY_HEALTH_VALUES, [])
+	if raw_values is Array:
+		for value in raw_values:
+			values.append(maxi(int(value), 0))
+
+	return values
+
+
+static func get_before_target_effects(effect_data: Dictionary) -> Array[Dictionary]:
+	var effects: Array[Dictionary] = []
+	var raw_effects: Variant = effect_data.get(KEY_BEFORE_TARGET_EFFECTS, [])
+	if raw_effects is Array:
+		for item in raw_effects:
+			if item is Dictionary:
+				effects.append(item)
+
+	return effects
+
+
+static func should_suppress_resource_gain(effect_data: Dictionary) -> bool:
+	return bool(effect_data.get(KEY_SUPPRESS_RESOURCE_GAIN, false))
 
 
 static func get_resource_id(effect_data: Dictionary) -> String:

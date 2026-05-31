@@ -66,6 +66,7 @@ var status_control_base_owner_id := ""
 var max_health := 0
 var damage_taken := 0
 var shield := 0
+var reborn_health_values: Array[int] = []
 var current_health: int:
 	get:
 		return maxi(max_health - damage_taken, 0)
@@ -112,6 +113,7 @@ func set_card_data(value: CardData) -> void:
 		max_health = 0
 		damage_taken = 0
 		shield = 0
+		reborn_health_values.clear()
 		max_movement = 0
 		current_movement = 0
 		max_attack_speed = 0
@@ -144,6 +146,7 @@ func set_card_data(value: CardData) -> void:
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
+		reborn_health_values = create_initial_reborn_health_values()
 		is_action_available_hint = false
 		is_pending_death = false
 		if data.is_minion():
@@ -275,6 +278,30 @@ func apply_mobile_assault_passive() -> void:
 	allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)
 
 
+func create_initial_reborn_health_values() -> Array[int]:
+	var values: Array[int] = []
+	if data == null:
+		return values
+
+	for keyword in data.keywords:
+		var value := get_reborn_health_value_from_keyword(keyword)
+		if value >= 0:
+			values.append(value)
+
+	return values
+
+
+func get_reborn_health_value_from_keyword(keyword: String) -> int:
+	if keyword == CardData.KEYWORD_REBORN:
+		return 0
+	if keyword.begins_with(CardData.KEYWORD_REBORN_PREFIX):
+		var amount_text := keyword.substr(CardData.KEYWORD_REBORN_PREFIX.length())
+		if amount_text.is_valid_int():
+			return maxi(int(amount_text), 0)
+
+	return -1
+
+
 func clear_card() -> void:
 	# 牌离开棋盘后，格子仍然保留，但卡牌数据被清空。
 	set_card_data(null)
@@ -311,6 +338,7 @@ func create_card_snapshot() -> Dictionary:
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
+		"reborn_health_values": reborn_health_values.duplicate(),
 		"max_movement": max_movement,
 		"current_movement": current_movement,
 		"max_attack_speed": max_attack_speed,
@@ -350,6 +378,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
+	reborn_health_values = normalize_int_array(snapshot.get("reborn_health_values", []))
 	max_movement = int(snapshot.get("max_movement", 0))
 	current_movement = int(snapshot.get("current_movement", 0))
 	max_attack_speed = int(snapshot.get("max_attack_speed", 0))
@@ -423,6 +452,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
+		"reborn_health_values": reborn_health_values.duplicate(),
 		"current_health": current_health,
 		"max_movement": max_movement,
 		"current_movement": current_movement,
@@ -445,6 +475,79 @@ func create_graveyard_snapshot(death_metadata: Dictionary = {}) -> Dictionary:
 		"last_state": create_last_state_snapshot(),
 		"death": death_metadata.duplicate(true)
 	}
+
+
+func has_reborn() -> bool:
+	return not reborn_health_values.is_empty()
+
+
+func get_reborn_count() -> int:
+	return reborn_health_values.size()
+
+
+func get_next_reborn_health_value() -> int:
+	if reborn_health_values.is_empty():
+		return -1
+
+	return maxi(int(reborn_health_values[0]), 0)
+
+
+func add_reborn_health_value(health_value: int = 0) -> void:
+	reborn_health_values.append(maxi(health_value, 0))
+	state_changed.emit(self)
+
+
+func consume_next_reborn_health_value() -> int:
+	if reborn_health_values.is_empty():
+		return -1
+
+	var health_value := maxi(int(reborn_health_values[0]), 0)
+	reborn_health_values.remove_at(0)
+	return health_value
+
+
+func revive_from_reborn(health_value: int) -> void:
+	if data == null:
+		return
+
+	var remaining_reborn_values := reborn_health_values.duplicate()
+	var revived_owner_id := owner_id
+	if status_control_base_owner_id != "":
+		revived_owner_id = status_control_base_owner_id
+
+	current_attack = int(origin.get("attack", data.attack))
+	passive_attack_bonus = 0
+	passive_keywords.clear()
+	status_attack_bonus = 0
+	status_attack_floor_debt = 0
+	status_max_health_bonus = 0
+	status_control_base_owner_id = ""
+	max_health = int(origin.get("health", data.health))
+	damage_taken = 0
+	if health_value > 0:
+		damage_taken = maxi(max_health - mini(health_value, max_health), 0)
+	shield = 0
+	reborn_health_values = remaining_reborn_values
+	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
+	current_movement = max_movement
+	max_attack_speed = int(origin.get("attack_speed", data.attack_speed if data.is_minion() else 0))
+	current_attacks = max_attack_speed
+	mounted_attack_max_uses = normalize_int_dictionary(origin.get("mounted_attack_max_uses", {}))
+	mounted_attack_uses = mounted_attack_max_uses.duplicate(true)
+	max_main_actions = int(origin.get("main_actions", 1 if data.is_unit() else 0))
+	current_main_actions = max_main_actions
+	used_action_groups.clear()
+	used_action_ids.clear()
+	allowed_action_group_pairs = normalize_string_array(origin.get("allowed_action_group_pairs", []))
+	statuses.clear()
+	owner_id = revived_owner_id
+	is_face_up = true
+	is_pending_death = false
+	is_selected = false
+	is_valid_target = false
+	is_action_available_hint = false
+	apply_keyword_passives()
+	state_changed.emit(self)
 
 
 func set_owner(new_owner_id: String) -> void:
@@ -594,6 +697,15 @@ func normalize_string_array(value: Variant) -> Array[String]:
 	if value is Array:
 		for item in value:
 			result.append(str(item))
+
+	return result
+
+
+func normalize_int_array(value: Variant) -> Array[int]:
+	var result: Array[int] = []
+	if value is Array:
+		for item in value:
+			result.append(maxi(int(item), 0))
 
 	return result
 

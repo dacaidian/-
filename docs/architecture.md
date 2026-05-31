@@ -557,3 +557,12 @@
 - `modify_spell_ability` 是手牌升级牌提供的通用被动修正。它由 `HandSpellModifierResolver` 统一解析，可以修正手牌法术牌，也可以修正随从 `spell_actions`。
 - 命中手牌法术时使用 `card_ids`，命中随从施法动作时使用 `spell_ids`。两者可在同一张升级牌中同时配置，但不应在 `SpellAction` 或 `HandPlayResolver` 中写死卡名判断。
 - 当前 `魅影` 使用 `modify_spell_ability` 将 `魅惑`（`charm_spell`）和 `狐念之术`（`fox_mind_art`）的目标规则改为 `non_hero_minions`，即不再限定属性小于 8，但仍不能选英雄，仍遵守魔法免疫。
+
+
+## Reborn And Nine Tails
+
+- Reborn is stored on the board instance as `CardState.reborn_health_values`, not as a normal `CardStatus`. Value `0` means revive at full health; positive values mean revive with that current health. Static keywords may use `reborn` or `reborn_3`; runtime effects should use `grant_reborn`.
+- A reborn unit still enters the normal death event and triggers `on_destroyed`, so deathrattles, future execute effects, and linked-death chains can react normally. After all queued death triggers finish, `DeathResolver` consumes one reborn layer and revives the unit in place.
+- Successful reborn skips graveyard/hero cooldown, clearing the board slot, refill, and attack occupy. This prevents refill from taking the original slot and prevents occupy prompts for a defeated reborn target.
+- `CardState.revive_from_reborn()` clears statuses, shield, and runtime modifiers, restores base stats/action resources, and preserves remaining reborn layers. Static reborn keywords are not re-parsed after revival, preventing infinite reborn loops.
+- Fox Spirit `nine_tails_upgrade` is a start-in-hand upgrade. It uses `modify_faction_skill` to modify `sacrifice`: when `tail >= 9`, Sacrifice no longer grants tail and instead runs `before_target_effects` to grant the sacrificed minion one full-health reborn layer before it dies.

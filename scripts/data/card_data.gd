@@ -16,6 +16,8 @@ const KEYWORD_CAN_ATTACK_WITH_ZERO_ATTACK := "can_attack_with_zero_attack"
 const KEYWORD_MECHANICAL := "mechanical"
 const KEYWORD_MOBILE_ASSAULT := "mobile_assault"
 const KEYWORD_FLYING := "flying"
+const KEYWORD_REBORN := "reborn"
+const KEYWORD_REBORN_PREFIX := "reborn_"
 const KEYWORD_SIEGE_PREFIX := "siege_"
 const KEYWORD_SIEGE_3 := "siege_3"
 

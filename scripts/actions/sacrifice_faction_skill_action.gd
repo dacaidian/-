@@ -57,11 +57,15 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not player.register_faction_skill_use(get_skill_id()):
 		return
 
+	var matching_modifiers := get_matching_skill_modifiers(player)
+	await execute_before_target_effects(player, target, game_manager, matching_modifiers)
+
 	if game_manager.has_method("play_status_apply_animation"):
 		await game_manager.play_status_apply_animation(target, "sacrifice")
 
 	game_manager.destroy_card_with_refill(target, "faction_skill_sacrifice", user, true)
-	player.gain_faction_resource(str(skill_data.get("resource_id", RESOURCE_TAIL)), int(skill_data.get("amount", 1)))
+	if not should_suppress_resource_gain(matching_modifiers):
+		player.gain_faction_resource(str(skill_data.get("resource_id", RESOURCE_TAIL)), int(skill_data.get("amount", 1)))
 	if game_manager.has_method("refresh_hand_passives_for_player"):
 		game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 
@@ -74,3 +78,75 @@ func get_current_player(game_manager: GameManager) -> PlayerState:
 	if game_manager == null:
 		return null
 	return game_manager.get_current_player()
+
+
+func get_matching_skill_modifiers(player: PlayerState) -> Array[Dictionary]:
+	var modifiers: Array[Dictionary] = []
+	if player == null:
+		return modifiers
+
+	var skill_id := get_skill_id()
+	for card_entry in player.hand:
+		var card_data := HandCardState.get_card_data(card_entry)
+		if card_data == null:
+			continue
+
+		for effect_data in card_data.effects:
+			if not effect_data is Dictionary:
+				continue
+
+			var modifier_data: Dictionary = effect_data
+			if not is_matching_skill_modifier(modifier_data, player, skill_id):
+				continue
+
+			modifiers.append(modifier_data)
+
+	return modifiers
+
+
+func is_matching_skill_modifier(effect_data: Dictionary, player: PlayerState, skill_id: String) -> bool:
+	if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_FACTION_SKILL:
+		return false
+
+	if EffectData.get_trigger(effect_data) != EffectData.TRIGGER_WHILE_IN_HAND:
+		return false
+
+	if not EffectData.get_skill_ids(effect_data).has(skill_id):
+		return false
+
+	return is_effect_condition_met(effect_data, player)
+
+
+func is_effect_condition_met(effect_data: Dictionary, player: PlayerState) -> bool:
+	var required_resource_id := EffectData.get_required_resource_id(effect_data)
+	if required_resource_id != "":
+		var required_min := EffectData.get_required_resource_min(effect_data)
+		if player.get_faction_resource_value(required_resource_id) < required_min:
+			return false
+
+	return true
+
+
+func execute_before_target_effects(
+	player: PlayerState,
+	target: CardState,
+	game_manager: GameManager,
+	modifiers: Array[Dictionary]
+) -> void:
+	if player == null or target == null or game_manager == null:
+		return
+
+	for modifier in modifiers:
+		for effect_data in EffectData.get_before_target_effects(modifier):
+			var runtime_effect_data := effect_data.duplicate(true)
+			EffectData.mark_effect_owner(runtime_effect_data, player.id)
+			EffectData.mark_selected_target(runtime_effect_data, target)
+			await game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
+
+
+func should_suppress_resource_gain(modifiers: Array[Dictionary]) -> bool:
+	for modifier in modifiers:
+		if EffectData.should_suppress_resource_gain(modifier):
+			return true
+
+	return false
