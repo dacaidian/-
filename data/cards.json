@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -995,7 +995,7 @@
 				"url": "res://assets/img/苗疆族/薄葬.png",
 				"type": "upgrade",
 				"count": 1,
-				"level": 3,
+				"level": 2,
 				"keywords": [],
 				"effects": [
 					{
