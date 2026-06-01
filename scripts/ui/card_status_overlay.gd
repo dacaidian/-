@@ -275,7 +275,6 @@ func draw_freeze_overlay() -> void:
 	for index in range(6):
 		var angle := TAU * float(index) / 6.0
 		var dir := Vector2(cos(angle), sin(angle))
-		var inner_point := center + dir * crystal_size * 0.25
 		var outer_point := center + dir * crystal_size
 		var branch_angle := angle + PI * 0.32
 		var branch_dir := Vector2(cos(branch_angle), sin(branch_angle))
