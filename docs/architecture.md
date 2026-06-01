@@ -598,7 +598,7 @@
 
 - `monkey_spirit` is a playable faction defined in `data/cards.json`; its first hero is `sun_wukong`.
 - `spell_move` and `spell_attack` are action-resource keywords. They are implemented in `CardState.apply_keyword_passives()` and allow the `spell` action group to coexist with `move` or `attack` respectively. They do not automatically allow `move` and `attack` to coexist with each other.
-- Sun Wukong currently defines four placeholder spell actions (`fiery_eyes_golden_gaze`, `somersault_cloud`, `body_beyond_body`, `bronze_head_iron_arms`) with empty effect lists. Empty spell actions are intentionally not startable by `SpellAction.can_start()`, so they document the future hero kit without exposing no-op buttons.
+- Sun Wukong defines four spell actions. `fiery_eyes_golden_gaze` is implemented through `grant_board_vision`; the remaining placeholder spells keep empty effect lists and therefore stay hidden until their effects are added.
 
 
 ## Board Vision / Peek Preview
@@ -606,4 +606,4 @@
 - Temporary board vision is stored on `PlayerState`, not on UI cards. `has_global_board_vision` grants full-board preview until turn end; `visible_board_slots` is the future extension point for per-slot vision.
 - `GrantBoardVisionEffect` is the generic effect entry. Current Sun Wukong `fiery_eyes_golden_gaze` uses `scope: "global"`; future effects can use selected-slot style scopes without changing hover UI.
 - Board hover preview asks `GameManager.can_preview_card_front(state)`. Face-up cards always preview; face-down cards preview only when the current player has vision for that slot.
-- Turn-limited vision is cleared in `PlayerState.end_turn()`, and GameManager hides active card hover previews when the current player ends the turn.
+- Turn-limited vision is cleared in `PlayerState.end_turn()` without duplicate state broadcasts, and GameManager hides active card hover previews when the current player ends the turn.

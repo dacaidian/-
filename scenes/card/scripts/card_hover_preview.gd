@@ -11,6 +11,7 @@ extends Node
 
 # 父节点 Card。这里不写成强类型，是因为它访问的是 card.gd 自定义属性和信号。
 var card
+var preview_permission_provider: Node
 
 # 记录鼠标是否还停留在父卡牌上。
 var is_mouse_hovering := false
@@ -105,18 +106,35 @@ func hide_preview() -> void:
 
 
 func get_game_manager() -> Node:
+	if (
+		preview_permission_provider != null
+		and is_instance_valid(preview_permission_provider)
+		and preview_permission_provider.has_method("can_preview_card_front")
+	):
+		return preview_permission_provider
+
 	var node := card as Node
 	while node != null:
 		if node.has_method("can_preview_card_front"):
+			preview_permission_provider = node
 			return node
 		node = node.get_parent()
 
 	var scene := get_tree().current_scene
-	if scene == null:
-		return null
+	if scene != null:
+		var scene_provider := scene.get_node_or_null("GameManager")
+		if scene_provider != null:
+			preview_permission_provider = scene_provider
+			return scene_provider
 
-	return scene.get_node_or_null("GameManager")
+	var root := get_tree().root
+	if root != null:
+		var root_provider := root.find_child("GameManager", true, false)
+		if root_provider != null:
+			preview_permission_provider = root_provider
+			return root_provider
 
+	return null
 
 func get_preview_position(display_size: Vector2) -> Vector2:
 	var viewport_size: Vector2 = card.get_viewport_rect().size

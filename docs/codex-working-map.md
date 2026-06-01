@@ -637,7 +637,7 @@ Notes:
 - Use `spell_move` when a unit may spellcast and move in the same turn.
 - Use `spell_attack` when a unit may spellcast and attack in the same turn.
 - These keywords only pair `spell` with the named action group; they do not imply `move_attack` or cavalry behavior.
-- Placeholder spell actions may use empty `effects`; they remain hidden because `SpellAction.can_start()` requires at least one effect.
+- Placeholder spell actions may use empty `effects`; they remain hidden because `SpellAction.can_start()` requires at least one effect. `fiery_eyes_golden_gaze` is no longer a placeholder and uses `grant_board_vision`.
 
 
 ## Board Vision / Peek Preview
@@ -645,4 +645,4 @@ Notes:
 - Temporary board vision is stored on `PlayerState`, not on UI cards. `has_global_board_vision` grants full-board preview until turn end; `visible_board_slots` is the future extension point for per-slot vision.
 - `GrantBoardVisionEffect` is the generic effect entry. Current Sun Wukong `fiery_eyes_golden_gaze` uses `scope: "global"`; future effects can use selected-slot style scopes without changing hover UI.
 - Board hover preview asks `GameManager.can_preview_card_front(state)`. Face-up cards always preview; face-down cards preview only when the current player has vision for that slot.
-- Turn-limited vision is cleared in `PlayerState.end_turn()`, and GameManager hides active card hover previews when the current player ends the turn.
+- Turn-limited vision is cleared in `PlayerState.end_turn()` without duplicate state broadcasts, and GameManager hides active card hover previews when the current player ends the turn.
