@@ -8,9 +8,9 @@ static func is_neighbor(from_slot: int, to_slot: int, board_columns: int) -> boo
 	if board_columns <= 0:
 		return false
 
-	var from_row: int = int(from_slot / board_columns)
+	var from_row: int = floori(float(from_slot) / float(board_columns))
 	var from_column: int = from_slot % board_columns
-	var to_row: int = int(to_slot / board_columns)
+	var to_row: int = floori(float(to_slot) / float(board_columns))
 	var to_column: int = to_slot % board_columns
 	var row_distance: int = abs(from_row - to_row)
 	var column_distance: int = abs(from_column - to_column)
@@ -23,7 +23,7 @@ static func get_adjacent_slots(slot_index: int, board_columns: int, board_size: 
 	if slot_index < 0 or board_columns <= 0 or board_size <= 0:
 		return adjacent_slots
 
-	var source_row: int = int(slot_index / board_columns)
+	var source_row: int = floori(float(slot_index) / float(board_columns))
 	var source_column: int = slot_index % board_columns
 	var board_rows: int = int(ceil(float(board_size) / float(board_columns)))
 
