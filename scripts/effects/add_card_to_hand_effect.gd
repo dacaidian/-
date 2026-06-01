@@ -40,7 +40,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		game_manager.refresh_debug_panel()
 
 
-func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
+func can_execute(_source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
 	var card_id := EffectData.get_card_id(effect_data)
 	if card_id == "":
 		return false
