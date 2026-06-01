@@ -85,10 +85,10 @@ static func has_face_up_hero(board_states: Array[CardState], owner_id: String, h
 static func get_area_slots(center_slot: int, area_rows: int, area_cols: int, board_columns: int, board_size: int) -> Array[int]:
 	var slots: Array[int] = []
 	var total_rows: int = int(ceil(float(board_size) / float(board_columns)))
-	var center_row: int = center_slot / board_columns
+	var center_row: int = floori(float(center_slot) / float(board_columns))
 	var center_col: int = center_slot % board_columns
-	var before_rows: int = (area_rows - 1) / 2
-	var before_cols: int = (area_cols - 1) / 2
+	var before_rows: int = floori(float(area_rows - 1) / 2.0)
+	var before_cols: int = floori(float(area_cols - 1) / 2.0)
 	var after_rows: int = area_rows - 1 - before_rows
 	var after_cols: int = area_cols - 1 - before_cols
 
