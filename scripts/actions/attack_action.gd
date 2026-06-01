@@ -110,9 +110,9 @@ func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns:
 		return slots
 
 	slots.append(target_slot)
-	var attacker_row: int = int(attacker_slot / board_columns)
+	var attacker_row: int = floori(float(attacker_slot) / float(board_columns))
 	var attacker_col: int = attacker_slot % board_columns
-	var target_row: int = int(target_slot / board_columns)
+	var target_row: int = floori(float(target_slot) / float(board_columns))
 	var target_col: int = target_slot % board_columns
 	var row_delta: int = clampi(target_row - attacker_row, -1, 1)
 	var col_delta: int = clampi(target_col - attacker_col, -1, 1)
