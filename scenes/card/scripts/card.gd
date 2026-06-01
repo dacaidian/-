@@ -313,7 +313,6 @@ func setup_status_overlay() -> void:
 
 	status_overlay = CardStatusOverlayScript.new() as CardStatusOverlay
 	status_overlay.name = "StatusOverlay"
-	status_overlay.layout_mode = 1
 	status_overlay.anchor_left = 0.0
 	status_overlay.anchor_top = 0.0
 	status_overlay.anchor_right = 1.0
@@ -474,7 +473,6 @@ func configure_value_texture(value_texture: TextureRect) -> void:
 	value_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	value_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	value_texture.stretch_mode = TextureRect.STRETCH_SCALE
-	value_texture.layout_mode = 1
 	value_texture.anchor_left = 1.0
 	value_texture.anchor_top = 1.0
 	value_texture.anchor_right = 1.0
