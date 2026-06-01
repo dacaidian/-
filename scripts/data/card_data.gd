@@ -40,6 +40,7 @@ var keywords: Array[String] = []
 # 效果定义来自 JSON。这里保存原始 Dictionary，由 EffectSystem 解释执行。
 var effects: Array[Dictionary] = []
 var spell_actions: Array[Dictionary] = []
+var actions: Array[Dictionary] = []
 var mounted_attacks: Array[Dictionary] = []
 var target_rule := ""
 var animation := ""
@@ -158,6 +159,12 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 		for spell_action in raw_spell_actions:
 			if spell_action is Dictionary:
 				data.spell_actions.append(spell_action)
+
+	var raw_actions = card_dictionary.get(EffectData.KEY_ACTIONS, [])
+	if raw_actions is Array:
+		for action_data in raw_actions:
+			if action_data is Dictionary:
+				data.actions.append(action_data)
 
 	var raw_mounted_attacks = card_dictionary.get(EffectData.KEY_MOUNTED_ATTACKS, [])
 	if raw_mounted_attacks is Array:

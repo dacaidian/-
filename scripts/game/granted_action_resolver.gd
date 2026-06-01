@@ -18,8 +18,19 @@ func get_granted_actions(user: CardState, game_manager: GameManager) -> Array[Ca
 	if burst_action.can_start(user, game_manager):
 		actions.append(burst_action)
 
+	append_card_configured_actions(actions, user, game_manager)
 	append_hand_granted_actions(actions, user, game_manager)
 	return actions
+
+
+func append_card_configured_actions(actions: Array[CardAction], user: CardState, game_manager: GameManager) -> void:
+	if user == null or user.data == null:
+		return
+
+	for action_data in user.data.actions:
+		var action := create_action_from_data(action_data)
+		if action != null and action.can_start(user, game_manager):
+			actions.append(action)
 
 
 func append_hand_granted_actions(actions: Array[CardAction], user: CardState, game_manager: GameManager) -> void:
@@ -56,4 +67,6 @@ func create_action_from_data(action_data: Dictionary) -> CardAction:
 		FixedMeleeDamageAction.ACTION_ID, "claw_strike":
 			return FixedMeleeDamageAction.new().setup(action_data)
 		_:
+			if action_data.has("effects"):
+				return EffectAction.new().setup(action_data)
 			return null

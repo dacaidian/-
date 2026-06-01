@@ -568,3 +568,11 @@
 - Successful reborn skips graveyard/hero cooldown, clearing the board slot, refill, and attack occupy. This prevents refill from taking the original slot and prevents occupy prompts for a defeated reborn target.
 - `CardState.revive_from_reborn()` clears statuses, shield, and runtime modifiers, restores base stats/action resources, and preserves remaining reborn layers. Static reborn keywords are not re-parsed after revival, preventing infinite reborn loops.
 - Fox Spirit `nine_tails_upgrade` is a start-in-hand upgrade. It uses `modify_faction_skill` to modify `sacrifice`: when `tail >= 9`, Sacrifice still kills the selected non-hero minion and no longer grants tail; instead, its `before_target_effects` grants one full-health reborn layer to the modifier scope (`card_ids`, currently `su_daji`).
+
+
+### Configured Effect Actions and Cleanse
+
+- `EffectAction` is the generic board action for cards that declare `actions[]` in `cards.json`. It handles target rules, runtime-state gating, main-action cost, animation, selected-target injection, and execution through `EffectRegistry`. Use it for building or unit abilities that are not spell-turn actions and do not need a bespoke action class.
+- `moon_well` is the first card-owned configured action example: `tranquil_spring` is a `special` main action, usable only while the owning Night Elf player runtime state is `moonrise`, `full_moon`, or `moonset`.
+- `cleanse` is a public effect. It removes runtime statuses from target units through `CardState.cleanse_statuses()` and removes matching `death_link` counterpart statuses by link id. Future uncleanseable statuses should be expressed as status metadata and filtered in `CleanseEffect`.
+- Full restoration is configured as `heal` with `amount_source: "missing_health"`; this keeps effective-heal triggers accurate because the existing `HealEffect` still measures the real healed amount.

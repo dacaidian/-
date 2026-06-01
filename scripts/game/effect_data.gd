@@ -125,8 +125,10 @@ const EFFECT_GRANT_FACTION_SKILLS := "grant_faction_skills"
 const EFFECT_GRANT_UNIT_KEYWORDS := "grant_unit_keywords"
 const EFFECT_GRANT_REBORN := "grant_reborn"
 const EFFECT_MODIFY_FACTION_SKILL := "modify_faction_skill"
+const EFFECT_CLEANSE := "cleanse"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
+const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"
 
 const TRIGGER_WHILE_IN_HAND := "while_in_hand"
 const TRIGGER_WHILE_ON_BOARD := "while_on_board"

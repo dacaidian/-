@@ -315,6 +315,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_heal_spell(owner, effect_root, target_card)
 		"medical_practice":
 			await play_medical_practice_spell(owner, effect_root, target_card)
+		"tranquil_spring":
+			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
 		"arcane", "arcane_wisdom":
@@ -379,6 +381,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
 		"medical_practice":
 			await play_medical_practice_at_rect(owner, effect_root, target_rect)
+		"tranquil_spring":
+			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"arcane", "arcane_wisdom":
@@ -439,6 +443,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"medical_practice":
 			await play_medical_practice_spell(owner, effect_root, target_card)
+		"tranquil_spring":
+			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"meteor_strike":
 			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_infusion":
@@ -961,6 +967,39 @@ func play_baptism_spell_at_rect(owner: Node, effect_root: Control, target_rect: 
 
 	heal_effect.queue_free()
 	wave_effect.queue_free()
+
+
+func play_tranquil_spring_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var spring_effect := create_rect_spell_effect(target_rect, "TranquilSpringEffect", create_tranquil_spring_effect_style(), 1.34)
+	var cleanse_ring := create_rect_spell_effect(target_rect, "TranquilSpringCleanseRing", create_tranquil_spring_ring_style(), 1.08)
+	effect_root.add_child(spring_effect)
+	effect_root.add_child(cleanse_ring)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_SINE)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(spring_effect, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.42)
+	rise_tween.tween_property(spring_effect, "modulate:a", 0.92, spell_animation_duration * 0.42)
+	rise_tween.tween_property(cleanse_ring, "scale", Vector2(1.52, 1.52), spell_animation_duration * 0.42)
+	rise_tween.tween_property(cleanse_ring, "modulate:a", 0.82, spell_animation_duration * 0.42)
+	await rise_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(spring_effect, "scale", Vector2(1.62, 1.62), spell_animation_duration * 0.64)
+	fade_tween.tween_property(spring_effect, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	fade_tween.tween_property(cleanse_ring, "scale", Vector2(2.35, 2.35), spell_animation_duration * 0.64)
+	fade_tween.tween_property(cleanse_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	await fade_tween.finished
+
+	spring_effect.queue_free()
+	cleanse_ring.queue_free()
 
 
 func play_summon_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -2399,6 +2438,28 @@ func create_arcane_aura_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.46, 0.72, 1.0, 0.54)
 	style.shadow_size = 38
+	return style
+
+
+func create_tranquil_spring_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.38, 0.96, 0.88, 0.24)
+	style.border_color = Color(0.78, 1.0, 0.94, 0.88)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.42, 0.92, 1.0, 0.58)
+	style.shadow_size = 38
+	return style
+
+
+func create_tranquil_spring_ring_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.74, 1.0, 0.88, 0.10)
+	style.border_color = Color(0.92, 1.0, 0.88, 0.82)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.68, 1.0, 0.82, 0.48)
+	style.shadow_size = 26
 	return style
 
 

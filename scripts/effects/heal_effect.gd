@@ -3,10 +3,10 @@ class_name HealEffect
 
 # 治疗效果。target 由 CardEffect 统一解释。
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
-	var amount := get_spell_scaled_amount(source_state, effect_data, game_manager)
 	var healed_targets: Array[CardState] = []
 
 	for target_state in get_target_states(source_state, effect_data, game_manager):
+		var amount := get_heal_amount_for_target(source_state, target_state, effect_data, game_manager)
 		if should_play_trigger_animation(effect_data, game_manager):
 			await game_manager.play_effect_heal_animation(target_state)
 		var healed_amount := target_state.heal(amount)
@@ -18,6 +18,18 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 	if not healed_targets.is_empty() and game_manager != null and game_manager.has_method("resolve_queued_triggers"):
 		await game_manager.resolve_queued_triggers()
+
+
+func get_heal_amount_for_target(
+	source_state: CardState,
+	target_state: CardState,
+	effect_data: Dictionary,
+	game_manager: Node
+) -> int:
+	if str(effect_data.get(EffectData.KEY_AMOUNT_SOURCE, "")) == EffectData.AMOUNT_SOURCE_MISSING_HEALTH:
+		return target_state.damage_taken if target_state != null else 0
+
+	return get_spell_scaled_amount(source_state, effect_data, game_manager)
 
 
 func queue_effective_heal_trigger(

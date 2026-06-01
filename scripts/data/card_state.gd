@@ -838,6 +838,26 @@ func remove_status_instance(status: CardStatus) -> bool:
 	return true
 
 
+func cleanse_statuses() -> Array[CardStatus]:
+	var removed_statuses: Array[CardStatus] = []
+	for index in range(statuses.size() - 1, -1, -1):
+		var status := statuses[index]
+		if status == null:
+			statuses.remove_at(index)
+			continue
+
+		removed_statuses.append(status)
+		statuses.remove_at(index)
+
+	if removed_statuses.is_empty():
+		return removed_statuses
+
+	recalculate_status_modifiers(false)
+	state_changed.emit(self)
+	removed_statuses.reverse()
+	return removed_statuses
+
+
 func has_status(status_id: String) -> bool:
 	return get_status(status_id) != null
 

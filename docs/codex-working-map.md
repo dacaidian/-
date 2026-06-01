@@ -599,3 +599,10 @@ Common changes:
 - New reborn sources should prefer `grant_reborn`; `health_values: [0]` means full-health revival, positive values mean exact current health after revival.
 - Reborn is real death followed by in-place revival: death triggers still happen, but successful reborn does not enter graveyard, refill the slot, or allow occupy.
 - Faction skill rewrites should use `modify_faction_skill` with `card_ids` as the affected scope plus `before_target_effects` and/or `suppress_resource_gain`, not UI-specific branches.
+
+
+### Configured actions and cleanse notes
+
+- Card-owned configured actions use `CardData.actions` and are created by `GrantedActionResolver.create_action_from_data()`. If an action only needs target selection plus `EffectRegistry` effects, prefer `EffectAction` instead of a card-specific action class. Current example: `moon_well` action `tranquil_spring`.
+- `cleanse` is the shared status removal effect. It calls `CardState.cleanse_statuses()` and also removes paired `death_link` counterparts so linked statuses cannot remain half-active. Future uncleanseable statuses should be represented as status metadata and filtered in `CleanseEffect`, not special-cased by card id.
+- Full healing should reuse `heal` with `amount_source: "missing_health"` so effective-heal triggers still receive the real healed amount.

@@ -1445,6 +1445,44 @@
 				]
 			},
 			{
+				"id": "moon_well",
+				"name": "月亮井",
+				"description": "二阶建筑。夜晚可使用静谧泉水，完全恢复一个随从并净化其状态。",
+				"url": "res://assets/img/暗夜精灵哨兵/月亮井.png",
+				"type": "building",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"attack": 0,
+				"health": 10,
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "tranquil_spring",
+						"name": "静谧泉水",
+						"target_rule": "all_minions",
+						"animation": "tranquil_spring",
+						"runtime_state_ids": [
+							"moonrise",
+							"full_moon",
+							"moonset"
+						],
+						"main_action_cost": 1,
+						"action_group": "special",
+						"can_reuse_action_group": false,
+						"effects": [
+							{
+								"id": "heal",
+								"amount_source": "missing_health"
+							},
+							{
+								"id": "cleanse"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "precision_shot",
 				"name": "精准射击",
 				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",
