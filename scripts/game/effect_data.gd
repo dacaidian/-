@@ -127,6 +127,7 @@ const EFFECT_GRANT_REBORN := "grant_reborn"
 const EFFECT_MODIFY_FACTION_SKILL := "modify_faction_skill"
 const EFFECT_CLEANSE := "cleanse"
 const EFFECT_EVOLVE_UNITS := "evolve_units"
+const EFFECT_SACRIFICE_FRIENDLY_MINIONS := "sacrifice_friendly_minions"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"

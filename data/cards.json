@@ -1764,7 +1764,8 @@
 				"card_id": "su_daji",
 				"attached_cards": [
 					"gou_po",
-					"charm_spell"
+					"charm_spell",
+					"huo_guo"
 				]
 			}
 		],
@@ -1991,6 +1992,30 @@
 				]
 			},
 			{
+				"id": "huo_guo",
+				"name": "祸国",
+				"description": "苏妲己的三阶法术。献祭全部场上友方非英雄随从，并获得9只九尾之尾。",
+				"url": "res://assets/img/狐妖仙/祸国.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "sacrifice",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "sacrifice_friendly_minions",
+						"resource_id": "tail",
+						"amount": 1
+					},
+					{
+						"id": "add_card_to_hand",
+						"card_id": "nine_tail_tail",
+						"amount": 9
+					}
+				]
+			},
+			{
 				"id": "mirage",
 				"name": "魅影",
 				"description": "升级牌。魅惑和狐念之术不再限定目标属性小于8，仍不能选择英雄。",
@@ -2156,6 +2181,21 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "nine_tail_tail",
+				"name": "九尾之尾",
+				"description": "狐妖仙一阶飞行衍生随从。",
+				"url": "res://assets/img/狐妖仙/九尾之尾.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"flying"
+				],
+				"attack": 2,
+				"health": 2,
+				"effects": []
 			}
 		]
 	},

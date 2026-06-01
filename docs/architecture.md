@@ -586,3 +586,9 @@
 - `evolve_units` is the generic evolution effect. It replaces matching face-up owned minions with `target_card_id` by calling `CardState.set_card_data()`, so the evolved unit is freshly initialized and does not inherit attack, health, shield, statuses, action resources, or origin from the old unit.
 - Hand upgrades can use `trigger: "while_in_hand"`, `active_zone: "hand"`, `card_ids`, and `target_card_id` to continuously evolve matching board units. Current example: `tianhu_transformation` evolves `qingqiu_fox_immortal` into token `tianhu`.
 - `giant` is a unit keyword handled by `AttackAction`. After a normal attack damages the center target, giant splash also damages enemy or neutral units in the target slot's other layer and the two side slots determined by attack direction. Only the center target can trigger attack-occupy; splash deaths use normal death resolution without occupy.
+
+
+### Ordered Mass Sacrifice
+
+- `sacrifice_friendly_minions` resolves friendly non-hero minions one at a time. Before each target is sacrificed it re-reads `modify_faction_skill` modifiers for `sacrifice`, so threshold upgrades such as Nine Tails can become active midway through the spell. Do not replace this with a single batch destroy when resource thresholds matter.
+- `huo_guo` uses this ordered sacrifice effect, then `add_card_to_hand` with `amount: 9` to add nine `nine_tail_tail` token minions to hand.

@@ -615,3 +615,9 @@ Common changes:
 
 - Evolution cards should use the shared `evolve_units` effect instead of manually mutating card fields. The target unit is reset through `CardState.set_card_data()`, intentionally dropping previous statuses and damage.
 - Giant splash is centralized in `AttackAction`; future splash shapes should extend direction/slot calculation there rather than adding per-card attack branches.
+
+
+### Ordered mass sacrifice
+
+- Use `sacrifice_friendly_minions` when a card must sacrifice many friendly non-hero minions while preserving per-target sacrifice modifiers and resource threshold changes. Current example: `huo_guo`.
+- The effect intentionally re-checks Nine Tails-style skill modifiers before every target. Avoid batching these deaths unless the card explicitly does not care about intermediate resource changes.
