@@ -33,7 +33,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		damaged_states.append(second_target)
 
 	if not damaged_states.is_empty():
-		await gm.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_SPELL, source_state)
+		gm.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_SPELL, source_state)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

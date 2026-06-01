@@ -4,6 +4,8 @@ class_name CardEffect
 # CardEffect 是所有卡牌效果的基类。
 # 具体效果只修改游戏状态，不直接操作 Card 节点或其他 UI。
 func execute(_source_state: CardState, _effect_data: Dictionary, _game_manager: Node) -> void:
+	if false:
+		await Engine.get_main_loop().process_frame
 	pass
 
 

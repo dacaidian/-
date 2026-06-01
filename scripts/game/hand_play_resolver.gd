@@ -131,7 +131,7 @@ func execute_selected_hand_card(game_manager: GameManager, target_state: CardSta
 		HAND_PLACE_ACTION_ID:
 			await execute_hand_minion_placement(game_manager, player, card_data, hand_index, target_state)
 		HAND_EQUIP_ACTION_ID:
-			await execute_hand_equipment(game_manager, player, card_data, hand_index)
+			execute_hand_equipment(game_manager, player, card_data, hand_index)
 		_:
 			await execute_hand_card(game_manager, player, card_data, hand_index, target_state)
 
@@ -317,7 +317,7 @@ func requires_target(card_data: CardData, player: PlayerState = null) -> bool:
 	return SpellTargetResolver.requires_target(get_target_rule(card_data, player))
 
 
-func can_target(card_data: CardData, target: CardState, game_manager: GameManager, player: PlayerState = null) -> bool:
+func can_target(card_data: CardData, target: CardState, _game_manager: GameManager, player: PlayerState = null) -> bool:
 	if card_data == null:
 		return false
 
