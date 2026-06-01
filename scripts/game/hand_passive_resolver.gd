@@ -84,8 +84,8 @@ func refresh_faction_runtime_cycle_passives(player: PlayerState, game_manager: G
 		fallback_state_id = str(effect_data.get(EffectData.KEY_FALLBACK_RUNTIME_STATE_ID, ""))
 		break
 
-	var changed := player.set_faction_runtime_state_cycle_override(override_state_ids, fallback_state_id)
-	if changed and game_manager != null:
+	var did_change := player.set_faction_runtime_state_cycle_override(override_state_ids, fallback_state_id)
+	if did_change and game_manager != null:
 		game_manager.update_faction_time_panel_view()
 
 

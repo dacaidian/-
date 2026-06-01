@@ -283,13 +283,13 @@ func set_faction_runtime_state_cycle_override(state_ids: Array[String], fallback
 		if state_id != "" and not normalized_state_ids.has(state_id):
 			normalized_state_ids.append(state_id)
 
-	var changed := normalized_state_ids != faction_runtime_state_cycle_override_ids
+	var did_change := normalized_state_ids != faction_runtime_state_cycle_override_ids
 	faction_runtime_state_cycle_override_ids = normalized_state_ids
 
 	if not has_faction_runtime_state():
-		if changed:
+		if did_change:
 			state_changed.emit(self)
-		return changed
+		return did_change
 
 	var current_index := find_faction_runtime_state_index(faction_runtime_state_id)
 	if current_index >= 0:
@@ -298,15 +298,15 @@ func set_faction_runtime_state_cycle_override(state_ids: Array[String], fallback
 		var fallback_index := find_faction_runtime_state_index(fallback_state_id)
 		if fallback_state_id != "" and fallback_index >= 0:
 			set_faction_runtime_state_by_index(fallback_index)
-			changed = true
+			did_change = true
 		elif not get_effective_faction_runtime_state_cycle().is_empty():
 			set_faction_runtime_state_by_index(0)
-			changed = true
+			did_change = true
 
-	if changed:
+	if did_change:
 		state_changed.emit(self)
 
-	return changed
+	return did_change
 
 
 func gain_resource_score(amount: int) -> void:
