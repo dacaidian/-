@@ -1970,6 +1970,27 @@
 				]
 			},
 			{
+				"id": "tianhu_transformation",
+				"name": "天狐化",
+				"description": "三阶升级牌。将场上己方青丘氏狐仙进化为天狐。",
+				"url": "res://assets/img/狐妖仙/天狐化.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "evolve_units",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"card_ids": [
+							"qingqiu_fox_immortal"
+						],
+						"target_card_id": "tianhu"
+					}
+				]
+			},
+			{
 				"id": "mirage",
 				"name": "魅影",
 				"description": "升级牌。魅惑和狐念之术不再限定目标属性小于8，仍不能选择英雄。",
@@ -2095,6 +2116,43 @@
 						],
 						"card_ids": [
 							"su_daji"
+						]
+					}
+				]
+			}
+		],
+		"tokens": [
+			{
+				"id": "tianhu",
+				"name": "天狐",
+				"description": "狐妖仙三阶衍生随从。巨兽，可施放狐火。",
+				"url": "res://assets/img/狐妖仙/天狐.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"giant"
+				],
+				"attack": 6,
+				"health": 16,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "foxfire",
+						"name": "狐火",
+						"animation": "foxfire",
+						"target_rule": "area_2x2",
+						"area_rows": 2,
+						"area_cols": 2,
+						"effects": [
+							{
+								"id": "damage",
+								"target": "selected_area_enemy_minions",
+								"amount": 4,
+								"area_rows": 2,
+								"area_cols": 2,
+								"death_reason": "spell"
+							}
 						]
 					}
 				]

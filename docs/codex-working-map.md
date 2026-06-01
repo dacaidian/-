@@ -609,3 +609,9 @@ Common changes:
 
 - `power_word_shield` is modeled as a stackable `health_modifier` status (`max_health_bonus: 5`) instead of direct max-health mutation. Removing it through `cleanse` lowers max/current health through `CardState.recalculate_status_modifiers()`, then `CleanseEffect` runs death resolution if the unit reaches 0 health.
 - Cast animation key `power_word_shield` has its own golden ward visual in `CardAnimationController`; do not reuse the frost shield key for this priest spell.
+
+
+### Evolution and giant attacks
+
+- Evolution cards should use the shared `evolve_units` effect instead of manually mutating card fields. The target unit is reset through `CardState.set_card_data()`, intentionally dropping previous statuses and damage.
+- Giant splash is centralized in `AttackAction`; future splash shapes should extend direction/slot calculation there rather than adding per-card attack branches.

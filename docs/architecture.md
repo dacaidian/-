@@ -579,3 +579,10 @@
 
 - `power_word_shield` is modeled as a stackable `health_modifier` status (`max_health_bonus: 5`) instead of direct max-health mutation. Removing it through `cleanse` lowers max/current health through `CardState.recalculate_status_modifiers()`, then `CleanseEffect` runs death resolution if the unit reaches 0 health.
 - Cast animation key `power_word_shield` has its own golden ward visual in `CardAnimationController`; do not reuse the frost shield key for this priest spell.
+
+
+### Evolution and Giant Splash
+
+- `evolve_units` is the generic evolution effect. It replaces matching face-up owned minions with `target_card_id` by calling `CardState.set_card_data()`, so the evolved unit is freshly initialized and does not inherit attack, health, shield, statuses, action resources, or origin from the old unit.
+- Hand upgrades can use `trigger: "while_in_hand"`, `active_zone: "hand"`, `card_ids`, and `target_card_id` to continuously evolve matching board units. Current example: `tianhu_transformation` evolves `qingqiu_fox_immortal` into token `tianhu`.
+- `giant` is a unit keyword handled by `AttackAction`. After a normal attack damages the center target, giant splash also damages enemy or neutral units in the target slot's other layer and the two side slots determined by attack direction. Only the center target can trigger attack-occupy; splash deaths use normal death resolution without occupy.

@@ -34,6 +34,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_MOONBLADE, MoonbladeEffect.new())
 	register_effect(EffectData.EFFECT_GRANT_REBORN, GrantRebornEffect.new())
 	register_effect(EffectData.EFFECT_CLEANSE, CleanseEffect.new())
+	register_effect(EffectData.EFFECT_EVOLVE_UNITS, EvolveUnitsEffect.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

@@ -12,6 +12,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	var flip_bonus := get_flip_capacity_bonus(player)
 	player.set_flip_capacity_bonus(flip_bonus)
 	refresh_faction_runtime_cycle_passives(player, game_manager)
+	refresh_unit_evolution_passives(player, game_manager)
 	refresh_unit_movement_passives(player, game_manager)
 	refresh_unit_keyword_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
@@ -23,6 +24,21 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 		var delta := player.max_flips_per_turn - previous_capacity
 		if delta > 0:
 			player.gain_flips(delta)
+
+
+func refresh_unit_evolution_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null or game_manager.effect_registry == null:
+		return
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_EVOLVE_UNITS:
+			continue
+
+		var runtime_effect_data := effect_data.duplicate(true)
+		EffectData.mark_effect_owner(runtime_effect_data, player.id)
+		game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
 
 
 func get_flip_capacity_bonus(player: PlayerState) -> int:

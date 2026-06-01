@@ -56,8 +56,11 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var attacker_card_id := user.card_id
 	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
 	target.take_damage(calculate_attack_damage(user, target))
+	var splash_targets := apply_giant_splash_damage(user, target, game_manager)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
+	if not splash_targets.is_empty():
+		await game_manager.resolve_dead_states(splash_targets, "attack", user)
 
 	var trigger_source := user
 	if trigger_source.is_empty() or trigger_source.card_id != attacker_card_id:
@@ -79,6 +82,84 @@ func calculate_attack_damage(user: CardState, target: CardState) -> int:
 		damage += user.get_siege_bonus()
 
 	return maxi(damage, 0)
+
+
+func apply_giant_splash_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+	var damaged_targets: Array[CardState] = []
+	if user == null or target == null or game_manager == null:
+		return damaged_targets
+	if not user.has_keyword(CardData.KEYWORD_GIANT):
+		return damaged_targets
+
+	for slot_index in get_giant_splash_slots(user.slot_index, target.slot_index, game_manager.board_columns, game_manager.board_states.size()):
+		for splash_target in game_manager.get_board_states_at_slot(slot_index):
+			if splash_target == target:
+				continue
+			if not can_giant_splash_target(user, splash_target):
+				continue
+
+			splash_target.take_damage(calculate_attack_damage(user, splash_target))
+			damaged_targets.append(splash_target)
+
+	return damaged_targets
+
+
+func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns: int, board_size: int) -> Array[int]:
+	var slots: Array[int] = []
+	if attacker_slot == target_slot or board_columns <= 0 or board_size <= 0:
+		return slots
+
+	slots.append(target_slot)
+	var attacker_row: int = int(attacker_slot / board_columns)
+	var attacker_col: int = attacker_slot % board_columns
+	var target_row: int = int(target_slot / board_columns)
+	var target_col: int = target_slot % board_columns
+	var row_delta: int = clampi(target_row - attacker_row, -1, 1)
+	var col_delta: int = clampi(target_col - attacker_col, -1, 1)
+	if row_delta == 0 and col_delta == 0:
+		return slots
+
+	var offsets: Array[Vector2i] = []
+	if row_delta != 0 and col_delta != 0:
+		offsets.append(Vector2i(row_delta, 0))
+		offsets.append(Vector2i(0, col_delta))
+	elif row_delta != 0:
+		offsets.append(Vector2i(row_delta, -1))
+		offsets.append(Vector2i(row_delta, 1))
+	elif col_delta != 0:
+		offsets.append(Vector2i(-1, col_delta))
+		offsets.append(Vector2i(1, col_delta))
+
+	for offset in offsets:
+		var slot := get_slot_by_offset(attacker_row, attacker_col, offset, board_columns, board_size)
+		if slot >= 0 and not slots.has(slot):
+			slots.append(slot)
+
+	return slots
+
+
+func get_slot_by_offset(row: int, col: int, offset: Vector2i, board_columns: int, board_size: int) -> int:
+	var board_rows: int = int(ceil(float(board_size) / float(board_columns)))
+	var target_row := row + offset.x
+	var target_col := col + offset.y
+	if target_row < 0 or target_row >= board_rows:
+		return -1
+	if target_col < 0 or target_col >= board_columns:
+		return -1
+
+	var slot := target_row * board_columns + target_col
+	return slot if slot >= 0 and slot < board_size else -1
+
+
+func can_giant_splash_target(user: CardState, target: CardState) -> bool:
+	if user == null or target == null or target == user:
+		return false
+	if not BoardQuery.is_face_up_unit(target):
+		return false
+	if target.owner_id == user.owner_id and target.owner_id != "":
+		return false
+
+	return true
 
 
 func get_attack_profile(user: CardState, target: CardState, game_manager: GameManager) -> Dictionary:
