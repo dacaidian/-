@@ -333,7 +333,6 @@ func get_card_flow_width() -> float:
 
 func create_hand_card_view(card_entry: Variant) -> PanelContainer:
 	var card := PanelContainer.new()
-	var card_data := get_card_data_from_entry(card_entry)
 	var hand_index := get_hand_index_from_entry(card_entry)
 	card_controls[hand_index] = card
 	card.custom_minimum_size = HAND_CARD_SIZE
