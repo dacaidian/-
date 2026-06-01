@@ -1,4 +1,4 @@
-[
+﻿[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -2225,7 +2225,7 @@
 					"spell_attack"
 				],
 				"attack": 3,
-				"health": 12,
+				"health": 16,
 				"effects": [],
 				"spell_actions": [
 					{
