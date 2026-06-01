@@ -227,8 +227,8 @@ func update_card_texture() -> void:
 	update_interaction_visual()
 
 
-func set_content_temporarily_hidden(hidden: bool) -> void:
-	is_content_temporarily_hidden = hidden
+func set_content_temporarily_hidden(should_hide_content: bool) -> void:
+	is_content_temporarily_hidden = should_hide_content
 	update_card_texture()
 	update_interaction_visual()
 
