@@ -1629,6 +1629,12 @@ func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
 	if state == null or target_card == null or card_data == null:
 		return
 
+	if not can_refill_ground_slot(slot_index):
+		card_pool.add_card(card_data, true)
+		update_card_pool_view()
+		refresh_debug_panel()
+		return
+
 	if card_pool_view_controller.view == null or card_pool_view_controller.animation_root == null:
 		state.set_card_data(card_data)
 		state.set_face_up(false)
@@ -1645,9 +1651,12 @@ func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
 
 	await card_pool_view_controller.play_refill_animation(self, target_card, card_back_texture)
 
-	if state.is_empty():
+	if state.is_empty() and can_refill_ground_slot(slot_index):
 		state.set_card_data(card_data)
 		state.set_face_up(false)
+	else:
+		card_pool.add_card(card_data, true)
+		update_card_pool_view()
 
 	target_card.is_animating = false
 	is_resolving_card_action = false
