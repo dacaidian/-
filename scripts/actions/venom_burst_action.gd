@@ -40,7 +40,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 	return targets
 
 
-func execute(user: CardState, target: CardState, game_manager: GameManager) -> void:
+func execute(user: CardState, _target: CardState, game_manager: GameManager) -> void:
 	if user == null or game_manager == null:
 		return
 	if not can_start(user, game_manager):
