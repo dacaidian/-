@@ -36,6 +36,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_CLEANSE, CleanseEffect.new())
 	register_effect(EffectData.EFFECT_EVOLVE_UNITS, EvolveUnitsEffect.new())
 	register_effect(EffectData.EFFECT_SACRIFICE_FRIENDLY_MINIONS, SacrificeFriendlyMinionsEffect.new())
+	register_effect(EffectData.EFFECT_GRANT_BOARD_VISION, GrantBoardVisionEffect.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

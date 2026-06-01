@@ -128,6 +128,7 @@ const EFFECT_MODIFY_FACTION_SKILL := "modify_faction_skill"
 const EFFECT_CLEANSE := "cleanse"
 const EFFECT_EVOLVE_UNITS := "evolve_units"
 const EFFECT_SACRIFICE_FRIENDLY_MINIONS := "sacrifice_friendly_minions"
+const EFFECT_GRANT_BOARD_VISION := "grant_board_vision"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"

@@ -765,6 +765,19 @@ func get_board_state(slot_index: int) -> CardState:
 	return board_states[slot_index]
 
 
+func can_preview_card_front(state: CardState) -> bool:
+	if state == null or state.is_empty():
+		return false
+	if state.is_face_up:
+		return true
+
+	var current_player := get_current_player()
+	if current_player == null:
+		return false
+
+	return current_player.can_preview_board_slot(state.slot_index)
+
+
 func _on_card_hovered(card: Card) -> void:
 	if interaction_manager.is_area_target_mode:
 		interaction_manager.update_area_preview(card.state, board_states, self)
@@ -854,6 +867,7 @@ func end_turn() -> void:
 	var current_player := get_current_player()
 	if current_player != null:
 		current_player.end_turn()
+		get_tree().call_group("card_hover_previews", "hide_preview")
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_AFTER_TURN_END, current_player.id)
 		advance_faction_runtime_state_for_player(current_player)
 

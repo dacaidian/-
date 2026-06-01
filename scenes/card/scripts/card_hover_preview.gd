@@ -24,6 +24,8 @@ func _ready() -> void:
 	if card == null:
 		return
 
+	add_to_group("card_hover_previews")
+
 	# 监听父卡牌的鼠标事件和翻面信号。
 	card.mouse_entered.connect(_on_card_mouse_entered)
 	card.mouse_exited.connect(_on_card_mouse_exited)
@@ -38,8 +40,7 @@ func _exit_tree() -> void:
 func _on_card_mouse_entered() -> void:
 	is_mouse_hovering = true
 
-	# 只有正面朝上时才需要展示大图。
-	if card.is_face_up:
+	if can_show_preview():
 		show_preview()
 
 
@@ -49,11 +50,23 @@ func _on_card_mouse_exited() -> void:
 
 
 func _on_card_face_changed(is_face_up: bool) -> void:
-	# 鼠标还在卡牌上，且翻到了正面，就显示；否则隐藏。
-	if is_face_up and is_mouse_hovering:
+	if is_mouse_hovering and (is_face_up or can_show_preview()):
 		show_preview()
 	else:
 		hide_preview()
+
+
+func can_show_preview() -> bool:
+	if card == null:
+		return false
+	if card.is_face_up:
+		return true
+
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("can_preview_card_front"):
+		return bool(scene.can_preview_card_front(card.state))
+
+	return false
 
 
 func show_preview() -> void:

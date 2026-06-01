@@ -27,6 +27,8 @@ var faction_resource_values: Dictionary = {}
 var faction_skill_configs: Dictionary = {}
 var unlocked_faction_skill_ids: Array[String] = []
 var used_faction_skill_ids: Array[String] = []
+var has_global_board_vision := false
+var visible_board_slots: Array[int] = []
 
 # 资源分是玩家的长期胜利资源。达到战局目标值的玩家会赢得游戏。
 var resource_score := DEFAULT_RESOURCE_SCORE
@@ -332,6 +334,40 @@ func start_turn() -> void:
 func end_turn() -> void:
 	# 第一版结束回合暂时不清理资源，只广播状态变化。
 	# 后续可以在这里处理弃牌、持续效果、回合结束触发等逻辑。
+	clear_turn_board_vision()
+	state_changed.emit(self)
+
+
+
+func grant_global_board_vision_until_turn_end() -> void:
+	if has_global_board_vision:
+		return
+
+	has_global_board_vision = true
+	state_changed.emit(self)
+
+
+func grant_board_slot_vision_until_turn_end(slot_index: int) -> void:
+	if slot_index < 0 or visible_board_slots.has(slot_index):
+		return
+
+	visible_board_slots.append(slot_index)
+	state_changed.emit(self)
+
+
+func can_preview_board_slot(slot_index: int) -> bool:
+	if has_global_board_vision:
+		return true
+
+	return visible_board_slots.has(slot_index)
+
+
+func clear_turn_board_vision() -> void:
+	if not has_global_board_vision and visible_board_slots.is_empty():
+		return
+
+	has_global_board_vision = false
+	visible_board_slots.clear()
 	state_changed.emit(self)
 
 

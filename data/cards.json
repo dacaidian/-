@@ -1,4 +1,4 @@
-﻿[
+[
 	{
 		"id": "silver_hand",
 		"name": "silverHand",
@@ -2233,7 +2233,12 @@
 						"name": "火眼金睛",
 						"animation": "arcane",
 						"target_rule": "none",
-						"effects": []
+						"effects": [
+							{
+								"id": "grant_board_vision",
+								"scope": "global"
+							}
+						]
 					},
 					{
 						"id": "somersault_cloud",
