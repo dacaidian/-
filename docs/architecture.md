@@ -576,3 +576,6 @@
 - `moon_well` is the first card-owned configured action example: `tranquil_spring` is a `special` main action, usable only while the owning Night Elf player runtime state is `moonrise`, `full_moon`, or `moonset`.
 - `cleanse` is a public effect. It removes runtime statuses from target units through `CardState.cleanse_statuses()` and removes matching `death_link` counterpart statuses by link id. Future uncleanseable statuses should be expressed as status metadata and filtered in `CleanseEffect`.
 - Full restoration is configured as `heal` with `amount_source: "missing_health"`; this keeps effective-heal triggers accurate because the existing `HealEffect` still measures the real healed amount.
+
+- `power_word_shield` is modeled as a stackable `health_modifier` status (`max_health_bonus: 5`) instead of direct max-health mutation. Removing it through `cleanse` lowers max/current health through `CardState.recalculate_status_modifiers()`, then `CleanseEffect` runs death resolution if the unit reaches 0 health.
+- Cast animation key `power_word_shield` has its own golden ward visual in `CardAnimationController`; do not reuse the frost shield key for this priest spell.

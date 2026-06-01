@@ -162,12 +162,23 @@
 							{
 								"id": "power_word_shield",
 								"name": "真言术·盾",
-								"animation": "shield",
+								"animation": "power_word_shield",
 								"target_rule": "all_minions",
 								"effects": [
 									{
-										"id": "increase_max_health",
-										"amount": 5
+										"id": "apply_status",
+										"status_id": "power_word_shield",
+										"status_name": "真言术·盾",
+										"status_description": "每层使生命上限提高5点，当前生命也同步提高。",
+										"status_tags": [
+											"health_modifier"
+										],
+										"stacks": 1,
+										"stack_policy": "stack",
+										"permanent": true,
+										"payload": {
+											"max_health_bonus": 5
+										}
 									}
 								]
 							}

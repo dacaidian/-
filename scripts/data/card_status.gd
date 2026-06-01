@@ -10,6 +10,7 @@ const DURATION_SCOPE_GLOBAL := "global"
 
 const DEFAULT_EXPIRES_ON_TRIGGER := EventContext.TRIGGER_AFTER_TURN_END
 const STATUS_DIVINE_SHIELD := "divine_shield"
+const STATUS_POWER_WORD_SHIELD := "power_word_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
 const STATUS_ENCOURAGE_GU := "encourage_gu"
 const STATUS_POISON := "poison"

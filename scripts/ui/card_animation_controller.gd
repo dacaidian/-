@@ -319,6 +319,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
+		"power_word_shield":
+			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
@@ -385,6 +387,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
+		"power_word_shield":
+			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
 		"summon":
@@ -445,6 +449,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_medical_practice_spell(owner, effect_root, target_card)
 		"tranquil_spring":
 			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
+		"power_word_shield":
+			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
 		"meteor_strike":
 			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_infusion":
@@ -688,6 +694,39 @@ func play_shield_spell_at_rect(owner: Node, effect_root: Control, target_rect: R
 	await recover_tween.finished
 
 	shield_effect.queue_free()
+
+
+func play_power_word_shield_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var ward := create_rect_spell_effect(target_rect, "PowerWordShieldWard", create_power_word_shield_ward_style(), 1.32)
+	var sigil := create_rect_spell_effect(target_rect, "PowerWordShieldSigil", create_power_word_shield_sigil_style(), 0.86)
+	effect_root.add_child(ward)
+	effect_root.add_child(sigil)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_SINE)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(ward, "scale", Vector2(1.12, 1.12), spell_animation_duration * 0.38)
+	rise_tween.tween_property(ward, "modulate:a", 0.92, spell_animation_duration * 0.38)
+	rise_tween.tween_property(sigil, "scale", Vector2(1.02, 1.02), spell_animation_duration * 0.38)
+	rise_tween.tween_property(sigil, "modulate:a", 0.90, spell_animation_duration * 0.38)
+	await rise_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(ward, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.68)
+	fade_tween.tween_property(ward, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	fade_tween.tween_property(sigil, "scale", Vector2(1.36, 1.36), spell_animation_duration * 0.68)
+	fade_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	await fade_tween.finished
+
+	ward.queue_free()
+	sigil.queue_free()
 
 
 func play_arcane_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
@@ -2416,6 +2455,28 @@ func create_shield_spell_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(14)
 	style.shadow_color = shield_spell_effect_glow_color
 	style.shadow_size = 32
+	return style
+
+
+func create_power_word_shield_ward_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.96, 0.78, 0.28, 0.22)
+	style.border_color = Color(1.0, 0.95, 0.62, 0.92)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.78, 0.28, 0.58)
+	style.shadow_size = 36
+	return style
+
+
+func create_power_word_shield_sigil_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.96, 0.70, 0.30)
+	style.border_color = Color(1.0, 1.0, 0.88, 0.96)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(1.0, 0.88, 0.46, 0.52)
+	style.shadow_size = 22
 	return style
 
 

@@ -7,12 +7,17 @@ class_name CleanseEffect
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
+	var cleansed_targets: Array[CardState] = []
 	for target_state in get_target_states(source_state, effect_data, game_manager):
 		var removed_statuses := target_state.cleanse_statuses()
 		if removed_statuses.is_empty():
 			continue
 
+		cleansed_targets.append(target_state)
 		remove_link_counterparts(target_state, removed_statuses, game_manager)
+
+	if not cleansed_targets.is_empty() and game_manager != null and game_manager.has_method("resolve_dead_states"):
+		await game_manager.resolve_dead_states(cleansed_targets, EffectData.DEATH_REASON_EFFECT, source_state)
 
 
 func remove_link_counterparts(target_state: CardState, removed_statuses: Array[CardStatus], game_manager: Node) -> void:
