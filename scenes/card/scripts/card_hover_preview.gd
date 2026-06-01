@@ -66,6 +66,10 @@ func can_show_preview() -> bool:
 	if scene != null and scene.has_method("can_preview_card_front"):
 		return bool(scene.can_preview_card_front(card.state))
 
+	var game_manager := get_game_manager()
+	if game_manager != null and game_manager.has_method("can_preview_card_front"):
+		return bool(game_manager.can_preview_card_front(card.state))
+
 	return false
 
 
@@ -98,6 +102,20 @@ func hide_preview() -> void:
 		# queue_free 会在当前帧结束后安全删除节点。
 		preview_rect.queue_free()
 		preview_rect = null
+
+
+func get_game_manager() -> Node:
+	var node := card as Node
+	while node != null:
+		if node.has_method("can_preview_card_front"):
+			return node
+		node = node.get_parent()
+
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+
+	return scene.get_node_or_null("GameManager")
 
 
 func get_preview_position(display_size: Vector2) -> Vector2:
