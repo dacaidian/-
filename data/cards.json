@@ -1886,6 +1886,41 @@
 				]
 			},
 			{
+				"id": "qingqiu_fox_immortal",
+				"name": "青丘氏狐仙",
+				"description": "狐妖仙三阶远程随从。狐火会灼烧一个2x2范围内的所有敌方随从。",
+				"url": "res://assets/img/狐妖仙/青丘氏狐仙.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 3,
+				"health": 8,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "foxfire",
+						"name": "狐火",
+						"animation": "foxfire",
+						"target_rule": "area_2x2",
+						"area_rows": 2,
+						"area_cols": 2,
+						"effects": [
+							{
+								"id": "damage",
+								"target": "selected_area_enemy_minions",
+								"amount": 4,
+								"area_rows": 2,
+								"area_cols": 2,
+								"death_reason": "spell"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "mirage",
 				"name": "魅影",
 				"description": "升级牌。魅惑和狐念之术不再限定目标属性小于8，仍不能选择英雄。",

@@ -321,6 +321,8 @@ func get_selected_area_targets(source_state: CardState, effect_data: Dictionary,
 		for target_state in game_manager.get_board_states_at_slot(slot_index):
 			if not BoardQuery.is_face_up_minion(target_state):
 				continue
+			if not SpellTargetResolver.can_spell_affect(target_state):
+				continue
 
 			match filter_type:
 				AreaFilter.ENEMY_MINIONS:

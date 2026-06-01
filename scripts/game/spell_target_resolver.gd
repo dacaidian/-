@@ -10,6 +10,7 @@ const TARGET_RULE_LOW_STAT_NON_HERO_MINIONS := "low_stat_non_hero_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
 const TARGET_RULE_AREA_3X3 := "area_3x3"
+const TARGET_RULE_AREA_2X2 := "area_2x2"
 const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
 const TARGET_RULE_MINIONS_BY_CARD_IDS := "minions_by_card_ids"
 
@@ -50,6 +51,8 @@ static func get_valid_targets(
 		if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS and game_manager.has_method("can_place_ground_card_on_slot"):
 			if not game_manager.can_place_ground_card_on_slot(state.slot_index):
 				continue
+		if is_area_rule(target_rule) and not is_valid_area_target(target_rule, state, game_manager):
+			continue
 		if can_target(target_rule, state, card_ids, source_state):
 			targets.append(state)
 
@@ -127,12 +130,30 @@ static func is_magic_immune(target: CardState) -> bool:
 
 
 static func is_area_rule(target_rule: String) -> bool:
-	return target_rule == TARGET_RULE_AREA_3X3
+	return target_rule == TARGET_RULE_AREA_3X3 or target_rule == TARGET_RULE_AREA_2X2
+
+
+static func is_valid_area_target(target_rule: String, target: CardState, game_manager: GameManager) -> bool:
+	if target == null or game_manager == null:
+		return false
+
+	var dimensions := get_area_dimensions(target_rule)
+	if dimensions.is_empty():
+		return false
+
+	var rows := int(dimensions.get("rows", 0))
+	var cols := int(dimensions.get("cols", 0))
+	if rows <= 0 or cols <= 0:
+		return false
+
+	return BoardQuery.is_full_area_inside_board(target.slot_index, rows, cols, game_manager.board_columns, game_manager.board_states.size())
 
 
 static func get_area_dimensions(target_rule: String) -> Dictionary:
 	match target_rule:
 		TARGET_RULE_AREA_3X3:
 			return {"rows": 3, "cols": 3}
+		TARGET_RULE_AREA_2X2:
+			return {"rows": 2, "cols": 2}
 		_:
 			return {}

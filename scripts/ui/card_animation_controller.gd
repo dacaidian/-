@@ -1786,6 +1786,8 @@ func play_area_spell_cast(owner: Node, effect_root: Control, caster_card: Card, 
 	match animation_key:
 		"blizzard":
 			await play_blizzard_area_spell(owner, effect_root, caster_card, center_card, spell_data)
+		"foxfire":
+			await play_foxfire_area_spell(owner, effect_root, caster_card, center_card, spell_data)
 		_:
 			await play_default_spell(owner, center_card)
 
@@ -1807,13 +1809,7 @@ func play_blizzard_area_spell(owner: Node, effect_root: Control, caster_card: Ca
 	charge_tween.tween_property(caster_card, "scale", caster_start_scale * 1.08, charge_duration)
 	await charge_tween.finished
 
-	var center_rect: Rect2 = center_card.get_global_rect()
-	var center_pos: Vector2 = center_rect.get_center()
-	var card_size_ref: Vector2 = center_card.size
-
-	var area_width: float = card_size_ref.x * area_cols
-	var area_height: float = card_size_ref.y * area_rows
-	var area_rect := Rect2(center_pos - Vector2(area_width, area_height) * 0.5, Vector2(area_width, area_height))
+	var area_rect := get_area_spell_rect(center_card, area_rows, area_cols)
 
 	var blizzard_effect := create_blizzard_area_effect(area_rect)
 	effect_root.add_child(blizzard_effect)
@@ -1842,6 +1838,69 @@ func play_blizzard_area_spell(owner: Node, effect_root: Control, caster_card: Ca
 	caster_card.is_animating = false
 
 
+func play_foxfire_area_spell(owner: Node, effect_root: Control, caster_card: Card, center_card: Card, spell_data: Dictionary) -> void:
+	var area_rows: int = int(spell_data.get("area_rows", 2))
+	var area_cols: int = int(spell_data.get("area_cols", 2))
+
+	caster_card.is_animating = true
+	var caster_start_scale: Vector2 = caster_card.scale
+	var caster_start_z_index: int = caster_card.z_index
+	caster_card.z_index = 1180
+
+	var charge_duration: float = spell_animation_duration * 0.20
+	var charge_tween := owner.create_tween()
+	charge_tween.set_parallel(true)
+	charge_tween.set_trans(Tween.TRANS_SINE)
+	charge_tween.set_ease(Tween.EASE_OUT)
+	charge_tween.tween_property(caster_card, "scale", caster_start_scale * 1.06, charge_duration)
+	await charge_tween.finished
+
+	var area_rect := get_area_spell_rect(center_card, area_rows, area_cols)
+	var foxfire_effect := create_foxfire_area_effect(area_rect)
+	effect_root.add_child(foxfire_effect)
+
+	var flame_count := 8
+	for i in range(flame_count):
+		var flame := create_foxfire_flame()
+		foxfire_effect.add_child(flame)
+		var x := randf_range(8.0, maxf(8.0, area_rect.size.x - 8.0))
+		var y := randf_range(8.0, maxf(8.0, area_rect.size.y - 8.0))
+		flame.position = Vector2(x, y) - flame.pivot_offset
+
+	var duration: float = spell_animation_duration * 0.74
+	var pulse_tween := owner.create_tween()
+	pulse_tween.set_parallel(true)
+	pulse_tween.set_trans(Tween.TRANS_SINE)
+	pulse_tween.set_ease(Tween.EASE_IN_OUT)
+	pulse_tween.tween_property(foxfire_effect, "modulate:a", 0.92, duration * 0.22)
+	pulse_tween.tween_property(foxfire_effect, "scale", Vector2(1.05, 1.05), duration * 0.30)
+	await owner.create_tween().tween_interval(duration * 0.46).finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(foxfire_effect, "modulate:a", 0.0, duration * 0.32)
+	fade_tween.tween_property(foxfire_effect, "scale", Vector2(1.14, 1.14), duration * 0.32)
+	fade_tween.tween_property(caster_card, "scale", caster_start_scale, duration * 0.32)
+	await fade_tween.finished
+
+	foxfire_effect.queue_free()
+	caster_card.scale = caster_start_scale
+	caster_card.z_index = caster_start_z_index
+	caster_card.is_animating = false
+
+
+func get_area_spell_rect(anchor_card: Card, area_rows: int, area_cols: int) -> Rect2:
+	var anchor_rect: Rect2 = anchor_card.get_global_rect()
+	var card_size_ref: Vector2 = anchor_card.size
+	var area_size := Vector2(card_size_ref.x * area_cols, card_size_ref.y * area_rows)
+	if area_rows % 2 == 0 or area_cols % 2 == 0:
+		return Rect2(anchor_rect.position, area_size)
+
+	return Rect2(anchor_rect.get_center() - area_size * 0.5, area_size)
+
+
 func create_blizzard_area_effect(area_rect: Rect2) -> Panel:
 	var effect := Panel.new()
 	effect.name = "BlizzardAreaEffect"
@@ -1861,6 +1920,48 @@ func create_blizzard_area_effect(area_rect: Rect2) -> Panel:
 	style.shadow_size = 32
 	effect.add_theme_stylebox_override("panel", style)
 	return effect
+
+
+func create_foxfire_area_effect(area_rect: Rect2) -> Panel:
+	var effect := Panel.new()
+	effect.name = "FoxfireAreaEffect"
+	effect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	effect.size = area_rect.size
+	effect.pivot_offset = effect.size * 0.5
+	effect.global_position = area_rect.get_center() - effect.pivot_offset
+	effect.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	effect.z_index = 2260
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.88, 0.22, 0.92, 0.18)
+	style.border_color = Color(1.0, 0.48, 0.96, 0.74)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(10)
+	style.shadow_color = Color(0.9, 0.18, 1.0, 0.50)
+	style.shadow_size = 34
+	effect.add_theme_stylebox_override("panel", style)
+	return effect
+
+
+func create_foxfire_flame() -> Panel:
+	var flame := Panel.new()
+	flame.name = "FoxfireFlame"
+	flame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var flame_size := Vector2(18, 18)
+	flame.size = flame_size
+	flame.custom_minimum_size = flame_size
+	flame.pivot_offset = flame_size * 0.5
+	flame.z_index = 2262
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.42, 0.96, 0.74)
+	style.border_color = Color(1.0, 0.82, 1.0, 0.92)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(9)
+	style.shadow_color = Color(0.8, 0.08, 1.0, 0.62)
+	style.shadow_size = 14
+	flame.add_theme_stylebox_override("panel", style)
+	return flame
 
 
 func create_fireball_projectile(size_scale := 1.0) -> Panel:

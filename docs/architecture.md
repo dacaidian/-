@@ -37,7 +37,7 @@
 - `StatusResolver`：状态规则和生命周期协作者。当前负责在普通回合时点前结算毒伤害，并在普通时点触发后推进临时状态的剩余回合；状态本身保存在 `CardState.statuses`。
 - `EventContext`：触发名和运行时上下文 key 的常量集合，例如 `TRIGGER_ON_DESTROYED`、`DESTROYER_PLAYER_ID`。规则层和效果层跨模块传上下文时优先使用这里的常量，避免字符串散落。
 - `EffectData`：卡牌效果 JSON 的字段名和基础读取工具，例如 `id`、`trigger`、`active_zone`、`card_ids`、`spell_actions`、`target`、`target_card_id`、`death_reason`、`filter_type`、`filter_owner`、`target_zone`、`amount_source`、`card_id`、`trigger_player`。它只定义配置语言，不执行效果；解析升级牌、时点触发、目标过滤、复活坟场筛选、状态内回合效果、上下文数值来源和运行时目标注入时优先使用这里，避免字符串散落。
-- `BoardQuery`：棋盘几何和常用目标过滤工具，例如八方向相邻、正面单位、正面随从集合、指定玩家英雄是否正面在场。`get_area_slots()` 以指定格子为中心、按 `area_rows × area_cols` 展开矩形区域，自动处理棋盘边缘裁剪。攻击范围、法术目标、英雄配套牌使用限制、时点光环、AOE 范围展开等规则需要扫描棋盘时优先复用这里，避免每个规则自己计算格子坐标。
+- `BoardQuery`: board geometry and common target filters. `get_area_slots()` expands `area_rows x area_cols` rectangles: odd sizes use the selected slot as center, even sizes use the selected slot as the top-left anchor. Rules that scan the board should prefer this helper instead of recomputing coordinates.
 - `HandInteractionController`：手牌 UI 与手牌规则之间的交互编排层，负责手牌焦点、可用提示、动作菜单锚点和手牌点击后的动作流转。
 - `HandCardState`：手牌运行时状态。旧手牌仍可直接保存 `CardData`，但需要冷却、来源、标签等运行时字段的手牌应保存为 `HandCardState`。当前英雄死亡复活会生成带 `cooldown_turns` 的英雄手牌。
 - `HandPlayResolver`：手牌使用规则协作者。当前负责手牌法术的可用性、目标规则、效果结算和消耗手牌，也负责手牌随从放置到棋盘的通用流程；后续装备、升级牌主动使用也优先在这里扩展。
@@ -128,7 +128,7 @@
    - 施法回合开启后，`ActionRegistry` 才会从当前随从的 `CardData.spell_actions` 和当前玩家手牌升级牌授予的 `spell_actions` 动态创建 `SpellAction`。
    - `SpellAction` 根据 `target_rule` 计算合法目标，当前 `all_minions` 表示所有正面随从。
    - 点击目标后登记 `spell` 行动类别，通过 `GameManager.play_spell_cast_animation()` 委托 `CardAnimationController` 播放表现，再执行配置中的效果。
-   - 当前已配置的随从法术包括：牧师的治疗术，目标规则为 `all_minions`，治疗目标 7 点生命；火焰女巫的火球术，目标规则为 `non_hero_minions`，对目标造成 6 点伤害；冰霜女巫的冰霜护盾，目标规则为 `all_minions`，使目标获得 6 点护盾；奥术法师的奥术智慧，目标规则为 `none`，使当前玩家本回合额外获得 3 次翻牌；女猎手的月刃，目标规则为 `all_minions`，第一目标必须存在相邻弹射随从，随后由 `BoardUnitBounceSelectionController` 选择第二目标。
+   - Current configured minion spells include Priest healing, Fire Witch fireball, Frost Witch shield, Arcane Mage wisdom, Huntress moonblade, and Qingqiu Fox Immortal foxfire. `foxfire` uses `area_2x2` to choose a top-left anchor and damage enemy minions in that 2x2 area.
 14. 玩家使用手牌法术：
 	- `HandDrawerController` 只发出手牌点击信号，`HandInteractionController` 记录焦点与菜单锚点，并把当前玩家和卡牌数据交给 `HandPlayResolver`。
 	- 点击可用手牌先进入和棋盘卡一致的焦点态；手牌卡显示金色焦点柔光，动作菜单显示“施放”。
@@ -248,7 +248,7 @@
 - 如果一张牌的多段效果需要不同目标，应在对应效果上显式写 `target`；运行时仍会保存选中目标上下文，但不会覆盖显式目标。
 - `selected_adjacent_enemy_minions` 表示：以本次选中的目标为中心，取其 8 方向相邻、正面、敌方、类型为随从的单位。敌我判断优先使用效果拥有者；手牌法术会由 `HandPlayResolver` 注入拥有者，棋盘法术则使用来源随从 owner。
 - `enemy_and_neutral_units` 表示：取战场上所有正面单位，排除效果拥有者的己方单位，保留敌方单位和中立单位；单位包括随从和建筑。当前用于“流星陨落”这类状态回合触发型全场伤害。
-- `selected_area_enemy_minions` 表示：以本次选中的格子为中心，按效果配置的 `area_rows` × `area_cols` 展开区域，取区域内正面敌方随从。`selected_area_all_minions` 同理但不区分敌我。区域展开由 `BoardQuery.get_area_slots()` 计算，自动处理棋盘边缘裁剪；过滤逻辑在 `CardEffect.get_selected_area_targets()` 中统一处理。新增过滤类型（友方、全部单位等）只需扩展 `CardEffect.AreaFilter` 枚举。
+- `selected_area_enemy_minions` uses the selected slot as the area anchor, expands `area_rows x area_cols` through `BoardQuery.get_area_slots()`, filters face-up enemy minions, and skips magic-immune targets. `selected_area_all_minions` uses the same geometry without the owner filter.
 
 ## 生命值约定
 
@@ -351,9 +351,9 @@
 - 由升级牌解锁的施法能力不要预埋进随从自身 `spell_actions` 再特殊禁用；优先让升级牌通过 `grant_spell_actions` 授予动作。授予规则的 JSON 解释放在 `GrantedSpellResolver`，这样未获得升级时单位基础定义保持干净，未来升级牌也可以授予不同单位不同法术。
 - 法术动作只在当前玩家开启施法回合后展示；施法回合状态保存在 `GameManager.is_spell_turn_active`，回合结束时清空。
 - 每个 spell action 至少包含 `id`、`name`、`target_rule` 和 `effects`；可选 `animation` 用于指定表现层动画 key。`CardAction.get_area_info()` 是多态方法，基类返回空字典，`SpellAction` 覆写并通过 `SpellTargetResolver` 返回 area 尺寸；`InteractionManager` 不依赖具体行动类的内部字段。
-- 法术目标规则由 `SpellTargetResolver` 统一解释。当前常用 `all_minions`、`non_hero_minions`、`minions_by_card_ids`、`none` 和 `area_3x3`；`all_minions` 只选正面随从，`non_hero_minions` 只选正面非英雄随从，`minions_by_card_ids` 只选 `spell_data.card_ids` 白名单里的正面随从并排除施法者自身，`none` 表示无目标法术，点击动作菜单后直接结算。`all_units` 解析能力仍保留给未来明确允许影响建筑的机制，但当前普通施法不应使用它。后续”不能选英雄””只能选建筑””只选友方”等规则应在这里扩展。
-- `area_3x3` 是首个 AOE 范围目标规则。它不选择单位，而是选择棋盘格子作为范围中心。`SpellTargetResolver.is_area_rule()` 统一判断 area 类型；`get_area_dimensions()` 从规则名解析尺寸。新增 area 形状（如 5×5、十字）只需在 `SpellTargetResolver` 中注册常量和映射，交互层和效果层自动适配。
-- AOE 目标选择复用同一套 `InteractionManager.start_action_selection()`：area 模式下全棋盘格子均为合法目标（白色边框），悬停时通过 `mouse_entered_card` 信号触发 `update_area_preview()`，调用 `BoardQuery.get_area_slots()` 计算影响范围并标记 `CardState.is_area_preview`（蓝色填充）。点击任意合法格子后，该格子作为”选中中心”注入效果上下文。
+- Spell target rules are interpreted only by `SpellTargetResolver`. Common rules include `all_minions`, `non_hero_minions`, `minions_by_card_ids`, `none`, `area_3x3`, and `area_2x2`. New target restrictions should be added there instead of branching in concrete actions or effects.
+- `area_3x3` and `area_2x2` are AOE target rules. Odd areas use a center slot; even areas use a top-left anchor, with `SpellTargetResolver.is_valid_area_target()` ensuring the full shape fits on the board. Register new area shapes through `is_area_rule()` and `get_area_dimensions()`.
+- AOE target selection reuses `InteractionManager.start_action_selection()`: area mode marks legal anchor slots, hover calls `update_area_preview()`, and `BoardQuery.get_area_slots()` marks the affected `CardState.is_area_preview` slots. The clicked slot is injected into effect context as the selected area anchor.
 - `empty_or_hidden_slots` 是格子型法术目标规则，允许选择空格或未翻开的背面牌格。它不要求目标是正面单位，当前用于“诱蛊”设置陷阱；释放时仍通过 `EffectData.mark_selected_target()` 把目标格子的 `CardState` 注入效果上下文。
 - `target_rule: "none"` 不一定表示完全没有后续交互。若某个效果在法术成功施放后需要多段棋盘选择，应由对应效果启动专门的选择协作者。例如 `swap_board_slots` 使用 `BoardPairSelectionController`，在效果结算期间最多选择三组格子并逐组交换；`link_units` 使用 `BoardUnitPairSelectionController`，在效果结算期间从合法随从中选两个建立链接。它们不把每次点击塞回 `InteractionManager` 的单次目标流程，避免和普通施法目标、手牌目标、AOE 预览互相耦合。
 - `swap_board_slots` 交换的是单元格本身：两个位置上的 `BoardCell.is_land` 等单元格性质会互换，地面层卡牌内容也随之交换；屏幕上的 CardSlot / Card 节点仍保持原物理坐标。7x7 棋盘中，初始内圈地面格被交换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被交换到内圈后仍不可补牌/放置普通随从。
@@ -384,7 +384,7 @@
 - 动画控制器只操作 `Card` 节点和临时表现节点，不直接修改 `CardState`、`PlayerState`、坟场、牌池等规则数据。
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
-- 法术表现通过卡牌或 spell action 的 `animation` key 分派。当前支持的 key 包括：`heal`（治疗脉冲）、`medical_practice`（行医：草药光点与苗疆药雾脉冲）、`shield`（护盾屏障）、`arcane`（奥术脉冲）、`arcane_aura`（奥术光环法阵与目标附着脉冲）、`meteor_aura`（流星光环：星环附着脉冲）、`meteor_strike`（流星命中：陨石坠落和爆裂冲击）、`summon`（水蓝召唤法阵与水滴扩散）、`gu_summon`（苗疆蛊术召唤：暗绿蛊雾、蛇形脉冲和蛊光爆散）、`gu_infusion`（励蛊：暗绿色蛊虫注入 + 毒绿力量脉冲）、`gu_life_link`（子母蛊：双目标蛊环与绿色生命线连接）、`thin_burial`（薄葬：暗绿裹布与蛊印庇护脉冲）、`gu_lure`（诱蛊释放：暗绿诱蛊法阵落到目标格）、`gu_trap_trigger`（诱蛊触发：毒红咬合脉冲 + 蛊孢爆散）、`fireball`（火球投射物）、`pyroblast`（放大版火球投射物）、`dark_arrow`（暗箭投射物）、`moonblade`（月刃：银蓝旋刃依次命中第一目标和弹射目标）、`baptism`（洗礼：目标金色治疗脉冲 + 周围圣光冲击）、`resurrection`（复活：默认法术特效，预留独立动画扩展）、`blizzard`（暴风雪：冰蓝色矩形区域覆盖 + 消散特效，走 `play_area_spell_cast()` 专用 AOE 动画入口）。未匹配的 key 走通用法术特效。
+- Spell visuals dispatch through the card or spell action `animation` key. Area keys include `blizzard` for the blue rectangular blizzard overlay and `foxfire` for the purple-pink 2x2 foxfire burn overlay. Unmatched keys use the generic spell effect.
 
 ## 玩家资源约定
 
@@ -559,6 +559,7 @@
 - 当前 `魅影` 使用 `modify_spell_ability` 将 `魅惑`（`charm_spell`）和 `狐念之术`（`fox_mind_art`）的目标规则改为 `non_hero_minions`，即不再限定属性小于 8，但仍不能选英雄，仍遵守魔法免疫。
 - 手牌法术的目标预览、点击层解析和最终执行校验都必须把手牌拥有者传入 `HandPlayResolver`，因为目标规则可能被拥有者手牌中的升级牌实时改写。
 
+- `Qingqiu Fox Immortal` is a Fox Spirit level-3 ranged minion, 4 copies, 3/8, with spell action `foxfire`. `foxfire` uses `area_2x2` and deals 4 spell damage to all enemy minions in the anchored 2x2 area.
 
 ## Reborn And Nine Tails
 

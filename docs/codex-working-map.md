@@ -160,7 +160,7 @@
 常见修改：
 
 - 建筑当前不能作为施法目标。伤害、治疗、护盾等可选目标默认应使用 `all_minions`；只有明确设计为可影响建筑时，才扩展目标规则。
-- `area_3x3` 是 AOE 范围目标规则：选择棋盘格子作为范围中心，影响 `area_rows × area_cols` 区域。`SpellTargetResolver.is_area_rule()` 统一判断；新增 area 形状只在 `SpellTargetResolver` 注册常量和尺寸映射。
+- `area_3x3` / `area_2x2` are AOE target rules. Odd areas use the selected slot as center; even areas use the selected slot as the top-left anchor. Register new area shapes in `SpellTargetResolver` constants and dimension mapping.
 - 升级牌授予法术仍走 `grant_spell_actions`，不要把授予逻辑写进具体随从。
 - 新法术动画优先新增 `animation` key，让 `CardAnimationController` 复用或扩展既有表现，例如 `pyroblast` 是放大版 `fireball`、`moonblade` 是二段弹射投射物。AOE 法术使用专用动画入口 `play_area_spell_cast()`。
 
@@ -274,7 +274,7 @@
 - 如果第一段目标还依赖效果内部条件（例如月刃要求第一目标附近存在可弹射随从），在对应 `CardEffect.can_execute()` 中实现校验；`SpellAction` 会把候选目标注入运行时效果并过滤掉不可执行目标。
 - 交换单元格会同时交换 `BoardCell` 性质和 `CardState` 内容。初始内圈地面格被换到外圈后仍可补牌/放置普通随从，初始外圈边缘格被换到内圈后仍不可补牌/放置普通随从；普通移动仍只交换卡牌内容。
 - 多段效果如果需要不同目标，要在效果上显式写 `target`；`selected_adjacent_enemy_minions` 可用于以选中目标为中心，伤害/影响周围 8 方向敌方随从。
-- `selected_area_enemy_minions` 和 `selected_area_all_minions` 用于 AOE 范围效果：读取效果配置的 `area_rows`/`area_cols`，通过 `BoardQuery.get_area_slots()` 展开区域，再按 `CardEffect.AreaFilter` 过滤。区域尺寸从效果 JSON 配置，与 target_rule 解耦。
+- `selected_area_enemy_minions` and `selected_area_all_minions` read `area_rows`/`area_cols`, expand through `BoardQuery.get_area_slots()`, filter through `CardEffect.AreaFilter`, and skip magic-immune targets. Area size lives in effect JSON and is separate from target_rule naming.
 - `enemy_and_neutral_units` 用于全场效果：选择所有非己方正面单位，包含敌方单位和中立随从/建筑；当前用于流星陨落的回合结束状态伤害。
 - 效果如果可能致死，应优先批量收集受影响目标并调用 `GameManager.resolve_dead_states()`；单体特殊流程才使用 `check_and_destroy_if_dead()`。
 - 固定授予法术用 `grant_spell_actions`；根据玩家历史动态授予法术用 `grant_last_spell_action` + `source_card_ids`，不要在 UI 或具体卡牌名分支里拼动作。
@@ -326,7 +326,7 @@
 - `thin_burial` 是薄葬的一次性施法/附着动画；持续死亡庇护视觉由 `CardStatusOverlay` 绘制。
 - `baptism` 是洗礼的金色治疗脉冲和扩散圣光冲击表现。
 - `gu_lure` 是诱蛊释放到格子的暗绿法阵表现；`gu_trap_trigger` 是诱蛊触发时的毒红咬合和蛊孢爆散表现。
-- `blizzard` 是暴风雪的冰蓝色区域覆盖 + 消散特效，走 `play_area_spell_cast()` → `play_blizzard_area_spell()` 专用 AOE 动画入口。区域效果面板由 `create_blizzard_area_effect()` 创建。
+- `blizzard` uses `play_area_spell_cast()` -> `play_blizzard_area_spell()` for the blue AOE overlay; `foxfire` uses the same area entry with a purple-pink 2x2 foxfire overlay. Area panels are created by the corresponding `create_*_area_effect()` helpers.
 - 动画控制器不直接改规则状态；规则变化由 `GameManager` 在 `await` 后处理。
 
 ### 建筑

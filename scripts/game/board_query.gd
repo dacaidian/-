@@ -87,11 +87,13 @@ static func get_area_slots(center_slot: int, area_rows: int, area_cols: int, boa
 	var total_rows: int = int(ceil(float(board_size) / float(board_columns)))
 	var center_row: int = center_slot / board_columns
 	var center_col: int = center_slot % board_columns
-	var half_rows: int = (area_rows - 1) / 2
-	var half_cols: int = (area_cols - 1) / 2
+	var before_rows: int = (area_rows - 1) / 2
+	var before_cols: int = (area_cols - 1) / 2
+	var after_rows: int = area_rows - 1 - before_rows
+	var after_cols: int = area_cols - 1 - before_cols
 
-	for row_offset in range(-half_rows, half_rows + 1):
-		for col_offset in range(-half_cols, half_cols + 1):
+	for row_offset in range(-before_rows, after_rows + 1):
+		for col_offset in range(-before_cols, after_cols + 1):
 			var row: int = center_row + row_offset
 			var col: int = center_col + col_offset
 			if row < 0 or row >= total_rows or col < 0 or col >= board_columns:
@@ -99,3 +101,10 @@ static func get_area_slots(center_slot: int, area_rows: int, area_cols: int, boa
 			slots.append(row * board_columns + col)
 
 	return slots
+
+
+static func is_full_area_inside_board(anchor_slot: int, area_rows: int, area_cols: int, board_columns: int, board_size: int) -> bool:
+	if anchor_slot < 0 or area_rows <= 0 or area_cols <= 0 or board_columns <= 0 or board_size <= 0:
+		return false
+
+	return get_area_slots(anchor_slot, area_rows, area_cols, board_columns, board_size).size() == area_rows * area_cols

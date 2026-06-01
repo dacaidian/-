@@ -93,6 +93,9 @@ func get_area_info() -> Dictionary:
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
+	if SpellTargetResolver.is_area_rule(target_rule) and not SpellTargetResolver.is_valid_area_target(target_rule, target, game_manager):
+		return false
+
 	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user):
 		return false
 
