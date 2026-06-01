@@ -12,16 +12,16 @@ var can_reuse_action_group := true
 var once_per_turn := false
 
 
-func can_start(user: CardState, game_manager: GameManager) -> bool:
+func can_start(_user: CardState, _game_manager: GameManager) -> bool:
 	return false
 
 
-func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[CardState]:
+func get_valid_targets(_user: CardState, _game_manager: GameManager) -> Array[CardState]:
 	var targets: Array[CardState] = []
 	return targets
 
 
-func execute(user: CardState, target: CardState, game_manager: GameManager) -> void:
+func execute(_user: CardState, _target: CardState, _game_manager: GameManager) -> void:
 	pass
 
 
