@@ -3,11 +3,11 @@ class_name CardEffect
 
 # CardEffect 是所有卡牌效果的基类。
 # 具体效果只修改游戏状态，不直接操作 Card 节点或其他 UI。
-func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
+func execute(_source_state: CardState, _effect_data: Dictionary, _game_manager: Node) -> void:
 	pass
 
 
-func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
+func can_execute(_source_state: CardState, _effect_data: Dictionary, _game_manager: Node) -> bool:
 	return true
 
 
