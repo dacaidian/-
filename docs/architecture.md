@@ -592,3 +592,10 @@
 
 - `sacrifice_friendly_minions` resolves friendly non-hero minions one at a time. Before each target is sacrificed it re-reads `modify_faction_skill` modifiers for `sacrifice`, so threshold upgrades such as Nine Tails can become active midway through the spell. Do not replace this with a single batch destroy when resource thresholds matter.
 - `huo_guo` uses this ordered sacrifice effect, then `add_card_to_hand` with `amount: 9` to add nine `nine_tail_tail` token minions to hand.
+
+
+## Monkey Spirit Skeleton
+
+- `monkey_spirit` is a playable faction defined in `data/cards.json`; its first hero is `sun_wukong`.
+- `spell_move` and `spell_attack` are action-resource keywords. They are implemented in `CardState.apply_keyword_passives()` and allow the `spell` action group to coexist with `move` or `attack` respectively. They do not automatically allow `move` and `attack` to coexist with each other.
+- Sun Wukong currently defines four placeholder spell actions (`fiery_eyes_golden_gaze`, `somersault_cloud`, `body_beyond_body`, `bronze_head_iron_arms`) with empty effect lists. Empty spell actions are intentionally not startable by `SpellAction.can_start()`, so they document the future hero kit without exposing no-op buttons.

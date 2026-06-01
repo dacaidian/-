@@ -2200,6 +2200,67 @@
 		]
 	},
 	{
+		"id": "monkey_spirit",
+		"name": "monkeySpirit",
+		"displayName": "猴妖仙",
+		"description": "花果山一脉的妖仙种族，以灵动身法、变化神通与强悍体魄扰乱战局。齐天大圣孙悟空兼具战斗与法术节奏，后续将围绕火眼金睛、筋斗云、身外身法和铜头铁臂展开独特玩法。",
+		"heroes": [
+			{
+				"card_id": "sun_wukong",
+				"attached_cards": []
+			}
+		],
+		"cards": [
+			{
+				"id": "sun_wukong",
+				"name": "齐天大圣孙悟空",
+				"description": "花果山美猴王，齐天大圣孙悟空。身负火眼金睛、筋斗云、身外身法与铜头铁臂之神通，既能亲临战阵，也能以法术穿插攻守，是猴妖仙一族的核心英雄。",
+				"url": "res://assets/img/猴妖仙/齐天大圣孙悟空.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [
+					"spell_move",
+					"spell_attack"
+				],
+				"attack": 3,
+				"health": 12,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "fiery_eyes_golden_gaze",
+						"name": "火眼金睛",
+						"animation": "arcane",
+						"target_rule": "none",
+						"effects": []
+					},
+					{
+						"id": "somersault_cloud",
+						"name": "筋斗云",
+						"animation": "arcane",
+						"target_rule": "none",
+						"effects": []
+					},
+					{
+						"id": "body_beyond_body",
+						"name": "身外身法",
+						"animation": "summon",
+						"target_rule": "none",
+						"effects": []
+					},
+					{
+						"id": "bronze_head_iron_arms",
+						"name": "铜头铁臂",
+						"animation": "shield",
+						"target_rule": "none",
+						"effects": []
+					}
+				]
+			}
+		]
+	},
+	{
 		"id": "neutral",
 		"name": "neutral",
 		"displayName": "中立牌库",

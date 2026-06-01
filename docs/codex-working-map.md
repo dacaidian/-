@@ -621,3 +621,20 @@ Common changes:
 
 - Use `sacrifice_friendly_minions` when a card must sacrifice many friendly non-hero minions while preserving per-target sacrifice modifiers and resource threshold changes. Current example: `huo_guo`.
 - The effect intentionally re-checks Nine Tails-style skill modifiers before every target. Avoid batching these deaths unless the card explicitly does not care about intermediate resource changes.
+
+
+### Monkey Spirit / Action-resource keywords
+
+Read first:
+
+- `data/cards.json`
+- `scripts/data/card_data.gd`
+- `scripts/data/card_state.gd`
+- `scripts/actions/spell_action.gd`
+
+Notes:
+
+- Use `spell_move` when a unit may spellcast and move in the same turn.
+- Use `spell_attack` when a unit may spellcast and attack in the same turn.
+- These keywords only pair `spell` with the named action group; they do not imply `move_attack` or cavalry behavior.
+- Placeholder spell actions may use empty `effects`; they remain hidden because `SpellAction.can_start()` requires at least one effect.

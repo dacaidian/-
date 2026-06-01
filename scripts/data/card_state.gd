@@ -262,6 +262,10 @@ func apply_keyword_passives() -> void:
 		apply_cavalry_passive()
 	if has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
 		apply_mobile_assault_passive()
+	if has_keyword(CardData.KEYWORD_SPELL_MOVE):
+		apply_spell_move_passive()
+	if has_keyword(CardData.KEYWORD_SPELL_ATTACK):
+		apply_spell_attack_passive()
 
 
 func apply_cavalry_passive() -> void:
@@ -276,6 +280,18 @@ func apply_mobile_assault_passive() -> void:
 	max_main_actions = maxi(max_main_actions, 2)
 	current_main_actions = max_main_actions
 	allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)
+
+
+func apply_spell_move_passive() -> void:
+	max_main_actions = maxi(max_main_actions, 2)
+	current_main_actions = max_main_actions
+	allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_SPELL, false)
+
+
+func apply_spell_attack_passive() -> void:
+	max_main_actions = maxi(max_main_actions, 2)
+	current_main_actions = max_main_actions
+	allow_action_group_pair(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL, false)
 
 
 func create_initial_reborn_health_values() -> Array[int]:
