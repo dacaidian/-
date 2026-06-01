@@ -60,7 +60,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 	if not splash_targets.is_empty():
-		await game_manager.resolve_dead_states(splash_targets, "attack", user)
+		game_manager.resolve_dead_states(splash_targets, "attack", user)
 
 	var trigger_source := user
 	if trigger_source.is_empty() or trigger_source.card_id != attacker_card_id:
