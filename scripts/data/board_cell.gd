@@ -20,7 +20,7 @@ var aerial_states: Array[CardState] = []
 
 func setup(index: int, board_columns: int, land_value: bool) -> void:
 	slot_index = index
-	row = int(index / board_columns) if board_columns > 0 else -1
+	row = floori(float(index) / float(board_columns)) if board_columns > 0 else -1
 	column = index % board_columns if board_columns > 0 else -1
 	is_land = land_value
 
