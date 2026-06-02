@@ -463,7 +463,7 @@ func is_land_slot(slot_index: int) -> bool:
 	if slot_index < 0 or board_columns <= 0 or board_rows <= 0:
 		return false
 
-	var row := int(slot_index / board_columns)
+	var row := floori(float(slot_index) / float(board_columns))
 	var column := slot_index % board_columns
 	return row > 0 and row < board_rows - 1 and column > 0 and column < board_columns - 1
 
