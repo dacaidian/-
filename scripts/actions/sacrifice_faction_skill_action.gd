@@ -16,7 +16,7 @@ func setup(value: Dictionary) -> SacrificeFactionSkillAction:
 	return self
 
 
-func can_start(user: CardState, game_manager: GameManager) -> bool:
+func can_start(_user: CardState, game_manager: GameManager) -> bool:
 	var player := get_current_player(game_manager)
 	if player == null:
 		return false
