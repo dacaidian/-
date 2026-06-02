@@ -311,7 +311,7 @@ func _play_animation_sequence(root: Node) -> void:
 	_return_button.disabled = false
 
 
-func _get_banner_center(root: Node) -> Vector2:
+func _get_banner_center(_root: Node) -> Vector2:
 	var banner_panel := _banner_container.get_child(0) as PanelContainer
 	if banner_panel == null:
 		return Vector2.ZERO
