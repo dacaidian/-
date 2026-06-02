@@ -179,7 +179,7 @@ func start_hand_card_action_selection(game_manager: GameManager, action_id: Stri
 				game_manager.interaction_manager.selected_hand_index
 			)
 		HandPlayResolver.HAND_EQUIP_ACTION_ID:
-			await hand_play_resolver.execute_hand_equipment(
+			hand_play_resolver.execute_hand_equipment(
 				game_manager,
 				current_player,
 				card_data,
