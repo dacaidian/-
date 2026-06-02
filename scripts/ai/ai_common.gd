@@ -8,10 +8,10 @@ static func calc_slot_position_weight(slot_index: int, board_columns: int, is_ow
 	if board_columns <= 0:
 		return 0.0
 
-	var center := int(board_columns * board_columns / 2)
-	var center_row: int = center / board_columns
+	var center := floori(float(board_columns * board_columns) / 2.0)
+	var center_row: int = floori(float(center) / float(board_columns))
 	var center_col: int = center % board_columns
-	var slot_row: int = slot_index / board_columns
+	var slot_row: int = floori(float(slot_index) / float(board_columns))
 	var slot_col: int = slot_index % board_columns
 	var row_dist: int = abs(slot_row - center_row)
 	var col_dist: int = abs(slot_col - center_col)
