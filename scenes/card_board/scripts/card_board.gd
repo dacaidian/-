@@ -119,7 +119,7 @@ func is_land_style_slot(index: int) -> bool:
 	if index >= 0 and index < land_slot_states.size():
 		return land_slot_states[index]
 
-	var row := int(index / board_columns)
+	var row := floori(float(index) / float(board_columns))
 	var column := index % board_columns
 	return not (row == 0 or row == board_rows - 1 or column == 0 or column == board_columns - 1)
 
