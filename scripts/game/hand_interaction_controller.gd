@@ -172,7 +172,7 @@ func start_hand_card_action_selection(game_manager: GameManager, action_id: Stri
 				game_manager.interaction_manager.selected_hand_index
 			)
 		HandPlayResolver.HAND_PLACE_ACTION_ID:
-			did_start = await hand_play_resolver.start_place_target_selection(
+			did_start = hand_play_resolver.start_place_target_selection(
 				game_manager,
 				current_player,
 				card_data,
