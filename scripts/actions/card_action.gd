@@ -22,6 +22,8 @@ func get_valid_targets(_user: CardState, _game_manager: GameManager) -> Array[Ca
 
 
 func execute(_user: CardState, _target: CardState, _game_manager: GameManager) -> void:
+	if false:
+		await Engine.get_main_loop().process_frame
 	pass
 
 
