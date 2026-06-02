@@ -279,7 +279,6 @@ func _find_loser(winner: PlayerState, all_players: Array[PlayerState]) -> Player
 
 
 func _play_animation_sequence(root: Node) -> void:
-	var viewport_size := root.get_viewport().get_visible_rect().size
 	var banner_origin := _banner_container.position
 	var banner_target := Vector2(0, 0)
 	_banner_container.position = banner_origin
