@@ -226,7 +226,7 @@ func find_best_flip_slot(gm: GameManager, player: PlayerState, failed_flip_slots
 
 func _is_slot_in_own_half(slot_index: int, board_columns: int, player_index: int) -> bool:
 	var total_rows := 5
-	var row: int = slot_index / board_columns
+	var row: int = floori(float(slot_index) / float(board_columns))
 	if player_index == 0:
 		return row <= 1
 	return row >= total_rows - 2
