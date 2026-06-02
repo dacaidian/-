@@ -344,8 +344,8 @@ func _ai_decide_occupy(game_manager: GameManager, attacker_state: CardState, def
 		return true
 
 	var board_columns := game_manager.board_columns
-	var attacker_row := attacker_state.slot_index / board_columns
-	var defeated_row := defeated_state.slot_index / board_columns
+	var attacker_row := floori(float(attacker_state.slot_index) / float(board_columns))
+	var defeated_row := floori(float(defeated_state.slot_index) / float(board_columns))
 
 	var is_advancing := false
 	if player_index == 0:
