@@ -513,9 +513,9 @@ func _nearest_distance(slot_index: int, enemy_minions: Array, board_columns: int
 	for enemy in enemy_minions:
 		if enemy == null:
 			continue
-		var row1: int = slot_index / board_columns
+		var row1: int = floori(float(slot_index) / float(board_columns))
 		var col1: int = slot_index % board_columns
-		var row2: int = enemy.slot_index / board_columns
+		var row2: int = floori(float(enemy.slot_index) / float(board_columns))
 		var col2: int = enemy.slot_index % board_columns
 		var dist: float = float(abs(row1 - row2) + abs(col1 - col2))
 		if dist < nearest:
@@ -525,7 +525,7 @@ func _nearest_distance(slot_index: int, enemy_minions: Array, board_columns: int
 
 func _is_slot_in_own_half(slot_index: int, board_columns: int, player_index: int) -> bool:
 	var total_rows := 5
-	var row: int = slot_index / board_columns
+	var row: int = floori(float(slot_index) / float(board_columns))
 	if player_index == 0:
 		return row <= 1
 	return row >= total_rows - 2
