@@ -40,7 +40,7 @@ func _execute_hand_candidate(gm: GameManager, candidate: Dictionary) -> bool:
 	elif card_data.is_minion():
 		await hpr.execute_hand_minion_placement(gm, player, card_data, hand_index, target)
 	elif card_data.is_equipment():
-		await hpr.execute_hand_equipment(gm, player, card_data, hand_index)
+		hpr.execute_hand_equipment(gm, player, card_data, hand_index)
 	gm.is_executing_action = false
 
 	_refresh_after_step(gm)
