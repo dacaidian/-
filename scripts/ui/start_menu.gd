@@ -148,7 +148,7 @@ func _setup_animations() -> void:
 	breathe.length = 3.0
 	breathe.loop_mode = Animation.LOOP_LINEAR
 	breathe.add_track(Animation.TYPE_VALUE)
-	breathe.track_set_path(0, "RootMargin/VBoxContainer/Header/TitleLabel:scale")
+	breathe.track_set_path(0, "RootMargin/VBoxContainer/Header/TextureRect/TitleLabel:scale")
 	breathe.track_insert_key(0, 0.0, Vector2(1, 1))
 	breathe.track_insert_key(0, 1.5, Vector2(1.03, 1.03))
 	breathe.track_insert_key(0, 3.0, Vector2(1, 1))
