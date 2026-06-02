@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://sjks2nmwk560" path="res://assets/img/startPanel/vs.png" id="6_tj3dw"]
 [ext_resource type="Texture2D" uid="uid://bicgvsh31sj67" path="res://assets/img/startPanel/startBtn.png" id="7_rudpn"]
 [ext_resource type="Texture2D" uid="uid://dpumnxqog6opq" path="res://assets/img/startPanel/startBtn-pressed.png" id="8_ceur5"]
-[ext_resource type="Texture2D" uid="uid://4t665uhf22hb" path="res://assets/img/startPanel/startBtn-hover.png" id="9_ei0w5"]
+[ext_resource type="Texture2D" path="res://assets/img/startPanel/startBtn-hover.png" id="9_ei0w5"]
 [ext_resource type="Texture2D" uid="uid://de72hr01o35lq" path="res://assets/img/startPanel/startBtn-disabled.png" id="10_uihle"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4v5wy"]
