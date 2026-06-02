@@ -239,7 +239,21 @@ func uses_minion_action_resources() -> bool:
 
 
 func has_keyword(keyword: String) -> bool:
-	return (data != null and data.has_keyword(keyword)) or passive_keywords.has(keyword)
+	return (data != null and data.has_keyword(keyword)) or passive_keywords.has(keyword) or has_status_keyword(keyword)
+
+
+func has_status_keyword(keyword: String) -> bool:
+	if keyword == "":
+		return false
+
+	for status in statuses:
+		if status == null:
+			continue
+		var status_keywords := EffectData.get_keywords(status.payload)
+		if status_keywords.has(keyword):
+			return true
+
+	return false
 
 
 func get_siege_bonus() -> int:

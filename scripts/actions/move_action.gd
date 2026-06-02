@@ -2,6 +2,7 @@ extends CardAction
 class_name MoveAction
 
 # 移动行动：随从和相邻空格/背面牌交换位置。
+# teleport 关键字允许跳过相邻限制，选择全场合法空位。
 
 func _init() -> void:
 	id = "move"
@@ -67,7 +68,7 @@ func can_target(user: CardState, target: CardState, game_manager: GameManager) -
 		if not game_manager.can_place_ground_card_on_slot(target.slot_index):
 			return false
 
-	if not is_neighbor(user.slot_index, target.slot_index, game_manager.board_columns):
+	if not user.has_keyword(CardData.KEYWORD_TELEPORT) and not is_neighbor(user.slot_index, target.slot_index, game_manager.board_columns):
 		return false
 
 	if user.is_flying():

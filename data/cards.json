@@ -2245,7 +2245,25 @@
 						"name": "筋斗云",
 						"animation": "arcane",
 						"target_rule": "none",
-						"effects": []
+						"effects": [
+							{
+								"id": "apply_status",
+								"target": "self",
+								"status_id": "somersault_cloud",
+								"status_name": "筋斗云",
+								"status_description": "本回合获得瞬移，移动可以选择全场任意合法空格。",
+								"duration_turns": 1,
+								"duration_scope": "source_owner",
+								"expires_on_trigger": "after_turn_end",
+								"stack_policy": "refresh",
+								"payload": {
+									"keywords": [
+										"teleport"
+									]
+								},
+								"apply_animation": "arcane"
+							}
+						]
 					},
 					{
 						"id": "body_beyond_body",
