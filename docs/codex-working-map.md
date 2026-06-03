@@ -234,6 +234,16 @@
 
 ### 攻击、死亡、占领
 
+铜头铁臂相关优先读：
+
+- `scripts/actions/attack_action.gd`
+- `scripts/data/card_state.gd` 中 `consume_bronze_head_iron_arms()`
+- `scripts/data/card_status.gd` 中 `STATUS_BRONZE_HEAD_IRON_ARMS`
+- `data/cards.json` 中孙悟空“铜头铁臂”配置
+
+约定：铜头铁臂只响应普通攻击 `AttackAction`，不响应法术、毒、固定伤害或骑乘副动作；若以后需要新的“被击中反应”，优先在具体伤害来源的语义入口接入，不要塞进通用 `take_damage()`。
+
+
 优先读：
 
 - `scripts/actions/attack_action.gd`

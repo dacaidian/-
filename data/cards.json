@@ -2277,7 +2277,18 @@
 						"name": "铜头铁臂",
 						"animation": "shield",
 						"target_rule": "none",
-						"effects": []
+						"effects": [
+							{
+								"id": "apply_status",
+								"target": "self",
+								"status_id": "bronze_head_iron_arms",
+								"status_name": "铜头铁臂",
+								"status_description": "被普通攻击击中时，抵挡此次伤害并反弹给攻击者。",
+								"permanent": true,
+								"stack_policy": "stack",
+								"apply_animation": "shield"
+							}
+						]
 					}
 				]
 			}

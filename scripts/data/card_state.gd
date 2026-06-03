@@ -1108,6 +1108,19 @@ func consume_divine_shield() -> bool:
 	return remove_status(CardStatus.STATUS_DIVINE_SHIELD)
 
 
+func consume_bronze_head_iron_arms() -> bool:
+	var status := get_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
+	if status == null:
+		return false
+
+	if status.stacks > 1:
+		status.stacks -= 1
+		state_changed.emit(self)
+		return true
+
+	return remove_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
+
+
 func gain_shield(amount: int) -> void:
 	if amount <= 0:
 		return

@@ -55,8 +55,12 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var attacker_owner_id := user.owner_id
 	var attacker_card_id := user.card_id
 	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
-	target.take_damage(calculate_attack_damage(user, target))
-	var splash_targets := apply_giant_splash_damage(user, target, game_manager)
+	var attack_damage := calculate_attack_damage(user, target)
+	var was_reflected := await resolve_bronze_head_iron_arms(user, target, attack_damage, game_manager)
+	var splash_targets: Array[CardState] = []
+	if not was_reflected:
+		target.take_damage(attack_damage)
+		splash_targets = apply_giant_splash_damage(user, target, game_manager)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 	if not splash_targets.is_empty():
@@ -67,6 +71,26 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		trigger_source = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
 	if trigger_source != null:
 		await game_manager.resolve_after_attack_triggers(trigger_source, target)
+
+
+func resolve_bronze_head_iron_arms(
+	attacker: CardState,
+	defender: CardState,
+	damage: int,
+	game_manager: GameManager
+) -> bool:
+	if attacker == null or defender == null or game_manager == null:
+		return false
+	if damage <= 0:
+		return false
+	if not defender.consume_bronze_head_iron_arms():
+		return false
+
+	if game_manager.has_method("play_status_apply_animation"):
+		await game_manager.play_status_apply_animation(defender, "shield")
+	attacker.take_damage(damage)
+	game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
+	return true
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
