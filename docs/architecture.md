@@ -53,7 +53,7 @@
 - `ActionHintResolver`：计算空闲状态下哪些己方卡牌应显示绿色可行动提示；后续冻结、沉默、建筑操作等可行动性提示规则优先在这里扩展。
 - `InteractionManager`：只管理当前交互状态，例如当前焦点牌、当前选择的行动、合法目标格子。
 - `CardAction`：行动基类。
-- `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。
+- `MoveAction`：移动行动，检查移动力，计算移动目标，消耗移动力并执行格子交换。拥有 `teleport` 关键字的单位会跳过相邻限制，可选择全场任意合法移动目标；地面单位仍只能进可放置地面格，飞行单位仍只能进飞行层可用格。
 - `AttackAction`：普通攻击行动，登记一次攻击类别并消耗一次攻击次数；通过 attack profile 统一给出目标是否合法、是否近战、是否允许占领，再造成攻击力伤害。
 - `MountedAttackAction`：骑乘攻击行动。它从 `CardData.mounted_attacks` 读取骑乘者 `rider_card_id`、基础伤害、攻速和射程；攻击次数独立保存在 `CardState.mounted_attack_uses`，不消耗本体普通攻击次数，也不把本体关键字强行改成远程。骑乘者的攻击力、攻速、攻城等增益按 `rider_card_id` 读取，使角鹰骑士这类“坐骑近战 + 骑手远程”的单位可以分别受益。
 - `SpellAction`：配置化施法行动，从 `CardData.spell_actions`、手牌升级牌授予的固定 `spell_actions` 和动态授予法术创建；负责法术目标规则、登记 `spell` 行动类别、播放施法动画，并把选中目标交给效果系统。需要按特定卡牌 id 限制目标时，`SpellAction` 会读取 `spell_data.card_ids` 并交给 `SpellTargetResolver`，不要在具体效果里再扫棋盘重做目标白名单。`SpellAction` 会把候选目标注入运行时效果并调用 `CardEffect.can_execute()`，因此月刃这类“第一目标还必须存在第二段弹射目标”的法术可以过滤掉无效第一目标。施法成功后会把本次 `spell_data` 记录到所属玩家的施法历史，供“学习上一个法术”等动态升级读取。
@@ -271,6 +271,7 @@
 - 永久状态使用 `permanent: true` 或不配置 `duration_turns`；临时状态配置 `duration_turns`。当前默认在 `after_turn_end` 时点减少持续回合。
 - `duration_scope` 决定临时状态按谁的回合倒计时：默认 `target_owner`，也支持 `source_owner` 和 `global`。`target_owner` 会在状态施加时记录目标当时的 owner，避免后续归属变化导致倒计时漂移。
 - `apply_status` 是通用施加状态效果。配置示例：`{"id":"apply_status","status_id":"poison","status_name":"中毒","duration_turns":2,"target":"selected","status_tags":["damage_over_time"]}`。它只负责把状态写入目标，具体中毒伤害、圣盾抵挡、冻结禁用行动等规则应由对应状态 resolver 或行动/效果读取状态后处理。可选字段 `apply_animation` 指定状态施加瞬间的视觉动画 key；没有该字段时不播放额外动画，由施法来源自身的动画负责表现。
+- 状态可以通过 `payload.keywords` 临时授予关键字；`CardState.has_keyword()` 会同时读取静态关键字、手牌/升级被动关键字和状态关键字。当前孙悟空“筋斗云”通过 `somersault_cloud` 状态临时授予 `teleport`，在本回合结束后按状态生命周期移除。
 - 当前圣盾使用 `status_id: "divine_shield"`，属于永久但可消耗状态。`CardState.take_damage()` 在数值护盾和生命结算前会先消耗一层圣盾并完全抵消本次伤害效果；多层圣盾逐层消耗，最后一层消耗后从状态列表移除。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。

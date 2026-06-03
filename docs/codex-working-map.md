@@ -203,6 +203,16 @@
 
 ### 行动系统
 
+瞬移相关优先读：
+
+- `scripts/actions/move_action.gd`
+- `scripts/data/card_data.gd` 中 `KEYWORD_TELEPORT`
+- `scripts/data/card_state.gd` 中 `has_keyword()` / `has_status_keyword()`
+- `data/cards.json` 中孙悟空“筋斗云”配置
+
+约定：`teleport` 只改变移动目标范围，不改变地面/飞行层合法性；临时瞬移优先通过 `apply_status` + `payload.keywords` 授予，避免为单张法术写死移动逻辑。
+
+
 优先读：
 
 - `scripts/actions/card_action.gd`
