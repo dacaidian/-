@@ -387,6 +387,7 @@
 - 如果动画结束后需要改变规则状态，由 `GameManager` 在 `await` 动画之后统一处理，例如交换内容、造成伤害、入坟或补位。
 - 覆盖层动画统一通过 `GameManager.get_overlay_animation_root()` 获取根节点。补位飞牌仍归 `CardPoolViewController` 管理，因为它依赖公共牌池固定视图；手牌飞入归 `HandDrawerController` 管理，因为它依赖手牌抽屉的区域定位。
 - Spell visuals dispatch through the card or spell action `animation` key. Area keys include `blizzard` for the blue rectangular blizzard overlay and `foxfire` for the purple-pink 2x2 foxfire burn overlay. Unmatched keys use the generic spell effect.
+- 孙悟空技能使用独立 animation key：`fiery_eyes_golden_gaze`、`somersault_cloud`、`body_beyond_body`、`bronze_head_iron_arms`。当前分别映射到金色洞察、云雾召唤、分身召唤和金色护体类表现；后续如果要升级美术，只替换这些 key 在 `CardAnimationController` 中的分派实现。
 
 ## 玩家资源约定
 

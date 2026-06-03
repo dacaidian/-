@@ -2231,7 +2231,7 @@
 					{
 						"id": "fiery_eyes_golden_gaze",
 						"name": "火眼金睛",
-						"animation": "arcane",
+						"animation": "fiery_eyes_golden_gaze",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -2243,7 +2243,7 @@
 					{
 						"id": "somersault_cloud",
 						"name": "筋斗云",
-						"animation": "arcane",
+						"animation": "somersault_cloud",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -2261,21 +2261,21 @@
 										"teleport"
 									]
 								},
-								"apply_animation": "arcane"
+								"apply_animation": "somersault_cloud"
 							}
 						]
 					},
 					{
 						"id": "body_beyond_body",
 						"name": "身外身法",
-						"animation": "summon",
+						"animation": "body_beyond_body",
 						"target_rule": "none",
 						"effects": []
 					},
 					{
 						"id": "bronze_head_iron_arms",
 						"name": "铜头铁臂",
-						"animation": "shield",
+						"animation": "bronze_head_iron_arms",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -2286,7 +2286,7 @@
 								"status_description": "被普通攻击击中时，抵挡此次伤害并反弹给攻击者。",
 								"permanent": true,
 								"stack_policy": "stack",
-								"apply_animation": "shield"
+								"apply_animation": "bronze_head_iron_arms"
 							}
 						]
 					}

@@ -330,6 +330,14 @@
 
 ### 动画表现
 
+孙悟空技能动画相关优先读：
+
+- `scripts/ui/card_animation_controller.gd`
+- `data/cards.json` 中孙悟空 `spell_actions[].animation`
+
+约定：孙悟空四个技能使用独立 animation key（`fiery_eyes_golden_gaze`、`somersault_cloud`、`body_beyond_body`、`bronze_head_iron_arms`），不要继续复用裸 `arcane` / `shield` 字符串；如果后续美术升级，优先替换这些 key 的分派实现。
+
+
 优先读：
 
 - `scripts/ui/card_animation_controller.gd`

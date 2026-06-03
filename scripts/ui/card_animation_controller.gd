@@ -321,6 +321,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_shield_spell(owner, effect_root, target_card)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
+		"fiery_eyes_golden_gaze":
+			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
@@ -341,6 +343,10 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_dark_arrow_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
+		"somersault_cloud", "body_beyond_body":
+			await play_summon_spell_at_rect(owner, effect_root, target_card.get_global_rect())
+		"bronze_head_iron_arms":
+			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
 		"moonblade":
 			if caster_card == null or target_card == null:
 				return
@@ -389,10 +395,16 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
+		"fiery_eyes_golden_gaze":
+			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
 		"summon":
 			await play_summon_spell_at_rect(owner, effect_root, target_rect)
+		"somersault_cloud", "body_beyond_body":
+			await play_summon_spell_at_rect(owner, effect_root, target_rect)
+		"bronze_head_iron_arms":
+			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
 		"arcane_aura":
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
 		"meteor_aura":
