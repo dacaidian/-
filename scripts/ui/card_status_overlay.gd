@@ -42,6 +42,10 @@ var charm_rune_color := Color(1.0, 0.78, 0.96, 0.86)
 var reborn_color := Color(0.18, 0.78, 0.44, 0.16)
 var reborn_edge_color := Color(0.76, 1.0, 0.58, 0.82)
 var reborn_core_color := Color(1.0, 0.92, 0.48, 0.88)
+var bronze_iron_color := Color(0.74, 0.58, 0.34, 0.16)
+var bronze_iron_edge_color := Color(1.0, 0.78, 0.38, 0.84)
+var bronze_iron_plate_color := Color(0.92, 0.72, 0.42, 0.36)
+var bronze_iron_rivet_color := Color(1.0, 0.92, 0.66, 0.86)
 
 
 func _ready() -> void:
@@ -60,7 +64,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
+	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
 
 
 func should_show_divine_shield() -> bool:
@@ -68,6 +72,13 @@ func should_show_divine_shield() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_DIVINE_SHIELD)
+
+
+func should_show_bronze_head_iron_arms() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
 
 
 func should_show_arcane_aura() -> bool:
@@ -168,6 +179,8 @@ func _draw() -> void:
 		draw_life_link_overlay()
 	if should_show_death_immunity():
 		draw_death_immunity_overlay()
+	if should_show_bronze_head_iron_arms():
+		draw_bronze_head_iron_arms()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -237,6 +250,42 @@ func draw_divine_shield() -> void:
 	var ray_color := Color(1.0, 0.95, 0.56, 0.22)
 	draw_line(Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.18), Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.78), ray_color, 2.0)
 	draw_line(Vector2(shield_rect.position.x + shield_rect.size.x * 0.28, center.y), Vector2(shield_rect.position.x + shield_rect.size.x * 0.72, center.y), ray_color, 2.0)
+
+
+func draw_bronze_head_iron_arms() -> void:
+	var armor_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.055)
+	var center := armor_rect.get_center()
+	var status := state.get_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 5)
+	var edge_width := maxf(size.x * 0.023, 2.0)
+
+	draw_rect(armor_rect, bronze_iron_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 3.8
+		var alpha := bronze_iron_edge_color.a * (1.0 - float(index) * 0.12)
+		draw_rect(
+			armor_rect.grow(grow),
+			Color(bronze_iron_edge_color.r, bronze_iron_edge_color.g, bronze_iron_edge_color.b, alpha),
+			false,
+			edge_width,
+			true
+		)
+
+	var plate_height := armor_rect.size.y * 0.18
+	for index in range(3):
+		var y := armor_rect.position.y + armor_rect.size.y * (0.28 + float(index) * 0.16)
+		var left := armor_rect.position.x + armor_rect.size.x * 0.22
+		var right := armor_rect.position.x + armor_rect.size.x * 0.78
+		draw_line(Vector2(left, y), Vector2(right, y + plate_height * 0.18), bronze_iron_plate_color, maxf(size.x * 0.035, 3.0))
+
+	var rivet_count := mini(maxi(stack_count + 1, 2), 6)
+	for index in range(rivet_count):
+		var angle := TAU * float(index) / float(rivet_count) - PI * 0.5
+		var point := center + Vector2(cos(angle), sin(angle)) * minf(armor_rect.size.x, armor_rect.size.y) * 0.34
+		draw_circle(point, maxf(size.x * 0.014, 2.2), bronze_iron_rivet_color)
+
+	draw_arc(center, minf(armor_rect.size.x, armor_rect.size.y) * 0.40, -PI * 0.18, TAU - PI * 0.18, 72, bronze_iron_edge_color, 2.2, true)
 
 
 func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, color: Color) -> void:

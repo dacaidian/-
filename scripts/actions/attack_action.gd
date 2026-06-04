@@ -87,7 +87,7 @@ func resolve_bronze_head_iron_arms(
 		return false
 
 	if game_manager.has_method("play_status_apply_animation"):
-		await game_manager.play_status_apply_animation(defender, "shield")
+		await game_manager.play_status_apply_animation(defender, "bronze_head_iron_arms")
 	attacker.take_damage(damage)
 	game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
 	return true

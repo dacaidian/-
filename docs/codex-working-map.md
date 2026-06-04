@@ -92,7 +92,7 @@
 - 状态自身也可以通过 `payload.trigger_effects` 提供触发效果，由 `EffectRegistry.execute_status_triggers()` 结算。当前用于蛊巨蜥“吞噬”继承最高级毒性攻击，以及子母蛊 `life_link` 在 `on_destroyed` 时触发 `destroy_linked_units`；不要把这种状态授予的触发效果写进 `AttackAction` 或 `DeathResolver`。
 - 同命/链接类状态读取 `EffectData.get_trigger_status()` 获取触发的具体状态层，再用 `payload.link_id` 找到同一链接另一端。AB、BC 链式链接依赖死亡队列自然传播，独立链接必须使用独立 link id。
 - 免疫死亡类状态使用 `status_tags: ["death_prevention"]`。`DeathResolver` 会跳过带该 tag 的单位；状态到期后由 `StatusResolver` 重新检查 0 生命单位并按标准死亡队列处理，不要在具体伤害效果里写“如果是薄葬”。
-- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、辉煌光环、冻结、励蛊、同命蛊和薄葬；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
+- 状态覆盖视觉统一放在 `CardStatusOverlay`；`Card` 只负责绑定状态、摆放覆盖层和棋盘数值图标。当前持续覆盖视觉包括圣盾、铜头铁臂、辉煌光环、冻结、励蛊、同命蛊和薄葬；毒性这类有数值的状态走 `Card` 的状态数字栈，放在血量图标上方并显示剩余总伤害。
 - **控制状态通用门控**：`CardState.has_status_with_tag(TAG_ACTION_PREVENTION)` 同时阻止 `can_move()`、`can_attack()` 和 `can_take_action_group()`。新增控制状态只需 JSON 配置 `"status_tags": ["action_prevention"]`，不要写 `is_frozen()` 等专用判断。
 
 ### 翻牌与补牌

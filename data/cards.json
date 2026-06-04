@@ -2260,8 +2260,7 @@
 									"keywords": [
 										"teleport"
 									]
-								},
-								"apply_animation": "somersault_cloud"
+								}
 							}
 						]
 					},
@@ -2285,8 +2284,7 @@
 								"status_name": "铜头铁臂",
 								"status_description": "被普通攻击击中时，抵挡此次伤害并反弹给攻击者。",
 								"permanent": true,
-								"stack_policy": "stack",
-								"apply_animation": "bronze_head_iron_arms"
+								"stack_policy": "stack"
 							}
 						]
 					}
