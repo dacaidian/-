@@ -2289,6 +2289,19 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "little_monkey_spirit",
+				"name": "小猴妖",
+				"description": "花果山的小猴妖，身手灵活，擅长在战场边缘穿插袭扰。",
+				"url": "res://assets/img/猴妖仙/小猴妖.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [],
+				"attack": 2,
+				"health": 3,
+				"effects": []
 			}
 		]
 	},
