@@ -2302,6 +2302,35 @@
 				"attack": 2,
 				"health": 3,
 				"effects": []
+			},
+			{
+				"id": "drive_spirit_yurong",
+				"name": "驱神禺狨",
+				"description": "猴妖仙二阶远程随从。通晓驱神之术，能驱散一个单位身上的状态。",
+				"url": "res://assets/img/猴妖仙/驱神禺狨.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 6,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "drive_spirit",
+						"name": "驱神",
+						"animation": "drive_spirit",
+						"target_rule": "all_units",
+						"effects": [
+							{
+								"id": "cleanse",
+								"target": "selected"
+							}
+						]
+					}
+				]
 			}
 		]
 	},

@@ -633,6 +633,7 @@ Common changes:
 
 - Card-owned configured actions use `CardData.actions` and are created by `GrantedActionResolver.create_action_from_data()`. If an action only needs target selection plus `EffectRegistry` effects, prefer `EffectAction` instead of a card-specific action class. Current example: `moon_well` action `tranquil_spring`.
 - `cleanse` is the shared status removal effect. It calls `CardState.cleanse_statuses()` and also removes paired `death_link` counterparts so linked statuses cannot remain half-active. Future uncleanseable statuses should be represented as status metadata and filtered in `CleanseEffect`, not special-cased by card id.
+- `驱神` 是猴妖仙驱神禺狨的随从施法，直接复用 `cleanse` 清除目标单位全部可净化状态；动画 key 为 `drive_spirit`，当前在 `CardAnimationController` 中复用净化光环表现。
 - Full healing should reuse `heal` with `amount_source: "missing_health"` so effective-heal triggers still receive the real healed amount.
 
 - `power_word_shield` is modeled as a stackable `health_modifier` status (`max_health_bonus: 5`) instead of direct max-health mutation. Removing it through `cleanse` lowers max/current health through `CardState.recalculate_status_modifiers()`, then `CleanseEffect` runs death resolution if the unit reaches 0 health.

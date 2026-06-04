@@ -317,6 +317,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_medical_practice_spell(owner, effect_root, target_card)
 		"tranquil_spring":
 			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
+		"drive_spirit":
+			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
 		"power_word_shield":
@@ -390,6 +392,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		"medical_practice":
 			await play_medical_practice_at_rect(owner, effect_root, target_rect)
 		"tranquil_spring":
+			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
+		"drive_spirit":
 			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)

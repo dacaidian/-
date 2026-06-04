@@ -193,7 +193,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、流星陨落、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、驱神禺狨、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、流星陨落、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -578,6 +578,7 @@
 - `EffectAction` is the generic board action for cards that declare `actions[]` in `cards.json`. It handles target rules, runtime-state gating, main-action cost, animation, selected-target injection, and execution through `EffectRegistry`. Use it for building or unit abilities that are not spell-turn actions and do not need a bespoke action class.
 - `moon_well` is the first card-owned configured action example: `tranquil_spring` is a `special` main action, usable only while the owning Night Elf player runtime state is `moonrise`, `full_moon`, or `moonset`.
 - `cleanse` is a public effect. It removes runtime statuses from target units through `CardState.cleanse_statuses()` and removes matching `death_link` counterpart statuses by link id. Future uncleanseable statuses should be expressed as status metadata and filtered in `CleanseEffect`.
+- `驱神禺狨` 的随从施法 `驱神` 使用 `target_rule: "all_units"` + `cleanse`，当前规则是驱散目标单位身上的全部可净化状态，不区分状态来源。表现层使用独立 `animation: "drive_spirit"`，当前复用净化光环表现。
 - Full restoration is configured as `heal` with `amount_source: "missing_health"`; this keeps effective-heal triggers accurate because the existing `HealEffect` still measures the real healed amount.
 
 - `power_word_shield` is modeled as a stackable `health_modifier` status (`max_health_bonus: 5`) instead of direct max-health mutation. Removing it through `cleanse` lowers max/current health through `CardState.recalculate_status_modifiers()`, then `CleanseEffect` runs death resolution if the unit reaches 0 health.
