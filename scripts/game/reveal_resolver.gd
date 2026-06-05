@@ -55,6 +55,7 @@ func resolve_revealed_board_card(game_manager: GameManager, state: CardState) ->
 			if state.is_empty():
 				return
 
+		game_manager.trigger_resolver.queue_trigger(state, EventContext.TRIGGER_ON_ENTER_BOARD)
 		game_manager.trigger_resolver.queue_trigger(state, EventContext.TRIGGER_ON_REVEAL)
 		await game_manager.trigger_resolver.resolve_queued(game_manager)
 		game_manager.check_and_destroy_if_dead(state, "effect")

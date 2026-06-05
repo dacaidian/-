@@ -134,6 +134,8 @@ const EFFECT_EVOLVE_UNITS := "evolve_units"
 const EFFECT_SACRIFICE_FRIENDLY_MINIONS := "sacrifice_friendly_minions"
 const EFFECT_GRANT_BOARD_VISION := "grant_board_vision"
 const EFFECT_MODIFY_HERO_REVIVE_COOLDOWN := "modify_hero_revive_cooldown"
+const EFFECT_SYNC_STATS_FROM_OWNER_CARD := "sync_stats_from_owner_card"
+const EFFECT_ASSIST_ATTACK_ATTACK_TARGET := "assist_attack_attack_target"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"

@@ -46,6 +46,8 @@ Common rules:
 - Implement a reusable effect in `scripts/effects/`.
 - Register it in `EffectRegistry`.
 - Keep effects rule-only and data-driven.
+- Use `on_enter_board` for effects that trigger when a unit is revealed onto the board or placed from hand.
+- Use `after_friendly_attack` plus `source_card_ids` for passive allies that respond to a specific friendly attacker, such as Monkey Spirit `hair_clone`.
 
 ## New Actions
 

@@ -5,6 +5,8 @@ class_name EffectRegistry
 # 以后新增效果时，在这里注册即可，不需要修改 Card 或 CardState。
 
 const GrantedUnitTriggerResolverScript := preload("res://scripts/game/granted_unit_trigger_resolver.gd")
+const SyncStatsFromOwnerCardEffectScript := preload("res://scripts/effects/sync_stats_from_owner_card_effect.gd")
+const AssistAttackAttackTargetEffectScript := preload("res://scripts/effects/assist_attack_attack_target_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -37,6 +39,8 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_EVOLVE_UNITS, EvolveUnitsEffect.new())
 	register_effect(EffectData.EFFECT_SACRIFICE_FRIENDLY_MINIONS, SacrificeFriendlyMinionsEffect.new())
 	register_effect(EffectData.EFFECT_GRANT_BOARD_VISION, GrantBoardVisionEffect.new())
+	register_effect(EffectData.EFFECT_SYNC_STATS_FROM_OWNER_CARD, SyncStatsFromOwnerCardEffectScript.new())
+	register_effect(EffectData.EFFECT_ASSIST_ATTACK_ATTACK_TARGET, AssistAttackAttackTargetEffectScript.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:
@@ -72,6 +76,8 @@ func execute_trigger(source_state: CardState, trigger: String, game_manager: Nod
 
 	for effect_data in source_state.data.effects:
 		if EffectData.get_trigger(effect_data) == trigger:
+			if not matches_trigger_source(effect_data, context):
+				continue
 			var runtime_effect_data := EffectData.duplicate_with_context(effect_data, context)
 			await execute_effect(source_state, runtime_effect_data, game_manager)
 
@@ -96,6 +102,19 @@ func execute_status_triggers(source_state: CardState, trigger: String, game_mana
 
 		if did_trigger and bool(status.payload.get(EffectData.KEY_CONSUME_ON_TRIGGER, false)):
 			source_state.remove_status_instance(status)
+
+
+func matches_trigger_source(effect_data: Dictionary, context: Dictionary) -> bool:
+	var source_card_ids := EffectData.get_source_card_ids(effect_data)
+	if source_card_ids.is_empty():
+		return true
+
+	var source_card_id := str(context.get(EventContext.SOURCE_CARD_ID, ""))
+	if source_card_id == "":
+		var source_state := context.get(EventContext.SOURCE_STATE) as CardState
+		source_card_id = source_state.card_id if source_state != null else ""
+
+	return source_card_ids.has(source_card_id)
 
 
 func scale_status_trigger_amount(effect_data: Dictionary, status: CardStatus) -> void:

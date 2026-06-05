@@ -1184,11 +1184,32 @@ func resolve_attack_kill(attacker_state: CardState, defeated_state: CardState, c
 
 func resolve_after_attack_triggers(attacker_state: CardState, attacked_state: CardState) -> void:
 	var context := {
-		EventContext.ATTACK_TARGET_STATE: attacked_state
+		EventContext.ATTACK_TARGET_STATE: attacked_state,
+		EventContext.SOURCE_STATE: attacker_state,
+		EventContext.SOURCE_CARD_ID: attacker_state.card_id if attacker_state != null else ""
 	}
 	trigger_resolver.queue_trigger(attacker_state, EventContext.TRIGGER_AFTER_ATTACK, context)
 	await trigger_resolver.resolve_queued(self)
+	await resolve_after_friendly_attack_triggers(attacker_state, attacked_state, context)
 	await equipment_trigger_resolver.resolve_after_attack(self, attacker_state, attacked_state)
+
+
+func resolve_after_friendly_attack_triggers(attacker_state: CardState, attacked_state: CardState, context: Dictionary) -> void:
+	if attacker_state == null or attacker_state.owner_id == "":
+		return
+
+	for value in get_all_board_states():
+		var source_state := value as CardState
+		if not BoardQuery.is_face_up_unit(source_state):
+			continue
+		if source_state == attacker_state:
+			continue
+		if source_state.owner_id != attacker_state.owner_id:
+			continue
+
+		trigger_resolver.queue_trigger(source_state, EventContext.TRIGGER_AFTER_FRIENDLY_ATTACK, context)
+
+	await trigger_resolver.resolve_queued(self)
 
 
 func set_board_slot_effect(slot_index: int, slot_effect: Variant) -> void:

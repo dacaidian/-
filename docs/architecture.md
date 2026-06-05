@@ -75,6 +75,10 @@ Reusable effects include healing, damage, shield, resource, mana, flips, apply/c
 
 Rules should prefer generic effects over one-card scripts. A card-specific effect is acceptable only when the mechanic cannot be expressed as reusable data.
 
+`on_enter_board` is the shared trigger for a unit entering the board through reveal or hand placement. Use it for triggered entry effects instead of duplicating `on_reveal` and placement branches.
+
+`after_friendly_attack` is broadcast to other friendly board units after a normal attack. Effects can use `source_card_ids` to filter the original attacker. Current example: Monkey Spirit `hair_clone` copies Sun Wukong's stats on enter and uses `assist_attack_attack_target` to attack Sun Wukong's attack target when in legal range.
+
 ## Targeting
 
 `SpellTargetResolver` owns target rules. Existing rules include all minions, all units, non-hero minions, non-buildings, selected areas, 2x2 regions, adjacent targets, card-id filtered targets, stealth and magic immune filtering.

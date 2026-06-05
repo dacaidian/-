@@ -2334,6 +2334,34 @@
 				]
 			},
 			{
+				"id": "hair_clone",
+				"name": "毫毛",
+				"description": "孙悟空的毫毛分身，入场时同步孙悟空的攻击力和生命上限。孙悟空普通攻击后，全场毫毛会尝试对同一目标同步攻击。",
+				"url": "res://assets/img/猴妖仙/毫毛.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"keywords": [
+					"trigger"
+				],
+				"attack": 1,
+				"health": 1,
+				"effects": [
+					{
+						"id": "sync_stats_from_owner_card",
+						"trigger": "on_enter_board",
+						"target_card_id": "sun_wukong"
+					},
+					{
+						"id": "assist_attack_attack_target",
+						"trigger": "after_friendly_attack",
+						"source_card_ids": [
+							"sun_wukong"
+						]
+					}
+				]
+			},
+			{
 				"id": "drive_spirit_yurong",
 				"name": "驱神禺狨",
 				"description": "猴妖仙二阶远程随从。通晓驱神之术，能驱散一个单位身上的状态。",
