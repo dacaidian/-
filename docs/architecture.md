@@ -75,7 +75,7 @@
 位置：`scenes`、`scripts/ui`
 
 - `Card`：只负责卡牌显示、翻牌动画、背光提示、点击信号和棋盘数值图标。血量显示在右下角，攻击显示在左下角；护盾、毒性等“有数值的状态”统一放在血量图标上方的纵向状态数字栈中。攻击数字从卡牌正面图所属种族目录下的 `攻击数字/{attack}.png` 加载；毒性数字按剩余总毒伤害读取 `毒性数字/{poison_damage * remaining_turns}.png`。数值图标节点的创建和资源设置集中在 `create_value_texture()` / `set_value_texture()`，避免每新增一个图标都复制一套 TextureRect 初始化。`mouse_entered_card` / `mouse_exited_card` 信号携带 Card 引用，供 GameManager 连接 hover 驱动的 area 预览等行为；`draw_area_preview()` 绘制 AOE 范围蓝色预览。
-- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、铜头铁臂金铜护体、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹、薄葬死亡庇护和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
+- `CardStatusOverlay`：负责棋盘卡牌上的持续状态覆盖表现。当前读取 `CardState.statuses` 绘制圣盾金色圣光盾、铜头铁臂金铜护体、蟠桃桃粉灵果光环、辉煌光环奥术法阵、励蛊绿色蛊虫强化背光、同命蛊链接绿纹、薄葬死亡庇护和冻结冰蓝色边框+冰晶雪花；毒性这类数值状态不再在这里绘制整卡遮罩，避免和数值图标重复表达。
 - `StartMenu`：游戏入口选择页。它只负责双方玩家选择种族和英雄，保证两名玩家不能选择相同种族；点击开始后实例化战斗场景并把 `player_faction_ids`、`selected_hero_card_ids` 传给 `GameManager`。入口页的背景微光由 `_add_ambient_lighting()` 动态创建，保持在 UI 后方，只做低透明度氛围层，不承担交互或规则逻辑。
 - `CardBoard`：只负责 7x7 棋盘布局、动态补齐 CardSlot/Card/AerialCard 节点、按当前 `BoardCell.is_land` 绘制地面格/边缘格样式，并响应窗口尺寸变化。地面层卡牌保持原尺寸；飞行层与地面层共格时由 `GameManager.sync_slot_card_layout()` 缩小并置于右上角显示。
 - `DebugPanel`：只负责展示运行时状态；面板可一键收起为右上角小按钮，避免遮挡棋盘和右侧展示区。
@@ -193,7 +193,7 @@
 - `CardPool.draw_random()` 是等级抽取规则的唯一入口：先查找当前牌池里仍存在的最低等级，再通过 `get_indices_for_level()` 只在该等级的剩余卡牌中随机抽取。当前等级耗尽后，下一次抽牌自然进入更高等级。
 - 公共牌堆 UI 通过 `CardPool.get_lowest_available_level()` 展示当前最低可抽等级的卡背；补牌飞行动画则使用已抽出卡牌自己的卡背，避免等级切换瞬间动画卡面错误。
 - `BoardSlotResolver`、开局铺牌、死亡/入手牌后的补位都继续调用 `draw_random()`，因此所有补牌场景共享同一套等级推进规则。
-- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、驱神禺狨、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、流星陨落、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
+- 当前等级定义：1 级为乌瑟尔、受祝福的步兵、信仰圣光、安东尼达斯、法师学徒、初级法术能量、召唤水元素、陈朵、励蛊、诱蛊、蛊童、草药符咒、剧毒之泉、蟠桃、金手指、小型矿脉、生命之泉、无中生有、草药；2 级为牧师、骑士、真言术·盾、骑术、火焰女巫、冰霜女巫、奥术法师、中级法术能量、好好学习、辉煌光环、女猎手、精英月刃豹、迅捷之弓、蛊毒蛇、巫医、子母蛊、蛇毒、驱神禺狨、中型矿脉、奥术矿脉、暗箭、无中生有生有；3 级为奥术傀儡、战斗牧师、心灵之火、终极法术能量、炎爆术、复活术、学院召唤、奥术空间、角鹰骑士、流星陨落、光明使者之锤、安东尼达斯的圣杖、生蛊王蛇、蛊巨蜥、薄葬、毒性爆发、大型矿脉、超大型矿脉。
 - `CardPool.from_match_selection()` 是战斗牌池构建入口：玩家种族牌通过 `CardDatabase.build_weighted_pool_for_selection()` 加入，中立牌库仍通过普通 `build_weighted_pool()` 加入。
 - 玩家种族牌池构建会根据 `selected_hero_card_ids` 过滤英雄：只加入选中的英雄，不加入同种族未选英雄。`heroes[].attached_cards` 中列出的子卡牌只会在对应英雄被选中时加入，避免未来多个英雄包互相污染。
 
@@ -276,11 +276,12 @@
 - `铜头铁臂` 使用 `status_id: "bronze_head_iron_arms"`，属于可叠加、可消耗状态。它只响应普通攻击 `AttackAction`：被普通攻击击中时消耗一层，抵挡本次普通攻击对自身的伤害，并把本次攻击伤害反弹给攻击者；法术、毒、固定伤害、骑乘副动作等非普通攻击不走这条反弹逻辑。
 - `辉煌光环` 使用 `status_id: "arcane_aura"`，由安东尼达斯英雄配套法术施加到安东尼达斯自己身上。它的 `payload.turn_effects` 在 `before_turn_start` 时触发，`trigger_player: "source_owner"` 表示只在状态所在单位拥有者的回合开始前生效；状态层数会乘到效果 `amount` 上，因此多次释放可以叠加额外法力。
 - `励蛊` 使用 `status_id: "encourage_gu"` 和 `status_tags: ["attack_modifier"]`，通过 `payload.attack_bonus` 为目标提供持续攻击力修正。`CardState.status_attack_bonus` 单独记录状态来源的攻击修正；状态叠层、驱散、过期或离场清空时会重新计算并回滚对应攻击力，不会污染一次性攻击力变化或手牌持续光环。需要提供生命上限修正的状态使用 `status_tags: ["health_modifier"]` 和 `payload.max_health_bonus`，由 `CardState.status_max_health_bonus` 统一回滚。
+- `蟠桃` 使用 `status_id: "immortal_peach"`，同时带 `attack_modifier` 和 `health_modifier`。每层通过 `payload.attack_bonus: 1` 与 `payload.max_health_bonus: 1` 提供 +1/+1，`stack_policy: "stack"` 让多张蟠桃自然叠层；驱散时由 `CardState.recalculate_status_modifiers()` 自动回滚攻击和生命上限。
 - `毒` 使用 `status_id: "poison"` 和 `status_tags: ["damage_over_time"]`，通过 `payload.poison_damage` 表示每次回合结束伤害，通过 `duration_turns` 表示持续几个目标拥有者回合。毒状态是唯一状态：新毒的剩余总伤害（`poison_damage * duration_turns`）高于已有毒时覆盖，否则忽略。`StatusResolver.resolve_pre_trigger_status_effects()` 会在 `after_turn_end` 的普通回合结束触发前先结算毒伤害，并立刻进入死亡/亡语/补牌流程，因此毒伤害早于生命之泉、手牌升级等回合结束治疗。毒的持续 UI 是数值图标，展示剩余总伤害而不是整卡紫色遮罩。苗疆族“毒性爆发”使用 `modify_applied_status` 将己方施加的新毒压缩为 `duration_turns: 1`，并把每回合毒伤调整为原剩余总伤害。
 - `储毒` 使用 `status_id: "stored_venom"` 和 `status_tags: ["stored_resource"]`，通过 `payload.stored_venom_damage` 保存剧毒之泉储存的总毒量。它不是持续伤害状态，不会在回合结束跳伤害；`Card` 复用毒性数字图标在状态数字栈中显示储毒量。
 - `同命蛊` 使用 `status_id: "life_link"` 和 `status_tags: ["death_link"]`。每次 `link_units` 施法都会生成唯一 `link_id`，分别给两个目标写入一层 `life_link` 状态；状态的 `payload.trigger_effects` 在 `on_destroyed` 时触发 `destroy_linked_units`，后者读取 `_trigger_status.payload.link_id` 找到同一链接的另一端并直接销毁。因为每次施法的 link id 独立，AB 和 CD 不互相影响；AB 与 BC 这种链式链接会通过死亡队列自然传播为 A 死亡、B 直接死亡、再触发 C 直接死亡。
 - `薄葬` 使用 `status_id: "death_immunity"` 和 `status_tags: ["death_prevention"]`。死亡解析器只看 tag，不绑定状态 id；因此后续“不灭”“濒死保护”等机制可以复用同一死亡门控。薄葬期间单位受到过量伤害时生命会停在 0，但不会入死亡队列；当状态在回合时点到期后，`StatusResolver` 会再次检查，若目标仍为 0 生命则按 `status_expired` 原因进入标准死亡/亡语/补牌流程。
-- 圣盾、铜头铁臂、辉煌光环、励蛊、同命蛊、薄葬和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、金铜护体、奥术光环、绿色蛊虫强化背光、链接绿纹、死亡庇护裹布或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
+- 圣盾、铜头铁臂、蟠桃、辉煌光环、励蛊、同命蛊、薄葬和冻结的持续视觉不属于施法动画，而是状态覆盖表现：`CardStatusOverlay` 读取目标当前状态并绘制金色圣光盾、金铜护体、桃粉灵果光环、奥术光环、绿色蛊虫强化背光、链接绿纹、死亡庇护裹布或冰蓝色边框与冰晶雪花图案。毒性、护盾等数值状态由 `Card` 的状态数字栈展示。一次性施法动画仍由 `CardAnimationController` 管理。
 - 冻结（`status_id: "freeze"`）是首个临时控制状态，配置 `duration_turns` + `expires_on_trigger: "after_turn_end"` + `duration_scope: "target_owner"`，完整覆盖对手一个回合。状态到期后自动移除，无需额外的"跳过恢复"或"强制清空行动力"逻辑。
 - `TAG_ACTION_PREVENTION` 是控制状态的通用 tag，不绑定特定 status_id。`CardState` 提供 `has_status_with_tag(tag)` 通用门控；`can_move()`、`can_attack()` 和 `can_take_action_group()` 都通过此 tag 阻止行动。未来眩晕、定身等控制状态只需在 JSON 中配置 `"status_tags": ["action_prevention"]` 即可复用同一套门控，零代码改动。
 - 同一来源、同一 `status_id` 的状态会按 `stack_policy` 合并：默认 `stack` 会叠层，`refresh` 会刷新持续信息但不额外叠层，`replace` 会用新状态替换旧状态，`ignore` 会忽略后续同源同名状态。蛇毒减攻使用 `refresh`，避免重复攻击把同一个“攻击-2”状态叠成无限减攻；毒状态仍走专门的强度比较逻辑。

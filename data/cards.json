@@ -2207,7 +2207,9 @@
 		"heroes": [
 			{
 				"card_id": "sun_wukong",
-				"attached_cards": []
+				"attached_cards": [
+					"immortal_peach"
+				]
 			}
 		],
 		"cards": [
@@ -2329,6 +2331,37 @@
 								"target": "selected"
 							}
 						]
+					}
+				]
+			},
+			{
+				"id": "immortal_peach",
+				"name": "蟠桃",
+				"description": "孙悟空的英雄法术。使一个随从获得一层蟠桃状态，攻击力和生命上限各+1。",
+				"url": "res://assets/img/猴妖仙/蟠桃.png",
+				"type": "spell",
+				"count": 2,
+				"level": 1,
+				"animation": "immortal_peach",
+				"target_rule": "all_minions",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "selected",
+						"status_id": "immortal_peach",
+						"status_name": "蟠桃",
+						"status_description": "每层攻击力+1，生命上限+1。",
+						"status_tags": [
+							"attack_modifier",
+							"health_modifier"
+						],
+						"permanent": true,
+						"stack_policy": "stack",
+						"payload": {
+							"attack_bonus": 1,
+							"max_health_bonus": 1
+						}
 					}
 				]
 			}

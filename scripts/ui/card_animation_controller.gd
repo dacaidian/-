@@ -313,6 +313,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell(owner, effect_root, target_card)
+		"immortal_peach":
+			await play_heal_spell(owner, effect_root, target_card)
 		"medical_practice":
 			await play_medical_practice_spell(owner, effect_root, target_card)
 		"tranquil_spring":
@@ -388,6 +390,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 	var animation_key := str(spell_data.get("animation", spell_data.get("id", "")))
 	match animation_key:
 		"heal", "healing_spell":
+			await play_heal_spell_at_rect(owner, effect_root, target_rect)
+		"immortal_peach":
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
 		"medical_practice":
 			await play_medical_practice_at_rect(owner, effect_root, target_rect)

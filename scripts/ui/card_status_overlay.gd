@@ -46,6 +46,10 @@ var bronze_iron_color := Color(0.74, 0.58, 0.34, 0.16)
 var bronze_iron_edge_color := Color(1.0, 0.78, 0.38, 0.84)
 var bronze_iron_plate_color := Color(0.92, 0.72, 0.42, 0.36)
 var bronze_iron_rivet_color := Color(1.0, 0.92, 0.66, 0.86)
+var immortal_peach_color := Color(1.0, 0.42, 0.58, 0.16)
+var immortal_peach_edge_color := Color(1.0, 0.78, 0.48, 0.78)
+var immortal_peach_leaf_color := Color(0.58, 1.0, 0.42, 0.72)
+var immortal_peach_core_color := Color(1.0, 0.88, 0.62, 0.88)
 
 
 func _ready() -> void:
@@ -64,7 +68,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
+	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
 
 
 func should_show_divine_shield() -> bool:
@@ -79,6 +83,13 @@ func should_show_bronze_head_iron_arms() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
+
+
+func should_show_immortal_peach() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_IMMORTAL_PEACH)
 
 
 func should_show_arcane_aura() -> bool:
@@ -181,6 +192,8 @@ func _draw() -> void:
 		draw_death_immunity_overlay()
 	if should_show_bronze_head_iron_arms():
 		draw_bronze_head_iron_arms()
+	if should_show_immortal_peach():
+		draw_immortal_peach_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -286,6 +299,35 @@ func draw_bronze_head_iron_arms() -> void:
 		draw_circle(point, maxf(size.x * 0.014, 2.2), bronze_iron_rivet_color)
 
 	draw_arc(center, minf(armor_rect.size.x, armor_rect.size.y) * 0.40, -PI * 0.18, TAU - PI * 0.18, 72, bronze_iron_edge_color, 2.2, true)
+
+
+func draw_immortal_peach_overlay() -> void:
+	var peach_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := peach_rect.get_center()
+	var status := state.get_status(CardStatus.STATUS_IMMORTAL_PEACH) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 5)
+	var radius := minf(peach_rect.size.x, peach_rect.size.y) * 0.34
+
+	draw_circle(center, radius * 1.02, immortal_peach_color)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 4.4
+		var alpha := immortal_peach_edge_color.a * (1.0 - float(index) * 0.13)
+		draw_arc(center, ring_radius, -PI * 0.35, TAU - PI * 0.35, 80, Color(immortal_peach_edge_color.r, immortal_peach_edge_color.g, immortal_peach_edge_color.b, alpha), 2.2, true)
+
+	var fruit_count := mini(maxi(stack_count, 1), 6)
+	for index in range(fruit_count):
+		var angle := TAU * float(index) / float(fruit_count) - PI * 0.5
+		var fruit_center := center + Vector2(cos(angle), sin(angle)) * radius * 0.82
+		var fruit_radius := maxf(size.x * 0.018, 2.4)
+		draw_circle(fruit_center, fruit_radius, immortal_peach_core_color)
+		draw_circle(fruit_center + Vector2(fruit_radius * 0.42, -fruit_radius * 0.25), fruit_radius * 0.46, Color(1.0, 0.50, 0.64, 0.74))
+		draw_line(fruit_center + Vector2(0.0, -fruit_radius * 0.92), fruit_center + Vector2(fruit_radius * 0.78, -fruit_radius * 1.55), immortal_peach_leaf_color, 1.5)
+
+	var leaf_left := center + Vector2(-radius * 0.28, -radius * 0.82)
+	var leaf_right := center + Vector2(radius * 0.28, -radius * 0.82)
+	draw_line(center + Vector2(0.0, -radius * 0.50), leaf_left, immortal_peach_leaf_color, 2.4)
+	draw_line(center + Vector2(0.0, -radius * 0.50), leaf_right, immortal_peach_leaf_color, 2.4)
 
 
 func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, color: Color) -> void:
