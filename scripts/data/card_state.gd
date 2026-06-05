@@ -899,6 +899,40 @@ func has_status_with_tag(tag: String) -> bool:
 	return false
 
 
+func is_stealthed_from_player(player_id: String) -> bool:
+	return (
+		player_id != ""
+		and owner_id != ""
+		and owner_id != player_id
+		and has_keyword(CardData.KEYWORD_STEALTH)
+	)
+
+
+func remove_statuses_with_tag(tag: String) -> Array[CardStatus]:
+	var removed_statuses: Array[CardStatus] = []
+	if tag == "":
+		return removed_statuses
+
+	for index in range(statuses.size() - 1, -1, -1):
+		var status := statuses[index]
+		if status == null:
+			statuses.remove_at(index)
+			continue
+		if not status.tags.has(tag):
+			continue
+
+		removed_statuses.append(status)
+		statuses.remove_at(index)
+
+	if removed_statuses.is_empty():
+		return removed_statuses
+
+	recalculate_status_modifiers(false)
+	state_changed.emit(self)
+	removed_statuses.reverse()
+	return removed_statuses
+
+
 func get_status(status_id: String) -> CardStatus:
 	for status in statuses:
 		if status != null and status.status_id == status_id:

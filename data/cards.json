@@ -2209,7 +2209,8 @@
 				"card_id": "sun_wukong",
 				"attached_cards": [
 					"immortal_peach",
-					"immobilize_spell"
+					"immobilize_spell",
+					"gather_scatter_qi"
 				]
 			}
 		],
@@ -2389,6 +2390,41 @@
 						],
 						"permanent": true,
 						"stack_policy": "refresh"
+					}
+				]
+			},
+			{
+				"id": "gather_scatter_qi",
+				"name": "聚散成气",
+				"description": "孙悟空化气隐身并获得瞬移。下次普通攻击或施法后解除；破隐一击造成暴击。",
+				"url": "res://assets/img/猴妖仙/聚散成气.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "gather_scatter_qi",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"card_id": "sun_wukong",
+						"status_id": "gather_scatter_qi",
+						"status_name": "聚散成气",
+						"status_description": "隐身并获得瞬移；下次普通攻击或施法后解除，破隐一击造成暴击。",
+						"status_tags": [
+							"stealth",
+							"breaks_on_attack_or_spell"
+						],
+						"permanent": true,
+						"stack_policy": "refresh",
+						"payload": {
+							"keywords": [
+								"stealth",
+								"teleport",
+								"critical"
+							]
+						}
 					}
 				]
 			}

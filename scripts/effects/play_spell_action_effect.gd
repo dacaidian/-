@@ -17,7 +17,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	var target_rule := SpellTargetResolver.get_rule_from_card_data(spell_card)
 	var target_state := get_auto_spell_target(source_state, effect_data)
 	if SpellTargetResolver.requires_target(target_rule):
-		if target_state == null or not SpellTargetResolver.can_target(target_rule, target_state):
+		if target_state == null or not SpellTargetResolver.can_target(target_rule, target_state, [], source_state):
 			return
 
 	await game_manager.play_spell_cast_animation(source_state, target_state if target_state != null else source_state, {

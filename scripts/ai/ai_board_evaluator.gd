@@ -499,7 +499,7 @@ func _count_area_hits(action: SpellAction, center_target: CardState, gm: GameMan
 	var area_slots: Array = BoardQuery.get_area_slots(center_target.slot_index, rows, cols, gm.board_columns, gm.board_states.size())
 	for slot_idx in area_slots:
 		var state := gm.get_board_state(slot_idx)
-		if state != null and SpellTargetResolver.can_target(action.target_rule, state):
+		if state != null and SpellTargetResolver.can_target(action.target_rule, state, [], null, player.id):
 			if state.owner_id == player.id:
 				result["own"] += 1
 			elif state.owner_id != "":

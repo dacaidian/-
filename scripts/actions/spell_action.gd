@@ -79,6 +79,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_SPELL)
 		await game_manager.effect_registry.execute_effect(user, runtime_effect_data, game_manager)
 
+	break_attack_or_spell_stealth(user)
 	record_successful_spell_cast(user, game_manager)
 
 
@@ -125,3 +126,10 @@ func record_successful_spell_cast(user: CardState, game_manager: GameManager) ->
 		return
 
 	owner.record_spell_action(user.card_id, spell_data)
+
+
+func break_attack_or_spell_stealth(user: CardState) -> void:
+	if user == null:
+		return
+
+	user.remove_statuses_with_tag(CardStatus.TAG_BREAKS_ON_ATTACK_OR_SPELL)

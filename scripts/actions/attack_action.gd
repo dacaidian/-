@@ -66,6 +66,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not splash_targets.is_empty():
 		game_manager.resolve_dead_states(splash_targets, "attack", user)
 
+	break_attack_or_spell_stealth(user)
 	var trigger_source := user
 	if trigger_source.is_empty() or trigger_source.card_id != attacker_card_id:
 		trigger_source = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
@@ -102,6 +103,8 @@ func calculate_attack_damage(user: CardState, target: CardState) -> int:
 		return 0
 
 	var damage := user.current_attack
+	if user.has_keyword(CardData.KEYWORD_CRITICAL):
+		damage *= 2
 	if target != null and target.is_building():
 		damage += user.get_siege_bonus()
 
@@ -221,6 +224,9 @@ func is_attackable_unit_target(user: CardState, target: CardState) -> bool:
 	if not BoardQuery.is_face_up_unit(target):
 		return false
 
+	if target.is_stealthed_from_player(user.owner_id):
+		return false
+
 	return true
 
 
@@ -262,3 +268,10 @@ func is_ranged_anchor(user: CardState, anchor_state: CardState) -> bool:
 		return false
 
 	return anchor_state.owner_id != "" and anchor_state.owner_id == user.owner_id
+
+
+func break_attack_or_spell_stealth(user: CardState) -> void:
+	if user == null:
+		return
+
+	user.remove_statuses_with_tag(CardStatus.TAG_BREAKS_ON_ATTACK_OR_SPELL)

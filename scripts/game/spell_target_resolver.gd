@@ -37,7 +37,8 @@ static func get_valid_targets(
 	target_rule: String,
 	game_manager: GameManager,
 	card_ids: Array[String] = [],
-	source_state: CardState = null
+	source_state: CardState = null,
+	source_owner_id: String = ""
 ) -> Array[CardState]:
 	var targets: Array[CardState] = []
 	if game_manager == null or not requires_target(target_rule):
@@ -53,7 +54,7 @@ static func get_valid_targets(
 				continue
 		if is_area_rule(target_rule) and not is_valid_area_target(target_rule, state, game_manager):
 			continue
-		if can_target(target_rule, state, card_ids, source_state):
+		if can_target(target_rule, state, card_ids, source_state, source_owner_id):
 			targets.append(state)
 
 	return targets
@@ -63,18 +64,23 @@ static func can_target(
 	target_rule: String,
 	target: CardState,
 	card_ids: Array[String] = [],
-	source_state: CardState = null
+	source_state: CardState = null,
+	source_owner_id: String = ""
 ) -> bool:
 	if target == null:
 		return false
 
+	var resolved_source_owner_id := resolve_source_owner_id(source_state, source_owner_id)
 	if is_area_rule(target_rule):
-		return can_select_area_center(target)
+		return can_select_area_center(target, resolved_source_owner_id)
 
 	if target_rule == TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 		return target.is_empty() or not target.is_face_up
 
 	if not BoardQuery.is_face_up_board_card(target):
+		return false
+
+	if target.is_stealthed_from_player(resolved_source_owner_id):
 		return false
 
 	if is_magic_immune(target):
@@ -107,8 +113,11 @@ static func get_current_attribute_total(target: CardState) -> int:
 	return target.current_attack + target.current_health
 
 
-static func can_select_area_center(target: CardState) -> bool:
+static func can_select_area_center(target: CardState, source_owner_id: String = "") -> bool:
 	if target == null:
+		return false
+
+	if BoardQuery.is_face_up_board_card(target) and target.is_stealthed_from_player(source_owner_id):
 		return false
 
 	if BoardQuery.is_face_up_board_card(target) and is_magic_immune(target):
@@ -127,6 +136,13 @@ static func is_magic_immune(target: CardState) -> bool:
 		and BoardQuery.is_face_up_board_card(target)
 		and target.has_keyword(CardData.KEYWORD_MAGIC_IMMUNE)
 	)
+
+
+static func resolve_source_owner_id(source_state: CardState, fallback_owner_id: String = "") -> String:
+	if source_state != null and source_state.owner_id != "":
+		return source_state.owner_id
+
+	return fallback_owner_id
 
 
 static func is_area_rule(target_rule: String) -> bool:

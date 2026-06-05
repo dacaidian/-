@@ -677,3 +677,21 @@ Notes:
 - `GrantBoardVisionEffect` is the generic effect entry. Current Sun Wukong `fiery_eyes_golden_gaze` uses `scope: "global"`; future effects can use selected-slot style scopes without changing hover UI.
 - Board hover preview asks `GameManager.can_preview_card_front(state)`. Face-up cards always preview; face-down cards preview only when the current player has vision for that slot.
 - Turn-limited vision is cleared in `PlayerState.end_turn()` without duplicate state broadcasts, and GameManager hides active card hover previews when the current player ends the turn.
+
+
+### 隐身、暴击与破隐
+
+优先读：
+
+- `scripts/data/card_state.gd` 中的 `is_stealthed_from_player()` 和 `remove_statuses_with_tag()`。
+- `scripts/game/spell_target_resolver.gd`，如果是法术/手牌法术目标限制。
+- `scripts/actions/attack_action.gd`，如果是普通攻击、暴击或破隐一击。
+- `scripts/actions/spell_action.gd`，如果是随从施法后破隐。
+- `scripts/ui/card_status_overlay.gd`，如果是隐身持续视觉。
+
+约定：
+
+- `stealth` 只禁止敌方“选中”该单位；友方仍可选择自己的隐身单位。
+- `critical` 由 `AttackAction.calculate_attack_damage()` 统一解释，目前只让攻击力部分翻倍，不放大攻城等额外伤害。
+- 临时隐身/暴击/瞬移优先通过 `apply_status` + `payload.keywords` 授予。若状态应在攻击或施法后解除，添加 `status_tags: ["stealth", "breaks_on_attack_or_spell"]`。
+- 当前范例是孙悟空英雄配套手牌法术 `聚散成气`。

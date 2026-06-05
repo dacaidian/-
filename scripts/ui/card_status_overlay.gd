@@ -54,6 +54,9 @@ var rooted_color := Color(0.25, 0.34, 0.12, 0.18)
 var rooted_edge_color := Color(0.68, 0.92, 0.36, 0.78)
 var rooted_vine_color := Color(0.48, 0.88, 0.24, 0.76)
 var rooted_knot_color := Color(1.0, 0.86, 0.38, 0.86)
+var stealth_color := Color(0.52, 0.72, 0.92, 0.12)
+var stealth_edge_color := Color(0.76, 0.92, 1.0, 0.62)
+var stealth_mist_color := Color(0.86, 0.96, 1.0, 0.34)
 
 
 func _ready() -> void:
@@ -72,7 +75,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
+	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
 
 
 func should_show_divine_shield() -> bool:
@@ -101,6 +104,13 @@ func should_show_rooted() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ROOTED)
+
+
+func should_show_stealth() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status_with_tag(CardStatus.TAG_STEALTH)
 
 
 func should_show_arcane_aura() -> bool:
@@ -207,6 +217,8 @@ func _draw() -> void:
 		draw_immortal_peach_overlay()
 	if should_show_rooted():
 		draw_rooted_overlay()
+	if should_show_stealth():
+		draw_stealth_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -370,6 +382,28 @@ func draw_rooted_overlay() -> void:
 	for point in [center + Vector2(-root_rect.size.x * 0.20, 0.0), center + Vector2(root_rect.size.x * 0.20, root_rect.size.y * 0.10)]:
 		draw_circle(point, maxf(size.x * 0.022, 2.8), rooted_knot_color)
 		draw_circle(point, maxf(size.x * 0.011, 1.6), Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, 0.72))
+
+
+func draw_stealth_overlay() -> void:
+	var stealth_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
+	var center := stealth_rect.get_center()
+	var edge_width := maxf(size.x * 0.018, 1.8)
+
+	draw_rect(stealth_rect, stealth_color, true)
+	draw_rect(stealth_rect, stealth_edge_color, false, edge_width, true)
+
+	for index in range(7):
+		var t := float(index) / 6.0
+		var x := lerpf(stealth_rect.position.x + stealth_rect.size.x * 0.12, stealth_rect.position.x + stealth_rect.size.x * 0.88, t)
+		var mist_top := Vector2(x - stealth_rect.size.x * 0.10, stealth_rect.position.y + stealth_rect.size.y * 0.18)
+		var mist_bottom := Vector2(x + stealth_rect.size.x * 0.10, stealth_rect.position.y + stealth_rect.size.y * 0.82)
+		var alpha := stealth_mist_color.a * (0.42 + 0.38 * sin(t * PI))
+		draw_line(mist_top, mist_bottom, Color(stealth_mist_color.r, stealth_mist_color.g, stealth_mist_color.b, alpha), maxf(size.x * 0.016, 1.5))
+
+	for index in range(3):
+		var radius := minf(stealth_rect.size.x, stealth_rect.size.y) * (0.24 + float(index) * 0.09)
+		var alpha := stealth_edge_color.a * (0.42 - float(index) * 0.08)
+		draw_arc(center, radius, -PI * 0.18, TAU - PI * 0.18, 72, Color(stealth_edge_color.r, stealth_edge_color.g, stealth_edge_color.b, alpha), 1.8, true)
 
 
 func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, color: Color) -> void:

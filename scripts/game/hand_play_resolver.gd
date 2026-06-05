@@ -191,7 +191,8 @@ func get_valid_targets(card_data: CardData, game_manager: GameManager, player: P
 	if card_data == null or game_manager == null:
 		return []
 
-	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data, player), game_manager)
+	var owner_id := player.id if player != null else ""
+	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data, player), game_manager, [], null, owner_id)
 
 
 func get_valid_placement_targets(game_manager: GameManager, card_data: CardData = null) -> Array[CardState]:
@@ -321,7 +322,8 @@ func can_target(card_data: CardData, target: CardState, _game_manager: GameManag
 	if card_data == null:
 		return false
 
-	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target)
+	var owner_id := player.id if player != null else ""
+	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target, [], null, owner_id)
 
 
 func get_target_rule(card_data: CardData, player: PlayerState = null) -> String:
