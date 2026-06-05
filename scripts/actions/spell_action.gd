@@ -79,7 +79,8 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_SPELL)
 		await game_manager.effect_registry.execute_effect(user, runtime_effect_data, game_manager)
 
-	break_attack_or_spell_stealth(user)
+	if EffectData.should_break_stealth_after_spell(spell_data):
+		break_attack_or_spell_stealth(user)
 	record_successful_spell_cast(user, game_manager)
 
 

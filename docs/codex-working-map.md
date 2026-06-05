@@ -712,3 +712,9 @@ Notes:
 - 护甲只在攻击语义入口扣减，不写入 `CardState.take_damage()`；毒、法术、固定伤害和反弹伤害默认不受护甲影响。
 - 护甲图标优先读取 `assets/img/护甲数字/{value}.png`，缺图时回退 `0.png` 并显示文字值。
 - 当前范例是孙悟空英雄套装 `龙宫珍宝`：攻击力+2、复活冷却-1、护甲+1、移动力+2、授予 `mobile_assault`。
+
+### Stealth Break Configuration
+
+- Spell actions break statuses tagged `breaks_on_attack_or_spell` by default after resolving effects.
+- If a spell is itself used to enter stealth, set `breaks_stealth: false` on that spell/card config so the newly applied stealth status is not immediately removed by the same cast.
+- Current example: Sun Wukong hand spell `gather_scatter_qi` applies stealth, teleport, and critical to the on-board `sun_wukong` via `target: "owner_card_by_id"` plus `target_card_id: "sun_wukong"`.

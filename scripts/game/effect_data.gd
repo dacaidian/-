@@ -89,6 +89,7 @@ const KEY_REQUIRED_RESOURCE_MIN := "required_resource_min"
 const KEY_HEALTH_VALUES := "health_values"
 const KEY_BEFORE_TARGET_EFFECTS := "before_target_effects"
 const KEY_SUPPRESS_RESOURCE_GAIN := "suppress_resource_gain"
+const KEY_BREAKS_STEALTH := "breaks_stealth"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -229,6 +230,10 @@ static func get_death_reason(effect_data: Dictionary, default_reason := DEATH_RE
 
 static func should_apply_spell_power(effect_data: Dictionary) -> bool:
 	return bool(effect_data.get(KEY_APPLY_SPELL_POWER, false)) and bool(effect_data.get(KEY_SPELL_POWER_SCALING, true))
+
+
+static func should_break_stealth_after_spell(spell_data: Dictionary) -> bool:
+	return bool(spell_data.get(KEY_BREAKS_STEALTH, true))
 
 
 static func is_spell_effect(effect_data: Dictionary) -> bool:
