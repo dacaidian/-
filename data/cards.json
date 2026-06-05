@@ -2208,7 +2208,8 @@
 			{
 				"card_id": "sun_wukong",
 				"attached_cards": [
-					"immortal_peach"
+					"immortal_peach",
+					"immobilize_spell"
 				]
 			}
 		],
@@ -2362,6 +2363,32 @@
 							"attack_bonus": 1,
 							"max_health_bonus": 1
 						}
+					}
+				]
+			},
+			{
+				"id": "immobilize_spell",
+				"name": "定身术",
+				"description": "孙悟空的英雄法术。使一个非英雄随从定身，无法行动，直到其受到伤害。",
+				"url": "res://assets/img/猴妖仙/定身术.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "immobilize",
+				"target_rule": "non_hero_minions",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "selected",
+						"status_id": "rooted",
+						"status_name": "定身",
+						"status_description": "无法做出任何行动，受到伤害后解除。",
+						"status_tags": [
+							"action_prevention"
+						],
+						"permanent": true,
+						"stack_policy": "refresh"
 					}
 				]
 			}

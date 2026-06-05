@@ -50,6 +50,10 @@ var immortal_peach_color := Color(1.0, 0.42, 0.58, 0.16)
 var immortal_peach_edge_color := Color(1.0, 0.78, 0.48, 0.78)
 var immortal_peach_leaf_color := Color(0.58, 1.0, 0.42, 0.72)
 var immortal_peach_core_color := Color(1.0, 0.88, 0.62, 0.88)
+var rooted_color := Color(0.25, 0.34, 0.12, 0.18)
+var rooted_edge_color := Color(0.68, 0.92, 0.36, 0.78)
+var rooted_vine_color := Color(0.48, 0.88, 0.24, 0.76)
+var rooted_knot_color := Color(1.0, 0.86, 0.38, 0.86)
 
 
 func _ready() -> void:
@@ -68,7 +72,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
+	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
 
 
 func should_show_divine_shield() -> bool:
@@ -90,6 +94,13 @@ func should_show_immortal_peach() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_IMMORTAL_PEACH)
+
+
+func should_show_rooted() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_ROOTED)
 
 
 func should_show_arcane_aura() -> bool:
@@ -194,6 +205,8 @@ func _draw() -> void:
 		draw_bronze_head_iron_arms()
 	if should_show_immortal_peach():
 		draw_immortal_peach_overlay()
+	if should_show_rooted():
+		draw_rooted_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
 	if should_show_freeze():
@@ -328,6 +341,35 @@ func draw_immortal_peach_overlay() -> void:
 	var leaf_right := center + Vector2(radius * 0.28, -radius * 0.82)
 	draw_line(center + Vector2(0.0, -radius * 0.50), leaf_left, immortal_peach_leaf_color, 2.4)
 	draw_line(center + Vector2(0.0, -radius * 0.50), leaf_right, immortal_peach_leaf_color, 2.4)
+
+
+func draw_rooted_overlay() -> void:
+	var root_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := root_rect.get_center()
+	var edge_width := maxf(size.x * 0.023, 2.0)
+
+	draw_rect(root_rect, rooted_color, true)
+	draw_rect(root_rect, rooted_edge_color, false, edge_width, true)
+
+	var vine_points := PackedVector2Array()
+	for index in range(10):
+		var t := float(index) / 9.0
+		var x := lerpf(root_rect.position.x + root_rect.size.x * 0.18, root_rect.position.x + root_rect.size.x * 0.82, t)
+		var y := center.y + sin(t * TAU * 1.55) * root_rect.size.y * 0.08
+		vine_points.append(Vector2(x, y))
+	draw_polyline(vine_points, rooted_vine_color, maxf(size.x * 0.025, 2.0), false)
+
+	var cross_points := PackedVector2Array()
+	for index in range(10):
+		var t := float(index) / 9.0
+		var x := lerpf(root_rect.position.x + root_rect.size.x * 0.82, root_rect.position.x + root_rect.size.x * 0.18, t)
+		var y := center.y + sin(t * TAU * 1.55 + PI) * root_rect.size.y * 0.08
+		cross_points.append(Vector2(x, y + root_rect.size.y * 0.10))
+	draw_polyline(cross_points, Color(rooted_vine_color.r, rooted_vine_color.g, rooted_vine_color.b, rooted_vine_color.a * 0.82), maxf(size.x * 0.021, 1.8), false)
+
+	for point in [center + Vector2(-root_rect.size.x * 0.20, 0.0), center + Vector2(root_rect.size.x * 0.20, root_rect.size.y * 0.10)]:
+		draw_circle(point, maxf(size.x * 0.022, 2.8), rooted_knot_color)
+		draw_circle(point, maxf(size.x * 0.011, 1.6), Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, 0.72))
 
 
 func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, color: Color) -> void:

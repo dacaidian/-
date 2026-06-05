@@ -1084,13 +1084,19 @@ func take_damage(amount: int) -> void:
 		return
 
 	var remaining_damage := amount
+	var did_receive_damage := false
 	if shield > 0:
 		var absorbed_damage: int = mini(shield, remaining_damage)
 		shield -= absorbed_damage
 		remaining_damage -= absorbed_damage
+		did_receive_damage = absorbed_damage > 0
 
 	if remaining_damage > 0:
 		damage_taken = mini(damage_taken + remaining_damage, max_health)
+		did_receive_damage = true
+
+	if did_receive_damage:
+		remove_status(CardStatus.STATUS_ROOTED)
 
 	state_changed.emit(self)
 

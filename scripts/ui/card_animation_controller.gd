@@ -369,6 +369,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
+		"immobilize":
+			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"charm":
 			await play_charm_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
@@ -434,6 +436,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_rect)
 		"soul_hook":
+			await play_soul_hook_at_rect(owner, effect_root, target_rect)
+		"immobilize":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"charm":
 			await play_charm_at_rect(owner, effect_root, target_rect)
