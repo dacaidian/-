@@ -1,162 +1,268 @@
-# War Card Architecture
+# War Card 架构说明
 
-> Encoding: this document is UTF-8. If a document cannot be edited by apply_patch, treat it as a bug and normalize it back to UTF-8 instead of appending around broken bytes.
+> Encoding guard: this document must stay valid UTF-8. If Chinese text becomes unreadable or `apply_patch` cannot edit this file, first repair/normalize the file as UTF-8. Do not append around broken bytes.
+>
+> 中文说明：本文档必须保持 UTF-8。若出现乱码，应先修复编码。
 
-## Project Shape
+## 项目形态
 
-This is a Godot tabletop card battler. The match starts at the faction/hero selection page, then enters a board scene. The rules are data-driven through `data/cards.json`; runtime behavior is implemented by reusable actions, effects, status resolvers, and UI controllers.
+这是一个 Godot 桌面卡牌战棋游戏。流程是：进入种族/英雄选择页，完成选择后进入棋盘对局。卡牌规则主要由 `data/cards.json` 驱动，运行时行为由通用行动、效果、状态、触发器和 UI 控制器组合实现。
 
-Main directories:
+主要目录：
 
-- `data/`: card and faction definitions.
-- `scenes/`: Godot scenes, including board, card, start menu, and debug UI.
-- `scripts/data/`: persistent and runtime data models.
-- `scripts/actions/`: player-visible board actions such as move, attack, spell, inject venom, venom burst, mounted attack, and faction skill actions.
-- `scripts/effects/`: reusable effect implementations referenced by JSON.
-- `scripts/game/`: orchestration, target resolution, triggers, death, hand play, passives, board layers, AI helpers, and match setup.
-- `scripts/ui/`: panels, animation controllers, action menu, hand drawer, equipment display, status overlay, faction panels, and victory screen.
-- `scripts/ai/`: AI candidate generation, evaluation, and execution.
+- `data/`：种族、英雄、卡牌和衍生牌定义。
+- `scenes/`：Godot 场景，包括棋盘、卡牌、开始菜单和 debug UI。
+- `scripts/data/`：静态数据和运行时数据模型。
+- `scripts/actions/`：玩家可见的行动，如移动、攻击、施法、注入毒液、毒爆、骑乘攻击、方向移动、种族技能等。
+- `scripts/effects/`：由 JSON 配置调用的通用效果。
+- `scripts/game/`：对局编排、目标选择、触发、死亡、手牌使用、被动、棋盘层、AI 和比赛配置。
+- `scripts/ui/`：动画、状态显示、手牌抽屉、装备面板、种族面板、胜利画面等。
+- `scripts/ai/`：AI 候选行为生成、评估和执行。
 
-## Core Data Model
+## 核心数据模型
 
-`CardData` is immutable card definition data loaded from `cards.json`: id, type, role, level, count, keywords, stats, effects, spell actions, configured actions, mounted attacks, equipment type, and hero metadata.
+`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。
 
-`CardState` is a board instance. It owns runtime properties such as owner, slot, layer, face-up state, current attack/health, max health, shield, armor, statuses, action counters, and origin snapshot.
+`CardState` 是棋盘上的卡牌实例，保存拥有者、位置、层级、翻开状态、当前攻击、当前生命、生命上限、护盾、护甲、状态、行动次数和原始快照。
 
-`HandCardState` wraps hand entries that need cooldown or runtime metadata, such as hero revival cards. Code that reads player hands should use `HandCardState.get_card_data(entry)` instead of casting directly to `CardData`.
+`HandCardState` 是手牌条目的运行时包装。英雄复活牌、带冷却的手牌、未来带状态的手牌都应使用它。读取手牌时不要直接 `as CardData`，应使用 `HandCardState.get_card_data(entry)`。
 
-`PlayerState` owns faction identity, hand, equipment, mana, resource score, graveyard, faction resources, board vision, and current-turn counters.
+`PlayerState` 保存玩家身份、种族、手牌、装备、法力、资源分、坟场、种族资源、透视能力和当前回合计数。
 
-`BoardCell` stores slot identity and capability. The 7x7 board has logical cells whose properties travel with the cell during swaps. A cell that began as an inner 5x5 battlefield cell remains refill/place-capable even if swapped outward; an original outer cell remains non-refill/non-ground-place even if swapped inward.
+`BoardCell` 保存棋盘格子的身份和能力。7x7 棋盘中，内圈 5x5 是常规战场格，外圈通常不补牌、不允许地面单位放置，但飞行单位可以进入空中层。格子的能力会随着“交换单元格”移动，不能用当前位置推断能否补牌或放置。
 
-## Card Data Rules
+## 卡牌数据规则
 
-`cards.json` contains factions. A faction can define `heroes`, `cards`, `tokens`, and faction-specific runtime configuration.
+`cards.json` 以种族为单位组织。一个种族可以有：
 
-Card types currently include minion, spell, building, upgrade, and equipment. Card levels drive the refill pool. Level 1 is used first, then level 2, then level 3. Neutral cards are mixed with both selected factions unless a faction rule removes them, such as Miaojiang removing Life Spring.
+- `heroes`：英雄及其附属牌。
+- `cards`：会进入牌池的常规卡牌。
+- `tokens`：衍生牌，不进入牌池，但可以被效果获取到手牌或召唤。
+- 种族运行时配置，如默认入手升级、种族资源、种族技能等。
 
-Hero attached cards enter the pool only when that hero is selected. Hero-attached hand cards require the owning hero to be on board before they can be used unless a future card explicitly opts out.
+当前卡牌类型包括：随从、法术、建筑、升级、装备。
 
-Default-in-hand upgrades are placed directly into the player's hand at match start and can provide persistent passives without entering the board pool.
+卡牌等级决定补牌顺序：先用 1 阶牌池，耗尽后进入 2 阶，再进入 3 阶。
 
-## Board And Layers
+英雄附属牌只有在对应英雄被选择时才会进入牌池。英雄附属手牌默认要求该英雄在场才能使用，除非未来卡牌明确声明例外。
 
-The board is 7x7. The inner 5x5 cells are normal battlefield cells. Outer cells are normally not refilled and not valid for ground placement, but flying units may use the air layer there.
+默认入手升级牌会在开局直接进入对应玩家手牌并生效，不进入棋盘牌池。
 
-A slot can hold independent ground and air layers. Ground and air occupancy are independent. A flying unit must not block clicks intended for the empty ground layer in the same slot.
+## 棋盘与层级
 
-Refill, placement, and card-pool logic must use the board cell capability, not the current visual position.
+棋盘是 7x7。内圈 5x5 是正常战场；外圈是边缘区域，通常不补牌、不允许地面单位放置，但允许飞行单位使用空中层。
 
-## Interaction State
+一个单元格可以同时有地面层和空中层。地面和空中占用相互独立。飞行单位不能阻挡玩家点击同格空闲的地面层。
 
-`InteractionManager` owns idle, focused board card, board target selection, focused hand card, hand target selection, and multi-step selection states. Right click and Escape should leave target/focus states consistently.
+补牌、手牌放置和移动合法性必须读取 `BoardCell` 的能力，而不是格子的当前坐标。
 
-`ActionMenuController` only displays actions. Action availability belongs to actions/resolvers.
+## 交互状态
 
-## Actions
+`InteractionManager` 管理空闲、棋盘卡牌焦点、棋盘目标选择、手牌焦点、手牌目标选择、多阶段选择等状态。右键和 Escape 应在焦点/目标选择状态下保持一致的退回逻辑。
 
-Every board action extends `CardAction`. Primary action groups include movement, attack, and spell. Action locks decide whether a unit can combine groups in a turn. Keywords such as cavalry, mobile assault, spell_move, and spell_attack modify these locks.
+`ActionMenuController` 只负责展示行动菜单，不负责判断行动是否可用。行动可用性应放在行动类或 resolver 中。
 
-Important action classes:
+## 行动系统
 
-- `MoveAction`: adjacent movement by default; `teleport` keyword allows all legal empty slots for the unit layer.
-- `DirectionalMoveAction`: configured no-target side movement. It moves one slot in a fixed direction and reuses `MoveAction` legality/execution. Current example: `westward` / 西行 on 通风猕猴 moves left, costs no main action, spends no movement, and can be used repeatedly while the left slot remains legal.
-- `AttackAction`: normal attack, ranged logic, giant splash, occupy prompt, armor reduction, stealth target filtering, and break-stealth after attack.
-- `SpellAction`: configured spell actions on units. It resolves targets through `SpellTargetResolver`, executes effects, and breaks stealth by default unless `breaks_stealth: false` is configured.
-- `EffectAction`: generic configured action wrapper for actions that only need target selection plus effect execution.
-- `MountedAttackAction`: independent rider-style attack such as Hippogryph rider archer attack.
-- `FixedMeleeDamageAction`: fixed-damage melee side action such as claw strike.
+所有棋盘行动继承 `CardAction`。主行动组包括移动、攻击、施法。行动锁决定一个单位本回合能否同时进行多个主行动组。骑兵、移动攻击、施法移动、施法攻击等关键词会改变这些锁。
 
-## Effects
+重要行动：
 
-Effects are JSON-driven and registered in `EffectRegistry`. `EffectData` is the shared configuration vocabulary. Add new keys there before using strings across code.
+- `MoveAction`：默认相邻移动；拥有瞬移能力时可选择全场合法空格。地面单位选地面层，飞行单位选空中层。
+- `DirectionalMoveAction`：无目标方向移动，用于通风猕猴“西行”等固定方向副动作。
+- `AttackAction`：普通攻击，包含远程规则、巨兽溅射、占领提示、护甲减伤、隐身目标过滤、攻击后破隐。
+- `SpellAction`：棋盘单位的施法动作。目标由 `SpellTargetResolver` 解析；施法后默认破除隐身，除非配置 `breaks_stealth: false`。
+- `EffectAction`：通用“选目标并执行效果”的配置行动。
+- `MountedAttackAction`：骑乘单位的独立攻击，如角鹰骑士上的弓箭手。
+- `FixedMeleeDamageAction`：固定伤害近战副动作，如月刃豹爪击。
 
-Reusable effects include healing, damage, shield, resource, mana, flips, apply/cleanse status, grant actions/spell actions/keywords/reborn, add or choose cards into hand, resurrect, evolve, ordered sacrifice, board traps, board cell swaps, linked death, faction runtime states, board vision, moonblade, and multi-target spell effects.
+## 效果系统
 
-Rules should prefer generic effects over one-card scripts. A card-specific effect is acceptable only when the mechanic cannot be expressed as reusable data.
+效果由 JSON 配置驱动，在 `EffectRegistry` 中注册。新增效果 id 和配置键应先放入 `EffectData`，避免字符串散落。
 
-`on_enter_board` is the shared trigger for a unit entering the board through reveal or hand placement. Use it for triggered entry effects instead of duplicating `on_reveal` and placement branches.
+已实现的通用效果包括：治疗、伤害、护盾、资源分、法力、翻牌、施加/净化状态、授予行动/施法/关键词/复生、获取或选择卡牌入手、复活、进化、顺序献祭、棋盘陷阱、单元格交换、子母蛊链接、种族状态、透视、月刃、多目标法术、入场同步属性、友方攻击协同等。
 
-`after_friendly_attack` is broadcast to other friendly board units after a normal attack. Effects can use `source_card_ids` to filter the original attacker. Current example: Monkey Spirit `hair_clone` copies Sun Wukong's stats on enter and uses `assist_attack_attack_target` to attack Sun Wukong's attack target when in legal range.
+规则应优先使用通用效果。只有无法通过数据组合表达的机制，才考虑新增较专用的效果。
 
-## Targeting
+`on_enter_board` 是单位进入棋盘的统一触发点，适用于翻开进入棋盘和从手牌放置进入棋盘。不要同时写一套 `on_reveal` 和一套放置逻辑。
 
-`SpellTargetResolver` owns target rules. Existing rules include all minions, all units, non-hero minions, non-buildings, selected areas, 2x2 regions, adjacent targets, card-id filtered targets, stealth and magic immune filtering.
+`after_friendly_attack` 会在友方单位完成普通攻击后广播给其他友方单位。效果可以用 `source_card_ids` 过滤原始攻击者。当前例子是猴妖仙“毫毛”在孙悟空攻击后尝试协同攻击同一目标。
 
-Magic immune is a base capability: magic immune units cannot be selected by spells and are skipped by spell AOE. Stealth prevents enemy actions from selecting that unit. Friendly actions may still select friendly stealth units.
+## 目标选择
 
-Multi-step target flows should use shared controllers such as board pair selection or card multi-select rather than embedding state in a single card implementation.
+`SpellTargetResolver` 负责法术目标规则。已有规则包含所有随从、所有单位、非英雄随从、非建筑、指定区域、2x2 区域、相邻目标、指定卡牌 id、隐身过滤、魔法免疫过滤等。
 
-## Status System
+魔法免疫是底层能力：魔法免疫单位不能被法术选中，也会被法术 AOE 跳过。
 
-`CardStatus` records temporary and persistent modifiers. Statuses can have id, tags, duration, duration scope, stack policy, payload modifiers, trigger effects, turn effects, and death persistence.
+隐身使敌方行动无法选中该单位。友方行动仍可选择己方隐身单位。
 
-A status with no turn duration can still be non-permanent in the gameplay sense. Most buffs, shields, charms, links, and spell-granted states should disappear on death unless explicitly marked `persists_after_death`.
+多阶段目标选择应复用通用选择控制器，不要把流程写死在某张卡里。
 
-Important status tags:
+## 状态系统
 
-- `damage_prevention`: divine shield style prevention.
-- `action_prevention`: cannot act, used by rooted/frozen style control.
-- `stealth`: target invisibility.
-- `breaks_on_attack_or_spell`: removed after normal attack or spell action.
+`CardStatus` 记录临时或持续状态。状态可以有 id、标签、持续时间、持续范围、叠加规则、属性修正、触发效果、回合效果和死亡后是否保留。
 
-Specific status families:
+没有回合持续时间的状态，不一定等于“死亡后也保留”。大多数增益、圣盾、魅惑、链接、法术授予状态都应在死亡后消失，除非明确配置 `persists_after_death`。
 
-- `rooted`: action prevention until the unit takes real shield/health damage. Its visual is a golden mask with a central `?` seal.
-- `stealth`: enemies cannot target; current Sun Wukong `gather_scatter_qi` grants stealth, teleport, and critical.
-- `poison`: unique status by total damage. Higher total poison replaces lower poison. Poison turn-end damage resolves before healing.
-- `snake_venom`: temporary attack reduction linked to poison duration; must restore actual previous amount, not a fixed value.
-- `charm`: control-changing status that can be cleansed.
-- `death_immunity`: keeps unit at 0 health until status ends; death is checked when it expires.
-- `reborn`: death triggers still happen, then the unit revives in place and skips graveyard/refill/occupy.
-- `health_modifier`: stackable max-health modifiers such as Power Word: Shield. Cleansing lowers max/current health and may cause death resolution.
+重要状态标签：
 
-`CardState.recalculate_status_modifiers()` is responsible for derived stat changes. Do not manually add fixed values back when a status expires; store or derive the actual modifier.
+- `damage_prevention`：类似圣盾，抵挡伤害。
+- `action_prevention`：禁止行动，用于定身、冻结等控制。
+- `stealth`：隐身，影响敌方选取。
+- `breaks_on_attack_or_spell`：攻击或施法后移除。
 
-## Damage, Death, Refill
+重要状态族：
 
-Damage should flow through `CardState.take_damage()` unless a mechanic explicitly kills without damage. This keeps shield, armor-independent damage, rooted break, poison immunity, death immunity, and death checks consistent.
+- `rooted`：受到真实护盾/生命伤害前无法行动，表现为金色遮罩和“定”字。
+- `stealth`：敌方无法选中；孙悟空“聚散成气”会授予隐身、瞬移和暴击。
+- `poison`：按总伤害唯一化，高总伤害毒覆盖低总伤害毒；回合结束时毒先于治疗结算。
+- `snake_venom`：与毒持续时间绑定的临时攻击降低，恢复时必须按实际修正量恢复。
+- `charm`：改变控制权，可被净化。
+- `death_immunity`：生命可固定到 0，状态结束后再检查死亡。
+- `reborn`：死亡触发仍会正常发生，然后原地复生，跳过坟场、补牌和占领。
+- `health_modifier`：可叠加生命上限修正，如真言术·盾。净化时会降低生命上限和当前生命，并可能触发死亡。
 
-Armor reduces normal attack damage only. It is not part of `take_damage()` because poison, spells, fixed damage, and reflected damage should not automatically be reduced.
+派生属性应由 `CardState.recalculate_status_modifiers()` 统一计算。状态失效时不要手动写死加回固定数值。
 
-Death is resolved by `DeathResolver`. It handles graveyard snapshots, death triggers, hero revival, reborn, linked death, resource score, refill, and occupy side effects.
+## 伤害、死亡与补牌
 
-Hero death does not enter graveyard. A hero becomes a hand minion card with cooldown. Equipment such as Dragon Palace Treasure can modify revive cooldown.
+伤害应尽量走 `CardState.take_damage()`，除非机制明确是直接杀死。这样才能保持护盾、定身破除、毒免疫、死亡免疫和死亡检查一致。
 
-Refill must use cell capability and level-based pool order.
+护甲只减少普通攻击伤害，不属于通用 `take_damage()`，因为法术、毒、固定伤害和反弹伤害不应默认被护甲减少。
 
-## Hand, Equipment, And Passives
+死亡由 `DeathResolver` 统一处理。它负责坟场快照、亡语、英雄复活、复生、子母蛊链接、资源分、补牌和占领副作用。
 
-The hand drawer has zones for spells, minions, upgrades, and equipment. Hand cards can focus and show an action list.
+英雄死亡不进坟场，而是进入手牌并带复活冷却。装备可以修改复活冷却。
 
-Hand actions include spell cast, minion placement, equipment equip, and passive upgrades. Equipment slots are per type. Equipping a second item of the same type returns the old item to hand.
+补牌必须使用格子能力，并遵守等级牌池顺序。
 
-Equipment passives use `trigger: "while_equipped"` and are refreshed through `HandPassiveResolver`. Do not write equipment behavior directly in `PlayerState.equip_card()` unless it is truly zone bookkeeping.
+## 手牌、装备与被动
 
-## Faction Runtime Systems
+手牌抽屉分为法术、随从、升级、装备区域。手牌可以进入焦点状态并展示行动列表。
 
-Faction resources and skills are player state, not UI state.
+手牌行动包括：施放法术、放置随从、装备装备、升级牌被动。
 
-Implemented examples:
+装备按类型唯一。装备同类型新装备时，旧装备返回手牌。
 
-- Night Elf time cycle: sunrise, noon, dusk, moonrise, full moon, moonset.
-- Miaojiang poison ecosystem: toxic spring, venom storage, venom burst, poison insects, poison upgrades.
-- Fox spirit tails: starts at 1, max 9. Default-in-hand upgrades unlock thresholds and faction skill sacrifice.
-- Monkey spirit action-resource keywords: `spell_move` and `spell_attack` allow spellcasting to coexist with movement or attacking.
-- Board vision: temporary full-board or future per-slot preview for face-down cards.
+装备被动使用 `trigger: "while_equipped"`，由 `HandPassiveResolver` 刷新。不要把装备属性逻辑写进 UI 或 `PlayerState.equip_card()`，除非只是区域 bookkeeping。
+
+## 种族运行时系统
+
+种族资源和种族技能属于玩家状态，不属于 UI 状态。
+
+已实现例子：
+
+- 暗夜精灵：日出、正午、黄昏、月升、满月、月落的时间循环。
+- 苗疆族：毒、毒虫、剧毒之泉、注入毒液、毒爆、毒相关升级。
+- 狐妖仙：尾数、献祭种族技能、默认入手升级、魅惑和复生体系。
+- 猴妖仙：施法/移动/攻击互斥关系扩展、透视、定身、隐身/暴击、护甲装备、瞬移、分身协攻。
 
 ## AI
 
-AI is split into candidate building, board evaluation, hand evaluation, and action execution. It should use the same public action and target APIs as the player. Put legality in actions/resolvers, scoring in evaluators.
+AI 分为候选行为生成、棋盘评估、手牌评估和行为执行。AI 应尽量调用玩家同一套行动和目标 API。合法性放在行动/resolver，评分放在 evaluator。
 
-## UI And Animation
+## UI 与动画
 
-UI controllers are presentation-only. They should not mutate rule data except through explicit callbacks to game/action/effect layers.
+UI 控制器只负责表现，不应直接修改规则数据，除非通过明确回调进入 game/action/effect 层。
 
-One-shot effects go in `CardAnimationController`. Persistent status visuals go in `CardStatusOverlay`. Numeric icons go in the card status/value stack in `Card`.
+一次性特效放在 `CardAnimationController`。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
-## Documentation And Encoding
+## 文档与编码
 
-All docs must be UTF-8. If a doc is not valid UTF-8, normalize or rewrite it first. Do not keep appending around broken bytes.
+所有文档必须是 UTF-8。若出现不可读乱码，应先修复编码或重写文档，不要继续在坏文件上追加。
 
-Use `docs/codex-working-map.md` as the quick index for common task types. Use this file for conceptual boundaries and architectural rules.
+`docs/codex-working-map.md` 是任务入口索引；本文档负责概念边界、系统设计和长期规则。
+
+## 未来设计笔记
+
+本节不是当前实现要求，而是记录长期设计方向，避免未来每张卡各自为政。
+
+### 节奏与种族卡牌数量
+
+单个种族不宜过大。建议每个种族约 13-17 种主牌设计、30-35 张主牌复制数，不包含衍生牌和英雄生成牌。
+
+推荐结构：
+
+- 英雄：1 张。
+- 1 阶：两个基础随从，加两到三个低阶法术/升级。此阶段应快速展示种族核心身份。
+- 2 阶：两到三个核心随从，加关键升级/法术。此阶段应形成主要策略分支。
+- 3 阶：一到两个终结随从，加少量高影响法术、装备、建筑或升级。每张 3 阶牌都应推动对局走向结尾。
+
+每个种族通常保留两条主路线和一条副路线。路线过多会让回合很忙，但决策不聚焦。
+
+### 中立牌与地图机制
+
+中立牌不应像第二个通用种族。它们主要负责创造棋盘目标、少量资源波动和地图质感，不应替代种族终结手段。
+
+当前中立牌池可以视为未来地图系统的原型：
+
+- 地图定义自己的中立牌包。
+- 地图可以把部分默认中立牌替换为主题版本。
+- 地图可以定义环境规则、棋盘修正和可选事件时机。
+
+示例结构：
+
+```json
+{
+  "id": "deadwind_pass",
+  "display_name": "逆风小径",
+  "neutral_cards": [
+    { "card_id": "arcane_mine", "count": 4 },
+    { "card_id": "small_mine", "count": 4 },
+    { "card_id": "unstable_rift", "count": 2 }
+  ],
+  "rules": [
+    { "id": "swap_random_cells", "trigger": "round_end", "amount": 1 }
+  ]
+}
+```
+
+设计原则：种族决定玩家是谁，地图决定玩家在哪里战斗。
+
+地图方向示例：
+
+- 逆风小径：奥术矿脉、不稳定裂隙、单元格错位、法力奖励。
+- 祖安：毒气、微光强化、炼金池、污染建筑、短期爆发和副作用。
+- 圣光修道院：治疗点、净化泉、防御建筑、对毒和诅咒的压制。
+- 影月谷：邪能裂隙、献祭祭坛、恶魔召唤、反治疗压力。
+- 艾露恩林地：月井、月相、隐匿、远程压制和站位奖励。
+- 机械城：零件、维修、装备、机械复活和能量核心。
+- 天灾冰原：尸堆、冰冻区域、治疗削弱和亡灵复生。
+
+### 中立牌平衡原则
+
+中立牌应该制造互动，而不是直接赢下游戏。
+
+建议方向：
+
+- 公共伤害牌通常不应能打英雄，除非它是稀有、高阶、明确设计为终结牌。
+- 类似暗箭的牌更适合做“非英雄随从去除”，让英雄死亡更多来自种族特色。
+- 永久翻牌加成等长期资源中立牌需要叠加上限或较低数量。
+- 矿脉建筑是健康的中立牌，因为它们制造空间争夺和资源分竞争。
+- 偏向某个种族的中立牌更适合放入地图，或由种族规则替换进入公共牌池。
+
+### 未来种族主题库
+
+以下是设计储备，不代表已经进入实现范围。
+
+- 卡拉赞：麦迪文、传送门、混乱元素、奥术傀儡、可攻击和升级的卡拉赞之塔。高阶裂隙可召唤 Boss 级威胁。
+- 霍格沃兹：没有施法回合，法术直接消耗法力。哈利可以用法力学习不可饶恕咒、防御咒、攻击咒、基础咒等。伙伴和神奇动物是重要支援。
+- 黄金学院：黄金是种族资源，来自斩杀、法术和建筑。黄金可购买随从和装备。金属法术、炼金术和黄金溶流提供破坏力。
+- 影月氏族：古尔丹用邪能强化兽人和恶魔，黑暗之门提供持续兵源。
+- 东京喰种：四种赫子提供不同加成，施法回合强化赫子。金木研通过多形态提供强攻，S/SSS 级角色作为后期高峰。
+- 共生体：毒液剥离组织，组织在子代池中进化，附着到人类随从后入场。纳尔是后期全局强化点。
+- 破坏者联盟：微光提供本回合攻击爆发。金克斯/爆爆人格切换形成不同模式，武器、偷窃、罪犯和通缉令构成玩法。
+- 光荣进化：机械随从通过升级后可消耗法力复活、交换意识，并解锁维克托的多条时间线。
+- 蜘蛛侠：发明、蛛丝、蜘蛛感应反应法术、反派集结和平行宇宙援军。核心机制应是“反应”。
+- 野兽人：杀死同类后进化，混沌腐蚀积累到阈值后爆发。卡扎克可牺牲友方野兽成长。
+- 天灾军团：友方死亡留下尸体，尸体可缝合巨人或强化憎恶。骷髅兵和阿尔萨斯强调复生，霜之哀伤压制治疗。
+- 九重天：杨戬、敕令、天兵、黄巾力士、雷部元帅、丹药、蟠桃、哮天犬和四大天王。应体现天庭秩序，与猴妖仙的个人神通形成对照。
+
+### 现有种族方向
+
+- 白银之手：信仰、祝福、阵线、治疗、保护、牺牲和反推。不要变成同时拥有硬控和高爆发的泛用种族。
+- 达拉然议会：灵活法术工具箱。需要持续关注法术强度、重复施法和高影响法术解锁的膨胀。
+- 苗疆族：毒和蛊生态。毒爆、陷阱和吞噬可以强，但要留下净化、站位和目标限制等反制。
+- 暗夜精灵哨兵：时间、月相、远程、站位、坐骑和夜晚奖励。
+- 狐妖仙：尾数、魅惑、献祭、控制和复生操纵。魅惑阈值和永久控制要保守。
+- 猴妖仙：孙悟空神通和猴群协同。英雄灵活性很强，应通过分身、隐身、护甲、瞬移等组件的铺垫来平衡。
