@@ -50,10 +50,10 @@ var immortal_peach_color := Color(1.0, 0.42, 0.58, 0.16)
 var immortal_peach_edge_color := Color(1.0, 0.78, 0.48, 0.78)
 var immortal_peach_leaf_color := Color(0.58, 1.0, 0.42, 0.72)
 var immortal_peach_core_color := Color(1.0, 0.88, 0.62, 0.88)
-var rooted_color := Color(0.25, 0.34, 0.12, 0.18)
-var rooted_edge_color := Color(0.68, 0.92, 0.36, 0.78)
-var rooted_vine_color := Color(0.48, 0.88, 0.24, 0.76)
-var rooted_knot_color := Color(1.0, 0.86, 0.38, 0.86)
+var rooted_color := Color(1.0, 0.66, 0.10, 0.24)
+var rooted_edge_color := Color(1.0, 0.86, 0.30, 0.88)
+var rooted_seal_color := Color(1.0, 0.92, 0.42, 0.92)
+var rooted_seal_shadow_color := Color(0.32, 0.16, 0.02, 0.72)
 var stealth_color := Color(0.52, 0.72, 0.92, 0.12)
 var stealth_edge_color := Color(0.76, 0.92, 1.0, 0.62)
 var stealth_mist_color := Color(0.86, 0.96, 1.0, 0.34)
@@ -363,25 +363,32 @@ func draw_rooted_overlay() -> void:
 	draw_rect(root_rect, rooted_color, true)
 	draw_rect(root_rect, rooted_edge_color, false, edge_width, true)
 
-	var vine_points := PackedVector2Array()
-	for index in range(10):
-		var t := float(index) / 9.0
-		var x := lerpf(root_rect.position.x + root_rect.size.x * 0.18, root_rect.position.x + root_rect.size.x * 0.82, t)
-		var y := center.y + sin(t * TAU * 1.55) * root_rect.size.y * 0.08
-		vine_points.append(Vector2(x, y))
-	draw_polyline(vine_points, rooted_vine_color, maxf(size.x * 0.025, 2.0), false)
+	var glow_radius := minf(root_rect.size.x, root_rect.size.y) * 0.44
+	for index in range(3):
+		var alpha := 0.15 - float(index) * 0.035
+		draw_circle(center, glow_radius * (1.0 + float(index) * 0.18), Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, alpha))
 
-	var cross_points := PackedVector2Array()
-	for index in range(10):
-		var t := float(index) / 9.0
-		var x := lerpf(root_rect.position.x + root_rect.size.x * 0.82, root_rect.position.x + root_rect.size.x * 0.18, t)
-		var y := center.y + sin(t * TAU * 1.55 + PI) * root_rect.size.y * 0.08
-		cross_points.append(Vector2(x, y + root_rect.size.y * 0.10))
-	draw_polyline(cross_points, Color(rooted_vine_color.r, rooted_vine_color.g, rooted_vine_color.b, rooted_vine_color.a * 0.82), maxf(size.x * 0.021, 1.8), false)
+	var seal_rect := Rect2(Vector2.ZERO, Vector2(root_rect.size.x * 0.52, root_rect.size.x * 0.52))
+	seal_rect.position = center - seal_rect.size * 0.5
+	draw_rect(seal_rect, Color(0.48, 0.22, 0.02, 0.30), true)
+	draw_rect(seal_rect, rooted_seal_color, false, maxf(size.x * 0.018, 1.8), true)
 
-	for point in [center + Vector2(-root_rect.size.x * 0.20, 0.0), center + Vector2(root_rect.size.x * 0.20, root_rect.size.y * 0.10)]:
-		draw_circle(point, maxf(size.x * 0.022, 2.8), rooted_knot_color)
-		draw_circle(point, maxf(size.x * 0.011, 1.6), Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, 0.72))
+	draw_rooted_seal_text(center)
+
+
+func draw_rooted_seal_text(center: Vector2) -> void:
+	var font := get_theme_default_font()
+	if font == null:
+		return
+
+	var text := "定"
+	var font_size := maxi(int(size.x * 0.34), 18)
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	var text_position := center - text_size * 0.5
+	text_position.y += text_size.y * 0.82
+
+	draw_string(font, text_position + Vector2(maxf(size.x * 0.012, 1.3), maxf(size.x * 0.012, 1.3)), text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, rooted_seal_shadow_color)
+	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, rooted_seal_color)
 
 
 func draw_stealth_overlay() -> void:

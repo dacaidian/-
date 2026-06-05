@@ -631,3 +631,7 @@
 - `armor` 是 `CardState` 上的运行时数值。普通攻击和骑乘攻击在造成伤害前通过攻击语义入口扣减护甲；法术、毒、固定伤害和反弹伤害不自动吃护甲，避免护甲污染所有 `take_damage()` 调用。
 - 护甲数字显示在血量图标上方的状态数字栈里，路径为 `res://assets/img/护甲数字/{armor}.png`。如果具体数字图不存在，会回退到 `0.png` 并叠加文字数值，便于资源逐步补齐。
 - 英雄复活冷却修正使用通用装备效果 `modify_hero_revive_cooldown`，由 `DeathResolver` 在英雄进入手牌冷却前读取当前装备修正。
+
+### Rooted Status Visual Update
+
+- `rooted` / 定身状态的持续表现由 `CardStatusOverlay.draw_rooted_overlay()` 绘制。当前视觉为半透明金色遮罩、金色边框、中心金色“定”字和柔光，不再使用旧版藤蔓束缚表现。
