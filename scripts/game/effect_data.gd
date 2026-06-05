@@ -13,6 +13,7 @@ const KEY_SPELL_IDS := "spell_ids"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_ACTIONS := "actions"
 const KEY_ACTION_ID := "action_id"
+const KEY_DIRECTION := "direction"
 const KEY_MOUNTED_ATTACKS := "mounted_attacks"
 const KEY_RIDER_CARD_ID := "rider_card_id"
 const KEY_ATTACK_SPEED := "attack_speed"
@@ -468,6 +469,10 @@ static func get_mounted_attacks(card_data: CardData) -> Array[Dictionary]:
 
 static func get_action_id(action_data: Dictionary) -> String:
 	return str(action_data.get(KEY_ACTION_ID, action_data.get(KEY_ID, "")))
+
+
+static func get_direction(action_data: Dictionary) -> String:
+	return str(action_data.get(KEY_DIRECTION, ""))
 
 
 static func get_rider_card_id(action_data: Dictionary) -> String:

@@ -60,6 +60,7 @@ Common rules:
 
 - Choose a primary action group only if it should interact with move/attack/spell locks.
 - Use `EffectAction` for configured target-plus-effects actions.
+- Use `DirectionalMoveAction` for no-target one-step directional movement, such as 通风猕猴 `westward` / 西行.
 - Target legality belongs in action/resolver code, not UI.
 
 ## Hand Cards

@@ -66,6 +66,8 @@ func create_action_from_data(action_data: Dictionary) -> CardAction:
 	match EffectData.get_action_id(action_data):
 		FixedMeleeDamageAction.ACTION_ID, "claw_strike":
 			return FixedMeleeDamageAction.new().setup(action_data)
+		DirectionalMoveAction.ACTION_ID, "westward":
+			return DirectionalMoveAction.new().setup(action_data)
 		_:
 			if action_data.has("effects"):
 				return EffectAction.new().setup(action_data)

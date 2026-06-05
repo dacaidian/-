@@ -60,6 +60,7 @@ Every board action extends `CardAction`. Primary action groups include movement,
 Important action classes:
 
 - `MoveAction`: adjacent movement by default; `teleport` keyword allows all legal empty slots for the unit layer.
+- `DirectionalMoveAction`: configured no-target side movement. It moves one slot in a fixed direction and reuses `MoveAction` legality/execution. Current example: `westward` / 西行 on 通风猕猴 moves left, costs no main action, spends no movement, and can be used repeatedly while the left slot remains legal.
 - `AttackAction`: normal attack, ranged logic, giant splash, occupy prompt, armor reduction, stealth target filtering, and break-stealth after attack.
 - `SpellAction`: configured spell actions on units. It resolves targets through `SpellTargetResolver`, executes effects, and breaks stealth by default unless `breaks_stealth: false` is configured.
 - `EffectAction`: generic configured action wrapper for actions that only need target selection plus effect execution.
