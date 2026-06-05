@@ -695,3 +695,20 @@ Notes:
 - `critical` 由 `AttackAction.calculate_attack_damage()` 统一解释，目前只让攻击力部分翻倍，不放大攻城等额外伤害。
 - 临时隐身/暴击/瞬移优先通过 `apply_status` + `payload.keywords` 授予。若状态应在攻击或施法后解除，添加 `status_tags: ["stealth", "breaks_on_attack_or_spell"]`。
 - 当前范例是孙悟空英雄配套手牌法术 `聚散成气`。
+
+
+### 装备被动与护甲
+
+优先读：
+
+- `scripts/data/player_state.gd`，装备槽、替换装备、英雄复活冷却修正。
+- `scripts/game/hand_passive_resolver.gd`，装备 `while_equipped` 持续被动刷新。
+- `scripts/actions/attack_action.gd` 和 `scripts/actions/mounted_attack_action.gd`，普通/骑乘攻击的护甲扣减。
+- `scenes/card/scripts/card.gd`，护甲数字图标显示。
+
+约定：
+
+- 新增持续装备加成时，优先使用 `trigger: "while_equipped"`，不要写进 `PlayerState.equip_card()`。
+- 护甲只在攻击语义入口扣减，不写入 `CardState.take_damage()`；毒、法术、固定伤害和反弹伤害默认不受护甲影响。
+- 护甲图标优先读取 `assets/img/护甲数字/{value}.png`，缺图时回退 `0.png` 并显示文字值。
+- 当前范例是孙悟空英雄套装 `龙宫珍宝`：攻击力+2、复活冷却-1、护甲+1、移动力+2、授予 `mobile_assault`。

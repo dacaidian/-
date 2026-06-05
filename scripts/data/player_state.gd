@@ -601,6 +601,19 @@ func get_spell_power_bonus() -> int:
 	return bonus
 
 
+func get_hero_revive_cooldown_modifier(hero_card_id: String = "") -> int:
+	var modifier := 0
+	for card_data in get_equipped_cards():
+		if hero_card_id != "" and card_data.owner_hero_card_id != "" and card_data.owner_hero_card_id != hero_card_id:
+			continue
+
+		for effect_data in card_data.effects:
+			if EffectData.get_id(effect_data) == EffectData.EFFECT_MODIFY_HERO_REVIVE_COOLDOWN:
+				modifier += EffectData.get_amount(effect_data)
+
+	return modifier
+
+
 func get_equipped_cards() -> Array[CardData]:
 	var equipped_cards: Array[CardData] = []
 	for card_data in equipped_cards_by_type.values():

@@ -59,7 +59,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var was_reflected := await resolve_bronze_head_iron_arms(user, target, attack_damage, game_manager)
 	var splash_targets: Array[CardState] = []
 	if not was_reflected:
-		target.take_damage(attack_damage)
+		target.take_damage(apply_armor_to_attack_damage(target, attack_damage))
 		splash_targets = apply_giant_splash_damage(user, target, game_manager)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
@@ -125,7 +125,8 @@ func apply_giant_splash_damage(user: CardState, target: CardState, game_manager:
 			if not can_giant_splash_target(user, splash_target):
 				continue
 
-			splash_target.take_damage(calculate_attack_damage(user, splash_target))
+			var splash_damage := apply_armor_to_attack_damage(splash_target, calculate_attack_damage(user, splash_target))
+			splash_target.take_damage(splash_damage)
 			damaged_targets.append(splash_target)
 
 	return damaged_targets
@@ -187,6 +188,13 @@ func can_giant_splash_target(user: CardState, target: CardState) -> bool:
 		return false
 
 	return true
+
+
+func apply_armor_to_attack_damage(target: CardState, damage: int) -> int:
+	if target == null or damage <= 0:
+		return maxi(damage, 0)
+
+	return maxi(damage - target.armor, 0)
 
 
 func get_attack_profile(user: CardState, target: CardState, game_manager: GameManager) -> Dictionary:

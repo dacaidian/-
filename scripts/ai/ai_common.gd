@@ -32,7 +32,7 @@ static func predict_combat(attacker: CardState, defender: CardState) -> Dictiona
 	if attacker == null or defender == null:
 		return _empty_combat_result()
 
-	var atk_damage := attacker.current_attack
+	var atk_damage := maxi(attacker.current_attack - defender.armor, 0)
 	var result := _empty_combat_result()
 
 	if defender.has_status("divine_shield"):
@@ -53,7 +53,7 @@ static func predict_combat(attacker: CardState, defender: CardState) -> Dictiona
 	var is_melee := not attacker.has_keyword(CardData.KEYWORD_RANGED)
 	var retaliation := 0
 	if is_melee and defender.current_attack > 0 and not result["will_kill_defender"]:
-		retaliation = defender.current_attack
+		retaliation = maxi(defender.current_attack - attacker.armor, 0)
 		if attacker.has_status("divine_shield"):
 			retaliation = 0
 		elif attacker.shield > 0:

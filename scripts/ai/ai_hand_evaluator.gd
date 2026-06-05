@@ -287,6 +287,14 @@ func _evaluate_equipment(card_data: CardData, player: PlayerState) -> Dictionary
 		var amount := int(effect_data.get("amount", 1))
 		if effect_id == "modify_spell_power":
 			score += float(amount) * 2.0
+		elif effect_id == "modify_unit_attack":
+			score += float(amount) * 1.6
+		elif effect_id == "modify_unit_armor":
+			score += float(amount) * 1.4
+		elif effect_id == "set_unit_movement":
+			score += float(amount) * 0.7
+		elif effect_id == "grant_unit_keywords":
+			score += float(EffectData.get_keywords(effect_data).size()) * 1.1
 
 	if existing != null:
 		var old_attack := float(existing.attack)

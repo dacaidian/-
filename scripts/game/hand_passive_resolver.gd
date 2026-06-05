@@ -16,6 +16,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	refresh_unit_movement_passives(player, game_manager)
 	refresh_unit_keyword_passives(player, game_manager)
 	refresh_unit_attack_passives(player, game_manager)
+	refresh_unit_armor_passives(player, game_manager)
 	refresh_unit_attack_speed_passives(player, game_manager)
 	refresh_mounted_attack_speed_passives(player, game_manager)
 	refresh_faction_skill_passives(player)
@@ -94,6 +95,10 @@ func is_hand_passive_effect(effect_data: Dictionary) -> bool:
 	return trigger == EffectData.TRIGGER_WHILE_IN_HAND or trigger == EffectData.TRIGGER_PASSIVE
 
 
+func is_equipped_passive_effect(effect_data: Dictionary) -> bool:
+	return EffectData.get_trigger(effect_data) == EffectData.TRIGGER_WHILE_EQUIPPED
+
+
 func is_board_passive_effect(effect_data: Dictionary) -> bool:
 	return EffectData.get_trigger(effect_data) == EffectData.TRIGGER_WHILE_ON_BOARD
 
@@ -103,6 +108,7 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 		return
 
 	var movement_by_card_id := get_unit_movement_overrides(player)
+	var movement_bonus_by_card_id := get_unit_movement_bonuses(player)
 	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_minion(state):
 			continue
@@ -113,6 +119,8 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 		var target_movement: int = base_movement
 		if movement_by_card_id.has(state.card_id):
 			target_movement = int(movement_by_card_id[state.card_id])
+		if movement_bonus_by_card_id.has(state.card_id):
+			target_movement += int(movement_bonus_by_card_id[state.card_id])
 
 		state.set_max_movement(target_movement, true)
 
@@ -156,6 +164,24 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 		attack_bonus += get_board_attack_resource_bonus(state, player)
 
 		state.set_passive_attack_bonus(attack_bonus)
+
+
+func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null:
+		return
+
+	var armor_bonus_by_card_id := get_unit_armor_bonuses(player)
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != player.id:
+			continue
+
+		var armor_bonus := 0
+		if armor_bonus_by_card_id.has(state.card_id):
+			armor_bonus = int(armor_bonus_by_card_id[state.card_id])
+
+		state.set_armor(armor_bonus)
 
 
 func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameManager) -> void:
@@ -223,6 +249,24 @@ func get_unit_movement_overrides(player: PlayerState) -> Dictionary:
 	return movement_by_card_id
 
 
+func get_unit_movement_bonuses(player: PlayerState) -> Dictionary:
+	var movement_bonus_by_card_id := {}
+	if player == null:
+		return movement_bonus_by_card_id
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_MOVEMENT:
+			continue
+
+		var amount := EffectData.get_amount(effect_data)
+		for card_id in EffectData.get_card_ids(effect_data):
+			movement_bonus_by_card_id[card_id] = int(movement_bonus_by_card_id.get(card_id, 0)) + amount
+
+	return movement_bonus_by_card_id
+
+
 func get_unit_keyword_grants(player: PlayerState) -> Dictionary:
 	var keywords_by_card_id := {}
 	if player == null:
@@ -273,6 +317,24 @@ func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
 			attack_bonus_by_card_id[card_id] = int(attack_bonus_by_card_id.get(card_id, 0)) + amount
 
 	return attack_bonus_by_card_id
+
+
+func get_unit_armor_bonuses(player: PlayerState) -> Dictionary:
+	var armor_bonus_by_card_id := {}
+	if player == null:
+		return armor_bonus_by_card_id
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ARMOR:
+			continue
+
+		var amount := EffectData.get_amount(effect_data)
+		for card_id in EffectData.get_card_ids(effect_data):
+			armor_bonus_by_card_id[card_id] = int(armor_bonus_by_card_id.get(card_id, 0)) + amount
+
+	return armor_bonus_by_card_id
 
 
 func get_board_attack_resource_bonus(state: CardState, player: PlayerState) -> int:
@@ -342,6 +404,11 @@ func get_hand_passive_effects(player: PlayerState) -> Array[Dictionary]:
 
 		for effect_data in card_data.effects:
 			if is_hand_passive_effect(effect_data):
+				effects.append(effect_data)
+
+	for card_data in player.get_equipped_cards():
+		for effect_data in card_data.effects:
+			if is_equipped_passive_effect(effect_data):
 				effects.append(effect_data)
 
 	return effects

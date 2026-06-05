@@ -293,6 +293,7 @@ func execute_hand_equipment(
 		return
 
 	player.equip_card(card_data)
+	game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 	game_manager.interaction_manager.cancel(game_manager.get_all_board_states())
 	game_manager.update_hand_drawer_view()
 	game_manager.refresh_debug_panel()

@@ -267,9 +267,10 @@ func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dict
 		return
 
 	if state.is_hero():
+		var revive_cooldown := maxi(HERO_REVIVE_COOLDOWN_TURNS + owner.get_hero_revive_cooldown_modifier(state.card_id), 0)
 		owner.add_to_hand_with_cooldown(
 			state.data,
-			HERO_REVIVE_COOLDOWN_TURNS,
+			revive_cooldown,
 			HandCardState.SOURCE_HERO_REVIVE,
 			["hero_revive"]
 		)

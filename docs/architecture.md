@@ -622,3 +622,12 @@
 - `critical` 是通用攻击关键字。`AttackAction.calculate_attack_damage()` 会把攻击力部分翻倍；攻城等额外加成不随暴击翻倍，避免后续复合关键词难以平衡。
 - “攻击或施法后解除”的状态使用 `CardStatus.TAG_BREAKS_ON_ATTACK_OR_SPELL`。`AttackAction` 和 `SpellAction` 在成功行动后移除带该 tag 的状态，不按具体 status_id 写死。
 - 孙悟空手牌法术 `聚散成气` 是当前范例：它给场上的孙悟空施加 `gather_scatter_qi` 状态，状态携带 `stealth`、`teleport`、`critical`，并通过 `CardStatusOverlay` 显示雾化隐身持续特效。
+
+
+## 装备被动与护甲
+
+- 装备牌可以使用 `trigger: "while_equipped"` 提供持续被动。`HandPassiveResolver` 会把已装备卡牌上的 while_equipped 效果与手牌持续被动一起刷新，但不会把 `after_attack` 等触发型装备效果误当作持续被动。
+- 当前装备被动支持复用单位加成效果：`modify_unit_attack`、`modify_unit_movement`、`modify_unit_armor`、`grant_unit_keywords` 等。装备后、替换装备、单位翻开/放置/复生后都会刷新这些被动。
+- `armor` 是 `CardState` 上的运行时数值。普通攻击和骑乘攻击在造成伤害前通过攻击语义入口扣减护甲；法术、毒、固定伤害和反弹伤害不自动吃护甲，避免护甲污染所有 `take_damage()` 调用。
+- 护甲数字显示在血量图标上方的状态数字栈里，路径为 `res://assets/img/护甲数字/{armor}.png`。如果具体数字图不存在，会回退到 `0.png` 并叠加文字数值，便于资源逐步补齐。
+- 英雄复活冷却修正使用通用装备效果 `modify_hero_revive_cooldown`，由 `DeathResolver` 在英雄进入手牌冷却前读取当前装备修正。

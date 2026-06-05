@@ -2210,7 +2210,8 @@
 				"attached_cards": [
 					"immortal_peach",
 					"immobilize_spell",
-					"gather_scatter_qi"
+					"gather_scatter_qi",
+					"dragon_palace_treasure"
 				]
 			}
 		],
@@ -2425,6 +2426,57 @@
 								"critical"
 							]
 						}
+					}
+				]
+			},
+			{
+				"id": "dragon_palace_treasure",
+				"name": "龙宫珍宝",
+				"description": "孙悟空的英雄套装。攻击力+2，英雄复活冷却-1，护甲+1，移动力+2，并获得移动攻击。",
+				"url": "res://assets/img/猴妖仙/龙宫珍宝.png",
+				"type": "equipment",
+				"equipment_type": "suit",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_equipped",
+						"card_ids": [
+							"sun_wukong"
+						],
+						"amount": 2
+					},
+					{
+						"id": "modify_unit_armor",
+						"trigger": "while_equipped",
+						"card_ids": [
+							"sun_wukong"
+						],
+						"amount": 1
+					},
+					{
+						"id": "modify_unit_movement",
+						"trigger": "while_equipped",
+						"card_ids": [
+							"sun_wukong"
+						],
+						"amount": 2
+					},
+					{
+						"id": "grant_unit_keywords",
+						"trigger": "while_equipped",
+						"card_ids": [
+							"sun_wukong"
+						],
+						"keywords": [
+							"mobile_assault"
+						]
+					},
+					{
+						"id": "modify_hero_revive_cooldown",
+						"amount": -1
 					}
 				]
 			}

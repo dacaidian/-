@@ -31,6 +31,7 @@ signal face_changed(is_face_up: bool)
 @export var shield_number_dir := "res://assets/img/护盾数字"
 
 @export var poison_number_dir := "res://assets/img/毒性数字"
+@export var armor_number_dir := "res://assets/img/护甲数字"
 @export var status_number_icon_gap := 2
 
 # 攻击数字图片所在子目录。实际路径会从卡牌正面图所属种族目录推导。
@@ -63,6 +64,8 @@ signal face_changed(is_face_up: bool)
 var state: CardState
 var shield_texture: TextureRect
 var poison_texture: TextureRect
+var armor_texture: TextureRect
+var armor_label: Label
 var attack_texture: TextureRect
 var status_overlay: CardStatusOverlay
 
@@ -89,6 +92,7 @@ func _ready() -> void:
 	setup_health_texture()
 	setup_shield_texture()
 	setup_poison_texture()
+	setup_armor_texture()
 	setup_attack_texture()
 	update_card_texture()
 
@@ -294,6 +298,25 @@ func setup_poison_texture() -> void:
 	poison_texture = create_value_texture("PoisonTexture")
 
 
+func setup_armor_texture() -> void:
+	if armor_texture != null:
+		return
+
+	armor_texture = create_value_texture("ArmorTexture")
+	armor_label = Label.new()
+	armor_label.name = "ArmorLabel"
+	armor_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	armor_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	armor_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	armor_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	armor_label.add_theme_font_size_override("font_size", 20)
+	armor_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0, 1.0))
+	armor_label.add_theme_color_override("font_shadow_color", Color(0.02, 0.04, 0.08, 0.95))
+	armor_label.add_theme_constant_override("shadow_offset_x", 1)
+	armor_label.add_theme_constant_override("shadow_offset_y", 1)
+	armor_texture.add_child(armor_label)
+
+
 func setup_attack_texture() -> void:
 	if attack_texture != null:
 		return
@@ -339,7 +362,8 @@ func update_status_overlay() -> void:
 func update_status_number_textures() -> void:
 	var stack_index := 0
 	stack_index = update_shield_texture(stack_index)
-	update_poison_texture(stack_index)
+	stack_index = update_poison_texture(stack_index)
+	update_armor_texture(stack_index)
 
 
 func update_shield_texture(stack_index: int) -> int:
@@ -387,6 +411,43 @@ func should_show_poison_number() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and get_poison_total_damage() > 0
+
+
+func update_armor_texture(stack_index: int) -> int:
+	if armor_texture == null:
+		return stack_index
+
+	if not should_show_armor():
+		armor_texture.hide()
+		return stack_index
+
+	var armor_texture_path := "%s/%d.png" % [armor_number_dir, state.armor]
+	var should_show_label := false
+	if not ResourceLoader.exists(armor_texture_path):
+		armor_texture_path = "%s/0.png" % armor_number_dir
+		should_show_label = true
+
+	if set_value_texture(armor_texture, armor_texture_path, "护甲"):
+		update_armor_label(should_show_label)
+		position_status_number_texture(armor_texture, stack_index)
+		return stack_index + 1
+
+	return stack_index
+
+
+func should_show_armor() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.armor > 0
+
+
+func update_armor_label(should_show_label: bool) -> void:
+	if armor_label == null:
+		return
+
+	armor_label.visible = should_show_label
+	armor_label.text = str(state.armor) if should_show_label and state != null else ""
 
 
 func get_poison_total_damage() -> int:

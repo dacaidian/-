@@ -97,7 +97,8 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	var is_melee := attack_range != EffectData.RANGE_RANGED and AttackAction.new().is_melee_attack_target(user, target, game_manager.board_columns)
 	await game_manager.play_card_attack_animation(user, target, is_melee)
-	target.take_damage(calculate_damage(user, target, game_manager))
+	var damage := AttackAction.new().apply_armor_to_attack_damage(target, calculate_damage(user, target, game_manager))
+	target.take_damage(damage)
 	game_manager.resolve_dead_states([target], EffectData.DEATH_REASON_EFFECT, user)
 
 

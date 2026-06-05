@@ -66,6 +66,7 @@ var status_control_base_owner_id := ""
 var max_health := 0
 var damage_taken := 0
 var shield := 0
+var armor := 0
 var reborn_health_values: Array[int] = []
 var current_health: int:
 	get:
@@ -113,6 +114,7 @@ func set_card_data(value: CardData) -> void:
 		max_health = 0
 		damage_taken = 0
 		shield = 0
+		armor = 0
 		reborn_health_values.clear()
 		max_movement = 0
 		current_movement = 0
@@ -146,6 +148,7 @@ func set_card_data(value: CardData) -> void:
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
+		armor = 0
 		reborn_health_values = create_initial_reborn_health_values()
 		is_action_available_hint = false
 		is_pending_death = false
@@ -368,6 +371,7 @@ func create_card_snapshot() -> Dictionary:
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
+		"armor": armor,
 		"reborn_health_values": reborn_health_values.duplicate(),
 		"max_movement": max_movement,
 		"current_movement": current_movement,
@@ -408,6 +412,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
+	armor = int(snapshot.get("armor", 0))
 	reborn_health_values = normalize_int_array(snapshot.get("reborn_health_values", []))
 	max_movement = int(snapshot.get("max_movement", 0))
 	current_movement = int(snapshot.get("current_movement", 0))
@@ -482,6 +487,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"max_health": max_health,
 		"damage_taken": damage_taken,
 		"shield": shield,
+		"armor": armor,
 		"reborn_health_values": reborn_health_values.duplicate(),
 		"current_health": current_health,
 		"max_movement": max_movement,
@@ -557,6 +563,7 @@ func revive_from_reborn(health_value: int) -> void:
 	if health_value > 0:
 		damage_taken = maxi(max_health - mini(health_value, max_health), 0)
 	shield = 0
+	armor = 0
 	reborn_health_values = remaining_reborn_values
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
 	current_movement = max_movement
@@ -1166,6 +1173,15 @@ func gain_shield(amount: int) -> void:
 		return
 
 	shield += amount
+	state_changed.emit(self)
+
+
+func set_armor(value: int) -> void:
+	var normalized_value := maxi(value, 0)
+	if armor == normalized_value:
+		return
+
+	armor = normalized_value
 	state_changed.emit(self)
 
 
