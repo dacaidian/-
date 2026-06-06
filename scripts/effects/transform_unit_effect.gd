@@ -34,13 +34,11 @@ func get_transform_target_data(effect_data: Dictionary, game_manager: Node) -> C
 	if game_manager == null or not game_manager.has_method("get_card_data_by_id"):
 		return null
 
-	var target_card_id := EffectData.get_target_card_id(effect_data)
-	if target_card_id == "":
-		target_card_id = EffectData.get_card_id(effect_data)
-	if target_card_id == "":
+	var transform_card_id := EffectData.get_card_id(effect_data)
+	if transform_card_id == "":
 		return null
 
-	var target_data := game_manager.get_card_data_by_id(target_card_id) as CardData
+	var target_data := game_manager.get_card_data_by_id(transform_card_id) as CardData
 	if target_data == null or not target_data.is_minion():
 		return null
 
