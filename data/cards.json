@@ -2725,13 +2725,13 @@
 			{
 				"id": "dark_arrow",
 				"name": "暗箭",
-				"description": "对一个随从造成4点伤害。",
+				"description": "对一个非英雄随从造成4点伤害。",
 				"url": "res://assets/img/公共牌池/暗箭.png",
 				"type": "spell",
 				"count": 4,
 				"level": 2,
 				"animation": "dark_arrow",
-				"target_rule": "all_minions",
+				"target_rule": "non_hero_minions",
 				"keywords": [],
 				"effects": [
 					{
