@@ -380,6 +380,28 @@ func apply_spell_attack_passive() -> void:
 	allow_action_group_pair(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL, false)
 
 
+func refresh_action_keyword_passives() -> void:
+	if data == null or not data.is_unit():
+		return
+
+	var base_main_actions := int(origin.get("main_actions", max_main_actions))
+	var base_pairs := normalize_string_array(origin.get("allowed_action_group_pairs", []))
+	max_main_actions = base_main_actions
+	allowed_action_group_pairs = base_pairs
+
+	if has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
+		max_main_actions = maxi(max_main_actions, 2)
+		allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)
+	if has_keyword(CardData.KEYWORD_SPELL_MOVE):
+		max_main_actions = maxi(max_main_actions, 2)
+		allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_SPELL, false)
+	if has_keyword(CardData.KEYWORD_SPELL_ATTACK):
+		max_main_actions = maxi(max_main_actions, 2)
+		allow_action_group_pair(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL, false)
+
+	refresh_current_main_actions()
+
+
 func create_initial_reborn_health_values() -> Array[int]:
 	var values: Array[int] = []
 	if data == null:
@@ -1340,6 +1362,7 @@ func set_passive_keywords(keywords: Array[String]) -> void:
 		return
 
 	passive_keywords = normalized_keywords
+	refresh_action_keyword_passives()
 	state_changed.emit(self)
 
 
