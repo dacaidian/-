@@ -8,8 +8,9 @@ class_name CleanseEffect
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var cleansed_targets: Array[CardState] = []
+	var cleanse_mode := EffectData.get_cleanse_mode(effect_data)
 	for target_state in get_target_states(source_state, effect_data, game_manager):
-		var removed_statuses := target_state.cleanse_statuses()
+		var removed_statuses := target_state.cleanse_statuses(cleanse_mode)
 		if removed_statuses.is_empty():
 			continue
 

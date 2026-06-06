@@ -2335,6 +2335,31 @@
 				]
 			},
 			{
+				"id": "windward_great_sage_macaque_king",
+				"name": "通风大圣猕猴王",
+				"description": "猴妖仙三阶随从。通风大圣猕猴王借风疾行，可反复向左侧合法格移动，在边路持续牵扯战局。",
+				"url": "res://assets/img/猴妖仙/通风大圣猕猴王王.png",
+				"type": "minion",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"attack": 5,
+				"health": 10,
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "westward",
+						"name": "西行",
+						"direction": "left",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"once_per_turn": false,
+						"spend_movement": false
+					}
+				]
+			},
+			{
 				"id": "hair_clone",
 				"name": "毫毛",
 				"description": "孙悟空的毫毛分身，入场时同步孙悟空的攻击力和生命上限。孙悟空普通攻击后，全场毫毛会尝试对同一目标同步攻击。",
@@ -2386,6 +2411,41 @@
 							{
 								"id": "cleanse",
 								"target": "selected"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "drive_spirit_great_sage_yurong_king",
+				"name": "驱神大圣禺狨王",
+				"description": "猴妖仙三阶远程随从。驱神大圣禺狨王能扫荡战场气机，驱散敌方单位的正面状态，并解除己方单位的负面状态。",
+				"url": "res://assets/img/猴妖仙/驱神大圣禺狨王.png",
+				"type": "minion",
+				"count": 1,
+				"level": 3,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 4,
+				"health": 8,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "drive_spirit_battlefield",
+						"name": "驱神",
+						"animation": "drive_spirit",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "cleanse",
+								"target": "enemy_units",
+								"cleanse_mode": "positive"
+							},
+							{
+								"id": "cleanse",
+								"target": "friendly_units",
+								"cleanse_mode": "negative"
 							}
 						]
 					}

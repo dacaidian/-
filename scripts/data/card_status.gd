@@ -64,6 +64,7 @@ var persists_after_death := false
 var source_card_id := ""
 var source_owner_id := ""
 var duration_owner_id := ""
+var valence := EffectData.STATUS_VALENCE_NEUTRAL
 var payload: Dictionary = {}
 
 
@@ -80,6 +81,7 @@ static func from_effect_data(effect_data: Dictionary, target_state: CardState, s
 	status.duration_scope = EffectData.get_status_duration_scope(effect_data)
 	status.expires_on_trigger = EffectData.get_status_expires_on_trigger(effect_data)
 	status.persists_after_death = EffectData.status_persists_after_death(effect_data)
+	status.valence = EffectData.get_status_valence(effect_data)
 	status.payload = EffectData.get_status_payload(effect_data)
 
 	if source_state != null:
@@ -214,6 +216,7 @@ func to_snapshot() -> Dictionary:
 		"source_card_id": source_card_id,
 		"source_owner_id": source_owner_id,
 		"duration_owner_id": duration_owner_id,
+		"valence": valence,
 		"payload": payload.duplicate(true)
 	}
 
@@ -233,6 +236,7 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	source_card_id = str(snapshot.get("source_card_id", ""))
 	source_owner_id = str(snapshot.get("source_owner_id", ""))
 	duration_owner_id = str(snapshot.get("duration_owner_id", ""))
+	valence = str(snapshot.get("valence", EffectData.STATUS_VALENCE_NEUTRAL))
 
 	var snapshot_payload: Variant = snapshot.get("payload", {})
 	if snapshot_payload is Dictionary:
@@ -248,3 +252,60 @@ func normalize_string_array(value: Variant) -> Array[String]:
 			result.append(str(item))
 
 	return result
+
+
+func get_cleanse_valence() -> String:
+	if valence != "" and valence != EffectData.STATUS_VALENCE_NEUTRAL:
+		return valence
+
+	var positive_status_ids := [
+		STATUS_DIVINE_SHIELD,
+		STATUS_POWER_WORD_SHIELD,
+		STATUS_ARCANE_AURA,
+		STATUS_ENCOURAGE_GU,
+		STATUS_DEVOUR,
+		STATUS_DEATH_IMMUNITY,
+		STATUS_STORED_VENOM,
+		STATUS_PRECISION_SHOT,
+		STATUS_METEOR_AURA,
+		STATUS_SOMERSAULT_CLOUD,
+		STATUS_BRONZE_HEAD_IRON_ARMS,
+		STATUS_IMMORTAL_PEACH,
+		STATUS_GATHER_SCATTER_QI
+	]
+	if positive_status_ids.has(status_id):
+		return EffectData.STATUS_VALENCE_POSITIVE
+
+	var negative_status_ids := [
+		STATUS_POISON,
+		STATUS_SNAKE_VENOM,
+		STATUS_LIFE_LINK,
+		STATUS_SOUL_HOOK,
+		STATUS_CHARM,
+		STATUS_ROOTED,
+		STATUS_FREEZE
+	]
+	if negative_status_ids.has(status_id):
+		return EffectData.STATUS_VALENCE_NEGATIVE
+
+	var attack_bonus := int(payload.get(EffectData.KEY_ATTACK_BONUS, 0))
+	var max_health_bonus := int(payload.get(EffectData.KEY_MAX_HEALTH_BONUS, 0))
+	if tags.has(TAG_ATTACK_MODIFIER) or tags.has(TAG_HEALTH_MODIFIER):
+		if attack_bonus > 0 or max_health_bonus > 0:
+			return EffectData.STATUS_VALENCE_POSITIVE
+		if attack_bonus < 0 or max_health_bonus < 0:
+			return EffectData.STATUS_VALENCE_NEGATIVE
+
+	if tags.has(TAG_ACTION_PREVENTION) or tags.has(TAG_DAMAGE_OVER_TIME) or tags.has(TAG_DEATH_LINK) or tags.has(TAG_CONTROL):
+		return EffectData.STATUS_VALENCE_NEGATIVE
+	if (
+		tags.has(TAG_DAMAGE_PREVENTION)
+		or tags.has(TAG_AURA)
+		or tags.has(TAG_MANA_GENERATION)
+		or tags.has(TAG_DEATH_PREVENTION)
+		or tags.has(TAG_STORED_RESOURCE)
+		or tags.has(TAG_STEALTH)
+	):
+		return EffectData.STATUS_VALENCE_POSITIVE
+
+	return EffectData.STATUS_VALENCE_NEUTRAL

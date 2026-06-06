@@ -968,7 +968,7 @@ func remove_status_instance(status: CardStatus) -> bool:
 	return true
 
 
-func cleanse_statuses() -> Array[CardStatus]:
+func cleanse_statuses(cleanse_mode := EffectData.CLEANSE_MODE_ALL) -> Array[CardStatus]:
 	var removed_statuses: Array[CardStatus] = []
 	for index in range(statuses.size() - 1, -1, -1):
 		var status := statuses[index]
@@ -976,6 +976,8 @@ func cleanse_statuses() -> Array[CardStatus]:
 			statuses.remove_at(index)
 			continue
 		if status.tags.has(CardStatus.TAG_UNCLEANSEABLE):
+			continue
+		if not should_cleanse_status(status, cleanse_mode):
 			continue
 
 		removed_statuses.append(status)
@@ -994,6 +996,19 @@ func cleanse_statuses() -> Array[CardStatus]:
 	state_changed.emit(self)
 	removed_statuses.reverse()
 	return removed_statuses
+
+
+func should_cleanse_status(status: CardStatus, cleanse_mode: String) -> bool:
+	if status == null:
+		return false
+
+	match cleanse_mode:
+		EffectData.CLEANSE_MODE_ALL:
+			return true
+		EffectData.CLEANSE_MODE_POSITIVE, EffectData.CLEANSE_MODE_NEGATIVE:
+			return status.get_cleanse_valence() == cleanse_mode
+		_:
+			return true
 
 
 func has_status(status_id: String) -> bool:

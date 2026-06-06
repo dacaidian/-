@@ -106,6 +106,10 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			targets = get_attack_target_unit(effect_data)
 		EffectData.TARGET_ENEMY_AND_NEUTRAL_UNITS:
 			targets = get_enemy_and_neutral_units(source_state, effect_data, game_manager)
+		EffectData.TARGET_FRIENDLY_UNITS:
+			targets = get_friendly_units(source_state, effect_data, game_manager)
+		EffectData.TARGET_ENEMY_UNITS:
+			targets = get_enemy_units(source_state, effect_data, game_manager)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
 			targets = []
@@ -296,6 +300,48 @@ func get_enemy_and_neutral_units(source_state: CardState, effect_data: Dictionar
 		if not BoardQuery.is_face_up_unit(target_state):
 			continue
 		if target_state.owner_id == owner_id:
+			continue
+
+		targets.append(target_state)
+
+	return targets
+
+
+func get_friendly_units(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if game_manager == null:
+		return targets
+
+	var owner_id := get_effect_owner_id(source_state, effect_data)
+	if owner_id == "":
+		return targets
+
+	for value in game_manager.get_all_board_states():
+		var target_state := value as CardState
+		if not BoardQuery.is_face_up_unit(target_state):
+			continue
+		if target_state.owner_id != owner_id:
+			continue
+
+		targets.append(target_state)
+
+	return targets
+
+
+func get_enemy_units(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if game_manager == null:
+		return targets
+
+	var owner_id := get_effect_owner_id(source_state, effect_data)
+	if owner_id == "":
+		return targets
+
+	for value in game_manager.get_all_board_states():
+		var target_state := value as CardState
+		if not BoardQuery.is_face_up_unit(target_state):
+			continue
+		if target_state.owner_id == "" or target_state.owner_id == owner_id:
 			continue
 
 		targets.append(target_state)

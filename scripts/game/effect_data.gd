@@ -37,6 +37,7 @@ const KEY_STATUS_DURATION_TURNS := "duration_turns"
 const KEY_STATUS_DURATION_SCOPE := "duration_scope"
 const KEY_STATUS_EXPIRES_ON_TRIGGER := "expires_on_trigger"
 const KEY_STATUS_PERSISTS_AFTER_DEATH := "persists_after_death"
+const KEY_STATUS_VALENCE := "status_valence"
 const KEY_STATUS_PAYLOAD := "payload"
 const KEY_STATUS_TURN_EFFECTS := "turn_effects"
 const KEY_STATUS_TRIGGER_EFFECTS := "trigger_effects"
@@ -92,6 +93,7 @@ const KEY_HEALTH_VALUES := "health_values"
 const KEY_BEFORE_TARGET_EFFECTS := "before_target_effects"
 const KEY_SUPPRESS_RESOURCE_GAIN := "suppress_resource_gain"
 const KEY_BREAKS_STEALTH := "breaks_stealth"
+const KEY_CLEANSE_MODE := "cleanse_mode"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -163,6 +165,16 @@ const TARGET_ATTACK_TARGET_ENEMY_UNIT := "attack_target_enemy_unit"
 const TARGET_ATTACK_TARGET_ENEMY_MINION := "attack_target_enemy_minion"
 const TARGET_ATTACK_TARGET_UNIT := "attack_target_unit"
 const TARGET_ENEMY_AND_NEUTRAL_UNITS := "enemy_and_neutral_units"
+const TARGET_FRIENDLY_UNITS := "friendly_units"
+const TARGET_ENEMY_UNITS := "enemy_units"
+
+const STATUS_VALENCE_POSITIVE := "positive"
+const STATUS_VALENCE_NEGATIVE := "negative"
+const STATUS_VALENCE_NEUTRAL := "neutral"
+
+const CLEANSE_MODE_ALL := "all"
+const CLEANSE_MODE_POSITIVE := "positive"
+const CLEANSE_MODE_NEGATIVE := "negative"
 
 const TRIGGER_PLAYER_ANY := "any"
 const TRIGGER_PLAYER_SOURCE_OWNER := "source_owner"
@@ -595,6 +607,10 @@ static func get_status_expires_on_trigger(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_STATUS_EXPIRES_ON_TRIGGER, CardStatus.DEFAULT_EXPIRES_ON_TRIGGER))
 
 
+static func get_status_valence(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_STATUS_VALENCE, STATUS_VALENCE_NEUTRAL))
+
+
 static func get_status_payload(effect_data: Dictionary) -> Dictionary:
 	var raw_payload: Variant = effect_data.get(KEY_STATUS_PAYLOAD, {})
 	if raw_payload is Dictionary:
@@ -652,3 +668,7 @@ static func get_filter_owner(effect_data: Dictionary) -> String:
 
 static func get_target_zone(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TARGET_ZONE, TARGET_ZONE_HAND))
+
+
+static func get_cleanse_mode(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_CLEANSE_MODE, CLEANSE_MODE_ALL))
