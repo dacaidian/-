@@ -230,7 +230,76 @@ func is_unit() -> bool:
 
 
 func is_hero() -> bool:
-	return data != null and data.is_hero()
+	return (data != null and data.is_hero()) or is_transformed_from_hero()
+
+
+func is_transformed_from_hero() -> bool:
+	var hero_card_id := get_effective_hero_card_id()
+	return hero_card_id != "" and (data == null or card_id != hero_card_id)
+
+
+func get_effective_hero_card_id() -> String:
+	if data != null and data.is_hero():
+		return card_id
+
+	var transform_status := get_transform_status()
+	if transform_status == null:
+		return ""
+
+	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
+	var original_data := original_snapshot.get("data") as CardData
+	if original_data != null and original_data.is_hero():
+		return original_data.id
+
+	if str(original_snapshot.get("role", "")) == CardData.ROLE_HERO:
+		return str(original_snapshot.get("card_id", ""))
+
+	return ""
+
+
+func get_effective_hero_card_data() -> CardData:
+	if data != null and data.is_hero():
+		return data
+
+	var transform_status := get_transform_status()
+	if transform_status == null:
+		return null
+
+	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
+	var original_data := original_snapshot.get("data") as CardData
+	if original_data != null and original_data.is_hero():
+		return original_data
+
+	return null
+
+
+func represents_card_id(target_card_id: String) -> bool:
+	if target_card_id == "":
+		return false
+	if card_id == target_card_id:
+		return true
+
+	var transform_status := get_transform_status()
+	if transform_status == null:
+		return false
+
+	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
+	return str(original_snapshot.get("card_id", "")) == target_card_id
+
+
+func get_represented_card_ids() -> Array[String]:
+	var card_ids: Array[String] = []
+	if card_id != "":
+		card_ids.append(card_id)
+
+	var transform_status := get_transform_status()
+	if transform_status != null:
+		var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
+		var original_card_id := str(original_snapshot.get("card_id", ""))
+		if original_card_id != "" and not card_ids.has(original_card_id):
+			card_ids.append(original_card_id)
+
+	return card_ids
 
 
 func is_flying() -> bool:
@@ -439,6 +508,30 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	is_selected = false
 	is_valid_target = false
 	state_changed.emit(self)
+
+
+func get_transform_status() -> CardStatus:
+	return get_status(CardStatus.STATUS_TRANSFORM)
+
+
+func is_cover_transformed() -> bool:
+	var status := get_transform_status()
+	if status == null:
+		return false
+
+	return str(status.payload.get(EffectData.KEY_TRANSFORM_MODE, "cover")) == "cover"
+
+
+func restore_from_transform_status(status: CardStatus) -> bool:
+	if status == null:
+		return false
+
+	var original_snapshot: Dictionary = status.payload.get("original_snapshot", {})
+	if original_snapshot.is_empty():
+		return false
+
+	apply_card_snapshot(original_snapshot)
+	return true
 
 
 func create_origin_snapshot() -> Dictionary:
@@ -882,11 +975,19 @@ func cleanse_statuses() -> Array[CardStatus]:
 		if status == null:
 			statuses.remove_at(index)
 			continue
+		if status.tags.has(CardStatus.TAG_UNCLEANSEABLE):
+			continue
 
 		removed_statuses.append(status)
 		statuses.remove_at(index)
 
 	if removed_statuses.is_empty():
+		return removed_statuses
+
+	var transform_status := find_transform_status_in_list(removed_statuses)
+	if transform_status != null:
+		restore_from_transform_status(transform_status)
+		removed_statuses.reverse()
 		return removed_statuses
 
 	recalculate_status_modifiers(false)
@@ -897,6 +998,14 @@ func cleanse_statuses() -> Array[CardStatus]:
 
 func has_status(status_id: String) -> bool:
 	return get_status(status_id) != null
+
+
+func find_transform_status_in_list(status_list: Array[CardStatus]) -> CardStatus:
+	for status in status_list:
+		if status != null and status.status_id == CardStatus.STATUS_TRANSFORM:
+			return status
+
+	return null
 
 
 func has_status_with_tag(tag: String) -> bool:

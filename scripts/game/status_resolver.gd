@@ -18,13 +18,20 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 		return
 
 	var death_immunity_expired_states: Array[CardState] = []
+	var transform_restored_states: Array[CardState] = []
 	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 
 		var expired_statuses := state.expire_statuses_for_turn_timing(trigger, turn_player_id)
+		if restore_expired_transforms(state, expired_statuses):
+			transform_restored_states.append(state)
 		if should_check_death_after_status_expiry(state, expired_statuses):
 			death_immunity_expired_states.append(state)
+
+	if not transform_restored_states.is_empty():
+		game_manager.refresh_action_available_hints()
+		game_manager.refresh_debug_panel()
 
 	if not death_immunity_expired_states.is_empty():
 		game_manager.resolve_dead_states(
@@ -66,5 +73,16 @@ func should_check_death_after_status_expiry(state: CardState, expired_statuses: 
 	for status in expired_statuses:
 		if status != null and status.tags.has(CardStatus.TAG_DEATH_PREVENTION):
 			return true
+
+	return false
+
+
+func restore_expired_transforms(state: CardState, expired_statuses: Array[CardStatus]) -> bool:
+	if state == null or expired_statuses.is_empty():
+		return false
+
+	for status in expired_statuses:
+		if status != null and status.status_id == CardStatus.STATUS_TRANSFORM:
+			return state.restore_from_transform_status(status)
 
 	return false

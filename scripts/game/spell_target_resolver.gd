@@ -96,7 +96,7 @@ static func can_target(
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
 		TARGET_RULE_MINIONS_BY_CARD_IDS:
-			return target.is_minion() and target != source_state and card_ids.has(target.card_id)
+			return target.is_minion() and target != source_state and is_state_in_card_filter(target, card_ids)
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:
@@ -111,6 +111,17 @@ static func get_current_attribute_total(target: CardState) -> int:
 		return 0
 
 	return target.current_attack + target.current_health
+
+
+static func is_state_in_card_filter(state: CardState, card_ids: Array[String]) -> bool:
+	if state == null:
+		return false
+
+	for card_id in card_ids:
+		if state.represents_card_id(card_id):
+			return true
+
+	return false
 
 
 static func can_select_area_center(target: CardState, source_owner_id: String = "") -> bool:

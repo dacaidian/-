@@ -116,12 +116,32 @@ func collect_death_events(
 
 		if not force_destroy and state.current_health > 0:
 			continue
+		if try_restore_cover_transform_death(game_manager, state):
+			continue
 
 		state.is_pending_death = true
 		death_events.append(create_death_event(game_manager, state, reason, source_state, should_refill_slots))
 
 	sort_death_events(game_manager, death_events)
 	return death_events
+
+
+func try_restore_cover_transform_death(game_manager: GameManager, state: CardState) -> bool:
+	if state == null or state.is_empty() or not state.is_cover_transformed():
+		return false
+
+	var transform_status := state.get_transform_status()
+	if transform_status == null:
+		return false
+
+	var did_restore := state.restore_from_transform_status(transform_status)
+	if not did_restore:
+		return false
+
+	if game_manager != null:
+		game_manager.refresh_action_available_hints()
+		game_manager.refresh_debug_panel()
+	return true
 
 
 func can_state_die(state: CardState) -> bool:
@@ -267,9 +287,13 @@ func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dict
 		return
 
 	if state.is_hero():
-		var revive_cooldown := maxi(HERO_REVIVE_COOLDOWN_TURNS + owner.get_hero_revive_cooldown_modifier(state.card_id), 0)
+		var hero_card_id := state.get_effective_hero_card_id()
+		var hero_card_data := state.get_effective_hero_card_data()
+		if hero_card_data == null:
+			hero_card_data = state.data
+		var revive_cooldown := maxi(HERO_REVIVE_COOLDOWN_TURNS + owner.get_hero_revive_cooldown_modifier(hero_card_id), 0)
 		owner.add_to_hand_with_cooldown(
-			state.data,
+			hero_card_data,
 			revive_cooldown,
 			HandCardState.SOURCE_HERO_REVIVE,
 			["hero_revive"]

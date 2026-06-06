@@ -76,7 +76,7 @@ static func has_face_up_hero(board_states: Array[CardState], owner_id: String, h
 	for state in board_states:
 		if not is_face_up_board_card(state):
 			continue
-		if state.owner_id == owner_id and state.card_id == hero_card_id and state.is_hero():
+		if state.owner_id == owner_id and state.represents_card_id(hero_card_id) and state.is_hero():
 			return true
 
 	return false

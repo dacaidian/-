@@ -46,7 +46,7 @@ func append_hand_granted_actions(actions: Array[CardAction], user: CardState, ga
 		for effect_data in card_data.effects:
 			if not is_grant_actions_effect(effect_data):
 				continue
-			if not EffectData.get_card_ids(effect_data).has(user.card_id):
+			if not matches_card_filter(user, EffectData.get_card_ids(effect_data)):
 				continue
 
 			for action_data in EffectData.get_actions(effect_data):
@@ -72,3 +72,14 @@ func create_action_from_data(action_data: Dictionary) -> CardAction:
 			if action_data.has("effects"):
 				return EffectAction.new().setup(action_data)
 			return null
+
+
+func matches_card_filter(state: CardState, card_ids: Array[String]) -> bool:
+	if state == null:
+		return false
+
+	for card_id in card_ids:
+		if state.represents_card_id(card_id):
+			return true
+
+	return false

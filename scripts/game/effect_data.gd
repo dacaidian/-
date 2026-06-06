@@ -53,6 +53,7 @@ const KEY_TARGET_ZONE := "target_zone"
 const KEY_AMOUNT_SOURCE := "amount_source"
 const KEY_CARD_ID := "card_id"
 const KEY_TARGET_CARD_ID := "target_card_id"
+const KEY_TRANSFORM_MODE := "transform_mode"
 const KEY_TRIGGER_PLAYER := "trigger_player"
 const KEY_BONUS_CARDS := "bonus_cards"
 const KEY_SELECTION_TITLE := "selection_title"
@@ -131,6 +132,7 @@ const EFFECT_GRANT_REBORN := "grant_reborn"
 const EFFECT_MODIFY_FACTION_SKILL := "modify_faction_skill"
 const EFFECT_CLEANSE := "cleanse"
 const EFFECT_EVOLVE_UNITS := "evolve_units"
+const EFFECT_TRANSFORM_UNIT := "transform_unit"
 const EFFECT_SACRIFICE_FRIENDLY_MINIONS := "sacrifice_friendly_minions"
 const EFFECT_GRANT_BOARD_VISION := "grant_board_vision"
 const EFFECT_MODIFY_HERO_REVIVE_COOLDOWN := "modify_hero_revive_cooldown"
@@ -382,6 +384,10 @@ static func get_card_id(effect_data: Dictionary) -> String:
 
 static func get_target_card_id(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TARGET_CARD_ID, ""))
+
+
+static func get_transform_mode(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_TRANSFORM_MODE, "cover"))
 
 
 static func get_selection_title(effect_data: Dictionary, default_title := "选择一张卡牌") -> String:

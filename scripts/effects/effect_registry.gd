@@ -7,6 +7,7 @@ class_name EffectRegistry
 const GrantedUnitTriggerResolverScript := preload("res://scripts/game/granted_unit_trigger_resolver.gd")
 const SyncStatsFromOwnerCardEffectScript := preload("res://scripts/effects/sync_stats_from_owner_card_effect.gd")
 const AssistAttackAttackTargetEffectScript := preload("res://scripts/effects/assist_attack_attack_target_effect.gd")
+const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -37,6 +38,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_GRANT_REBORN, GrantRebornEffect.new())
 	register_effect(EffectData.EFFECT_CLEANSE, CleanseEffect.new())
 	register_effect(EffectData.EFFECT_EVOLVE_UNITS, EvolveUnitsEffect.new())
+	register_effect(EffectData.EFFECT_TRANSFORM_UNIT, TransformUnitEffectScript.new())
 	register_effect(EffectData.EFFECT_SACRIFICE_FRIENDLY_MINIONS, SacrificeFriendlyMinionsEffect.new())
 	register_effect(EffectData.EFFECT_GRANT_BOARD_VISION, GrantBoardVisionEffect.new())
 	register_effect(EffectData.EFFECT_SYNC_STATS_FROM_OWNER_CARD, SyncStatsFromOwnerCardEffectScript.new())
@@ -112,7 +114,11 @@ func matches_trigger_source(effect_data: Dictionary, context: Dictionary) -> boo
 	var source_card_id := str(context.get(EventContext.SOURCE_CARD_ID, ""))
 	if source_card_id == "":
 		var source_state := context.get(EventContext.SOURCE_STATE) as CardState
-		source_card_id = source_state.card_id if source_state != null else ""
+		if source_state != null:
+			for card_id in source_card_ids:
+				if source_state.represents_card_id(card_id):
+					return true
+			source_card_id = source_state.card_id
 
 	return source_card_ids.has(source_card_id)
 

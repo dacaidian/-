@@ -206,7 +206,7 @@ func get_turn_player_minions_by_card_ids(effect_data: Dictionary, game_manager: 
 			continue
 		if target_state.owner_id != turn_player_id:
 			continue
-		if not allowed_card_ids.has(target_state.card_id):
+		if not is_state_in_card_filter(target_state, allowed_card_ids):
 			continue
 
 		targets.append(target_state)
@@ -216,6 +216,17 @@ func get_turn_player_minions_by_card_ids(effect_data: Dictionary, game_manager: 
 
 func get_card_id_filter(effect_data: Dictionary) -> Array[String]:
 	return EffectData.get_card_ids(effect_data)
+
+
+func is_state_in_card_filter(state: CardState, card_ids: Array[String]) -> bool:
+	if state == null:
+		return false
+
+	for card_id in card_ids:
+		if state.represents_card_id(card_id):
+			return true
+
+	return false
 
 
 func get_selected_adjacent_enemy_minions(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
@@ -265,7 +276,7 @@ func get_owner_cards_by_id(source_state: CardState, effect_data: Dictionary, gam
 		var target_state := value as CardState
 		if not BoardQuery.is_face_up_unit(target_state):
 			continue
-		if target_state.owner_id == owner_id and target_card_ids.has(target_state.card_id):
+		if target_state.owner_id == owner_id and is_state_in_card_filter(target_state, target_card_ids):
 			targets.append(target_state)
 
 	return targets

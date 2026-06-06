@@ -2211,7 +2211,8 @@
 					"immortal_peach",
 					"immobilize_spell",
 					"gather_scatter_qi",
-					"dragon_palace_treasure"
+					"dragon_palace_treasure",
+					"heavenly_form"
 				]
 			}
 		],
@@ -2533,6 +2534,50 @@
 						"amount": -1
 					}
 				]
+			},
+			{
+				"id": "heavenly_form",
+				"name": "法天象地",
+				"description": "孙悟空变身为法象一回合。法象为14/22巨兽，持续期间若被击败则按英雄死亡进入复活冷却。",
+				"url": "res://assets/img/猴妖仙/法天象地.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "heavenly_form",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "transform_unit",
+						"target": "owner_card_by_id",
+						"target_card_id": "sun_wukong",
+						"card_id": "heavenly_avatar",
+						"transform_mode": "evolution",
+						"status_name": "法天象地",
+						"status_description": "变身为法象一回合；持续期间死亡则正常死亡。",
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"permanent": false
+					}
+				]
+			}
+		],
+		"tokens": [
+			{
+				"id": "heavenly_avatar",
+				"name": "法象",
+				"description": "孙悟空法天象地所化巨大神相，拥有巨兽之力。",
+				"url": "res://assets/img/猴妖仙/法象.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"giant"
+				],
+				"attack": 14,
+				"health": 22,
+				"effects": []
 			}
 		]
 	},

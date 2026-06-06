@@ -38,7 +38,7 @@ func can_equipment_trigger_for_attacker(equipment_data: CardData, attacker_state
 		return false
 
 	var hero_id := equipment_data.owner_hero_card_id
-	if hero_id != "" and attacker_state.card_id != hero_id:
+	if hero_id != "" and not attacker_state.represents_card_id(hero_id):
 		return false
 
 	return true

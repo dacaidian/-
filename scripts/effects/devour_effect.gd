@@ -49,9 +49,20 @@ func can_devour_target(source_state: CardState, target_state: CardState, allowed
 		and source_state != target_state
 		and BoardQuery.is_face_up_board_card(target_state)
 		and target_state.is_minion()
-		and allowed_card_ids.has(target_state.card_id)
+		and is_state_in_card_filter(target_state, allowed_card_ids)
 		and not target_state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 	)
+
+
+func is_state_in_card_filter(state: CardState, card_ids: Array[String]) -> bool:
+	if state == null:
+		return false
+
+	for card_id in card_ids:
+		if state.represents_card_id(card_id):
+			return true
+
+	return false
 
 
 func apply_devour_status(

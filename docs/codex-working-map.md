@@ -129,6 +129,7 @@
 - `scripts/game/status_resolver.gd`
 - `scripts/game/status_modifier_resolver.gd`
 - `scripts/effects/apply_status_effect.gd`
+- `scripts/effects/transform_unit_effect.gd`
 - `scripts/effects/cleanse_effect.gd`
 - `scripts/ui/card_status_overlay.gd`
 
@@ -140,6 +141,7 @@
 - `breaks_on_attack_or_spell` 会在攻击或施法后移除，除非法术配置 `breaks_stealth: false`。
 - `rooted` 的表现是金色遮罩和中心“定”字。
 - 毒状态按总伤害唯一化，回合结束时先于治疗结算。
+- 变身使用 `transform_unit` 效果和 `transform` 状态。变身状态不可净化；进化变身死亡时正常死亡，覆盖变身死亡时先恢复原形。
 
 ## 法术目标
 

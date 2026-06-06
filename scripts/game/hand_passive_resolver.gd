@@ -117,10 +117,12 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 
 		var base_movement := get_origin_movement(state)
 		var target_movement: int = base_movement
-		if movement_by_card_id.has(state.card_id):
-			target_movement = int(movement_by_card_id[state.card_id])
-		if movement_bonus_by_card_id.has(state.card_id):
-			target_movement += int(movement_bonus_by_card_id[state.card_id])
+		var movement_override: Variant = get_represented_card_value(state, movement_by_card_id, null)
+		if movement_override != null:
+			target_movement = int(movement_override)
+		var movement_bonus: Variant = get_represented_card_value(state, movement_bonus_by_card_id, null)
+		if movement_bonus != null:
+			target_movement += int(movement_bonus)
 
 		state.set_max_movement(target_movement, true)
 
@@ -137,7 +139,7 @@ func refresh_unit_keyword_passives(player: PlayerState, game_manager: GameManage
 			continue
 
 		var keywords: Array[String] = []
-		var raw_keywords: Variant = keywords_by_card_id.get(state.card_id, [])
+		var raw_keywords: Variant = get_represented_card_value(state, keywords_by_card_id, [])
 		if raw_keywords is Array:
 			for keyword in raw_keywords:
 				var normalized_keyword := str(keyword)
@@ -159,8 +161,9 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 			continue
 
 		var attack_bonus := 0
-		if attack_bonus_by_card_id.has(state.card_id):
-			attack_bonus = int(attack_bonus_by_card_id[state.card_id])
+		var attack_bonus_value: Variant = get_represented_card_value(state, attack_bonus_by_card_id, null)
+		if attack_bonus_value != null:
+			attack_bonus = int(attack_bonus_value)
 		attack_bonus += get_board_attack_resource_bonus(state, player)
 
 		state.set_passive_attack_bonus(attack_bonus)
@@ -178,8 +181,9 @@ func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager)
 			continue
 
 		var armor_bonus := 0
-		if armor_bonus_by_card_id.has(state.card_id):
-			armor_bonus = int(armor_bonus_by_card_id[state.card_id])
+		var armor_bonus_value: Variant = get_represented_card_value(state, armor_bonus_by_card_id, null)
+		if armor_bonus_value != null:
+			armor_bonus = int(armor_bonus_value)
 
 		state.set_armor(armor_bonus)
 
@@ -197,8 +201,9 @@ func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameM
 
 		var base_attack_speed := get_origin_attack_speed(state)
 		var attack_speed_bonus := 0
-		if attack_speed_bonus_by_card_id.has(state.card_id):
-			attack_speed_bonus = int(attack_speed_bonus_by_card_id[state.card_id])
+		var attack_speed_bonus_value: Variant = get_represented_card_value(state, attack_speed_bonus_by_card_id, null)
+		if attack_speed_bonus_value != null:
+			attack_speed_bonus = int(attack_speed_bonus_value)
 
 		state.set_max_attack_speed(base_attack_speed + attack_speed_bonus, true)
 
@@ -247,6 +252,17 @@ func get_unit_movement_overrides(player: PlayerState) -> Dictionary:
 				movement_by_card_id[card_id] = maxi(int(movement_by_card_id[card_id]), amount)
 
 	return movement_by_card_id
+
+
+func get_represented_card_value(state: CardState, values_by_card_id: Dictionary, default_value: Variant) -> Variant:
+	if state == null:
+		return default_value
+
+	for card_id in state.get_represented_card_ids():
+		if values_by_card_id.has(card_id):
+			return values_by_card_id[card_id]
+
+	return default_value
 
 
 func get_unit_movement_bonuses(player: PlayerState) -> Dictionary:

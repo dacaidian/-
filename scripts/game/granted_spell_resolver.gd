@@ -71,7 +71,11 @@ func does_grant_apply_to_user(effect_data: Dictionary, user: CardState) -> bool:
 	if card_ids.is_empty():
 		return true
 
-	return card_ids.has(user.card_id)
+	for card_id in card_ids:
+		if user.represents_card_id(card_id):
+			return true
+
+	return false
 
 
 func get_card_data_from_hand_entry(card_entry: Variant) -> CardData:

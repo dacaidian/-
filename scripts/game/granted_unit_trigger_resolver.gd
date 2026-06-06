@@ -66,4 +66,11 @@ func is_active_grant(effect_data: Dictionary) -> bool:
 
 func matches_source_card(effect_data: Dictionary, source_state: CardState) -> bool:
 	var card_ids := EffectData.get_card_ids(effect_data)
-	return card_ids.is_empty() or card_ids.has(source_state.card_id)
+	if card_ids.is_empty():
+		return true
+
+	for card_id in card_ids:
+		if source_state.represents_card_id(card_id):
+			return true
+
+	return false
