@@ -460,19 +460,11 @@ func create_board_cell(slot_index: int, ground_state: CardState) -> BoardCell:
 
 
 func is_land_slot(slot_index: int) -> bool:
-	if slot_index < 0 or board_columns <= 0 or board_rows <= 0:
-		return false
-
-	var row := floori(float(slot_index) / float(board_columns))
-	var column := slot_index % board_columns
-	return row > 0 and row < board_rows - 1 and column > 0 and column < board_columns - 1
+	return board_layer_resolver.is_land_slot(self, slot_index)
 
 
 func get_board_cell(slot_index: int) -> BoardCell:
-	if slot_index < 0 or slot_index >= board_cells.size():
-		return null
-
-	return board_cells[slot_index]
+	return board_layer_resolver.get_board_cell(self, slot_index)
 
 
 func get_aerial_state(slot_index: int) -> CardState:
@@ -500,23 +492,7 @@ func can_place_aerial_card_on_slot(slot_index: int) -> bool:
 
 
 func sync_board_cell_state_flags(slot_index: int) -> void:
-	var cell := get_board_cell(slot_index)
-	var state := get_board_state(slot_index)
-	if cell == null or state == null:
-		return
-
-	cell.ground_state = state
-	var can_interact := cell.can_hold_ground()
-	if state.is_interactable != can_interact:
-		state.is_interactable = can_interact
-		state.state_changed.emit(state)
-
-	var aerial_state := get_aerial_state(slot_index)
-	if aerial_state != null and aerial_state.is_interactable != true:
-		aerial_state.is_interactable = true
-		aerial_state.state_changed.emit(aerial_state)
-
-	sync_slot_card_layout(slot_index)
+	board_layer_resolver.sync_board_cell_state_flags(self, slot_index)
 
 
 func sync_slot_card_layout(slot_index: int) -> void:
@@ -556,11 +532,7 @@ func sync_card_board_slot_styles() -> void:
 	if card_board == null or not card_board.has_method("set_land_slot_states"):
 		return
 
-	var land_states: Array[bool] = []
-	for cell in board_cells:
-		land_states.append(cell != null and cell.is_land)
-
-	card_board.set_land_slot_states(land_states)
+	card_board.set_land_slot_states(board_layer_resolver.get_land_slot_states(self))
 
 
 func create_initial_card_state(card_data: CardData, slot_index: int) -> CardState:
