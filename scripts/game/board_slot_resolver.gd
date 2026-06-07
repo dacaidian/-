@@ -5,6 +5,26 @@ class_name BoardSlotResolver
 # 它不处理死亡原因、区域归属或玩家交互，只围绕“某个 slot 是否能放入下一张牌”工作。
 
 
+func get_card_pool_next_back_texture(game_manager: GameManager) -> Texture2D:
+	if game_manager == null or game_manager.card_pool == null:
+		return _get_default_back_texture(game_manager)
+
+	var next_level := game_manager.card_pool.get_lowest_available_level()
+	if next_level <= 0:
+		return _get_default_back_texture(game_manager)
+
+	return get_card_back_texture_for_level(game_manager, next_level)
+
+
+func get_card_back_texture_for_level(game_manager: GameManager, level: int) -> Texture2D:
+	var fallback := _get_default_back_texture(game_manager)
+	var card_back_path := "res://assets/img/卡背/%d.png" % maxi(level, 1)
+	if ResourceLoader.exists(card_back_path):
+		return load(card_back_path) as Texture2D
+
+	return fallback
+
+
 func draw_card_to_slot(game_manager: GameManager, slot_index: int) -> bool:
 	if game_manager == null:
 		return false
@@ -82,3 +102,10 @@ func refill_empty_board_slots(game_manager: GameManager, max_count: int = -1) ->
 
 	game_manager.refresh_debug_panel()
 	return filled_count
+
+
+func _get_default_back_texture(game_manager: GameManager) -> Texture2D:
+	if game_manager == null:
+		return null
+
+	return game_manager.default_back_texture

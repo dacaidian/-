@@ -696,22 +696,11 @@ func update_card_pool_view() -> void:
 
 
 func get_card_pool_next_back_texture() -> Texture2D:
-	if card_pool == null:
-		return default_back_texture
-
-	var next_level := card_pool.get_lowest_available_level()
-	if next_level <= 0:
-		return default_back_texture
-
-	return get_card_back_texture_for_level(next_level)
+	return board_slot_resolver.get_card_pool_next_back_texture(self)
 
 
 func get_card_back_texture_for_level(level: int) -> Texture2D:
-	var card_back_path := "res://assets/img/卡背/%d.png" % maxi(level, 1)
-	if ResourceLoader.exists(card_back_path):
-		return load(card_back_path) as Texture2D
-
-	return default_back_texture
+	return board_slot_resolver.get_card_back_texture_for_level(self, level)
 
 
 func draw_card_to_slot(slot_index: int) -> bool:

@@ -58,6 +58,8 @@
 
 `BoardLayerResolver` 是棋盘层级和格子能力入口，负责地面/空中状态查询、土地格判断、地面补牌/放置/空中放置合法性，以及同步 `BoardCell` 与 `CardState` 的交互标记。`GameManager` 只保留兼容门面，不应重新写一套格子能力判断。
 
+`BoardSlotResolver` 是牌池到棋盘格的入口，负责抽牌进格子、清空格子、空格补牌，以及按下一张可抽等级选择卡背。`GameManager` 只调用门面方法；死亡、手牌放置、AI 翻牌、替换未翻开卡牌等流程都应走这里，避免绕过 7x7 格子能力和等级牌池顺序。
+
 ## 交互状态
 
 `InteractionManager` 管理空闲、棋盘卡牌焦点、棋盘目标选择、手牌焦点、手牌目标选择、多阶段选择等状态。右键和 Escape 应在焦点/目标选择状态下保持一致的退回逻辑。
@@ -147,6 +149,8 @@
 通用 `resurrect` 效果支持按 `filter_type`、`filter_owner` 和 `card_ids` 过滤坟场候选。需要“复活指定卡牌”时应优先配置 `card_ids`，不要新增专用效果。
 
 补牌必须使用格子能力，并遵守等级牌池顺序。
+
+卡背显示也跟随等级牌池顺序。需要展示牌池顶部、补牌飞行动画或指定等级卡背时，统一通过 `GameManager.get_card_pool_next_back_texture()` / `get_card_back_texture_for_level()`，实际解析逻辑由 `BoardSlotResolver` 负责。
 
 ## 手牌、装备与被动
 

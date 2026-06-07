@@ -101,6 +101,7 @@
 
 - 不要假设一个格子只有一张牌。
 - 地面/空中层查询、土地格判断、放置与补牌能力优先放在 `BoardLayerResolver`。
+- 牌池抽牌、空格补牌、清空格子、等级卡背解析优先放在 `BoardSlotResolver`。
 - 地面层和空中层独立。
 - 飞行单位可使用外圈和空中层。
 - 瞬移允许移动到全场任意合法空目的地。
@@ -177,6 +178,7 @@
 - 英雄死亡生成冷却手牌，不进坟场。
 - 指定卡牌复活应复用 `resurrect` 的 `card_ids` 过滤，例如孙悟空“身外身法”只复活 `hair_clone`。
 - 只有具备补牌能力的格子才补牌。
+- 任何补牌入口都应调用 `GameManager.refill_board_slot_from_pool()` / `draw_card_to_slot()`，不要直接从 `card_pool.draw_random()` 后写入棋盘。
 - 顺序献祭使用 `sacrifice_friendly_minions`，保证前一个死亡能影响后一个死亡。
 
 ## 装备
