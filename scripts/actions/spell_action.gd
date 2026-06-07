@@ -34,6 +34,9 @@ func can_start(user: CardState, game_manager: GameManager) -> bool:
 	if effects.is_empty():
 		return false
 
+	if not requires_target() and not can_effects_execute_with_target(user, null, game_manager):
+		return false
+
 	return can_pay_action_cost(user)
 
 
