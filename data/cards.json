@@ -2275,7 +2275,17 @@
 						"name": "身外身法",
 						"animation": "body_beyond_body",
 						"target_rule": "none",
-						"effects": []
+						"effects": [
+							{
+								"id": "resurrect",
+								"amount": 1,
+								"filter_type": "minion",
+								"filter_owner": "self",
+								"card_ids": [
+									"hair_clone"
+								]
+							}
+						]
 					},
 					{
 						"id": "bronze_head_iron_arms",

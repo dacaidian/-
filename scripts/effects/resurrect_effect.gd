@@ -25,13 +25,14 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 	var filter_type := EffectData.get_filter_type(effect_data)
 	var filter_owner := EffectData.get_filter_owner(effect_data)
+	var card_ids := EffectData.get_card_ids(effect_data)
 
 	var candidates: Array[Dictionary] = []
 	var candidate_indices: Array[int] = []
 
 	for i in range(player.graveyard.size()):
 		var snapshot: Dictionary = player.graveyard[i]
-		if _matches_filter(snapshot, filter_type, filter_owner, player.id):
+		if _matches_filter(snapshot, filter_type, filter_owner, card_ids, player.id):
 			var origin: Dictionary = snapshot.get("origin", {})
 			candidates.append({
 				"name": str(origin.get("display_name", "???")) if origin.has("display_name") else str(origin.get("card_id", "???")),
@@ -108,8 +109,9 @@ func has_candidates(player: PlayerState, effect_data: Dictionary) -> bool:
 
 	var filter_type := EffectData.get_filter_type(effect_data)
 	var filter_owner := EffectData.get_filter_owner(effect_data)
+	var card_ids := EffectData.get_card_ids(effect_data)
 	for snapshot in player.graveyard:
-		if _matches_filter(snapshot, filter_type, filter_owner, player.id):
+		if _matches_filter(snapshot, filter_type, filter_owner, card_ids, player.id):
 			return true
 
 	return false
@@ -123,9 +125,10 @@ func _add_resurrected_card_to_zone(player: PlayerState, card_data: CardData, tar
 			push_warning("暂不支持的复活目标区域: %s" % target_zone)
 
 
-func _matches_filter(snapshot: Dictionary, filter_type: String, filter_owner: String, player_id: String) -> bool:
+func _matches_filter(snapshot: Dictionary, filter_type: String, filter_owner: String, card_ids: Array[String], player_id: String) -> bool:
 	var origin: Dictionary = snapshot.get("origin", {})
 	var snapshot_type := str(origin.get("type", ""))
+	var snapshot_card_id := str(origin.get("card_id", ""))
 
 	if filter_type == "minion":
 		if snapshot_type != "minion":
@@ -133,6 +136,9 @@ func _matches_filter(snapshot: Dictionary, filter_type: String, filter_owner: St
 	elif filter_type == "building":
 		if snapshot_type != "building":
 			return false
+
+	if not card_ids.is_empty() and not card_ids.has(snapshot_card_id):
+		return false
 
 	if filter_owner == "self":
 		var last_state: Dictionary = snapshot.get("last_state", {})
