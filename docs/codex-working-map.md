@@ -57,12 +57,14 @@
 
 - `scripts/actions/card_action.gd`
 - `scripts/actions/action_registry.gd`
+- `scripts/game/action_resource_resolver.gd`
 - `scripts/game/granted_action_resolver.gd`
 - `scripts/game/action_hint_resolver.gd`
 
 常见规则：
 
 - 只有会和移动/攻击/施法互斥的行动，才加入主行动组。
+- 主行动次数、移动攻击、施法移动、施法攻击等兼容关系统一放在 `ActionResourceResolver`。
 - “选择目标并执行效果”的行动优先使用 `EffectAction`。
 - 固定方向无目标移动使用 `DirectionalMoveAction`。
 - 合法性判断放在行动/resolver，不放在 UI。

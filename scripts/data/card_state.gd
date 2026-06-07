@@ -1,6 +1,8 @@
 extends Resource
 class_name CardState
 
+const ActionResourceResolverScript := preload("res://scripts/game/action_resource_resolver.gd")
+
 signal state_changed(state: CardState)
 
 const ACTION_GROUP_MOVE := "move"
@@ -381,25 +383,7 @@ func apply_spell_attack_passive() -> void:
 
 
 func refresh_action_keyword_passives() -> void:
-	if data == null or not data.is_unit():
-		return
-
-	var base_main_actions := int(origin.get("main_actions", max_main_actions))
-	var base_pairs := normalize_string_array(origin.get("allowed_action_group_pairs", []))
-	max_main_actions = base_main_actions
-	allowed_action_group_pairs = base_pairs
-
-	if has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
-		max_main_actions = maxi(max_main_actions, 2)
-		allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK, false)
-	if has_keyword(CardData.KEYWORD_SPELL_MOVE):
-		max_main_actions = maxi(max_main_actions, 2)
-		allow_action_group_pair(ACTION_GROUP_MOVE, ACTION_GROUP_SPELL, false)
-	if has_keyword(CardData.KEYWORD_SPELL_ATTACK):
-		max_main_actions = maxi(max_main_actions, 2)
-		allow_action_group_pair(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL, false)
-
-	refresh_current_main_actions()
+	ActionResourceResolverScript.refresh_action_keyword_passives(self)
 
 
 func create_initial_reborn_health_values() -> Array[int]:
@@ -761,26 +745,7 @@ func can_attack() -> bool:
 
 
 func can_take_action_group(action_group: String, can_reuse_used_group := true) -> bool:
-	if has_status_with_tag(CardStatus.TAG_ACTION_PREVENTION):
-		return false
-	if action_group == "":
-		return true
-
-	if used_action_groups.has(action_group):
-		return can_reuse_used_group
-
-	var effective_max_main_actions := get_effective_max_main_actions()
-	if effective_max_main_actions <= 0:
-		return false
-
-	if used_action_groups.size() >= effective_max_main_actions:
-		return false
-
-	for used_group in used_action_groups:
-		if not can_combine_action_groups(used_group, action_group):
-			return false
-
-	return true
+	return ActionResourceResolverScript.can_take_action_group(self, action_group, can_reuse_used_group)
 
 
 func register_action_group(action_group: String) -> bool:
@@ -816,37 +781,15 @@ func register_action_id(action_id: String) -> bool:
 
 
 func can_combine_action_groups(first_group: String, second_group: String) -> bool:
-	if first_group == second_group:
-		return true
-
-	if allowed_action_group_pairs.has(create_action_group_pair_key(first_group, second_group)):
-		return true
-
-	return can_combine_action_groups_from_current_keywords(first_group, second_group)
+	return ActionResourceResolverScript.can_combine_action_groups(self, first_group, second_group)
 
 
 func get_effective_max_main_actions() -> int:
-	var value := max_main_actions
-	if has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
-		value = maxi(value, 2)
-	if has_keyword(CardData.KEYWORD_SPELL_MOVE):
-		value = maxi(value, 2)
-	if has_keyword(CardData.KEYWORD_SPELL_ATTACK):
-		value = maxi(value, 2)
-
-	return value
+	return ActionResourceResolverScript.get_effective_max_main_actions(self)
 
 
 func can_combine_action_groups_from_current_keywords(first_group: String, second_group: String) -> bool:
-	var pair_key := create_action_group_pair_key(first_group, second_group)
-	if pair_key == create_action_group_pair_key(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK):
-		return has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT)
-	if pair_key == create_action_group_pair_key(ACTION_GROUP_MOVE, ACTION_GROUP_SPELL):
-		return has_keyword(CardData.KEYWORD_SPELL_MOVE)
-	if pair_key == create_action_group_pair_key(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL):
-		return has_keyword(CardData.KEYWORD_SPELL_ATTACK)
-
-	return false
+	return ActionResourceResolverScript.can_combine_action_groups_from_current_keywords(self, first_group, second_group)
 
 
 func allow_action_group_pair(first_group: String, second_group: String, should_emit_changed := true) -> void:
@@ -863,9 +806,7 @@ func allow_action_group_pair(first_group: String, second_group: String, should_e
 
 
 func create_action_group_pair_key(first_group: String, second_group: String) -> String:
-	var groups := [first_group, second_group]
-	groups.sort()
-	return "%s|%s" % [groups[0], groups[1]]
+	return ActionResourceResolverScript.create_action_group_pair_key(first_group, second_group)
 
 
 func refresh_current_main_actions() -> void:
