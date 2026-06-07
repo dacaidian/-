@@ -248,6 +248,7 @@
 
 优先读：
 
+- `scripts/game/game_animation_resolver.gd`
 - `scripts/ui/card_animation_controller.gd`
 - `scripts/ui/card_status_overlay.gd`
 - `scenes/card/scripts/card.gd`
@@ -257,6 +258,7 @@
 常见规则：
 
 - 一次性特效放在 `CardAnimationController`。
+- 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 持续状态表现放在 `CardStatusOverlay`。
 - 数值图标放在 `Card` 的状态/数值堆叠区域。
 - UI 控制器不拥有玩法规则。

@@ -9,6 +9,7 @@ const HandDrawerControllerScript := preload("res://scripts/ui/hand_drawer_contro
 const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_display_controller.gd")
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
+const GameAnimationResolverScript := preload("res://scripts/game/game_animation_resolver.gd")
 const BoardSlotResolverScript := preload("res://scripts/game/board_slot_resolver.gd")
 const ActionHintResolverScript := preload("res://scripts/game/action_hint_resolver.gd")
 const RevealResolverScript := preload("res://scripts/game/reveal_resolver.gd")
@@ -137,6 +138,7 @@ var hand_drawer_controller := HandDrawerControllerScript.new()
 var equipment_display_controller := EquipmentDisplayControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
 var card_animation_controller := CardAnimationControllerScript.new()
+var game_animation_resolver := GameAnimationResolverScript.new()
 var board_slot_resolver := BoardSlotResolverScript.new()
 var action_hint_resolver := ActionHintResolverScript.new()
 var reveal_resolver := RevealResolverScript.new()
@@ -1386,7 +1388,7 @@ func play_card_swap_animation(
 	first_slot_position: Vector2,
 	second_slot_position: Vector2
 ) -> void:
-	await card_animation_controller.play_card_swap(
+	await game_animation_resolver.play_card_swap_animation(
 		self,
 		first_card,
 		second_card,
@@ -1396,216 +1398,47 @@ func play_card_swap_animation(
 
 
 func play_card_attack_animation(attacker_state: CardState, target_state: CardState, is_melee_attack := true) -> void:
-	if attacker_state == null or target_state == null:
-		return
-
-	var attacker_card: Card = get_card_for_state(attacker_state)
-	var target_card: Card = get_card_for_state(target_state)
-	if attacker_card == null or target_card == null:
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_card_attack(
-		self,
-		get_parent(),
-		attacker_card,
-		target_card,
-		is_melee_attack
-	)
-	is_resolving_card_action = false
+	await game_animation_resolver.play_card_attack_animation(self, attacker_state, target_state, is_melee_attack)
 
 
 func play_spell_cast_animation(caster_state: CardState, target_state: CardState, spell_data: Dictionary) -> void:
-	if caster_state == null or target_state == null:
-		return
-
-	var caster_card: Card = get_card_for_state(caster_state)
-	var target_card: Card = get_card_for_state(target_state)
-	if caster_card == null or target_card == null:
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_spell_cast(
-		self,
-		get_overlay_animation_root(),
-		caster_card,
-		target_card,
-		spell_data
-	)
-	is_resolving_card_action = false
+	await game_animation_resolver.play_spell_cast_animation(self, caster_state, target_state, spell_data)
 
 
 func play_area_spell_animation(caster_state: CardState, center_state: CardState, spell_data: Dictionary) -> void:
-	if caster_state == null or center_state == null:
-		return
-
-	var caster_card: Card = get_card_for_state(caster_state)
-	var center_card: Card = get_card_for_state(center_state)
-	if caster_card == null or center_card == null:
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_area_spell_cast(
-		self,
-		get_overlay_animation_root(),
-		caster_card,
-		center_card,
-		spell_data
-	)
-	is_resolving_card_action = false
+	await game_animation_resolver.play_area_spell_animation(self, caster_state, center_state, spell_data)
 
 
 func play_link_units_animation(first_state: CardState, second_state: CardState, animation_key := "gu_life_link") -> void:
-	if first_state == null or second_state == null:
-		return
-
-	var first_card: Card = get_card_for_state(first_state)
-	var second_card: Card = get_card_for_state(second_state)
-	if first_card == null or second_card == null:
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_life_link_spell(
-		self,
-		get_overlay_animation_root(),
-		first_card,
-		second_card,
-		{"animation": animation_key}
-	)
-	is_resolving_card_action = false
+	await game_animation_resolver.play_link_units_animation(self, first_state, second_state, animation_key)
 
 
 func play_moonblade_animation(caster_state: CardState, first_state: CardState, second_state: CardState) -> void:
-	if caster_state == null or first_state == null or second_state == null:
-		return
-
-	var caster_card: Card = get_card_for_state(caster_state)
-	var first_card: Card = get_card_for_state(first_state)
-	var second_card: Card = get_card_for_state(second_state)
-	if caster_card == null or first_card == null or second_card == null:
-		return
-
-	is_resolving_card_action = true
-	await card_animation_controller.play_moonblade_spell(
-		self,
-		get_overlay_animation_root(),
-		caster_card,
-		first_card,
-		second_card
-	)
-	is_resolving_card_action = false
+	await game_animation_resolver.play_moonblade_animation(self, caster_state, first_state, second_state)
 
 
 func play_effect_heal_animation(target_state: CardState) -> void:
-	if target_state == null:
-		return
-
-	var target_card: Card = get_card_for_state(target_state)
-	if target_card == null:
-		return
-
-	await card_animation_controller.play_spell_cast(
-		self,
-		get_overlay_animation_root(),
-		target_card,
-		target_card,
-		{"animation": "heal"}
-	)
+	await game_animation_resolver.play_effect_heal_animation(self, target_state)
 
 
 func play_status_apply_animation(target_state: CardState, animation_key: String) -> void:
-	if target_state == null or animation_key == "":
-		return
-
-	var target_card: Card = get_card_for_state(target_state)
-	if target_card == null:
-		return
-
-	await card_animation_controller.play_spell_cast(
-		self,
-		get_overlay_animation_root(),
-		target_card,
-		target_card,
-		{"animation": animation_key}
-	)
+	await game_animation_resolver.play_status_apply_animation(self, target_state, animation_key)
 
 
 func play_slot_effect_animation(target_state: CardState, animation_key: String) -> void:
-	if target_state == null or animation_key == "":
-		return
-
-	var target_card: Card = get_card_for_state(target_state)
-	if target_card == null:
-		return
-
-	await card_animation_controller.play_spell_cast_at_rect(
-		self,
-		get_overlay_animation_root(),
-		target_card.get_global_rect(),
-		{"animation": animation_key}
-	)
+	await game_animation_resolver.play_slot_effect_animation(self, target_state, animation_key)
 
 
 func play_card_to_hand_animation(source_card: Card, card_data: CardData) -> void:
-	if source_card == null or card_data == null:
-		return
-
-	await hand_drawer_controller.play_card_to_hand_animation(
-		self,
-		get_overlay_animation_root(),
-		source_card,
-		card_data
-	)
+	await game_animation_resolver.play_card_to_hand_animation(self, source_card, card_data)
 
 
 func play_hand_spell_card_animation(card_data: CardData, target_state: CardState = null, animation_override := "") -> void:
-	if card_data == null:
-		return
-
-	var spell_data := {
-		"animation": animation_override if animation_override != "" else (card_data.animation if card_data.animation != "" else "heal")
-	}
-
-	is_resolving_card_action = true
-
-	if target_state != null:
-		var target_card: Card = get_card_by_slot(target_state.slot_index)
-		if target_card != null:
-			var hand_card_rect: Rect2 = hand_interaction_controller.get_selected_hand_card_rect()
-			if hand_card_rect.size != Vector2.ZERO:
-				await card_animation_controller.play_spell_cast_from_rect_to_card(
-					self,
-					get_overlay_animation_root(),
-					hand_card_rect,
-					target_card,
-					spell_data
-				)
-			else:
-				await card_animation_controller.play_spell_cast(
-					self,
-					get_overlay_animation_root(),
-					target_card,
-					target_card,
-					spell_data
-				)
-	else:
-		var hand_card_rect: Rect2 = hand_interaction_controller.get_selected_hand_card_rect()
-		if hand_card_rect.size != Vector2.ZERO:
-			await card_animation_controller.play_spell_cast_at_rect(
-				self,
-				get_overlay_animation_root(),
-				hand_card_rect,
-				spell_data
-			)
-
-	is_resolving_card_action = false
+	await game_animation_resolver.play_hand_spell_card_animation(self, card_data, target_state, animation_override)
 
 
 func get_overlay_animation_root() -> Control:
-	if card_pool_view_controller.animation_root != null:
-		return card_pool_view_controller.animation_root
-
-	return get_parent() as Control
+	return game_animation_resolver.get_overlay_animation_root(self)
 
 func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState) -> void:
 	await board_movement_resolver.move_card_content_to_empty_slot(self, from_state, to_state)
@@ -1620,44 +1453,7 @@ func promote_ground_flying_to_aerial(source_state: CardState) -> CardState:
 
 
 func animate_refill_board_slot(slot_index: int, card_data: CardData) -> void:
-	var state: CardState = get_board_state(slot_index)
-	var target_card: Card = get_card_by_slot(slot_index)
-	if state == null or target_card == null or card_data == null:
-		return
-
-	if not can_refill_ground_slot(slot_index):
-		card_pool.add_card(card_data, true)
-		update_card_pool_view()
-		refresh_debug_panel()
-		return
-
-	if card_pool_view_controller.view == null or card_pool_view_controller.animation_root == null:
-		state.set_card_data(card_data)
-		state.set_face_up(false)
-		refresh_action_available_hints()
-		refresh_debug_panel()
-		return
-
-	is_resolving_card_action = true
-	target_card.is_animating = true
-
-	var card_back_texture: Texture2D = card_data.back_texture
-	if card_back_texture == null:
-		card_back_texture = get_card_back_texture_for_level(card_data.level)
-
-	await card_pool_view_controller.play_refill_animation(self, target_card, card_back_texture)
-
-	if state.is_empty() and can_refill_ground_slot(slot_index):
-		state.set_card_data(card_data)
-		state.set_face_up(false)
-	else:
-		card_pool.add_card(card_data, true)
-		update_card_pool_view()
-
-	target_card.is_animating = false
-	is_resolving_card_action = false
-	refresh_action_available_hints()
-	refresh_debug_panel()
+	await game_animation_resolver.animate_refill_board_slot(self, slot_index, card_data)
 
 
 func cancel_interaction() -> void:

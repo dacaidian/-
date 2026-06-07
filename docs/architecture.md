@@ -185,7 +185,7 @@ AI 分为候选行为生成、棋盘评估、手牌评估和行为执行。AI �
 
 UI 控制器只负责表现，不应直接修改规则数据，除非通过明确回调进入 game/action/effect 层。
 
-一次性特效放在 `CardAnimationController`。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
+一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
 ## 文档与编码
 
