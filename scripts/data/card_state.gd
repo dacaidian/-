@@ -769,10 +769,11 @@ func can_take_action_group(action_group: String, can_reuse_used_group := true) -
 	if used_action_groups.has(action_group):
 		return can_reuse_used_group
 
-	if max_main_actions <= 0:
+	var effective_max_main_actions := get_effective_max_main_actions()
+	if effective_max_main_actions <= 0:
 		return false
 
-	if used_action_groups.size() >= max_main_actions:
+	if used_action_groups.size() >= effective_max_main_actions:
 		return false
 
 	for used_group in used_action_groups:
@@ -818,7 +819,34 @@ func can_combine_action_groups(first_group: String, second_group: String) -> boo
 	if first_group == second_group:
 		return true
 
-	return allowed_action_group_pairs.has(create_action_group_pair_key(first_group, second_group))
+	if allowed_action_group_pairs.has(create_action_group_pair_key(first_group, second_group)):
+		return true
+
+	return can_combine_action_groups_from_current_keywords(first_group, second_group)
+
+
+func get_effective_max_main_actions() -> int:
+	var value := max_main_actions
+	if has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
+		value = maxi(value, 2)
+	if has_keyword(CardData.KEYWORD_SPELL_MOVE):
+		value = maxi(value, 2)
+	if has_keyword(CardData.KEYWORD_SPELL_ATTACK):
+		value = maxi(value, 2)
+
+	return value
+
+
+func can_combine_action_groups_from_current_keywords(first_group: String, second_group: String) -> bool:
+	var pair_key := create_action_group_pair_key(first_group, second_group)
+	if pair_key == create_action_group_pair_key(ACTION_GROUP_MOVE, ACTION_GROUP_ATTACK):
+		return has_keyword(CardData.KEYWORD_CAVALRY) or has_keyword(CardData.KEYWORD_MOBILE_ASSAULT)
+	if pair_key == create_action_group_pair_key(ACTION_GROUP_MOVE, ACTION_GROUP_SPELL):
+		return has_keyword(CardData.KEYWORD_SPELL_MOVE)
+	if pair_key == create_action_group_pair_key(ACTION_GROUP_ATTACK, ACTION_GROUP_SPELL):
+		return has_keyword(CardData.KEYWORD_SPELL_ATTACK)
+
+	return false
 
 
 func allow_action_group_pair(first_group: String, second_group: String, should_emit_changed := true) -> void:
@@ -841,7 +869,7 @@ func create_action_group_pair_key(first_group: String, second_group: String) -> 
 
 
 func refresh_current_main_actions() -> void:
-	current_main_actions = maxi(max_main_actions - used_action_groups.size(), 0)
+	current_main_actions = maxi(get_effective_max_main_actions() - used_action_groups.size(), 0)
 
 
 func normalize_string_array(value: Variant) -> Array[String]:

@@ -167,6 +167,8 @@
 
 状态净化支持正负面筛选。`CardStatus` 保存 `status_valence`，可取 `positive`、`negative`、`neutral`；未显式配置时按状态 id、标签和属性修正数值推断。`CleanseEffect` 通过 `cleanse_mode` 控制净化范围：`all` 保持旧逻辑，`positive` 只移除正面状态，`negative` 只移除负面状态。全场阵营型净化使用效果目标 `friendly_units` / `enemy_units`，不要在单张卡牌里手写遍历逻辑。当前例子是猴妖仙“驱神大圣禺狨王”：驱散敌方单位正面状态，并解除己方单位负面状态。
 
+移动攻击、施法移动、施法攻击这类主动作兼容关系由当前实际关键词动态决定。即使关键词来自装备、状态或变身，`CardState.can_take_action_group()` 也必须能直接识别，避免只依赖某次被动刷新写入的缓存。
+
 ## AI
 
 AI 分为候选行为生成、棋盘评估、手牌评估和行为执行。AI 应尽量调用玩家同一套行动和目标 API。合法性放在行动/resolver，评分放在 evaluator。
