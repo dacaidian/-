@@ -314,19 +314,19 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 		"heal", "healing_spell":
 			await play_heal_spell(owner, effect_root, target_card)
 		"immortal_peach":
-			await play_heal_spell(owner, effect_root, target_card)
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"medical_practice":
 			await play_medical_practice_spell(owner, effect_root, target_card)
 		"tranquil_spring":
 			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"drive_spirit":
-			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
 		"fiery_eyes_golden_gaze":
-			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
@@ -348,9 +348,9 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 				return
 			await play_dark_arrow_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"somersault_cloud", "body_beyond_body", "gather_scatter_qi", "heavenly_form":
-			await play_summon_spell_at_rect(owner, effect_root, target_card.get_global_rect())
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"bronze_head_iron_arms":
-			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"moonblade":
 			if caster_card == null or target_card == null:
 				return
@@ -370,7 +370,7 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"immobilize":
-			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
+			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"charm":
 			await play_charm_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_lure":
@@ -394,27 +394,27 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		"heal", "healing_spell":
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
 		"immortal_peach":
-			await play_heal_spell_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"medical_practice":
 			await play_medical_practice_at_rect(owner, effect_root, target_rect)
 		"tranquil_spring":
 			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
 		"drive_spirit":
-			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
 		"fiery_eyes_golden_gaze":
-			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
 		"summon":
 			await play_summon_spell_at_rect(owner, effect_root, target_rect)
 		"somersault_cloud", "body_beyond_body", "gather_scatter_qi", "heavenly_form":
-			await play_summon_spell_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"bronze_head_iron_arms":
-			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"arcane_aura":
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
 		"meteor_aura":
@@ -438,7 +438,7 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"immobilize":
-			await play_soul_hook_at_rect(owner, effect_root, target_rect)
+			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"charm":
 			await play_charm_at_rect(owner, effect_root, target_rect)
 		"gu_lure":
@@ -1112,6 +1112,59 @@ func play_summon_spell_at_rect(owner: Node, effect_root: Control, target_rect: R
 	wave_effect.queue_free()
 	for droplet in droplets:
 		droplet.queue_free()
+
+
+func play_monkey_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var aura := create_rect_spell_effect(target_rect, "MonkeySpellAura", create_monkey_spell_aura_style(animation_key), 1.22)
+	var core := create_rect_spell_effect(target_rect, "MonkeySpellCore", create_monkey_spell_core_style(animation_key), get_monkey_spell_core_size(animation_key))
+	var symbol := create_monkey_spell_symbol(target_rect, animation_key)
+	var accents := create_monkey_spell_accents(target_rect, animation_key)
+	effect_root.add_child(aura)
+	effect_root.add_child(core)
+	effect_root.add_child(symbol)
+	for accent in accents:
+		effect_root.add_child(accent)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.tween_property(aura, "scale", Vector2(1.16, 1.16), spell_animation_duration * 0.38)
+	rise_tween.tween_property(aura, "modulate:a", 0.86, spell_animation_duration * 0.38)
+	rise_tween.tween_property(aura, "rotation", get_monkey_spell_rotation(animation_key) * 0.35, spell_animation_duration * 0.38)
+	rise_tween.tween_property(core, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.38)
+	rise_tween.tween_property(core, "modulate:a", 0.94, spell_animation_duration * 0.38)
+	rise_tween.tween_property(symbol, "scale", Vector2(1.14, 1.14), spell_animation_duration * 0.38)
+	rise_tween.tween_property(symbol, "modulate:a", 0.98, spell_animation_duration * 0.38)
+	for index in range(accents.size()):
+		var accent := accents[index]
+		rise_tween.tween_property(accent, "modulate:a", get_monkey_accent_alpha(animation_key, index), spell_animation_duration * 0.38)
+		rise_tween.tween_property(accent, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.38)
+	await rise_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.tween_property(aura, "scale", Vector2(1.78, 1.78), spell_animation_duration * 0.72)
+	fade_tween.tween_property(aura, "rotation", get_monkey_spell_rotation(animation_key), spell_animation_duration * 0.72)
+	fade_tween.tween_property(aura, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	fade_tween.tween_property(core, "scale", get_monkey_spell_core_fade_scale(animation_key), spell_animation_duration * 0.72)
+	fade_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	fade_tween.tween_property(symbol, "position", symbol.position + get_monkey_symbol_drift(target_rect, animation_key), spell_animation_duration * 0.72)
+	fade_tween.tween_property(symbol, "scale", get_monkey_symbol_fade_scale(animation_key), spell_animation_duration * 0.72)
+	fade_tween.tween_property(symbol, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for index in range(accents.size()):
+		var accent := accents[index]
+		fade_tween.tween_property(accent, "position", accent.position + get_monkey_accent_drift(target_rect, animation_key, index), spell_animation_duration * 0.72)
+		fade_tween.tween_property(accent, "scale", get_monkey_accent_fade_scale(animation_key, index), spell_animation_duration * 0.72)
+		fade_tween.tween_property(accent, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await fade_tween.finished
+
+	aura.queue_free()
+	core.queue_free()
+	symbol.queue_free()
+	for accent in accents:
+		accent.queue_free()
 
 
 func play_fireball_spell(owner: Node, effect_root: Control, caster_card: Card, target_card: Card, size_scale := 1.0) -> void:
@@ -2447,6 +2500,216 @@ func create_baptism_wave_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "BaptismWaveEffect", create_baptism_wave_effect_style(), 1.16)
 
 
+func create_monkey_spell_symbol(target_rect: Rect2, animation_key: String) -> Label:
+	var label := Label.new()
+	label.name = "MonkeySpellSymbol"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = get_monkey_spell_symbol(animation_key)
+	label.size = target_rect.size * get_monkey_symbol_size_multiplier(animation_key)
+	label.pivot_offset = label.size * 0.5
+	label.global_position = target_rect.get_center() - label.pivot_offset
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	label.z_index = 2350
+	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * get_monkey_symbol_font_scale(animation_key)), 20))
+	label.add_theme_color_override("font_color", get_monkey_symbol_color(animation_key))
+	label.add_theme_color_override("font_shadow_color", get_monkey_symbol_shadow_color(animation_key))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	return label
+
+
+func create_monkey_spell_accents(target_rect: Rect2, animation_key: String) -> Array[Control]:
+	var accents: Array[Control] = []
+	match animation_key:
+		"fiery_eyes_golden_gaze":
+			for index in range(2):
+				var x_offset := (-0.18 if index == 0 else 0.18) * target_rect.size.x
+				accents.append(create_monkey_accent_panel(
+					target_rect,
+					"GoldenEyeSlit_%d" % index,
+					create_monkey_accent_style(Color(1.0, 0.78, 0.08, 0.82), Color(1.0, 0.96, 0.42, 0.96), 3, 999, Color(1.0, 0.42, 0.05, 0.66), 20),
+					Vector2(0.24, 0.055),
+					Vector2(x_offset, -target_rect.size.y * 0.13)
+				))
+			for index in range(3):
+				accents.append(create_monkey_accent_panel(
+					target_rect,
+					"GoldenGazeRay_%d" % index,
+					create_monkey_accent_style(Color(1.0, 0.60, 0.02, 0.42), Color(1.0, 0.92, 0.30, 0.66), 2, 3, Color(1.0, 0.46, 0.02, 0.45), 12),
+					Vector2(0.58, 0.020),
+					Vector2(0.0, target_rect.size.y * (-0.02 + float(index) * 0.10))
+				))
+		"somersault_cloud":
+			for index in range(5):
+				var angle := -PI * 0.85 + float(index) * PI * 0.24
+				accents.append(create_monkey_accent_panel(
+					target_rect,
+					"CloudPuff_%d" % index,
+					create_monkey_accent_style(Color(0.90, 0.96, 1.0, 0.78), Color(1.0, 0.98, 0.78, 0.70), 2, 999, Color(0.80, 0.94, 1.0, 0.40), 18),
+					Vector2(0.18, 0.12),
+					Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.25
+				))
+			accents.append(create_monkey_accent_panel(
+				target_rect,
+				"CloudGoldTrail",
+				create_monkey_accent_style(Color(1.0, 0.70, 0.10, 0.36), Color(1.0, 0.94, 0.44, 0.72), 3, 999, Color(1.0, 0.62, 0.10, 0.45), 18),
+				Vector2(0.72, 0.030),
+				Vector2(0.0, target_rect.size.y * 0.20)
+			))
+		"body_beyond_body":
+			for index in range(7):
+				var angle := TAU * float(index) / 7.0 - PI * 0.5
+				var hair := create_monkey_accent_panel(
+					target_rect,
+					"HairCloneStrand_%d" % index,
+					create_monkey_accent_style(Color(0.96, 0.86, 0.62, 0.72), Color(1.0, 0.96, 0.78, 0.80), 2, 999, Color(1.0, 0.78, 0.36, 0.36), 10),
+					Vector2(0.035, 0.18),
+					Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.30
+				)
+				hair.rotation = angle + PI * 0.5
+				accents.append(hair)
+		"bronze_head_iron_arms":
+			for index in range(4):
+				var y_offset := target_rect.size.y * (-0.22 + float(index) * 0.15)
+				accents.append(create_monkey_accent_panel(
+					target_rect,
+					"BronzePlate_%d" % index,
+					create_monkey_accent_style(Color(0.66, 0.42, 0.18, 0.46), Color(1.0, 0.76, 0.36, 0.88), 3, 7, Color(1.0, 0.58, 0.20, 0.35), 16),
+					Vector2(0.68, 0.055),
+					Vector2(0.0, y_offset)
+				))
+			for index in range(6):
+				var angle := TAU * float(index) / 6.0
+				accents.append(create_monkey_accent_panel(
+					target_rect,
+					"BronzeRivet_%d" % index,
+					create_monkey_accent_style(Color(1.0, 0.82, 0.38, 0.88), Color(1.0, 0.98, 0.70, 0.80), 2, 999, Color(1.0, 0.62, 0.20, 0.46), 10),
+					Vector2(0.055, 0.055),
+					Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.32
+				))
+		"immortal_peach":
+			accents.append(create_monkey_accent_panel(
+				target_rect,
+				"PeachFruit",
+				create_monkey_accent_style(Color(1.0, 0.46, 0.62, 0.82), Color(1.0, 0.88, 0.60, 0.90), 4, 999, Color(1.0, 0.36, 0.58, 0.56), 20),
+				Vector2(0.30, 0.24),
+				Vector2(0.0, target_rect.size.y * 0.06)
+			))
+			for index in range(2):
+				var leaf := create_monkey_accent_panel(
+					target_rect,
+					"PeachLeaf_%d" % index,
+					create_monkey_accent_style(Color(0.42, 1.0, 0.34, 0.70), Color(0.86, 1.0, 0.58, 0.82), 2, 999, Color(0.40, 1.0, 0.24, 0.36), 12),
+					Vector2(0.20, 0.055),
+					Vector2(target_rect.size.x * (-0.08 if index == 0 else 0.08), -target_rect.size.y * 0.16)
+				)
+				leaf.rotation = -0.52 if index == 0 else 0.52
+				accents.append(leaf)
+		"drive_spirit":
+			for index in range(3):
+				var talisman := create_monkey_accent_label(target_rect, "敕", "DriveSpiritTalisman_%d" % index, Color(1.0, 0.90, 0.46, 0.94), Color(0.18, 0.08, 0.02, 0.75), 0.22)
+				talisman.position += Vector2(target_rect.size.x * (-0.24 + float(index) * 0.24), target_rect.size.y * (-0.10 + float(index % 2) * 0.18))
+				talisman.rotation = -0.18 + float(index) * 0.18
+				accents.append(talisman)
+			accents.append(create_monkey_accent_panel(
+				target_rect,
+				"DriveSpiritSweep",
+				create_monkey_accent_style(Color(0.82, 1.0, 0.90, 0.30), Color(1.0, 0.96, 0.62, 0.82), 4, 999, Color(0.70, 1.0, 0.86, 0.44), 22),
+				Vector2(0.82, 0.035),
+				Vector2(0.0, target_rect.size.y * 0.22)
+			))
+		"immobilize":
+			for index in range(4):
+				var bar := create_monkey_accent_panel(
+					target_rect,
+					"ImmobilizeSealBar_%d" % index,
+					create_monkey_accent_style(Color(1.0, 0.72, 0.08, 0.40), Color(1.0, 0.95, 0.42, 0.86), 3, 5, Color(1.0, 0.64, 0.04, 0.42), 16),
+					Vector2(0.72, 0.035),
+					Vector2(0.0, target_rect.size.y * (-0.28 + float(index) * 0.19))
+				)
+				bar.rotation = -0.08 if index % 2 == 0 else 0.08
+				accents.append(bar)
+		"gather_scatter_qi":
+			for index in range(6):
+				var mist := create_monkey_accent_panel(
+					target_rect,
+					"QiMist_%d" % index,
+					create_monkey_accent_style(Color(0.82, 0.94, 1.0, 0.34), Color(0.96, 1.0, 1.0, 0.50), 2, 999, Color(0.70, 0.92, 1.0, 0.28), 12),
+					Vector2(0.10 + float(index % 3) * 0.05, 0.028),
+					Vector2(target_rect.size.x * (-0.30 + float(index % 3) * 0.30), target_rect.size.y * (-0.20 + floorf(float(index) / 3.0) * 0.38))
+				)
+				mist.rotation = -0.45 + float(index) * 0.18
+				accents.append(mist)
+		"heavenly_form":
+			for index in range(2):
+				var pillar := create_monkey_accent_panel(
+					target_rect,
+					"HeavenlyPillar_%d" % index,
+					create_monkey_accent_style(Color(1.0, 0.70, 0.18, 0.28), Color(1.0, 0.92, 0.44, 0.78), 5, 8, Color(1.0, 0.54, 0.12, 0.46), 24),
+					Vector2(0.055, 0.82),
+					Vector2(target_rect.size.x * (-0.42 if index == 0 else 0.42), 0.0)
+				)
+				pillar.rotation = -0.06 if index == 0 else 0.06
+				accents.append(pillar)
+		_:
+			accents.append(create_monkey_accent_panel(
+				target_rect,
+				"MonkeyDefaultAccent",
+				create_monkey_accent_style(Color(1.0, 0.72, 0.16, 0.32), Color(1.0, 0.92, 0.46, 0.78), 4, 999, Color(1.0, 0.54, 0.10, 0.42), 20),
+				Vector2(0.72, 0.035),
+				Vector2.ZERO
+			))
+	return accents
+
+
+func create_monkey_accent_panel(
+	target_rect: Rect2,
+	panel_name: String,
+	style: StyleBoxFlat,
+	size_multiplier: Vector2,
+	center_offset: Vector2
+) -> Panel:
+	var panel := Panel.new()
+	panel.name = panel_name
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size = Vector2(target_rect.size.x * size_multiplier.x, target_rect.size.y * size_multiplier.y)
+	panel.pivot_offset = panel.size * 0.5
+	panel.global_position = target_rect.get_center() + center_offset - panel.pivot_offset
+	panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	panel.z_index = 2340
+	panel.add_theme_stylebox_override("panel", style)
+	return panel
+
+
+func create_monkey_accent_label(
+	target_rect: Rect2,
+	text: String,
+	label_name: String,
+	font_color: Color,
+	shadow_color: Color,
+	size_multiplier: float
+) -> Label:
+	var label := Label.new()
+	label.name = label_name
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = text
+	label.size = Vector2(target_rect.size.x * size_multiplier, target_rect.size.x * size_multiplier)
+	label.pivot_offset = label.size * 0.5
+	label.global_position = target_rect.get_center() - label.pivot_offset
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	label.z_index = 2345
+	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * size_multiplier * 0.76), 15))
+	label.add_theme_color_override("font_color", font_color)
+	label.add_theme_color_override("font_shadow_color", shadow_color)
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	return label
+
+
 func create_rect_spell_effect(target_rect: Rect2, effect_name: String, style: StyleBoxFlat, size_multiplier: float) -> Panel:
 	var effect := Panel.new()
 	effect.name = effect_name
@@ -2458,6 +2721,236 @@ func create_rect_spell_effect(target_rect: Rect2, effect_name: String, style: St
 	effect.z_index = 2300
 	effect.add_theme_stylebox_override("panel", style)
 	return effect
+
+
+func create_monkey_spell_aura_style(animation_key: String) -> StyleBoxFlat:
+	match animation_key:
+		"somersault_cloud":
+			return create_monkey_accent_style(Color(0.62, 0.86, 1.0, 0.18), Color(1.0, 0.96, 0.70, 0.76), 6, 999, Color(0.76, 0.92, 1.0, 0.42), 34)
+		"body_beyond_body":
+			return create_monkey_accent_style(Color(0.86, 0.76, 0.50, 0.15), Color(1.0, 0.88, 0.44, 0.78), 6, 999, Color(1.0, 0.70, 0.22, 0.38), 30)
+		"bronze_head_iron_arms":
+			return create_monkey_accent_style(Color(0.50, 0.28, 0.12, 0.20), Color(1.0, 0.72, 0.30, 0.86), 8, 22, Color(1.0, 0.48, 0.12, 0.48), 36)
+		"immortal_peach":
+			return create_monkey_accent_style(Color(1.0, 0.36, 0.54, 0.16), Color(1.0, 0.84, 0.54, 0.84), 7, 999, Color(1.0, 0.42, 0.62, 0.42), 34)
+		"drive_spirit":
+			return create_monkey_accent_style(Color(0.34, 0.74, 0.68, 0.14), Color(1.0, 0.92, 0.42, 0.82), 7, 18, Color(0.74, 1.0, 0.86, 0.42), 32)
+		"immobilize":
+			return create_monkey_accent_style(Color(0.76, 0.34, 0.02, 0.20), Color(1.0, 0.84, 0.22, 0.92), 8, 10, Color(1.0, 0.58, 0.04, 0.54), 38)
+		"gather_scatter_qi":
+			return create_monkey_accent_style(Color(0.72, 0.88, 1.0, 0.12), Color(0.94, 1.0, 1.0, 0.58), 5, 999, Color(0.74, 0.94, 1.0, 0.34), 28)
+		"heavenly_form":
+			return create_monkey_accent_style(Color(1.0, 0.58, 0.08, 0.16), Color(1.0, 0.90, 0.34, 0.92), 9, 16, Color(1.0, 0.42, 0.04, 0.56), 42)
+		_:
+			return create_monkey_accent_style(Color(1.0, 0.62, 0.10, 0.18), Color(1.0, 0.88, 0.38, 0.82), 7, 999, Color(1.0, 0.48, 0.08, 0.44), 32)
+
+
+func create_monkey_spell_core_style(animation_key: String) -> StyleBoxFlat:
+	match animation_key:
+		"fiery_eyes_golden_gaze":
+			return create_monkey_accent_style(Color(1.0, 0.54, 0.04, 0.72), Color(1.0, 0.98, 0.48, 0.94), 4, 999, Color(1.0, 0.32, 0.02, 0.68), 28)
+		"somersault_cloud":
+			return create_monkey_accent_style(Color(0.92, 0.98, 1.0, 0.70), Color(1.0, 0.96, 0.70, 0.88), 3, 999, Color(0.84, 0.96, 1.0, 0.56), 24)
+		"bronze_head_iron_arms":
+			return create_monkey_accent_style(Color(0.78, 0.48, 0.20, 0.48), Color(1.0, 0.82, 0.44, 0.92), 5, 10, Color(1.0, 0.56, 0.12, 0.54), 26)
+		"immortal_peach":
+			return create_monkey_accent_style(Color(1.0, 0.50, 0.66, 0.70), Color(1.0, 0.92, 0.62, 0.92), 4, 999, Color(1.0, 0.38, 0.62, 0.58), 26)
+		"drive_spirit":
+			return create_monkey_accent_style(Color(0.98, 0.86, 0.34, 0.42), Color(1.0, 0.98, 0.70, 0.92), 4, 7, Color(1.0, 0.78, 0.22, 0.42), 22)
+		"immobilize":
+			return create_monkey_accent_style(Color(1.0, 0.64, 0.06, 0.46), Color(1.0, 0.96, 0.34, 0.96), 5, 6, Color(1.0, 0.48, 0.02, 0.58), 28)
+		"gather_scatter_qi":
+			return create_monkey_accent_style(Color(0.86, 0.96, 1.0, 0.30), Color(1.0, 1.0, 1.0, 0.72), 3, 999, Color(0.78, 0.96, 1.0, 0.38), 22)
+		"heavenly_form":
+			return create_monkey_accent_style(Color(1.0, 0.72, 0.16, 0.36), Color(1.0, 0.96, 0.48, 0.96), 6, 12, Color(1.0, 0.42, 0.04, 0.62), 34)
+		_:
+			return create_monkey_accent_style(Color(1.0, 0.68, 0.14, 0.42), Color(1.0, 0.94, 0.48, 0.88), 4, 999, Color(1.0, 0.48, 0.10, 0.48), 24)
+
+
+func create_monkey_accent_style(
+	bg_color: Color,
+	border_color: Color,
+	border_width: int,
+	corner_radius: int,
+	shadow_color: Color,
+	shadow_size: int
+) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(corner_radius)
+	style.shadow_color = shadow_color
+	style.shadow_size = shadow_size
+	return style
+
+
+func get_monkey_spell_symbol(animation_key: String) -> String:
+	match animation_key:
+		"fiery_eyes_golden_gaze":
+			return "眼"
+		"somersault_cloud":
+			return "云"
+		"body_beyond_body":
+			return "毫"
+		"bronze_head_iron_arms":
+			return "铁"
+		"immortal_peach":
+			return "桃"
+		"drive_spirit":
+			return "敕"
+		"immobilize":
+			return "定"
+		"gather_scatter_qi":
+			return "气"
+		"heavenly_form":
+			return "法"
+		_:
+			return "猿"
+
+
+func get_monkey_symbol_color(animation_key: String) -> Color:
+	match animation_key:
+		"somersault_cloud", "gather_scatter_qi":
+			return Color(0.92, 0.98, 1.0, 0.96)
+		"immortal_peach":
+			return Color(1.0, 0.84, 0.58, 0.98)
+		"drive_spirit":
+			return Color(1.0, 0.94, 0.52, 0.98)
+		"bronze_head_iron_arms":
+			return Color(1.0, 0.76, 0.34, 0.98)
+		_:
+			return Color(1.0, 0.88, 0.30, 0.98)
+
+
+func get_monkey_symbol_shadow_color(animation_key: String) -> Color:
+	match animation_key:
+		"somersault_cloud", "gather_scatter_qi":
+			return Color(0.05, 0.18, 0.28, 0.86)
+		"drive_spirit":
+			return Color(0.14, 0.06, 0.02, 0.88)
+		_:
+			return Color(0.24, 0.08, 0.02, 0.88)
+
+
+func get_monkey_symbol_size_multiplier(animation_key: String) -> Vector2:
+	match animation_key:
+		"heavenly_form":
+			return Vector2(0.92, 0.92)
+		"immobilize":
+			return Vector2(0.66, 0.66)
+		_:
+			return Vector2(0.58, 0.58)
+
+
+func get_monkey_symbol_font_scale(animation_key: String) -> float:
+	match animation_key:
+		"heavenly_form":
+			return 0.56
+		"immobilize":
+			return 0.42
+		_:
+			return 0.36
+
+
+func get_monkey_spell_core_size(animation_key: String) -> float:
+	match animation_key:
+		"heavenly_form":
+			return 0.82
+		"bronze_head_iron_arms", "immobilize":
+			return 0.66
+		"somersault_cloud":
+			return 0.74
+		_:
+			return 0.54
+
+
+func get_monkey_spell_core_fade_scale(animation_key: String) -> Vector2:
+	match animation_key:
+		"gather_scatter_qi":
+			return Vector2(0.34, 0.34)
+		"heavenly_form":
+			return Vector2(1.46, 1.46)
+		_:
+			return Vector2(1.36, 1.36)
+
+
+func get_monkey_symbol_fade_scale(animation_key: String) -> Vector2:
+	match animation_key:
+		"gather_scatter_qi", "body_beyond_body":
+			return Vector2(0.45, 0.45)
+		"heavenly_form":
+			return Vector2(1.34, 1.34)
+		_:
+			return Vector2(0.74, 0.74)
+
+
+func get_monkey_symbol_drift(target_rect: Rect2, animation_key: String) -> Vector2:
+	match animation_key:
+		"somersault_cloud":
+			return Vector2(target_rect.size.x * 0.24, -target_rect.size.y * 0.16)
+		"gather_scatter_qi":
+			return Vector2(0.0, -target_rect.size.y * 0.24)
+		"heavenly_form":
+			return Vector2(0.0, -target_rect.size.y * 0.08)
+		_:
+			return Vector2.ZERO
+
+
+func get_monkey_spell_rotation(animation_key: String) -> float:
+	match animation_key:
+		"somersault_cloud":
+			return 0.58
+		"body_beyond_body":
+			return -0.82
+		"gather_scatter_qi":
+			return 0.72
+		"heavenly_form":
+			return 0.12
+		_:
+			return 0.36
+
+
+func get_monkey_accent_alpha(animation_key: String, index: int) -> float:
+	match animation_key:
+		"gather_scatter_qi":
+			return 0.58 + float(index % 3) * 0.08
+		"body_beyond_body":
+			return 0.82
+		"heavenly_form":
+			return 0.78
+		_:
+			return 0.90
+
+
+func get_monkey_accent_drift(target_rect: Rect2, animation_key: String, index: int) -> Vector2:
+	match animation_key:
+		"fiery_eyes_golden_gaze":
+			return Vector2(target_rect.size.x * (0.30 + float(index % 2) * 0.10), target_rect.size.y * 0.03)
+		"somersault_cloud":
+			return Vector2(target_rect.size.x * 0.22, -target_rect.size.y * 0.14)
+		"body_beyond_body":
+			var angle := TAU * float(index) / 7.0 - PI * 0.5
+			return Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.24
+		"gather_scatter_qi":
+			return Vector2(target_rect.size.x * (-0.08 + float(index % 3) * 0.08), -target_rect.size.y * 0.28)
+		"heavenly_form":
+			return Vector2(0.0, -target_rect.size.y * 0.12)
+		_:
+			var angle := TAU * float(index) / 6.0
+			return Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.10
+
+
+func get_monkey_accent_fade_scale(animation_key: String, index: int) -> Vector2:
+	match animation_key:
+		"gather_scatter_qi", "body_beyond_body":
+			return Vector2(0.28, 0.28)
+		"heavenly_form":
+			return Vector2(1.24 + float(index) * 0.08, 1.24 + float(index) * 0.08)
+		"immobilize":
+			return Vector2(1.36, 1.08)
+		_:
+			return Vector2(1.42, 1.42)
 
 
 func create_heal_spell_effect_style() -> StyleBoxFlat:
