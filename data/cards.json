@@ -2652,6 +2652,34 @@
 		]
 	},
 	{
+		"id": "beastmen",
+		"name": "beastmen",
+		"displayName": "野兽人",
+		"description": "野兽人崇尚野性本能与混沌腐蚀，兽群在血战中进化，在牺牲与吞噬中获得新的力量。卡扎克·独眼统御角兽、牛头怪与人马兽，将战场变成弱肉强食的兽径。",
+		"heroes": [
+			{
+				"card_id": "kazak_one_eye",
+				"attached_cards": []
+			}
+		],
+		"cards": [
+			{
+				"id": "kazak_one_eye",
+				"name": "卡扎克·独眼",
+				"description": "野兽人英雄。卡扎克·独眼是兽群中最凶悍的兽王，他以战吼驱使同族冲锋，也能在牺牲友方野兽后吞噬其力量。当前为基础英雄实现，后续会逐步接入同类进化、混沌腐蚀与兽王献祭机制。",
+				"url": "res://assets/img/野兽人/卡扎克·独眼.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"attack": 4,
+				"health": 16,
+				"effects": []
+			}
+		]
+	},
+	{
 		"id": "neutral",
 		"name": "neutral",
 		"displayName": "中立牌库",

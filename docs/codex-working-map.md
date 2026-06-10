@@ -29,6 +29,7 @@
 
 - 常规卡牌放在种族的 `cards[]`。
 - 衍生牌放在对应种族的 `tokens[]`。
+- 新增可选种族时，先在 `cards.json` 中加入种族块、`heroes[]` 和至少一张英雄牌；中立牌库必须继续保持最后一个 faction。
 - 英雄附属牌必须加入 `heroes[].attached_cards`。
 - 指定拥有者英雄/卡牌时，优先使用 `target: "owner_card_by_id"` 加 `target_card_id` 或 `card_ids`。
 - 修改后运行 `python tools/validate_cards.py`。
