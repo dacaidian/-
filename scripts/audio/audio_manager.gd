@@ -78,6 +78,7 @@ func play_bgm(audio_key: String) -> void:
 
 	var stream := load_stream_from_entry(entry)
 	if stream != null:
+		apply_stream_loop_setting(stream, bool(entry.get("loop", false)))
 		bgm_player.stream = stream
 		bgm_player.volume_db = float(entry.get("volume_db", -8.0))
 		bgm_player.bus = get_existing_bus(str(entry.get("bus", DEFAULT_BGM_BUS)))
@@ -162,6 +163,16 @@ func load_stream_from_entry(entry: Dictionary) -> AudioStream:
 
 	var resource := ResourceLoader.load(path)
 	return resource as AudioStream
+
+
+func apply_stream_loop_setting(stream: AudioStream, should_loop: bool) -> void:
+	if stream == null:
+		return
+
+	for property in stream.get_property_list():
+		if str(property.get("name", "")) == "loop":
+			stream.set("loop", should_loop)
+			return
 
 
 func get_available_sfx_player() -> AudioStreamPlayer:

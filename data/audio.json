@@ -1,9 +1,9 @@
 {
 	"bgm": {
 		"battle_default": {
-			"path": "",
-			"procedural": true,
-			"volume_db": -18.0,
+			"path": "res://assets/music/onetent-angel-183090.mp3",
+			"procedural": false,
+			"volume_db": -10.0,
 			"bus": "Music",
 			"loop": true
 		}
