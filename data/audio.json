@@ -1,0 +1,23 @@
+{
+	"bgm": {
+		"battle_default": {
+			"path": "",
+			"procedural": true,
+			"volume_db": -18.0,
+			"bus": "Music",
+			"loop": true
+		}
+	},
+	"sfx": {
+		"attack_melee": {
+			"path": "",
+			"volume_db": -4.0,
+			"bus": "SFX"
+		},
+		"attack_ranged": {
+			"path": "",
+			"volume_db": -4.0,
+			"bus": "SFX"
+		}
+	}
+}

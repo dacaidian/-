@@ -10,6 +10,7 @@ const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_di
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 const GameAnimationResolverScript := preload("res://scripts/game/game_animation_resolver.gd")
+const AudioManagerScript := preload("res://scripts/audio/audio_manager.gd")
 const BoardSlotResolverScript := preload("res://scripts/game/board_slot_resolver.gd")
 const ActionHintResolverScript := preload("res://scripts/game/action_hint_resolver.gd")
 const RevealResolverScript := preload("res://scripts/game/reveal_resolver.gd")
@@ -47,6 +48,10 @@ const RIGHT_HUD_GAP := 12.0
 
 # 静态卡牌配置文件路径。
 @export var cards_json_path := "res://data/cards.json"
+
+# 音频配置文件路径。背景音乐和音效 key 到资源路径的映射都在这里维护。
+@export var audio_config_path := "res://data/audio.json"
+@export var default_battle_bgm_key := "battle_default"
 
 # 默认参战种族；入口选择页会覆盖这些值。
 @export var player_faction_ids: Array[String] = ["silver_hand", "dalaran_council"]
@@ -139,6 +144,7 @@ var equipment_display_controller := EquipmentDisplayControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
 var card_animation_controller := CardAnimationControllerScript.new()
 var game_animation_resolver := GameAnimationResolverScript.new()
+var audio_manager := AudioManagerScript.new()
 var board_slot_resolver := BoardSlotResolverScript.new()
 var action_hint_resolver := ActionHintResolverScript.new()
 var reveal_resolver := RevealResolverScript.new()
@@ -178,6 +184,7 @@ func _ready() -> void:
 
 	initialize_players()
 	setup_card_animation_controller()
+	setup_audio_manager()
 	setup_turn_status_view()
 	setup_faction_time_panel_view()
 	setup_faction_skill_panel_view()
@@ -192,6 +199,7 @@ func _ready() -> void:
 	initialize_board()
 	setup_card_pool_view()
 	update_card_pool_view()
+	start_battle_music()
 	schedule_ai_turn_if_needed()
 
 
@@ -581,6 +589,26 @@ func setup_card_animation_controller() -> void:
 		"heal_spell_effect_color": heal_spell_effect_color,
 		"heal_spell_effect_glow_color": heal_spell_effect_glow_color
 	})
+
+
+func setup_audio_manager() -> void:
+	if audio_manager.get_parent() == null:
+		add_child(audio_manager)
+	audio_manager.setup(audio_config_path)
+
+
+func start_battle_music() -> void:
+	if default_battle_bgm_key == "":
+		return
+	audio_manager.play_bgm(default_battle_bgm_key)
+
+
+func play_sfx(audio_key: String) -> void:
+	audio_manager.play_sfx(audio_key)
+
+
+func play_spell_sfx(spell_data: Dictionary) -> void:
+	audio_manager.play_spell_sfx(spell_data)
 
 
 func setup_turn_status_view() -> void:

@@ -52,6 +52,7 @@ var actions: Array[Dictionary] = []
 var mounted_attacks: Array[Dictionary] = []
 var target_rule := ""
 var animation := ""
+var audio := ""
 var equipment_type := ""
 var attack := 0
 var health := 0
@@ -143,6 +144,7 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.level = maxi(int(card_dictionary.get("level", 1)), 1)
 	data.target_rule = str(card_dictionary.get("target_rule", ""))
 	data.animation = str(card_dictionary.get("animation", ""))
+	data.audio = str(card_dictionary.get("audio", ""))
 	data.equipment_type = str(card_dictionary.get("equipment_type", ""))
 	data.attack = int(card_dictionary.get("attack", 0))
 	data.health = int(card_dictionary.get("health", 0))

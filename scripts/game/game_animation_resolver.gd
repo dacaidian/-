@@ -40,6 +40,7 @@ func play_card_attack_animation(
 		return
 
 	game_manager.is_resolving_card_action = true
+	game_manager.play_sfx("attack_melee" if is_melee_attack else "attack_ranged")
 	await game_manager.card_animation_controller.play_card_attack(
 		game_manager,
 		game_manager.get_parent(),
@@ -65,6 +66,7 @@ func play_spell_cast_animation(
 		return
 
 	game_manager.is_resolving_card_action = true
+	game_manager.play_spell_sfx(spell_data)
 	await game_manager.card_animation_controller.play_spell_cast(
 		game_manager,
 		get_overlay_animation_root(game_manager),
@@ -90,6 +92,7 @@ func play_area_spell_animation(
 		return
 
 	game_manager.is_resolving_card_action = true
+	game_manager.play_spell_sfx(spell_data)
 	await game_manager.card_animation_controller.play_area_spell_cast(
 		game_manager,
 		get_overlay_animation_root(game_manager),
@@ -237,8 +240,11 @@ func play_hand_spell_card_animation(
 	var spell_data := {
 		"animation": animation_override if animation_override != "" else (card_data.animation if card_data.animation != "" else "heal")
 	}
+	if card_data.audio != "":
+		spell_data["audio"] = card_data.audio
 
 	game_manager.is_resolving_card_action = true
+	game_manager.play_spell_sfx(spell_data)
 
 	if target_state != null:
 		var target_card: Card = game_manager.get_card_for_state(target_state)
