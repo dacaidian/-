@@ -18,6 +18,8 @@
 - `scripts/game/`：对局编排、目标选择、触发、死亡、手牌使用、被动、棋盘层、AI 和比赛配置。
 - `scripts/ui/`：动画、状态显示、手牌抽屉、装备面板、种族面板、胜利画面等。
 - `scripts/ai/`：AI 候选行为生成、评估和执行。
+- `scripts/audio/`：背景音乐、音效池和音频配置解析。
+- `assets/`：卡面、UI、音乐和未来 VFX 贴图资源。
 
 ## 核心数据模型
 
@@ -188,6 +190,35 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
 音频表现由 `AudioManager` 统一管理，配置在 `data/audio.json`。`GameManager` 只暴露 `play_sfx()`、`play_spell_sfx()` 和 `start_battle_music()` 门面；规则层不直接持有 `AudioStreamPlayer`，视觉动画层也不直接加载音频资源。进入棋盘后默认播放 `battle_default` 背景音乐；没有外部音频文件时可使用程序化 BGM 兜底。攻击音效使用 `attack_melee` / `attack_ranged`，法术优先读取卡牌或 spell action 的 `audio` key，否则可按 `spell_<animation>` 约定扩展。
+
+### 特效资源与未来 VFX 管线
+
+当前代码型特效集中在 `CardAnimationController`，适合快速实现和小型表现。未来若要制作更复杂的粒子、shader、序列帧、投射物、持续状态和手牌释放特效，应逐步引入独立 VFX 管线：
+
+- `VfxManager`：表现层入口，负责播放一次性、投射物、区域、持续状态和 UI 锚点特效。
+- `VfxRegistry` / `data/vfx.json`：把规则侧的 `animation` 或未来 `vfx` key 映射到具体 PackedScene、贴图、音效、持续时间和挂载层。
+- `scenes/vfx/`：存放可复用 VFX 场景，例如火球、治疗、净化、毒、变身、法天象地、月相、魅惑等。
+- `assets/vfx/source/`：外部购买或下载的原始素材。
+- `assets/vfx/textures/`：项目内实际使用的清理后贴图、sprite sheet、flipbook。
+- `assets/audio/sfx/`：法术、攻击、UI 和环境音效。
+
+功能边界：
+
+- 规则层只发出“发生了什么”，例如伤害、治疗、状态施加、变身、攻击命中。
+- `GameAnimationResolver` 把规则事件转换为表现事件，并查找棋盘、手牌、牌池或 UI 锚点。
+- `VfxManager` 负责实例化特效和生命周期，不读取或修改规则数据。
+- `AudioManager` 负责音频播放，VFX 场景不直接 new 音频播放器，最多声明音效 key。
+- `CardStatusOverlay` 仍负责持续状态图标、数字和可读性强的战场状态；不要用持续粒子替代所有状态信息。
+
+素材来源建议：
+
+- Godot Asset Library：Godot 原生 shader、粒子、插件和示例。
+- itch.io / GameDev Market：2D 法术、投射物、impact、sprite sheet 和音效包。
+- Kenney：授权友好的 UI、图标、占位素材和基础音效。
+- OpenGameArt / Freesound：免费素材来源，但必须逐项确认许可证。
+- Unity Asset Store / Fab / ArtStation / Gumroad：适合买通用 PNG 序列、flipbook、贴图、模型和音效；慎用强依赖 Unity ParticleSystem、URP、Niagara 或 Unreal 蓝图的成品特效。
+
+引入外部素材时必须记录来源和授权。优先选择 CC0、明确可商用或项目购买授权；避免把授权不清的素材直接提交进仓库。
 
 ## 文档与编码
 

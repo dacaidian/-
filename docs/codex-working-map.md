@@ -252,6 +252,8 @@
 - `scripts/game/game_animation_resolver.gd`
 - `scripts/ui/card_animation_controller.gd`
 - `scripts/ui/card_status_overlay.gd`
+- `scripts/audio/audio_manager.gd`
+- `data/audio.json`
 - `scenes/card/scripts/card.gd`
 - `scripts/ui/hand_drawer_controller.gd`
 - 相关 panel controller
@@ -265,6 +267,25 @@
 - 持续状态表现放在 `CardStatusOverlay`。
 - 数值图标放在 `Card` 的状态/数值堆叠区域。
 - UI 控制器不拥有玩法规则。
+
+## VFX 与素材资源
+
+优先读：
+
+- `docs/architecture.md` 的“特效资源与未来 VFX 管线”。
+- `scripts/game/game_animation_resolver.gd`
+- `scripts/ui/card_animation_controller.gd`
+- `scripts/audio/audio_manager.gd`
+- `data/audio.json`
+- 未来 `data/vfx.json`、`scripts/vfx/`、`scenes/vfx/`
+
+常见规则：
+
+- 小型代码特效继续放在 `CardAnimationController`；复杂粒子、shader、投射物、区域特效和持续特效应逐步迁移到 `VfxManager` + PackedScene。
+- 规则层不直接实例化 VFX，也不直接加载贴图、粒子或音频。
+- 外部素材进入项目前，保留来源和授权信息；优先使用 CC0、明确可商用或已购买授权的素材。
+- 推荐素材来源：Godot Asset Library、itch.io、GameDev Market、Kenney、OpenGameArt、Freesound。Unity/Fab/ArtStation/Gumroad 素材只优先使用通用 PNG 序列、sprite sheet、flipbook、贴图、模型和音频。
+- 外部素材建议先放 `assets/vfx/source/`，处理后的项目运行资源放 `assets/vfx/textures/`；音效放 `assets/audio/sfx/`。
 
 ## 验证与提交清单
 
