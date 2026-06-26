@@ -49,7 +49,7 @@ func apply_transform(target_state: CardState, target_data: CardData, effect_data
 	var original_snapshot := target_state.create_card_snapshot()
 	var owner_id := target_state.owner_id
 
-	target_state.set_card_data(target_data)
+	target_state.transform_to_card_data(target_data)
 	target_state.owner_id = owner_id
 	target_state.is_face_up = true
 

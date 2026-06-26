@@ -536,8 +536,55 @@ func restore_from_transform_status(status: CardStatus) -> bool:
 	if original_snapshot.is_empty():
 		return false
 
+	var action_economy_snapshot := create_action_economy_snapshot()
 	apply_card_snapshot(original_snapshot)
+	apply_action_economy_after_form_change(action_economy_snapshot)
 	return true
+
+
+func transform_to_card_data(target_data: CardData) -> void:
+	if target_data == null:
+		return
+
+	var action_economy_snapshot := create_action_economy_snapshot()
+	set_card_data(target_data)
+	apply_action_economy_after_form_change(action_economy_snapshot)
+
+
+func create_action_economy_snapshot() -> Dictionary:
+	var spent_mounted_uses := {}
+	for action_id in mounted_attack_max_uses:
+		var max_uses := int(mounted_attack_max_uses.get(action_id, 0))
+		var current_uses := int(mounted_attack_uses.get(action_id, max_uses))
+		spent_mounted_uses[str(action_id)] = maxi(max_uses - current_uses, 0)
+
+	return {
+		"spent_movement": maxi(max_movement - current_movement, 0),
+		"spent_attacks": maxi(max_attack_speed - current_attacks, 0),
+		"spent_mounted_attack_uses": spent_mounted_uses,
+		"used_action_groups": used_action_groups.duplicate(),
+		"used_action_ids": used_action_ids.duplicate()
+	}
+
+
+func apply_action_economy_after_form_change(action_economy_snapshot: Dictionary) -> void:
+	var spent_movement := int(action_economy_snapshot.get("spent_movement", 0))
+	current_movement = maxi(max_movement - spent_movement, 0)
+
+	var spent_attacks := int(action_economy_snapshot.get("spent_attacks", 0))
+	current_attacks = maxi(max_attack_speed - spent_attacks, 0)
+
+	var spent_mounted_uses = action_economy_snapshot.get("spent_mounted_attack_uses", {})
+	if spent_mounted_uses is Dictionary:
+		for action_id in mounted_attack_max_uses.keys():
+			var max_uses := int(mounted_attack_max_uses.get(action_id, 0))
+			var spent_uses := int(spent_mounted_uses.get(action_id, 0))
+			mounted_attack_uses[action_id] = maxi(max_uses - spent_uses, 0)
+
+	used_action_groups = normalize_string_array(action_economy_snapshot.get("used_action_groups", []))
+	used_action_ids = normalize_string_array(action_economy_snapshot.get("used_action_ids", []))
+	refresh_current_main_actions()
+	state_changed.emit(self)
 
 
 func create_origin_snapshot() -> Dictionary:
