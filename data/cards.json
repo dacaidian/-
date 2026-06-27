@@ -2676,6 +2676,19 @@
 				"attack": 4,
 				"health": 16,
 				"effects": []
+			},
+			{
+				"id": "lesser_horned_beast",
+				"name": "劣角兽",
+				"description": "野兽人基础随从。低阶角兽血脉稀薄，却仍保留着野性冲撞的本能。",
+				"url": "res://assets/img/野兽人/劣角兽.png",
+				"type": "minion",
+				"count": 4,
+				"level": 1,
+				"keywords": [],
+				"attack": 2,
+				"health": 2,
+				"effects": []
 			}
 		]
 	},
