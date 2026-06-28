@@ -2872,6 +2872,26 @@
 				"effects": []
 			},
 			{
+				"id": "chaos_corruption",
+				"name": "混沌腐蚀",
+				"description": "野兽人种族规则：己方回合结束时，统计场上己方全部随从的混沌腐蚀总数。每10点混沌腐蚀，对全部敌方随从造成1点伤害。",
+				"url": "res://assets/img/野兽人/混沌腐蚀.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "chaos_corruption_burst",
+						"trigger": "after_turn_end",
+						"active_zone": "hand",
+						"threshold": 10,
+						"damage_per_threshold": 1
+					}
+				]
+			},
+			{
 				"id": "lesser_horned_beast",
 				"name": "劣角兽",
 				"description": "野兽人基础随从。低阶角兽血脉稀薄，却仍保留着野性冲撞的本能。",
