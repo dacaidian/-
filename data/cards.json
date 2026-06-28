@@ -232,7 +232,7 @@
 				"level": 3,
 				"keywords": [],
 				"attack": 4,
-				"health": 16,
+				"health": 12,
 				"effects": [
 					{
 						"id": "gain_attack",
