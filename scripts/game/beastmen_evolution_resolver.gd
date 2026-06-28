@@ -86,7 +86,7 @@ func resolve_kazak_slaughter(
 	if attack_gain > 0:
 		killer.set_current_attack(killer.current_attack + attack_gain)
 	if health_gain > 0:
-		killer.increase_max_health(health_gain)
+		killer.increase_max_health(health_gain, false)
 	killer.chaos_corruption += 1
 	killer.state_changed.emit(killer)
 
