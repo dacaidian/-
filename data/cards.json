@@ -2760,15 +2760,17 @@
 			{
 				"id": "great_horned_beast",
 				"name": "大角兽",
-				"description": "角兽继续吞噬同系血脉后的高阶形态，庞大身躯足以碾碎阵线。",
+				"description": "角兽继续吞噬同系血脉后的高阶巨兽形态，庞大身躯足以碾碎阵线。",
 				"url": "res://assets/img/野兽人/大角兽.png",
 				"type": "minion",
 				"count": 0,
 				"level": 1,
 				"evolution_line": "horned_beast",
-				"keywords": [],
-				"attack": 14,
-				"health": 14,
+				"keywords": [
+					"giant"
+				],
+				"attack": 10,
+				"health": 10,
 				"effects": []
 			},
 			{
