@@ -461,13 +461,14 @@ func add_to_hand_with_cooldown(
 	card_data: CardData,
 	cooldown_turns: int,
 	source := "",
-	tags: Array[String] = []
+	tags: Array[String] = [],
+	permanent_stat_overrides: Dictionary = {}
 ) -> void:
 	if card_data == null:
 		return
 
 	var hand_card_state := HandCardState.new()
-	hand_card_state.setup(card_data, id, cooldown_turns, source, tags)
+	hand_card_state.setup(card_data, id, cooldown_turns, source, tags, permanent_stat_overrides)
 	add_hand_card_state(hand_card_state)
 
 

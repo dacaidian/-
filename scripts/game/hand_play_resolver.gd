@@ -242,6 +242,9 @@ func execute_hand_minion_placement(
 	if not can_place_minion_on_target(target_state, game_manager, card_data):
 		return
 
+	var hand_card_state := player.get_hand_card_state_at(hand_index)
+	var permanent_stat_overrides := hand_card_state.get_permanent_stat_overrides() if hand_card_state != null and hand_card_state.has_permanent_stat_overrides() else {}
+
 	if not player.remove_from_hand_at(hand_index, card_data):
 		return
 
@@ -250,6 +253,8 @@ func execute_hand_minion_placement(
 		if aerial_state == null or not aerial_state.is_empty():
 			return
 		aerial_state.set_card_data(card_data)
+		if not permanent_stat_overrides.is_empty():
+			aerial_state.apply_permanent_stat_overrides_as_fresh_state(permanent_stat_overrides)
 		aerial_state.set_owner(player.id)
 		aerial_state.set_face_up(true)
 		await game_manager.resolve_slot_unit_entered(aerial_state)
@@ -269,6 +274,8 @@ func execute_hand_minion_placement(
 		refill_one_empty_slot_after_replacing_hidden_card(game_manager, target_state.slot_index)
 
 	target_state.set_card_data(card_data)
+	if not permanent_stat_overrides.is_empty():
+		target_state.apply_permanent_stat_overrides_as_fresh_state(permanent_stat_overrides)
 	target_state.set_owner(player.id)
 	target_state.set_face_up(true)
 	await game_manager.resolve_slot_unit_entered(target_state)

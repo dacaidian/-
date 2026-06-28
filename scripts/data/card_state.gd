@@ -33,6 +33,10 @@ var data: CardData
 # 后续坟场、复活、复制可以直接使用它，不需要重新回 JSON 查询。
 var origin: Dictionary = {}
 
+# 永久属性覆盖层。它的优先级高于 origin，但不污染 origin。
+# 例如卡扎克杀戮成长会写入这里；死亡清状态后重新入场仍保留，净化/驱散不会移除。
+var permanent_stat_overrides: Dictionary = {}
+
 # 当前是否允许玩家操作这张牌。
 var is_interactable := true
 
@@ -107,6 +111,7 @@ func set_card_data(value: CardData) -> void:
 		front_texture = null
 		back_texture = null
 		origin.clear()
+		permanent_stat_overrides.clear()
 		current_attack = 0
 		passive_attack_bonus = 0
 		passive_keywords.clear()
@@ -196,6 +201,7 @@ func set_card_data(value: CardData) -> void:
 			allowed_action_group_pairs.clear()
 		statuses.clear()
 		origin = create_origin_snapshot()
+		permanent_stat_overrides.clear()
 
 	state_changed.emit(self)
 
@@ -436,6 +442,7 @@ func create_card_snapshot() -> Dictionary:
 		"display_name": display_name,
 		"data": data,
 		"origin": origin.duplicate(true),
+		"permanent_stat_overrides": permanent_stat_overrides.duplicate(true),
 		"is_face_up": is_face_up,
 		"front_texture": front_texture,
 		"back_texture": back_texture,
@@ -478,6 +485,11 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		origin = snapshot_origin.duplicate(true)
 	else:
 		origin = {}
+	var snapshot_permanent_stat_overrides = snapshot.get("permanent_stat_overrides", {})
+	if snapshot_permanent_stat_overrides is Dictionary:
+		permanent_stat_overrides = snapshot_permanent_stat_overrides.duplicate(true)
+	else:
+		permanent_stat_overrides = {}
 	is_face_up = bool(snapshot.get("is_face_up", false))
 	front_texture = snapshot.get("front_texture") as Texture2D
 	back_texture = snapshot.get("back_texture") as Texture2D
@@ -518,6 +530,40 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	is_pending_death = false
 	is_selected = false
 	is_valid_target = false
+	state_changed.emit(self)
+
+
+func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> void:
+	if data == null:
+		return
+
+	permanent_stat_overrides = overrides.duplicate(true)
+	current_attack = int(permanent_stat_overrides.get("attack", origin.get("attack", current_attack)))
+	passive_attack_bonus = 0
+	status_attack_bonus = 0
+	status_attack_floor_debt = 0
+	status_max_health_bonus = 0
+	status_control_base_owner_id = ""
+	max_health = int(permanent_stat_overrides.get("health", origin.get("health", max_health)))
+	damage_taken = 0
+	shield = 0
+	armor = 0
+	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", chaos_corruption)))
+	reborn_health_values = normalize_int_array(origin.get("reborn_health_values", []))
+	max_movement = int(origin.get("movement", max_movement))
+	current_movement = max_movement
+	max_attack_speed = int(origin.get("attack_speed", max_attack_speed))
+	current_attacks = max_attack_speed
+	mounted_attack_max_uses = normalize_int_dictionary(origin.get("mounted_attack_max_uses", {}))
+	mounted_attack_uses.clear()
+	max_main_actions = int(origin.get("main_actions", max_main_actions))
+	current_main_actions = max_main_actions
+	used_action_groups.clear()
+	used_action_ids.clear()
+	allowed_action_group_pairs = normalize_string_array(origin.get("allowed_action_group_pairs", []))
+	statuses.clear()
+	is_pending_death = false
+	refresh_action_keyword_passives()
 	state_changed.emit(self)
 
 
@@ -703,20 +749,20 @@ func revive_from_reborn(health_value: int) -> void:
 	if status_control_base_owner_id != "":
 		revived_owner_id = status_control_base_owner_id
 
-	current_attack = int(origin.get("attack", data.attack))
+	current_attack = int(permanent_stat_overrides.get("attack", origin.get("attack", data.attack)))
 	passive_attack_bonus = 0
 	passive_keywords.clear()
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
 	status_max_health_bonus = 0
 	status_control_base_owner_id = ""
-	max_health = int(origin.get("health", data.health))
+	max_health = int(permanent_stat_overrides.get("health", origin.get("health", data.health)))
 	damage_taken = 0
 	if health_value > 0:
 		damage_taken = maxi(max_health - mini(health_value, max_health), 0)
 	shield = 0
 	armor = 0
-	chaos_corruption = int(origin.get("chaos_corruption", data.chaos_corruption))
+	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", data.chaos_corruption)))
 	reborn_health_values = remaining_reborn_values
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
 	current_movement = max_movement

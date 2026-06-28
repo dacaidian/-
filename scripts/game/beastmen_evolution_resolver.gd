@@ -88,6 +88,9 @@ func resolve_kazak_slaughter(
 	if health_gain > 0:
 		killer.increase_max_health(health_gain, false)
 	killer.chaos_corruption += 1
+	killer.permanent_stat_overrides["attack"] = killer.current_attack
+	killer.permanent_stat_overrides["health"] = killer.max_health
+	killer.permanent_stat_overrides["chaos_corruption"] = killer.chaos_corruption
 	killer.state_changed.emit(killer)
 
 	if game_manager.has_method("play_status_apply_animation"):

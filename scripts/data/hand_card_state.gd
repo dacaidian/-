@@ -8,6 +8,7 @@ var owner_id := ""
 var cooldown_turns := 0
 var source := ""
 var tags: Array[String] = []
+var permanent_stat_overrides: Dictionary = {}
 
 
 func setup(
@@ -15,13 +16,23 @@ func setup(
 	new_owner_id: String,
 	new_cooldown_turns := 0,
 	new_source := "",
-	new_tags: Array[String] = []
+	new_tags: Array[String] = [],
+	new_permanent_stat_overrides: Dictionary = {}
 ) -> void:
 	data = new_data
 	owner_id = new_owner_id
 	cooldown_turns = maxi(new_cooldown_turns, 0)
 	source = new_source
 	tags = new_tags.duplicate()
+	permanent_stat_overrides = new_permanent_stat_overrides.duplicate(true)
+
+
+func has_permanent_stat_overrides() -> bool:
+	return not permanent_stat_overrides.is_empty()
+
+
+func get_permanent_stat_overrides() -> Dictionary:
+	return permanent_stat_overrides.duplicate(true)
 
 
 func is_available() -> bool:

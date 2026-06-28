@@ -300,7 +300,8 @@ func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dict
 			hero_card_data,
 			revive_cooldown,
 			HandCardState.SOURCE_HERO_REVIVE,
-			["hero_revive"]
+			["hero_revive"],
+			state.permanent_stat_overrides
 		)
 		return
 
