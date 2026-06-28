@@ -187,6 +187,7 @@ const RANGE_MELEE := "melee"
 const RANGE_RANGED := "ranged"
 
 const DEATH_REASON_EFFECT := "effect"
+const DEATH_REASON_ATTACK := "attack"
 const DEATH_REASON_SPELL := "spell"
 const DEATH_REASON_HAND_SPELL := "hand_spell"
 const DEATH_REASON_POISON := "poison"

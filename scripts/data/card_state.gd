@@ -69,6 +69,7 @@ var max_health := 0
 var damage_taken := 0
 var shield := 0
 var armor := 0
+var chaos_corruption := 0
 var reborn_health_values: Array[int] = []
 var current_health: int:
 	get:
@@ -117,6 +118,7 @@ func set_card_data(value: CardData) -> void:
 		damage_taken = 0
 		shield = 0
 		armor = 0
+		chaos_corruption = 0
 		reborn_health_values.clear()
 		max_movement = 0
 		current_movement = 0
@@ -151,6 +153,7 @@ func set_card_data(value: CardData) -> void:
 		damage_taken = 0
 		shield = 0
 		armor = 0
+		chaos_corruption = data.chaos_corruption
 		reborn_health_values = create_initial_reborn_health_values()
 		is_action_available_hint = false
 		is_pending_death = false
@@ -447,6 +450,7 @@ func create_card_snapshot() -> Dictionary:
 		"damage_taken": damage_taken,
 		"shield": shield,
 		"armor": armor,
+		"chaos_corruption": chaos_corruption,
 		"reborn_health_values": reborn_health_values.duplicate(),
 		"max_movement": max_movement,
 		"current_movement": current_movement,
@@ -488,6 +492,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	damage_taken = int(snapshot.get("damage_taken", 0))
 	shield = int(snapshot.get("shield", 0))
 	armor = int(snapshot.get("armor", 0))
+	chaos_corruption = int(snapshot.get("chaos_corruption", 0))
 	reborn_health_values = normalize_int_array(snapshot.get("reborn_health_values", []))
 	max_movement = int(snapshot.get("max_movement", 0))
 	current_movement = int(snapshot.get("current_movement", 0))
@@ -711,6 +716,7 @@ func revive_from_reborn(health_value: int) -> void:
 		damage_taken = maxi(max_health - mini(health_value, max_health), 0)
 	shield = 0
 	armor = 0
+	chaos_corruption = int(origin.get("chaos_corruption", data.chaos_corruption))
 	reborn_health_values = remaining_reborn_values
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
 	current_movement = max_movement
