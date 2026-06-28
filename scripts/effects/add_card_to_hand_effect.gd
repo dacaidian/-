@@ -20,7 +20,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if player == null:
 		return
 
-	var amount := int(effect_data.get(EffectData.KEY_AMOUNT, 1))
+	var amount := get_add_amount(source_state, effect_data)
 	if amount <= 0:
 		return
 
@@ -28,14 +28,16 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		var card_data := candidate_cards[randi_range(0, candidate_cards.size() - 1)]
 		player.add_to_hand(card_data)
 
+	consume_source_status_if_needed(source_state, effect_data)
+
 	if game_manager.has_method("update_hand_drawer_view"):
 		game_manager.update_hand_drawer_view()
 	if game_manager.has_method("refresh_debug_panel"):
 		game_manager.refresh_debug_panel()
 
 
-func can_execute(_source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
-	return not get_candidate_cards(effect_data, game_manager).is_empty()
+func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
+	return not get_candidate_cards(effect_data, game_manager).is_empty() and get_add_amount(source_state, effect_data) > 0
 
 
 func get_candidate_cards(effect_data: Dictionary, game_manager: Node) -> Array[CardData]:
@@ -56,3 +58,26 @@ func get_candidate_cards(effect_data: Dictionary, game_manager: Node) -> Array[C
 			cards.append(card_data)
 
 	return cards
+
+
+func get_add_amount(source_state: CardState, effect_data: Dictionary) -> int:
+	if str(effect_data.get(EffectData.KEY_AMOUNT_SOURCE, "")) == EffectData.AMOUNT_SOURCE_STATUS_STACKS:
+		var status_id := EffectData.get_status_id(effect_data)
+		if source_state == null or status_id == "":
+			return 0
+
+		var status := source_state.get_status(status_id)
+		return maxi(status.stacks if status != null else 0, 0)
+
+	return int(effect_data.get(EffectData.KEY_AMOUNT, 1))
+
+
+func consume_source_status_if_needed(source_state: CardState, effect_data: Dictionary) -> void:
+	if not bool(effect_data.get(EffectData.KEY_CONSUME_SOURCE_STATUS, false)):
+		return
+
+	var status_id := EffectData.get_status_id(effect_data)
+	if source_state == null or status_id == "":
+		return
+
+	source_state.remove_status(status_id)

@@ -57,6 +57,11 @@ var rooted_seal_shadow_color := Color(0.32, 0.16, 0.02, 0.72)
 var stealth_color := Color(0.52, 0.72, 0.92, 0.12)
 var stealth_edge_color := Color(0.76, 0.92, 1.0, 0.62)
 var stealth_mist_color := Color(0.86, 0.96, 1.0, 0.34)
+var wanmo_charge_color := Color(0.46, 0.02, 0.02, 0.24)
+var wanmo_charge_edge_color := Color(1.0, 0.24, 0.08, 0.78)
+var wanmo_charge_core_color := Color(1.0, 0.46, 0.12, 0.92)
+var wanmo_charge_text_color := Color(1.0, 0.90, 0.58, 0.98)
+var wanmo_charge_shadow_color := Color(0.12, 0.0, 0.0, 0.96)
 
 
 func _ready() -> void:
@@ -75,7 +80,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn()
+	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge()
 
 
 func should_show_divine_shield() -> bool:
@@ -190,6 +195,14 @@ func should_show_reborn() -> bool:
 	return state.is_face_up and state.is_minion() and state.get_reborn_count() > 0
 
 
+func should_show_wanmo_charge() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	var status := state.get_status(CardStatus.STATUS_WANMO_CHARGE)
+	return state.is_face_up and state.is_building() and status != null and status.get_wanmo_charge() > 0
+
+
 func _draw() -> void:
 	if should_show_arcane_aura():
 		draw_arcane_aura()
@@ -203,6 +216,8 @@ func _draw() -> void:
 		draw_charm_overlay()
 	if should_show_reborn():
 		draw_reborn_overlay()
+	if should_show_wanmo_charge():
+		draw_wanmo_charge_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -266,6 +281,37 @@ func draw_meteor_aura() -> void:
 		var pos := center + Vector2(cos(angle), sin(angle)) * radius * 0.78
 		draw_line(pos + Vector2(-4.0, 0.0), pos + Vector2(4.0, 0.0), meteor_aura_star_color, 1.8)
 		draw_line(pos + Vector2(0.0, -4.0), pos + Vector2(0.0, 4.0), meteor_aura_star_color, 1.8)
+
+
+func draw_wanmo_charge_overlay() -> void:
+	var status := state.get_status(CardStatus.STATUS_WANMO_CHARGE) if state != null else null
+	if status == null:
+		return
+
+	var charge_count := status.get_wanmo_charge()
+	var charge_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
+	var center := charge_rect.get_center()
+	var radius := minf(charge_rect.size.x, charge_rect.size.y) * 0.34
+
+	draw_circle(center, radius * 1.08, wanmo_charge_color)
+	for index in range(mini(maxi(charge_count, 1), 6)):
+		var ring_radius := radius + float(index) * 4.0
+		var alpha := wanmo_charge_edge_color.a * (1.0 - float(index) * 0.12)
+		draw_arc(center, ring_radius, -PI * 0.22, TAU - PI * 0.22, 80, Color(wanmo_charge_edge_color.r, wanmo_charge_edge_color.g, wanmo_charge_edge_color.b, alpha), 2.4, true)
+
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0 + 0.16
+		var inner_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.45
+		var outer_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.88
+		draw_line(inner_point, outer_point, wanmo_charge_core_color, 2.0)
+
+	var font := get_theme_default_font()
+	var font_size := maxi(int(size.x * 0.22), 22)
+	var text := str(charge_count)
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size)
+	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
+	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_shadow_color)
+	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_text_color)
 
 
 func draw_divine_shield() -> void:

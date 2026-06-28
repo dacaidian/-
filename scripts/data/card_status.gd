@@ -30,6 +30,7 @@ const STATUS_ROOTED := "rooted"
 const STATUS_GATHER_SCATTER_QI := "gather_scatter_qi"
 const STATUS_TRANSFORM := "transform"
 const STATUS_SAVAGE_ROAR_ATTACK := "savage_roar_attack"
+const STATUS_WANMO_CHARGE := "wanmo_charge"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -185,6 +186,13 @@ func get_poison_total_remaining_damage() -> int:
 
 func get_stored_venom_damage() -> int:
 	return int(payload.get(EffectData.KEY_STORED_VENOM_DAMAGE, 0))
+
+
+func get_wanmo_charge() -> int:
+	if status_id != STATUS_WANMO_CHARGE:
+		return 0
+
+	return maxi(stacks, 0)
 
 
 func is_stronger_poison_than(other: CardStatus) -> bool:

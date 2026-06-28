@@ -367,7 +367,7 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
-		"beastmen_evolution", "beastmen_slaughter", "savage_roar":
+		"beastmen_evolution", "beastmen_slaughter", "savage_roar", "wanmo_charge", "wanmo_ritual":
 			await play_beastmen_survival_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
@@ -437,7 +437,7 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_rect)
-		"beastmen_evolution", "beastmen_slaughter", "savage_roar":
+		"beastmen_evolution", "beastmen_slaughter", "savage_roar", "wanmo_charge", "wanmo_ritual":
 			await play_beastmen_survival_at_rect(owner, effect_root, target_rect, animation_key)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
@@ -1711,9 +1711,11 @@ func play_beastmen_survival_at_rect(owner: Node, effect_root: Control, target_re
 
 	var is_slaughter := animation_key == "beastmen_slaughter"
 	var is_roar := animation_key == "savage_roar"
+	var is_wanmo_charge := animation_key == "wanmo_charge"
+	var is_wanmo_ritual := animation_key == "wanmo_ritual"
 	var ring := create_rect_spell_effect(target_rect, "BeastmenSurvivalRing", create_beastmen_survival_ring_style(is_slaughter), 1.32)
 	var core := create_rect_spell_effect(target_rect, "BeastmenSurvivalCore", create_beastmen_survival_core_style(is_slaughter), 0.66 if is_slaughter else 0.58)
-	var sigil := create_beastmen_survival_sigil(target_rect, is_slaughter, is_roar)
+	var sigil := create_beastmen_survival_sigil(target_rect, is_slaughter, is_roar, is_wanmo_charge, is_wanmo_ritual)
 	var shards := create_beastmen_survival_shards_for_rect(target_rect, is_slaughter)
 
 	effect_root.add_child(ring)
@@ -2477,11 +2479,17 @@ func create_charm_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 	return motes
 
 
-func create_beastmen_survival_sigil(target_rect: Rect2, is_slaughter: bool, is_roar := false) -> Label:
+func create_beastmen_survival_sigil(
+	target_rect: Rect2,
+	is_slaughter: bool,
+	is_roar := false,
+	is_wanmo_charge := false,
+	is_wanmo_ritual := false
+) -> Label:
 	var label := Label.new()
 	label.name = "BeastmenSurvivalSigil"
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = "吼" if is_roar else ("噬" if is_slaughter else "爪")
+	label.text = get_beastmen_survival_sigil_text(is_slaughter, is_roar, is_wanmo_charge, is_wanmo_ritual)
 	label.size = target_rect.size * (Vector2(0.58, 0.58) if is_slaughter else Vector2(0.54, 0.54))
 	label.pivot_offset = label.size * 0.5
 	label.global_position = target_rect.get_center() - label.pivot_offset
@@ -2493,11 +2501,30 @@ func create_beastmen_survival_sigil(target_rect: Rect2, is_slaughter: bool, is_r
 	var sigil_color := Color(1.0, 0.42, 0.18, 0.98) if is_slaughter else Color(1.0, 0.68, 0.24, 0.96)
 	if is_roar:
 		sigil_color = Color(1.0, 0.55, 0.12, 0.98)
+	if is_wanmo_charge:
+		sigil_color = Color(1.0, 0.30, 0.10, 0.98)
+	if is_wanmo_ritual:
+		sigil_color = Color(1.0, 0.18, 0.08, 0.98)
 	label.add_theme_color_override("font_color", sigil_color)
 	label.add_theme_color_override("font_shadow_color", Color(0.16, 0.01, 0.01, 0.95))
 	label.add_theme_constant_override("shadow_offset_x", 3)
 	label.add_theme_constant_override("shadow_offset_y", 3)
 	return label
+
+
+func get_beastmen_survival_sigil_text(
+	is_slaughter: bool,
+	is_roar: bool,
+	is_wanmo_charge: bool,
+	is_wanmo_ritual: bool
+) -> String:
+	if is_wanmo_ritual:
+		return "仪"
+	if is_wanmo_charge:
+		return "岩"
+	if is_roar:
+		return "吼"
+	return "噬" if is_slaughter else "爪"
 
 
 func create_beastmen_survival_shards_for_rect(target_rect: Rect2, is_slaughter: bool) -> Array[Panel]:

@@ -2842,6 +2842,21 @@
 				"attack": 16,
 				"health": 20,
 				"effects": []
+			},
+			{
+				"id": "gore_beast",
+				"name": "古尔兽",
+				"description": "万魔岩在废灭仪式中唤出的古老巨兽，庞大身躯承载着混沌杀戮的回响。",
+				"url": "res://assets/img/野兽人/古尔兽.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"giant"
+				],
+				"attack": 8,
+				"health": 16,
+				"effects": []
 			}
 		],
 		"cards": [
@@ -3028,6 +3043,36 @@
 									"centaur_beast",
 									"harpy"
 								]
+							}
+						]
+					}
+				],
+				"effects": []
+			},
+			{
+				"id": "wanmo_rock",
+				"name": "万魔岩",
+				"description": "野兽人建筑。友方野兽人完成杀戮进化或卡扎克完成杀戮成长时，万魔岩获得1点充能。废灭仪式会消耗全部充能，召唤等量古尔兽。",
+				"url": "res://assets/img/野兽人/万魔岩.png",
+				"type": "building",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"attack": 0,
+				"health": 20,
+				"actions": [
+					{
+						"action_id": "desolation_ritual",
+						"name": "废灭仪式",
+						"animation": "wanmo_ritual",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_id": "gore_beast",
+								"amount_source": "status_stacks",
+								"status_id": "wanmo_charge",
+								"consume_source_status": true
 							}
 						]
 					}

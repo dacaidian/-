@@ -96,6 +96,7 @@ const KEY_BREAKS_STEALTH := "breaks_stealth"
 const KEY_CLEANSE_MODE := "cleanse_mode"
 const KEY_THRESHOLD := "threshold"
 const KEY_DAMAGE_PER_THRESHOLD := "damage_per_threshold"
+const KEY_CONSUME_SOURCE_STATUS := "consume_source_status"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -146,6 +147,7 @@ const EFFECT_CHAOS_CORRUPTION_BURST := "chaos_corruption_burst"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"
+const AMOUNT_SOURCE_STATUS_STACKS := "status_stacks"
 
 const TRIGGER_WHILE_IN_HAND := "while_in_hand"
 const TRIGGER_WHILE_EQUIPPED := "while_equipped"
