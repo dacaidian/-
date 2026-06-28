@@ -190,7 +190,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
-野兽人的“适者生存”表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长。规则层只触发 key，血色爪印、吞噬核心和碎片爆裂等视觉由 `CardAnimationController` 统一生成。
+野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波和仪式碎片等视觉由 `CardAnimationController` 统一生成。
 
 音频表现由 `AudioManager` 统一管理，配置在 `data/audio.json`。`GameManager` 只暴露 `play_sfx()`、`play_spell_sfx()` 和 `start_battle_music()` 门面；规则层不直接持有 `AudioStreamPlayer`，视觉动画层也不直接加载音频资源。进入棋盘后默认播放 `battle_default` 背景音乐；没有外部音频文件时可使用程序化 BGM 兜底。攻击音效使用 `attack_melee` / `attack_ranged`，法术优先读取卡牌或 spell action 的 `audio` key，否则可按 `spell_<animation>` 约定扩展。
 

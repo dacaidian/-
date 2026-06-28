@@ -212,6 +212,17 @@ func play_slot_effect_animation(
 	)
 
 
+func play_board_effect_animation(game_manager: GameManager, animation_key: String) -> void:
+	if game_manager == null or animation_key == "":
+		return
+
+	await game_manager.card_animation_controller.play_board_effect(
+		game_manager,
+		get_overlay_animation_root(game_manager),
+		animation_key
+	)
+
+
 func play_card_to_hand_animation(
 	game_manager: GameManager,
 	source_card: Card,

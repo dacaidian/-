@@ -2899,6 +2899,7 @@
 				"effects": [
 					{
 						"id": "chaos_corruption_burst",
+						"animation": "chaos_corruption_burst",
 						"trigger": "after_turn_end",
 						"active_zone": "hand",
 						"threshold": 10,
@@ -3032,7 +3033,7 @@
 					{
 						"id": "wild_call",
 						"name": "野性呼唤",
-						"animation": "savage_roar",
+						"animation": "wild_call",
 						"target_rule": "none",
 						"effects": [
 							{

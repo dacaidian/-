@@ -24,17 +24,22 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	var total_corruption := get_total_friendly_corruption(game_manager, owner_id)
-	var damage := int(total_corruption / threshold) * damage_per_threshold
+	var damage := floori(float(total_corruption) / float(threshold)) * damage_per_threshold
 	if damage <= 0:
 		return
 
 	var damaged_targets: Array[CardState] = []
-	for target_state in get_enemy_minions(game_manager, owner_id):
+	var enemy_minions := get_enemy_minions(game_manager, owner_id)
+	if enemy_minions.is_empty():
+		return
+
+	var animation_key := str(effect_data.get("animation", "chaos_corruption_burst"))
+	if animation_key != "" and game_manager.has_method("play_board_effect_animation"):
+		await game_manager.play_board_effect_animation(animation_key)
+
+	for target_state in enemy_minions:
 		target_state.take_damage(damage)
 		damaged_targets.append(target_state)
-
-	if damaged_targets.is_empty():
-		return
 
 	if game_manager.has_method("resolve_dead_states"):
 		var death_reason := EffectData.get_death_reason(effect_data, EffectData.DEATH_REASON_EFFECT)

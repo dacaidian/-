@@ -367,8 +367,14 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
-		"beastmen_evolution", "beastmen_slaughter", "savage_roar", "wanmo_charge", "wanmo_ritual":
+		"beastmen_evolution", "beastmen_slaughter", "wanmo_charge":
 			await play_beastmen_survival_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"savage_roar":
+			await play_savage_roar_at_rect(owner, effect_root, target_card.get_global_rect())
+		"wild_call":
+			await play_wild_call_at_rect(owner, effect_root, target_card.get_global_rect())
+		"wanmo_ritual":
+			await play_wanmo_ritual_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"immobilize":
@@ -437,8 +443,14 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_rect)
-		"beastmen_evolution", "beastmen_slaughter", "savage_roar", "wanmo_charge", "wanmo_ritual":
+		"beastmen_evolution", "beastmen_slaughter", "wanmo_charge":
 			await play_beastmen_survival_at_rect(owner, effect_root, target_rect, animation_key)
+		"savage_roar":
+			await play_savage_roar_at_rect(owner, effect_root, target_rect)
+		"wild_call":
+			await play_wild_call_at_rect(owner, effect_root, target_rect)
+		"wanmo_ritual":
+			await play_wanmo_ritual_at_rect(owner, effect_root, target_rect)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"immobilize":
@@ -1767,6 +1779,256 @@ func play_beastmen_survival_at_rect(owner: Node, effect_root: Control, target_re
 		shard.queue_free()
 
 
+func play_savage_roar_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var shockwave := create_rect_spell_effect(target_rect, "SavageRoarShockwave", create_beastmen_roar_shockwave_style(), 1.42)
+	var throat_glow := create_rect_spell_effect(target_rect, "SavageRoarThroatGlow", create_beastmen_roar_core_style(), 0.52)
+	var sigil := create_beastmen_spell_sigil(target_rect, "吼", Color(1.0, 0.54, 0.10, 0.98), 0.46)
+	var streaks := create_beastmen_radial_streaks_for_rect(target_rect, "SavageRoarStreak", 10, Color(1.0, 0.28, 0.04, 0.90), Color(1.0, 0.78, 0.22, 0.78))
+
+	effect_root.add_child(shockwave)
+	effect_root.add_child(throat_glow)
+	effect_root.add_child(sigil)
+	for streak in streaks:
+		effect_root.add_child(streak)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_BACK)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(shockwave, "modulate:a", 0.92, spell_animation_duration * 0.30)
+	rise_tween.tween_property(shockwave, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.30)
+	rise_tween.tween_property(throat_glow, "modulate:a", 0.96, spell_animation_duration * 0.30)
+	rise_tween.tween_property(throat_glow, "scale", Vector2(1.20, 1.20), spell_animation_duration * 0.30)
+	rise_tween.tween_property(sigil, "modulate:a", 1.0, spell_animation_duration * 0.30)
+	rise_tween.tween_property(sigil, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.30)
+	await rise_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(shockwave, "scale", Vector2(1.96, 1.96), spell_animation_duration * 0.76)
+	burst_tween.tween_property(shockwave, "modulate:a", 0.0, spell_animation_duration * 0.76)
+	burst_tween.tween_property(throat_glow, "scale", Vector2(0.34, 0.34), spell_animation_duration * 0.76)
+	burst_tween.tween_property(throat_glow, "modulate:a", 0.0, spell_animation_duration * 0.76)
+	burst_tween.tween_property(sigil, "global_position", sigil.global_position + Vector2(0.0, -target_rect.size.y * 0.22), spell_animation_duration * 0.76)
+	burst_tween.tween_property(sigil, "scale", Vector2(1.62, 1.62), spell_animation_duration * 0.76)
+	burst_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.76)
+	for streak in streaks:
+		var offset: Vector2 = streak.get_meta("beastmen_spell_offset", Vector2.ZERO)
+		burst_tween.tween_property(streak, "global_position", streak.global_position + offset, spell_animation_duration * 0.76)
+		burst_tween.tween_property(streak, "scale", Vector2(0.28, 0.28), spell_animation_duration * 0.76)
+		burst_tween.tween_property(streak, "modulate:a", 0.0, spell_animation_duration * 0.76)
+	await burst_tween.finished
+
+	shockwave.queue_free()
+	throat_glow.queue_free()
+	sigil.queue_free()
+	for streak in streaks:
+		streak.queue_free()
+
+
+func play_wild_call_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var ring := create_rect_spell_effect(target_rect, "WildCallRitualRing", create_wild_call_ring_style(), 1.28)
+	var smoke := create_rect_spell_effect(target_rect, "WildCallSmoke", create_wild_call_smoke_style(), 0.84)
+	var sigil := create_beastmen_spell_sigil(target_rect, "兽", Color(0.92, 0.96, 0.42, 0.98), 0.42)
+	var calls := create_beastmen_radial_streaks_for_rect(target_rect, "WildCallTotemSpark", 8, Color(0.42, 0.72, 0.14, 0.90), Color(1.0, 0.82, 0.28, 0.72))
+
+	effect_root.add_child(ring)
+	effect_root.add_child(smoke)
+	effect_root.add_child(sigil)
+	for call in calls:
+		effect_root.add_child(call)
+
+	var gather_tween := owner.create_tween()
+	gather_tween.set_parallel(true)
+	gather_tween.set_trans(Tween.TRANS_BACK)
+	gather_tween.set_ease(Tween.EASE_OUT)
+	gather_tween.tween_property(ring, "modulate:a", 0.90, spell_animation_duration * 0.36)
+	gather_tween.tween_property(ring, "rotation", -0.18, spell_animation_duration * 0.36)
+	gather_tween.tween_property(smoke, "modulate:a", 0.78, spell_animation_duration * 0.36)
+	gather_tween.tween_property(smoke, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
+	gather_tween.tween_property(sigil, "modulate:a", 0.95, spell_animation_duration * 0.36)
+	await gather_tween.finished
+
+	var release_tween := owner.create_tween()
+	release_tween.set_parallel(true)
+	release_tween.set_trans(Tween.TRANS_SINE)
+	release_tween.set_ease(Tween.EASE_OUT)
+	release_tween.tween_property(ring, "scale", Vector2(1.58, 1.58), spell_animation_duration * 0.74)
+	release_tween.tween_property(ring, "rotation", 0.54, spell_animation_duration * 0.74)
+	release_tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration * 0.74)
+	release_tween.tween_property(smoke, "scale", Vector2(1.62, 1.62), spell_animation_duration * 0.74)
+	release_tween.tween_property(smoke, "modulate:a", 0.0, spell_animation_duration * 0.74)
+	release_tween.tween_property(sigil, "scale", Vector2(1.48, 1.48), spell_animation_duration * 0.74)
+	release_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.74)
+	for call in calls:
+		var offset: Vector2 = call.get_meta("beastmen_spell_offset", Vector2.ZERO)
+		release_tween.tween_property(call, "global_position", call.global_position + offset * 0.82, spell_animation_duration * 0.74)
+		release_tween.tween_property(call, "modulate:a", 0.0, spell_animation_duration * 0.74)
+	await release_tween.finished
+
+	ring.queue_free()
+	smoke.queue_free()
+	sigil.queue_free()
+	for call in calls:
+		call.queue_free()
+
+
+func play_wanmo_ritual_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var ritual_ring := create_rect_spell_effect(target_rect, "WanmoRitualRing", create_wanmo_ritual_ring_style(), 1.46)
+	var rift := create_rect_spell_effect(target_rect, "WanmoRitualRift", create_wanmo_ritual_rift_style(), 0.70)
+	var sigil := create_beastmen_spell_sigil(target_rect, "仪", Color(1.0, 0.16, 0.08, 0.98), 0.48)
+	var fragments := create_beastmen_radial_streaks_for_rect(target_rect, "WanmoRitualFragment", 12, Color(0.55, 0.02, 0.00, 0.95), Color(1.0, 0.22, 0.08, 0.82))
+
+	effect_root.add_child(ritual_ring)
+	effect_root.add_child(rift)
+	effect_root.add_child(sigil)
+	for fragment in fragments:
+		effect_root.add_child(fragment)
+
+	var open_tween := owner.create_tween()
+	open_tween.set_parallel(true)
+	open_tween.set_trans(Tween.TRANS_BACK)
+	open_tween.set_ease(Tween.EASE_OUT)
+	open_tween.tween_property(ritual_ring, "modulate:a", 0.94, spell_animation_duration * 0.38)
+	open_tween.tween_property(ritual_ring, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.38)
+	open_tween.tween_property(ritual_ring, "rotation", -0.42, spell_animation_duration * 0.38)
+	open_tween.tween_property(rift, "modulate:a", 0.90, spell_animation_duration * 0.38)
+	open_tween.tween_property(rift, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.38)
+	open_tween.tween_property(sigil, "modulate:a", 1.0, spell_animation_duration * 0.38)
+	open_tween.tween_property(sigil, "scale", Vector2(1.15, 1.15), spell_animation_duration * 0.38)
+	await open_tween.finished
+
+	var collapse_tween := owner.create_tween()
+	collapse_tween.set_parallel(true)
+	collapse_tween.set_trans(Tween.TRANS_EXPO)
+	collapse_tween.set_ease(Tween.EASE_OUT)
+	collapse_tween.tween_property(ritual_ring, "scale", Vector2(1.82, 1.82), spell_animation_duration * 0.86)
+	collapse_tween.tween_property(ritual_ring, "rotation", 0.76, spell_animation_duration * 0.86)
+	collapse_tween.tween_property(ritual_ring, "modulate:a", 0.0, spell_animation_duration * 0.86)
+	collapse_tween.tween_property(rift, "scale", Vector2(0.28, 0.28), spell_animation_duration * 0.86)
+	collapse_tween.tween_property(rift, "modulate:a", 0.0, spell_animation_duration * 0.86)
+	collapse_tween.tween_property(sigil, "global_position", sigil.global_position + Vector2(0.0, -target_rect.size.y * 0.18), spell_animation_duration * 0.86)
+	collapse_tween.tween_property(sigil, "scale", Vector2(1.72, 1.72), spell_animation_duration * 0.86)
+	collapse_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.86)
+	for fragment in fragments:
+		var offset: Vector2 = fragment.get_meta("beastmen_spell_offset", Vector2.ZERO)
+		collapse_tween.tween_property(fragment, "global_position", fragment.global_position + offset * 1.08, spell_animation_duration * 0.86)
+		collapse_tween.tween_property(fragment, "rotation", fragment.rotation + 1.10, spell_animation_duration * 0.86)
+		collapse_tween.tween_property(fragment, "modulate:a", 0.0, spell_animation_duration * 0.86)
+	await collapse_tween.finished
+
+	ritual_ring.queue_free()
+	rift.queue_free()
+	sigil.queue_free()
+	for fragment in fragments:
+		fragment.queue_free()
+
+
+func play_board_effect(owner: Node, effect_root: Control, animation_key: String) -> void:
+	if owner == null or effect_root == null or animation_key == "":
+		return
+
+	match animation_key:
+		"chaos_corruption_burst":
+			await play_chaos_corruption_board_burst(owner, effect_root)
+		_:
+			return
+
+
+func play_chaos_corruption_board_burst(owner: Node, effect_root: Control) -> void:
+	var viewport_size := effect_root.get_viewport_rect().size
+	if viewport_size == Vector2.ZERO:
+		return
+
+	var veil := ColorRect.new()
+	veil.name = "ChaosCorruptionVeil"
+	veil.color = Color(0.18, 0.02, 0.00, 0.0)
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil.z_index = 2280
+
+	var pulse := Panel.new()
+	pulse.name = "ChaosCorruptionBoardPulse"
+	pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pulse.size = viewport_size * 0.72
+	pulse.pivot_offset = pulse.size * 0.5
+	pulse.position = (viewport_size - pulse.size) * 0.5
+	pulse.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	pulse.z_index = 2290
+	pulse.add_theme_stylebox_override("panel", create_chaos_corruption_board_pulse_style())
+
+	var sigil := Label.new()
+	sigil.name = "ChaosCorruptionBoardSigil"
+	sigil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sigil.text = "蚀"
+	sigil.size = Vector2(220.0, 220.0)
+	sigil.pivot_offset = sigil.size * 0.5
+	sigil.position = viewport_size * 0.5 - sigil.pivot_offset
+	sigil.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sigil.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	sigil.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	sigil.z_index = 2298
+	sigil.add_theme_font_size_override("font_size", 132)
+	sigil.add_theme_color_override("font_color", Color(0.86, 0.08, 0.02, 0.96))
+	sigil.add_theme_color_override("font_shadow_color", Color(0.02, 0.0, 0.0, 0.96))
+	sigil.add_theme_constant_override("shadow_offset_x", 5)
+	sigil.add_theme_constant_override("shadow_offset_y", 5)
+
+	var motes := create_chaos_corruption_board_motes(viewport_size)
+
+	effect_root.add_child(veil)
+	effect_root.add_child(pulse)
+	effect_root.add_child(sigil)
+	for mote in motes:
+		effect_root.add_child(mote)
+
+	var surge_tween := owner.create_tween()
+	surge_tween.set_parallel(true)
+	surge_tween.set_trans(Tween.TRANS_CUBIC)
+	surge_tween.set_ease(Tween.EASE_OUT)
+	surge_tween.tween_property(veil, "color:a", 0.34, spell_animation_duration * 0.42)
+	surge_tween.tween_property(pulse, "modulate:a", 0.86, spell_animation_duration * 0.42)
+	surge_tween.tween_property(pulse, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.42)
+	surge_tween.tween_property(sigil, "modulate:a", 0.94, spell_animation_duration * 0.42)
+	surge_tween.tween_property(sigil, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.42)
+	for mote in motes:
+		surge_tween.tween_property(mote, "modulate:a", 0.82, spell_animation_duration * 0.42)
+	await surge_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN_OUT)
+	fade_tween.tween_property(veil, "color:a", 0.0, spell_animation_duration * 0.92)
+	fade_tween.tween_property(pulse, "scale", Vector2(1.58, 1.58), spell_animation_duration * 0.92)
+	fade_tween.tween_property(pulse, "modulate:a", 0.0, spell_animation_duration * 0.92)
+	fade_tween.tween_property(sigil, "scale", Vector2(1.42, 1.42), spell_animation_duration * 0.92)
+	fade_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.92)
+	for mote in motes:
+		var drift: Vector2 = mote.get_meta("chaos_corruption_drift", Vector2.ZERO)
+		fade_tween.tween_property(mote, "position", mote.position + drift, spell_animation_duration * 0.92)
+		fade_tween.tween_property(mote, "scale", Vector2(0.24, 0.24), spell_animation_duration * 0.92)
+		fade_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.92)
+	await fade_tween.finished
+
+	veil.queue_free()
+	pulse.queue_free()
+	sigil.queue_free()
+	for mote in motes:
+		mote.queue_free()
+
+
 func play_soul_hook_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -2552,6 +2814,84 @@ func create_beastmen_survival_shards_for_rect(target_rect: Rect2, is_slaughter: 
 		shards.append(shard)
 
 	return shards
+
+
+func create_beastmen_spell_sigil(target_rect: Rect2, text: String, font_color: Color, size_multiplier := 0.44) -> Label:
+	var label := Label.new()
+	label.name = "BeastmenSpellSigil"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = text
+	label.size = target_rect.size * Vector2(0.62, 0.62)
+	label.pivot_offset = label.size * 0.5
+	label.global_position = target_rect.get_center() - label.pivot_offset
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	label.z_index = 2360
+	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * size_multiplier), 24))
+	label.add_theme_color_override("font_color", font_color)
+	label.add_theme_color_override("font_shadow_color", Color(0.08, 0.0, 0.0, 0.96))
+	label.add_theme_constant_override("shadow_offset_x", 3)
+	label.add_theme_constant_override("shadow_offset_y", 3)
+	return label
+
+
+func create_beastmen_radial_streaks_for_rect(
+	target_rect: Rect2,
+	name_prefix: String,
+	count: int,
+	fill_color: Color,
+	border_color: Color
+) -> Array[Panel]:
+	var streaks: Array[Panel] = []
+	var center := target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.40
+
+	for index in range(count):
+		var angle := TAU * float(index) / float(count) + PI * 0.07
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.18
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * (1.02 if index % 2 == 0 else 0.82)
+		var streak := Panel.new()
+		streak.name = "%s_%d" % [name_prefix, index]
+		streak.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var streak_size := Vector2(9.0, 30.0) if index % 2 == 0 else Vector2(7.0, 20.0)
+		streak.size = streak_size
+		streak.pivot_offset = streak_size * 0.5
+		streak.global_position = center + start_offset - streak.pivot_offset
+		streak.rotation = angle + PI * 0.5
+		streak.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		streak.z_index = 2350
+		streak.set_meta("beastmen_spell_offset", burst_offset)
+		streak.add_theme_stylebox_override("panel", create_beastmen_spell_streak_style(fill_color, border_color))
+		streaks.append(streak)
+
+	return streaks
+
+
+func create_chaos_corruption_board_motes(viewport_size: Vector2) -> Array[Panel]:
+	var motes: Array[Panel] = []
+	var center := viewport_size * 0.5
+	var radius := minf(viewport_size.x, viewport_size.y) * 0.42
+
+	for index in range(18):
+		var angle := TAU * float(index) / 18.0 + PI * 0.11
+		var inward := Vector2(cos(angle), sin(angle)) * radius * (0.35 + 0.035 * float(index % 5))
+		var drift := Vector2(cos(angle), sin(angle)) * radius * (0.42 + 0.018 * float(index % 4))
+		var mote := Panel.new()
+		mote.name = "ChaosCorruptionBoardMote_%d" % index
+		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var mote_size := Vector2(14.0, 14.0) if index % 3 == 0 else Vector2(9.0, 9.0)
+		mote.size = mote_size
+		mote.pivot_offset = mote_size * 0.5
+		mote.position = center + inward - mote.pivot_offset
+		mote.scale = Vector2(0.72, 0.72)
+		mote.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		mote.z_index = 2296
+		mote.set_meta("chaos_corruption_drift", drift)
+		mote.add_theme_stylebox_override("panel", create_chaos_corruption_mote_style(index))
+		motes.append(mote)
+
+	return motes
 
 
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
@@ -3426,6 +3766,109 @@ func create_beastmen_survival_shard_style(is_slaughter: bool) -> StyleBoxFlat:
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(3)
 	style.shadow_size = 14
+	return style
+
+
+func create_beastmen_roar_shockwave_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.40, 0.06, 0.00, 0.22)
+	style.border_color = Color(1.0, 0.34, 0.04, 0.92)
+	style.set_border_width_all(10)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.22, 0.02, 0.62)
+	style.shadow_size = 44
+	return style
+
+
+func create_beastmen_roar_core_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.32, 0.02, 0.58)
+	style.border_color = Color(1.0, 0.82, 0.28, 0.86)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(18)
+	style.shadow_color = Color(1.0, 0.26, 0.02, 0.72)
+	style.shadow_size = 30
+	return style
+
+
+func create_wild_call_ring_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.26, 0.05, 0.24)
+	style.border_color = Color(0.86, 0.92, 0.28, 0.84)
+	style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.54, 0.82, 0.12, 0.50)
+	style.shadow_size = 36
+	return style
+
+
+func create_wild_call_smoke_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.28, 0.42, 0.10, 0.34)
+	style.border_color = Color(1.0, 0.74, 0.20, 0.64)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.62, 0.90, 0.18, 0.42)
+	style.shadow_size = 28
+	return style
+
+
+func create_wanmo_ritual_ring_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.16, 0.00, 0.00, 0.32)
+	style.border_color = Color(1.0, 0.08, 0.02, 0.94)
+	style.set_border_width_all(11)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.92, 0.02, 0.00, 0.70)
+	style.shadow_size = 48
+	return style
+
+
+func create_wanmo_ritual_rift_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.42, 0.00, 0.00, 0.62)
+	style.border_color = Color(1.0, 0.28, 0.08, 0.86)
+	style.set_border_width_all(6)
+	style.set_corner_radius_all(12)
+	style.shadow_color = Color(1.0, 0.04, 0.00, 0.72)
+	style.shadow_size = 34
+	return style
+
+
+func create_beastmen_spell_streak_style(fill_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill_color
+	style.border_color = border_color
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(3)
+	style.shadow_color = fill_color
+	style.shadow_size = 16
+	return style
+
+
+func create_chaos_corruption_board_pulse_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.32, 0.00, 0.00, 0.18)
+	style.border_color = Color(0.88, 0.04, 0.00, 0.82)
+	style.set_border_width_all(16)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.72, 0.00, 0.00, 0.68)
+	style.shadow_size = 72
+	return style
+
+
+func create_chaos_corruption_mote_style(index: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	if index % 3 == 0:
+		style.bg_color = Color(0.82, 0.02, 0.00, 0.90)
+		style.border_color = Color(1.0, 0.22, 0.08, 0.70)
+	else:
+		style.bg_color = Color(0.28, 0.00, 0.00, 0.82)
+		style.border_color = Color(0.90, 0.10, 0.02, 0.58)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.84, 0.00, 0.00, 0.56)
+	style.shadow_size = 18
 	return style
 
 

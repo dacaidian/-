@@ -1457,6 +1457,10 @@ func play_slot_effect_animation(target_state: CardState, animation_key: String) 
 	await game_animation_resolver.play_slot_effect_animation(self, target_state, animation_key)
 
 
+func play_board_effect_animation(animation_key: String) -> void:
+	await game_animation_resolver.play_board_effect_animation(self, animation_key)
+
+
 func play_card_to_hand_animation(source_card: Card, card_data: CardData) -> void:
 	await game_animation_resolver.play_card_to_hand_animation(self, source_card, card_data)
 
