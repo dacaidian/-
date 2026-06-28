@@ -3003,6 +3003,38 @@
 				"effects": []
 			},
 			{
+				"id": "shrieking_shaman",
+				"name": "嘶叫萨满",
+				"description": "野兽人萨满随从。它以刺耳嚎叫召集兽群，让低阶野兽从混沌荒野中奔赴战场。",
+				"url": "res://assets/img/野兽人/嘶叫萨满.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [],
+				"attack": 4,
+				"health": 4,
+				"spell_actions": [
+					{
+						"id": "wild_call",
+						"name": "野性呼唤",
+						"animation": "savage_roar",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_ids": [
+									"lesser_horned_beast",
+									"razor_beast",
+									"centaur_beast",
+									"harpy"
+								]
+							}
+						]
+					}
+				],
+				"effects": []
+			},
+			{
 				"id": "minotaur",
 				"name": "牛头怪",
 				"description": "野兽人高阶重型随从，强壮躯体承载着更深的混沌腐蚀。",

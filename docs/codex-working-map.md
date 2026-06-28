@@ -213,7 +213,7 @@
 - 苗疆毒生态。
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
-- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发和鹰身女妖咆哮体系。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/game/death_resolver.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`。
+- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、鹰身女妖咆哮体系和野性呼唤。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/game/death_resolver.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池。
 
 ## 未来地图与设计笔记
 

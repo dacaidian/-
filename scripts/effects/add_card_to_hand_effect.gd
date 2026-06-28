@@ -8,15 +8,8 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if game_manager == null:
 		return
 
-	var card_id := EffectData.get_card_id(effect_data)
-	if card_id == "":
-		return
-
-	if not game_manager.has_method("get_card_data_by_id"):
-		return
-
-	var card_data := game_manager.get_card_data_by_id(card_id) as CardData
-	if card_data == null:
+	var candidate_cards := get_candidate_cards(effect_data, game_manager)
+	if candidate_cards.is_empty():
 		return
 
 	var owner_id := get_effect_owner_id(source_state, effect_data)
@@ -32,6 +25,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	for copy_index in range(amount):
+		var card_data := candidate_cards[randi_range(0, candidate_cards.size() - 1)]
 		player.add_to_hand(card_data)
 
 	if game_manager.has_method("update_hand_drawer_view"):
@@ -41,11 +35,24 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 
 func can_execute(_source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:
-	var card_id := EffectData.get_card_id(effect_data)
-	if card_id == "":
-		return false
+	return not get_candidate_cards(effect_data, game_manager).is_empty()
 
+
+func get_candidate_cards(effect_data: Dictionary, game_manager: Node) -> Array[CardData]:
+	var cards: Array[CardData] = []
 	if game_manager == null or not game_manager.has_method("get_card_data_by_id"):
-		return false
+		return cards
 
-	return game_manager.get_card_data_by_id(card_id) != null
+	var card_id := EffectData.get_card_id(effect_data)
+	if card_id != "":
+		var fixed_card := game_manager.get_card_data_by_id(card_id) as CardData
+		if fixed_card != null:
+			cards.append(fixed_card)
+		return cards
+
+	for candidate_id in EffectData.get_card_ids(effect_data):
+		var card_data := game_manager.get_card_data_by_id(candidate_id) as CardData
+		if card_data != null:
+			cards.append(card_data)
+
+	return cards
