@@ -65,10 +65,12 @@ var evolution_line := ""
 
 # JSON 中配置的正面图片路径。
 var front_texture_path := ""
+var table_texture_path := ""
 var back_texture_path := ""
 
 # 运行时根据 front_texture_path 加载出的图片资源。
 var front_texture: Texture2D
+var table_texture: Texture2D
 var back_texture: Texture2D
 
 
@@ -157,6 +159,7 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.start_in_hand = bool(card_dictionary.get("start_in_hand", false))
 	data.evolution_line = str(card_dictionary.get("evolution_line", ""))
 	data.front_texture_path = str(card_dictionary.get("url", ""))
+	data.table_texture_path = get_table_texture_path(data.front_texture_path)
 	data.back_texture_path = "res://assets/img/卡背/%d.png" % data.level
 
 	var raw_keywords = card_dictionary.get("keywords", [])
@@ -191,7 +194,24 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	# JSON 只保存资源路径；真正的 Texture2D 在这里加载。
 	if data.front_texture_path != "":
 		data.front_texture = load(data.front_texture_path) as Texture2D
+	if data.table_texture_path != "":
+		data.table_texture = load(data.table_texture_path) as Texture2D
 	if ResourceLoader.exists(data.back_texture_path):
 		data.back_texture = load(data.back_texture_path) as Texture2D
 
 	return data
+
+
+static func get_table_texture_path(front_path: String) -> String:
+	if front_path == "":
+		return ""
+
+	var extension := front_path.get_extension()
+	if extension == "":
+		return ""
+
+	var table_path := "%s-table.%s" % [front_path.trim_suffix(".%s" % extension), extension]
+	if ResourceLoader.exists(table_path):
+		return table_path
+
+	return ""

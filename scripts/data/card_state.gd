@@ -59,6 +59,7 @@ var is_face_up := false
 
 # 当前实例使用的正反面图片。
 var front_texture: Texture2D
+var table_texture: Texture2D
 var back_texture: Texture2D
 
 # 当前攻击、生命上限、已受伤害和护盾。当前生命由 max_health - damage_taken 计算得出。
@@ -109,6 +110,7 @@ func set_card_data(value: CardData) -> void:
 		display_name = "空格子"
 		owner_id = ""
 		front_texture = null
+		table_texture = null
 		back_texture = null
 		origin.clear()
 		permanent_stat_overrides.clear()
@@ -146,6 +148,7 @@ func set_card_data(value: CardData) -> void:
 		card_id = data.id
 		display_name = data.display_name
 		front_texture = data.front_texture
+		table_texture = data.table_texture
 		back_texture = data.back_texture
 		current_attack = data.attack
 		passive_attack_bonus = 0
@@ -445,6 +448,7 @@ func create_card_snapshot() -> Dictionary:
 		"permanent_stat_overrides": permanent_stat_overrides.duplicate(true),
 		"is_face_up": is_face_up,
 		"front_texture": front_texture,
+		"table_texture": table_texture,
 		"back_texture": back_texture,
 		"current_attack": current_attack,
 		"passive_attack_bonus": passive_attack_bonus,
@@ -492,6 +496,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		permanent_stat_overrides = {}
 	is_face_up = bool(snapshot.get("is_face_up", false))
 	front_texture = snapshot.get("front_texture") as Texture2D
+	table_texture = snapshot.get("table_texture") as Texture2D
 	back_texture = snapshot.get("back_texture") as Texture2D
 	current_attack = int(snapshot.get("current_attack", 0))
 	passive_attack_bonus = int(snapshot.get("passive_attack_bonus", 0))

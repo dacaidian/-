@@ -218,9 +218,9 @@ func update_card_texture() -> void:
 
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# 正面朝上且正面图存在时显示正面，否则显示背面。
-	if is_face_up and get_front_texture() != null:
-		texture_rect.texture = get_front_texture()
+	# 棋盘正面优先显示 table 图；手牌、预览等仍使用原始卡图。
+	if is_face_up and get_board_front_texture() != null:
+		texture_rect.texture = get_board_front_texture()
 	else:
 		texture_rect.texture = get_back_texture()
 
@@ -243,6 +243,13 @@ func get_front_texture() -> Texture2D:
 		return state.front_texture
 
 	return front_texture
+
+
+func get_board_front_texture() -> Texture2D:
+	if state != null and state.table_texture != null:
+		return state.table_texture
+
+	return get_front_texture()
 
 
 func get_back_texture() -> Texture2D:
