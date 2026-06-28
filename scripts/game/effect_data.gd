@@ -169,6 +169,7 @@ const TARGET_ATTACK_TARGET_ENEMY_MINION := "attack_target_enemy_minion"
 const TARGET_ATTACK_TARGET_UNIT := "attack_target_unit"
 const TARGET_ENEMY_AND_NEUTRAL_UNITS := "enemy_and_neutral_units"
 const TARGET_FRIENDLY_UNITS := "friendly_units"
+const TARGET_FRIENDLY_MINIONS := "friendly_minions"
 const TARGET_ENEMY_UNITS := "enemy_units"
 
 const STATUS_VALENCE_POSITIVE := "positive"

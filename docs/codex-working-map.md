@@ -144,7 +144,7 @@
 - 可驱散属性变化应使用状态 payload/modifier。
 - 状态失效时不要写死恢复固定数值，除非状态自己保存了精确修正量。
 - `action_prevention` 通用阻止行动。
-- 净化走 `CleanseEffect`。默认 `cleanse_mode: "all"`，可配置 `positive` 只驱散正面状态，或 `negative` 只解除负面状态。全场阵营目标优先用 `friendly_units` / `enemy_units`。
+- 净化走 `CleanseEffect`。默认 `cleanse_mode: "all"`，可配置 `positive` 只驱散正面状态，或 `negative` 只解除负面状态。全场阵营目标优先用 `friendly_units` / `enemy_units`；只影响随从时用 `friendly_minions`，避免误作用到建筑。
 - `breaks_on_attack_or_spell` 会在攻击或施法后移除，除非法术配置 `breaks_stealth: false`。
 - `rooted` 的表现是金色遮罩和中心“定”字。
 - 毒状态按总伤害唯一化，回合结束时先于治疗结算。
@@ -213,7 +213,7 @@
 - 苗疆毒生态。
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
-- 野兽人同系斩杀进化、卡扎克杀戮成长和混沌腐蚀爆发。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/game/death_resolver.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算。
+- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发和鹰身女妖咆哮体系。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/game/death_resolver.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`。
 
 ## 未来地图与设计笔记
 

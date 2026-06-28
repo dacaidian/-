@@ -29,6 +29,7 @@ const STATUS_IMMORTAL_PEACH := "immortal_peach"
 const STATUS_ROOTED := "rooted"
 const STATUS_GATHER_SCATTER_QI := "gather_scatter_qi"
 const STATUS_TRANSFORM := "transform"
+const STATUS_SAVAGE_ROAR_ATTACK := "savage_roar_attack"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -271,7 +272,8 @@ func get_cleanse_valence() -> String:
 		STATUS_SOMERSAULT_CLOUD,
 		STATUS_BRONZE_HEAD_IRON_ARMS,
 		STATUS_IMMORTAL_PEACH,
-		STATUS_GATHER_SCATTER_QI
+		STATUS_GATHER_SCATTER_QI,
+		STATUS_SAVAGE_ROAR_ATTACK
 	]
 	if positive_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_POSITIVE

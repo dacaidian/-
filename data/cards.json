@@ -2892,6 +2892,53 @@
 				]
 			},
 			{
+				"id": "savage_roar",
+				"name": "野蛮咆哮",
+				"description": "升级牌。允许鹰身女妖和疯语兽释放野蛮咆哮，使本回合所有友方随从攻击力+1。",
+				"url": "res://assets/img/野兽人/野蛮咆哮.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "grant_spell_actions",
+						"active_zone": "hand",
+						"card_ids": [
+							"harpy",
+							"mad_speech_beast"
+						],
+						"spell_actions": [
+							{
+								"id": "savage_roar_spell",
+								"name": "野蛮咆哮",
+								"animation": "savage_roar",
+								"target_rule": "none",
+								"effects": [
+									{
+										"id": "apply_status",
+										"target": "friendly_minions",
+										"status_id": "savage_roar_attack",
+										"status_name": "野蛮咆哮",
+										"status_description": "本回合攻击力+1。",
+										"status_tags": [
+											"attack_modifier"
+										],
+										"duration_turns": 1,
+										"expires_on_trigger": "after_turn_end",
+										"status_valence": "positive",
+										"payload": {
+											"attack_bonus": 1
+										},
+										"apply_animation": "savage_roar"
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "lesser_horned_beast",
 				"name": "劣角兽",
 				"description": "野兽人基础随从。低阶角兽血脉稀薄，却仍保留着野性冲撞的本能。",
