@@ -2688,6 +2688,58 @@
 				],
 				"transform_to": "great_horned_beast",
 				"animation": "beastmen_evolution"
+			},
+			{
+				"id": "razor_beast_to_razor_beast_chariot",
+				"killer_card_ids": [
+					"razor_beast"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "razor_beast",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "razor_beast_chariot",
+				"animation": "beastmen_evolution"
+			},
+			{
+				"id": "centaur_beast_to_axe_thrower_centaur_beast",
+				"killer_card_ids": [
+					"centaur_beast"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "centaur_beast",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "axe_thrower_centaur_beast",
+				"animation": "beastmen_evolution"
+			},
+			{
+				"id": "harpy_to_mad_speech_beast",
+				"killer_card_ids": [
+					"harpy"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "harpy",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "mad_speech_beast",
+				"animation": "beastmen_evolution"
+			},
+			{
+				"id": "minotaur_to_heavy_weapon_minotaur",
+				"killer_card_ids": [
+					"minotaur"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "minotaur",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "heavy_weapon_minotaur",
+				"animation": "beastmen_evolution"
 			}
 		],
 		"tokens": [
@@ -2701,8 +2753,8 @@
 				"level": 1,
 				"evolution_line": "horned_beast",
 				"keywords": [],
-				"attack": 4,
-				"health": 5,
+				"attack": 6,
+				"health": 6,
 				"effects": []
 			},
 			{
@@ -2715,8 +2767,77 @@
 				"level": 1,
 				"evolution_line": "horned_beast",
 				"keywords": [],
-				"attack": 7,
+				"attack": 14,
+				"health": 14,
+				"effects": []
+			},
+			{
+				"id": "razor_beast_chariot",
+				"name": "剃刀兽战车",
+				"description": "剃刀兽进化后的冲锋形态，以尖刺与战车般的躯壳撕开阵线。",
+				"url": "res://assets/img/野兽人/剃刀兽战车.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"movement": 3,
+				"evolution_line": "razor_beast",
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 4,
+				"health": 4,
+				"effects": []
+			},
+			{
+				"id": "axe_thrower_centaur_beast",
+				"name": "飞斧人马兽",
+				"description": "人马兽进化后的飞斧猎手，奔袭中投出浸染混沌的利斧。",
+				"url": "res://assets/img/野兽人/飞斧人马兽.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"movement": 3,
+				"chaos_corruption": 4,
+				"evolution_line": "centaur_beast",
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 4,
+				"health": 6,
+				"effects": []
+			},
+			{
+				"id": "mad_speech_beast",
+				"name": "疯语兽",
+				"description": "鹰身女妖在混沌低语中进化而成的狂乱形态，仍能飞掠战场。",
+				"url": "res://assets/img/野兽人/疯语兽.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"chaos_corruption": 4,
+				"evolution_line": "harpy",
+				"keywords": [
+					"flying"
+				],
+				"attack": 8,
 				"health": 8,
+				"effects": []
+			},
+			{
+				"id": "heavy_weapon_minotaur",
+				"name": "重武牛头怪",
+				"description": "牛头怪进化后的巨型重武形态，挥击会撕裂目标周围的阵线。",
+				"url": "res://assets/img/野兽人/重武牛头怪.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"chaos_corruption": 6,
+				"evolution_line": "minotaur",
+				"keywords": [
+					"giant"
+				],
+				"attack": 16,
+				"health": 20,
 				"effects": []
 			}
 		],
@@ -2731,8 +2852,8 @@
 				"count": 1,
 				"level": 1,
 				"keywords": [],
-				"attack": 4,
-				"health": 16,
+				"attack": 2,
+				"health": 14,
 				"effects": []
 			},
 			{
@@ -2759,6 +2880,71 @@
 				"keywords": [],
 				"attack": 2,
 				"health": 2,
+				"effects": []
+			},
+			{
+				"id": "razor_beast",
+				"name": "剃刀兽",
+				"description": "野兽人高速突袭随从，锋利背刃适合在兽群间争夺进化资格。",
+				"url": "res://assets/img/野兽人/剃刀兽.png",
+				"type": "minion",
+				"count": 4,
+				"level": 1,
+				"movement": 3,
+				"evolution_line": "razor_beast",
+				"keywords": [],
+				"attack": 2,
+				"health": 1,
+				"effects": []
+			},
+			{
+				"id": "centaur_beast",
+				"name": "人马兽",
+				"description": "野兽人二阶奔袭随从，机动迅猛，体内已经积累混沌腐蚀。",
+				"url": "res://assets/img/野兽人/人马兽.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"movement": 3,
+				"chaos_corruption": 2,
+				"evolution_line": "centaur_beast",
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 3,
+				"health": 3,
+				"effects": []
+			},
+			{
+				"id": "harpy",
+				"name": "鹰身女妖",
+				"description": "野兽人飞行随从，尖啸盘旋于战场边缘，混沌腐蚀在羽翼间滋长。",
+				"url": "res://assets/img/野兽人/鹰身女妖.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"chaos_corruption": 2,
+				"evolution_line": "harpy",
+				"keywords": [
+					"flying"
+				],
+				"attack": 1,
+				"health": 3,
+				"effects": []
+			},
+			{
+				"id": "minotaur",
+				"name": "牛头怪",
+				"description": "野兽人高阶重型随从，强壮躯体承载着更深的混沌腐蚀。",
+				"url": "res://assets/img/野兽人/牛头怪.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"chaos_corruption": 3,
+				"evolution_line": "minotaur",
+				"keywords": [],
+				"attack": 8,
+				"health": 10,
 				"effects": []
 			}
 		]

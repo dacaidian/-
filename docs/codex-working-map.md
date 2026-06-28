@@ -212,7 +212,7 @@
 - 苗疆毒生态。
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
-- 野兽人同系斩杀进化。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/game/death_resolver.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。
+- 野兽人同系斩杀进化。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/game/death_resolver.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段，当前混沌腐蚀只存储，不结算效果。
 
 ## 未来地图与设计笔记
 

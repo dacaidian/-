@@ -155,7 +155,7 @@ func set_card_data(value: CardData) -> void:
 		is_action_available_hint = false
 		is_pending_death = false
 		if data.is_minion():
-			max_movement = 1
+			max_movement = maxi(data.movement, 0)
 			current_movement = max_movement
 			max_attack_speed = maxi(data.attack_speed, 0)
 			current_attacks = max_attack_speed
@@ -605,6 +605,7 @@ func create_origin_snapshot() -> Dictionary:
 		"spell_actions": data.spell_actions.duplicate(true),
 		"attack": data.attack,
 		"health": data.health,
+		"chaos_corruption": data.chaos_corruption,
 		"movement": max_movement,
 		"attack_speed": max_attack_speed,
 		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
