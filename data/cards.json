@@ -2662,6 +2662,64 @@
 				"attached_cards": []
 			}
 		],
+		"evolution_rules": [
+			{
+				"id": "lesser_horned_beast_to_horned_beast",
+				"killer_card_ids": [
+					"lesser_horned_beast"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "horned_beast",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "horned_beast",
+				"animation": "beastmen_evolution"
+			},
+			{
+				"id": "horned_beast_to_great_horned_beast",
+				"killer_card_ids": [
+					"horned_beast"
+				],
+				"victim_owner": "friendly",
+				"victim_evolution_line": "horned_beast",
+				"death_reasons": [
+					"attack"
+				],
+				"transform_to": "great_horned_beast",
+				"animation": "beastmen_evolution"
+			}
+		],
+		"tokens": [
+			{
+				"id": "horned_beast",
+				"name": "角兽",
+				"description": "劣角兽在血战中幸存后的进化形态，角冠更坚硬，冲撞也更加凶猛。",
+				"url": "res://assets/img/野兽人/角兽.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"evolution_line": "horned_beast",
+				"keywords": [],
+				"attack": 4,
+				"health": 5,
+				"effects": []
+			},
+			{
+				"id": "great_horned_beast",
+				"name": "大角兽",
+				"description": "角兽继续吞噬同系血脉后的高阶形态，庞大身躯足以碾碎阵线。",
+				"url": "res://assets/img/野兽人/大角兽.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"evolution_line": "horned_beast",
+				"keywords": [],
+				"attack": 7,
+				"health": 8,
+				"effects": []
+			}
+		],
 		"cards": [
 			{
 				"id": "kazak_one_eye",
@@ -2678,6 +2736,18 @@
 				"effects": []
 			},
 			{
+				"id": "survival_of_the_fittest",
+				"name": "适者生存",
+				"description": "野兽人种族规则：己方野兽人随从通过普通攻击击败友方同系随从后，会进化为该进化链的下一形态。劣角兽会进化为角兽，角兽会进化为大角兽。进化不会刷新本回合已经消耗的行动力。",
+				"url": "res://assets/img/野兽人/适者生存.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
 				"id": "lesser_horned_beast",
 				"name": "劣角兽",
 				"description": "野兽人基础随从。低阶角兽血脉稀薄，却仍保留着野性冲撞的本能。",
@@ -2685,6 +2755,7 @@
 				"type": "minion",
 				"count": 4,
 				"level": 1,
+				"evolution_line": "horned_beast",
 				"keywords": [],
 				"attack": 2,
 				"health": 2,

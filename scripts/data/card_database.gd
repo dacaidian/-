@@ -228,6 +228,23 @@ func get_faction_skill_configs(faction_id: String) -> Array[Dictionary]:
 	return skill_configs
 
 
+func get_faction_evolution_rules(faction_id: String) -> Array[Dictionary]:
+	var evolution_rules: Array[Dictionary] = []
+	var faction = factions_by_id.get(faction_id, {})
+	if not faction is Dictionary:
+		return evolution_rules
+
+	var raw_rules: Variant = faction.get("evolution_rules", [])
+	if not raw_rules is Array:
+		return evolution_rules
+
+	for rule in raw_rules:
+		if rule is Dictionary:
+			evolution_rules.append(rule.duplicate(true))
+
+	return evolution_rules
+
+
 func get_starting_hand_cards(faction_id: String, selected_hero_card_id := "") -> Array[CardData]:
 	var cards: Array[CardData] = []
 	var selected_hero_id := selected_hero_card_id

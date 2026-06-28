@@ -59,6 +59,7 @@ var health := 0
 var attack_speed := 1
 var owner_hero_card_id := ""
 var start_in_hand := false
+var evolution_line := ""
 
 # JSON 中配置的正面图片路径。
 var front_texture_path := ""
@@ -150,6 +151,7 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.health = int(card_dictionary.get("health", 0))
 	data.attack_speed = int(card_dictionary.get("attack_speed", 1))
 	data.start_in_hand = bool(card_dictionary.get("start_in_hand", false))
+	data.evolution_line = str(card_dictionary.get("evolution_line", ""))
 	data.front_texture_path = str(card_dictionary.get("url", ""))
 	data.back_texture_path = "res://assets/img/卡背/%d.png" % data.level
 

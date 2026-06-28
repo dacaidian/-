@@ -7,6 +7,9 @@ class_name DeathResolver
 var is_resolving_death_batches := false
 var queued_death_scan_requests: Array[Dictionary] = []
 const HERO_REVIVE_COOLDOWN_TURNS := 3
+const BeastmenEvolutionResolverScript := preload("res://scripts/game/beastmen_evolution_resolver.gd")
+
+var beastmen_evolution_resolver := BeastmenEvolutionResolverScript.new()
 
 
 func check_and_destroy_if_dead(game_manager: GameManager, state: CardState, reason: String = "damage", source_state: CardState = null) -> bool:
@@ -221,6 +224,7 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		)
 
 	await game_manager.trigger_resolver.resolve_queued(game_manager)
+	await beastmen_evolution_resolver.resolve_after_death_batch(game_manager, death_events)
 
 	for death_event in death_events:
 		var state := death_event.get("state") as CardState
@@ -346,6 +350,8 @@ func can_offer_attack_occupy(attacker_state: CardState, defeated_state: CardStat
 		return false
 
 	if attacker_state == defeated_state:
+		return false
+	if attacker_state.owner_id == defeated_state.owner_id and attacker_state.owner_id != "":
 		return false
 
 	if defeated_state.current_health > 0:
