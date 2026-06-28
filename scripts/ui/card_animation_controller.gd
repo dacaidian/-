@@ -367,6 +367,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_sacrifice_at_rect(owner, effect_root, target_card.get_global_rect())
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_card.get_global_rect())
+		"beastmen_evolution", "beastmen_slaughter":
+			await play_beastmen_survival_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_card.get_global_rect())
 		"immobilize":
@@ -435,6 +437,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_sacrifice_at_rect(owner, effect_root, target_rect)
 		"reborn":
 			await play_reborn_at_rect(owner, effect_root, target_rect)
+		"beastmen_evolution", "beastmen_slaughter":
+			await play_beastmen_survival_at_rect(owner, effect_root, target_rect, animation_key)
 		"soul_hook":
 			await play_soul_hook_at_rect(owner, effect_root, target_rect)
 		"immobilize":
@@ -1701,6 +1705,65 @@ func play_reborn_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) 
 	core.queue_free()
 
 
+func play_beastmen_survival_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var is_slaughter := animation_key == "beastmen_slaughter"
+	var ring := create_rect_spell_effect(target_rect, "BeastmenSurvivalRing", create_beastmen_survival_ring_style(is_slaughter), 1.32)
+	var core := create_rect_spell_effect(target_rect, "BeastmenSurvivalCore", create_beastmen_survival_core_style(is_slaughter), 0.66 if is_slaughter else 0.58)
+	var sigil := create_beastmen_survival_sigil(target_rect, is_slaughter)
+	var shards := create_beastmen_survival_shards_for_rect(target_rect, is_slaughter)
+
+	effect_root.add_child(ring)
+	effect_root.add_child(core)
+	effect_root.add_child(sigil)
+	for shard in shards:
+		effect_root.add_child(shard)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_BACK)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(ring, "modulate:a", 0.94, spell_animation_duration * 0.36)
+	rise_tween.tween_property(ring, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.36)
+	rise_tween.tween_property(ring, "rotation", -0.28 if is_slaughter else 0.20, spell_animation_duration * 0.36)
+	rise_tween.tween_property(core, "modulate:a", 0.90, spell_animation_duration * 0.36)
+	rise_tween.tween_property(core, "scale", Vector2(1.24, 1.24), spell_animation_duration * 0.36)
+	rise_tween.tween_property(sigil, "modulate:a", 0.96, spell_animation_duration * 0.36)
+	rise_tween.tween_property(sigil, "scale", Vector2(1.12, 1.12), spell_animation_duration * 0.36)
+	for shard in shards:
+		var offset: Vector2 = shard.get_meta("beastmen_survival_offset", Vector2.ZERO)
+		rise_tween.tween_property(shard, "global_position", shard.global_position + offset * 0.22, spell_animation_duration * 0.36)
+		rise_tween.tween_property(shard, "modulate:a", 0.88, spell_animation_duration * 0.36)
+	await rise_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(ring, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.72)
+	burst_tween.tween_property(ring, "rotation", 0.62 if is_slaughter else -0.48, spell_animation_duration * 0.72)
+	burst_tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(core, "scale", Vector2(0.36, 0.36) if is_slaughter else Vector2(1.82, 1.82), spell_animation_duration * 0.72)
+	burst_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "global_position", sigil.global_position + Vector2(0.0, -target_rect.size.y * 0.20), spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "scale", Vector2(1.42, 1.42) if is_slaughter else Vector2(1.70, 1.70), spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for shard in shards:
+		var offset: Vector2 = shard.get_meta("beastmen_survival_offset", Vector2.ZERO)
+		burst_tween.tween_property(shard, "global_position", shard.global_position + offset, spell_animation_duration * 0.72)
+		burst_tween.tween_property(shard, "scale", Vector2(0.30, 0.30), spell_animation_duration * 0.72)
+		burst_tween.tween_property(shard, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await burst_tween.finished
+
+	ring.queue_free()
+	core.queue_free()
+	sigil.queue_free()
+	for shard in shards:
+		shard.queue_free()
+
+
 func play_soul_hook_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -2411,6 +2474,53 @@ func create_charm_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
 		motes.append(mote)
 
 	return motes
+
+
+func create_beastmen_survival_sigil(target_rect: Rect2, is_slaughter: bool) -> Label:
+	var label := Label.new()
+	label.name = "BeastmenSurvivalSigil"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = "噬" if is_slaughter else "爪"
+	label.size = target_rect.size * (Vector2(0.58, 0.58) if is_slaughter else Vector2(0.54, 0.54))
+	label.pivot_offset = label.size * 0.5
+	label.global_position = target_rect.get_center() - label.pivot_offset
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	label.z_index = 2355
+	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * (0.44 if is_slaughter else 0.40)), 22))
+	label.add_theme_color_override("font_color", Color(1.0, 0.42, 0.18, 0.98) if is_slaughter else Color(1.0, 0.68, 0.24, 0.96))
+	label.add_theme_color_override("font_shadow_color", Color(0.16, 0.01, 0.01, 0.95))
+	label.add_theme_constant_override("shadow_offset_x", 3)
+	label.add_theme_constant_override("shadow_offset_y", 3)
+	return label
+
+
+func create_beastmen_survival_shards_for_rect(target_rect: Rect2, is_slaughter: bool) -> Array[Panel]:
+	var shards: Array[Panel] = []
+	var center := target_rect.get_center()
+	var radius: float = minf(target_rect.size.x, target_rect.size.y) * (0.38 if is_slaughter else 0.34)
+	var shard_count := 9 if is_slaughter else 7
+
+	for index in range(shard_count):
+		var angle := TAU * float(index) / float(shard_count) + (PI * 0.08 if is_slaughter else -PI * 0.12)
+		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.22
+		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * (1.05 if is_slaughter else 0.88)
+		var shard := Panel.new()
+		shard.name = "BeastmenSurvivalShard_%d" % index
+		shard.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var shard_size := Vector2(10.0, 22.0) if index % 2 == 0 else Vector2(8.0, 16.0)
+		shard.size = shard_size
+		shard.pivot_offset = shard_size * 0.5
+		shard.global_position = center + start_offset - shard.pivot_offset
+		shard.rotation = angle + PI * 0.5
+		shard.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		shard.z_index = 2340
+		shard.set_meta("beastmen_survival_offset", burst_offset)
+		shard.add_theme_stylebox_override("panel", create_beastmen_survival_shard_style(is_slaughter))
+		shards.append(shard)
+
+	return shards
 
 
 func create_summon_spell_effect_for_rect(target_rect: Rect2) -> Panel:
@@ -3236,6 +3346,55 @@ func create_reborn_core_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.72, 1.0, 0.30, 0.72)
 	style.shadow_size = 28
+	return style
+
+
+func create_beastmen_survival_ring_style(is_slaughter: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	if is_slaughter:
+		style.bg_color = Color(0.34, 0.02, 0.02, 0.26)
+		style.border_color = Color(1.0, 0.22, 0.10, 0.90)
+		style.shadow_color = Color(0.86, 0.08, 0.02, 0.64)
+		style.set_border_width_all(9)
+	else:
+		style.bg_color = Color(0.22, 0.08, 0.02, 0.22)
+		style.border_color = Color(1.0, 0.56, 0.16, 0.88)
+		style.shadow_color = Color(1.0, 0.34, 0.04, 0.54)
+		style.set_border_width_all(8)
+	style.set_corner_radius_all(999)
+	style.shadow_size = 40
+	return style
+
+
+func create_beastmen_survival_core_style(is_slaughter: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	if is_slaughter:
+		style.bg_color = Color(0.70, 0.04, 0.02, 0.50)
+		style.border_color = Color(1.0, 0.70, 0.34, 0.88)
+		style.shadow_color = Color(0.92, 0.08, 0.02, 0.70)
+	else:
+		style.bg_color = Color(0.78, 0.30, 0.04, 0.34)
+		style.border_color = Color(1.0, 0.82, 0.42, 0.86)
+		style.shadow_color = Color(1.0, 0.42, 0.06, 0.62)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(20)
+	style.shadow_size = 28
+	return style
+
+
+func create_beastmen_survival_shard_style(is_slaughter: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	if is_slaughter:
+		style.bg_color = Color(0.86, 0.10, 0.04, 0.92)
+		style.border_color = Color(1.0, 0.62, 0.26, 0.84)
+		style.shadow_color = Color(0.92, 0.06, 0.02, 0.60)
+	else:
+		style.bg_color = Color(0.92, 0.34, 0.06, 0.86)
+		style.border_color = Color(1.0, 0.78, 0.34, 0.76)
+		style.shadow_color = Color(1.0, 0.28, 0.04, 0.46)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(3)
+	style.shadow_size = 14
 	return style
 
 
