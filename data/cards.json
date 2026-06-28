@@ -2800,7 +2800,8 @@
 				"chaos_corruption": 4,
 				"evolution_line": "centaur_beast",
 				"keywords": [
-					"mobile_assault"
+					"mobile_assault",
+					"ranged"
 				],
 				"attack": 4,
 				"health": 6,
