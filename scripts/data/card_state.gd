@@ -50,6 +50,8 @@ var is_valid_target := false
 var is_action_available_hint := false
 
 var is_area_preview := false
+# Cell-level visual mirror. The authoritative data lives on BoardCell and must
+# survive card content changes such as refill, movement, or clearing.
 var has_beast_path := false
 
 # 当前是否已经进入死亡结算队列。用于批量死亡时避免同一张牌重复入队。
@@ -144,7 +146,6 @@ func set_card_data(value: CardData) -> void:
 		is_selected = false
 		is_valid_target = false
 		is_action_available_hint = false
-		has_beast_path = false
 		is_pending_death = false
 	else:
 		card_id = data.id

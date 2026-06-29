@@ -108,7 +108,7 @@
 - 飞行单位可使用外圈和空中层。
 - 瞬移允许移动到全场任意合法空目的地。
 - 交换单元格时，格子的原始能力必须随格子移动。
-- 兽径等单元格地形效果存放在 `BoardCell`，通过 `BoardLayerResolver` 同步到 `CardState` 显示；奥术空间交换单元格时必须随 cell 一起移动。野兽人地面随从的兽径移动由 `MoveAction` 查询当前连通兽径图，不消耗主行动力和移动力，但不能绕过行动禁止状态。
+- 兽径等单元格地形效果存放在 `BoardCell`，通过 `BoardLayerResolver` 同步到 `CardState` 显示；`CardState.has_beast_path` 只是显示镜像，不属于卡牌内容，不能在 `clear_card()` / `set_card_data(null)` 时清掉。奥术空间交换单元格时必须随 cell 一起移动。野兽人地面随从的兽径移动由 `MoveAction` 查询当前连通兽径图，不消耗主行动力和移动力，但不能绕过行动禁止状态。
 
 ## 攻击与伤害
 
