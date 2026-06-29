@@ -1838,13 +1838,13 @@ func play_wild_call_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 	var ring := create_rect_spell_effect(target_rect, "WildCallRitualRing", create_wild_call_ring_style(), 1.28)
 	var smoke := create_rect_spell_effect(target_rect, "WildCallSmoke", create_wild_call_smoke_style(), 0.84)
 	var sigil := create_beastmen_spell_sigil(target_rect, "兽", Color(0.92, 0.96, 0.42, 0.98), 0.42)
-	var calls := create_beastmen_radial_streaks_for_rect(target_rect, "WildCallTotemSpark", 8, Color(0.42, 0.72, 0.14, 0.90), Color(1.0, 0.82, 0.28, 0.72))
+	var call_marks := create_beastmen_radial_streaks_for_rect(target_rect, "WildCallTotemSpark", 8, Color(0.42, 0.72, 0.14, 0.90), Color(1.0, 0.82, 0.28, 0.72))
 
 	effect_root.add_child(ring)
 	effect_root.add_child(smoke)
 	effect_root.add_child(sigil)
-	for call in calls:
-		effect_root.add_child(call)
+	for call_mark in call_marks:
+		effect_root.add_child(call_mark)
 
 	var gather_tween := owner.create_tween()
 	gather_tween.set_parallel(true)
@@ -1868,17 +1868,17 @@ func play_wild_call_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 	release_tween.tween_property(smoke, "modulate:a", 0.0, spell_animation_duration * 0.74)
 	release_tween.tween_property(sigil, "scale", Vector2(1.48, 1.48), spell_animation_duration * 0.74)
 	release_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.74)
-	for call in calls:
-		var offset: Vector2 = call.get_meta("beastmen_spell_offset", Vector2.ZERO)
-		release_tween.tween_property(call, "global_position", call.global_position + offset * 0.82, spell_animation_duration * 0.74)
-		release_tween.tween_property(call, "modulate:a", 0.0, spell_animation_duration * 0.74)
+	for call_mark in call_marks:
+		var offset: Vector2 = call_mark.get_meta("beastmen_spell_offset", Vector2.ZERO)
+		release_tween.tween_property(call_mark, "global_position", call_mark.global_position + offset * 0.82, spell_animation_duration * 0.74)
+		release_tween.tween_property(call_mark, "modulate:a", 0.0, spell_animation_duration * 0.74)
 	await release_tween.finished
 
 	ring.queue_free()
 	smoke.queue_free()
 	sigil.queue_free()
-	for call in calls:
-		call.queue_free()
+	for call_mark in call_marks:
+		call_mark.queue_free()
 
 
 func play_wanmo_ritual_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
