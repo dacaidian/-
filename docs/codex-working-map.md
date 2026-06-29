@@ -157,13 +157,19 @@
 
 - `scripts/game/spell_target_resolver.gd`
 - `scripts/game/target_state_resolver.gd`
-- `scripts/game/` 下的多阶段选择控制器
+- `scripts/game/selection_request.gd`
+- `scripts/game/selection_result.gd`
+- `scripts/game/board_selection_controller.gd`
+- `scripts/game/board_query.gd`
 
 常见规则：
 
 - 新目标规则加到 `SpellTargetResolver`，不要在单张卡里手写过滤。
 - 魔法免疫和隐身过滤应集中处理。
 - 多目标/多阶段法术应复用通用选择控制器。
+- `SpellTargetResolver` 只管目标合法性；`BoardQuery` 管棋盘几何；`BoardSelectionController` 管多阶段交互；效果/行动消费 `SelectionResult` 后再修改规则数据。
+- 固定长度直线/矢量选择使用 `SelectionRequest.KIND_LINE_VECTOR`，当前兽径已走这条入口。
+- 方向射线选择使用 `SelectionRequest.KIND_DIRECTION_RAY`，适合以英雄或某单位为中心选择上下左右/斜向，并沿方向寻找第一个命中单位。
 
 ## 死亡、坟场与补牌
 
@@ -214,7 +220,7 @@
 - 苗疆毒生态。
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
-- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、兽径地形、鹰身女妖咆哮体系、野性呼唤和万魔岩仪式。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/effects/set_beast_path_effect.gd`、`scripts/game/board_line_selection_controller.gd`、`scripts/game/death_resolver.gd`、`scripts/data/board_cell.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；兽径使用 `set_beast_path` + 五格直线选择，不要写成单位状态；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池；按状态层数生成卡牌使用 `add_card_to_hand` + `amount_source: "status_stacks"` + `status_id`，需要消耗资源时配置 `consume_source_status: true`。
+- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、兽径地形、鹰身女妖咆哮体系、野性呼唤和万魔岩仪式。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/effects/set_beast_path_effect.gd`、`scripts/game/board_selection_controller.gd`、`scripts/game/board_query.gd`、`scripts/game/death_resolver.gd`、`scripts/data/board_cell.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；兽径使用 `set_beast_path` + `SelectionRequest.KIND_LINE_VECTOR` 五格直线选择，不要写成单位状态；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池；按状态层数生成卡牌使用 `add_card_to_hand` + `amount_source: "status_stacks"` + `status_id`，需要消耗资源时配置 `consume_source_status: true`。
 
 ## 未来地图与设计笔记
 

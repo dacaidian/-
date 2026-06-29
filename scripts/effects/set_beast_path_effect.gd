@@ -1,7 +1,7 @@
 extends CardEffect
 class_name SetBeastPathEffect
 
-const BoardLineSelectionControllerScript := preload("res://scripts/game/board_line_selection_controller.gd")
+const BoardSelectionControllerScript := preload("res://scripts/game/board_selection_controller.gd")
 
 # Sets a persistent beast path on board cells. The path is stored on BoardCell,
 # so Arcane Space moves the tunnel with the cell properties instead of anchoring
@@ -22,12 +22,13 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if player != null and player.is_ai:
 		selected_slots = choose_ai_line(game_manager, line_length)
 	else:
-		var controller := BoardLineSelectionControllerScript.new()
-		selected_slots = await controller.select_line(
-			game_manager,
-			line_length,
-			str(effect_data.get(EffectData.KEY_SELECTION_TITLE, "选择一条直线兽径"))
+		var request := SelectionRequest.line_vector(
+			str(effect_data.get(EffectData.KEY_SELECTION_TITLE, "选择一条直线兽径")),
+			line_length
 		)
+		var controller := BoardSelectionControllerScript.new()
+		var result: SelectionResult = await controller.select(game_manager, request)
+		selected_slots = result.path_slots if result != null and not result.cancelled else []
 
 	if selected_slots.is_empty():
 		return
@@ -58,17 +59,20 @@ func choose_ai_line(game_manager: Node, line_length: int) -> Array[int]:
 		Vector2i(1, -1)
 	]
 	for start_slot in range(game_manager.board_states.size()):
-		var start_row := floori(float(start_slot) / float(game_manager.board_columns))
-		var start_col := start_slot % game_manager.board_columns
 		for direction in directions:
-			var slots: Array[int] = []
-			for index in range(line_length):
-				var row := start_row + direction.x * index
-				var col := start_col + direction.y * index
-				if row < 0 or col < 0 or row >= game_manager.board_rows or col >= game_manager.board_columns:
-					slots.clear()
-					break
-				slots.append(row * game_manager.board_columns + col)
+			var end_slot := BoardQuery.get_slot_at_offset(
+				start_slot,
+				direction * (line_length - 1),
+				game_manager.board_columns,
+				game_manager.board_states.size()
+			)
+			var slots := BoardQuery.get_line_slots(
+				start_slot,
+				end_slot,
+				line_length,
+				game_manager.board_columns,
+				game_manager.board_states.size()
+			)
 			if slots.size() == line_length:
 				return slots
 

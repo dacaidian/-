@@ -4,6 +4,31 @@ class_name BoardQuery
 # BoardQuery 提供棋盘几何与常用单位过滤。
 # 规则层需要“相邻”“正面单位”“正面随从”时优先走这里，避免各模块重复计算格子。
 
+const DIRECTIONS_4_WAY := "4_way"
+const DIRECTIONS_8_WAY := "8_way"
+
+
+static func get_direction_vectors(direction_mode := DIRECTIONS_8_WAY) -> Array[Vector2i]:
+	var directions: Array[Vector2i] = [
+		Vector2i(-1, 0),
+		Vector2i(0, -1),
+		Vector2i(0, 1),
+		Vector2i(1, 0)
+	]
+	if direction_mode == DIRECTIONS_8_WAY:
+		directions = [
+			Vector2i(-1, -1),
+			Vector2i(-1, 0),
+			Vector2i(-1, 1),
+			Vector2i(0, -1),
+			Vector2i(0, 1),
+			Vector2i(1, -1),
+			Vector2i(1, 0),
+			Vector2i(1, 1)
+		]
+
+	return directions
+
 static func is_neighbor(from_slot: int, to_slot: int, board_columns: int) -> bool:
 	if board_columns <= 0:
 		return false
@@ -46,6 +71,126 @@ static func get_adjacent_slots(slot_index: int, board_columns: int, board_size: 
 			adjacent_slots.append(target_slot)
 
 	return adjacent_slots
+
+
+static func get_slot_row(slot_index: int, board_columns: int) -> int:
+	if slot_index < 0 or board_columns <= 0:
+		return -1
+
+	return floori(float(slot_index) / float(board_columns))
+
+
+static func get_slot_column(slot_index: int, board_columns: int) -> int:
+	if slot_index < 0 or board_columns <= 0:
+		return -1
+
+	return slot_index % board_columns
+
+
+static func get_slot_at_row_col(row: int, column: int, board_columns: int, board_size: int) -> int:
+	if row < 0 or column < 0 or board_columns <= 0 or board_size <= 0:
+		return -1
+
+	var board_rows := int(ceil(float(board_size) / float(board_columns)))
+	if row >= board_rows or column >= board_columns:
+		return -1
+
+	var slot := row * board_columns + column
+	return slot if slot >= 0 and slot < board_size else -1
+
+
+static func get_slot_at_offset(start_slot: int, offset: Vector2i, board_columns: int, board_size: int) -> int:
+	var row := get_slot_row(start_slot, board_columns)
+	var column := get_slot_column(start_slot, board_columns)
+	if row < 0 or column < 0:
+		return -1
+
+	return get_slot_at_row_col(row + offset.x, column + offset.y, board_columns, board_size)
+
+
+static func get_line_end_slots(
+	start_slot: int,
+	line_length: int,
+	board_columns: int,
+	board_size: int,
+	direction_mode := DIRECTIONS_8_WAY
+) -> Array[int]:
+	var slots: Array[int] = []
+	if line_length <= 1:
+		return slots
+
+	for direction in get_direction_vectors(direction_mode):
+		var end_slot := get_slot_at_offset(start_slot, direction * (line_length - 1), board_columns, board_size)
+		if end_slot >= 0:
+			slots.append(end_slot)
+
+	return slots
+
+
+static func get_line_slots(
+	start_slot: int,
+	end_slot: int,
+	line_length: int,
+	board_columns: int,
+	board_size: int,
+	direction_mode := DIRECTIONS_8_WAY
+) -> Array[int]:
+	var slots: Array[int] = []
+	if start_slot < 0 or end_slot < 0 or line_length <= 1 or board_columns <= 0 or board_size <= 0:
+		return slots
+
+	var start_row := get_slot_row(start_slot, board_columns)
+	var start_col := get_slot_column(start_slot, board_columns)
+	var end_row := get_slot_row(end_slot, board_columns)
+	var end_col := get_slot_column(end_slot, board_columns)
+	var row_delta := end_row - start_row
+	var col_delta := end_col - start_col
+	var steps := line_length - 1
+	var row_step := signi(row_delta)
+	var col_step := signi(col_delta)
+	var direction := Vector2i(row_step, col_step)
+
+	if not get_direction_vectors(direction_mode).has(direction):
+		return slots
+	if abs(row_delta) != abs(row_step) * steps:
+		return slots
+	if abs(col_delta) != abs(col_step) * steps:
+		return slots
+	if row_step == 0 and col_step == 0:
+		return slots
+
+	for index in range(line_length):
+		var slot := get_slot_at_row_col(start_row + row_step * index, start_col + col_step * index, board_columns, board_size)
+		if slot < 0:
+			slots.clear()
+			return slots
+		slots.append(slot)
+
+	return slots
+
+
+static func get_ray_slots(
+	origin_slot: int,
+	direction: Vector2i,
+	board_columns: int,
+	board_size: int,
+	max_distance := -1
+) -> Array[int]:
+	var slots: Array[int] = []
+	if origin_slot < 0 or direction == Vector2i.ZERO or board_columns <= 0 or board_size <= 0:
+		return slots
+
+	var row := get_slot_row(origin_slot, board_columns)
+	var column := get_slot_column(origin_slot, board_columns)
+	var distance := 1
+	while max_distance < 0 or distance <= max_distance:
+		var slot := get_slot_at_row_col(row + direction.x * distance, column + direction.y * distance, board_columns, board_size)
+		if slot < 0:
+			break
+		slots.append(slot)
+		distance += 1
+
+	return slots
 
 
 static func is_face_up_board_card(state: CardState) -> bool:
@@ -101,6 +246,14 @@ static func get_area_slots(center_slot: int, area_rows: int, area_cols: int, boa
 			slots.append(row * board_columns + col)
 
 	return slots
+
+
+static func signi(value: int) -> int:
+	if value > 0:
+		return 1
+	if value < 0:
+		return -1
+	return 0
 
 
 static func is_full_area_inside_board(anchor_slot: int, area_rows: int, area_cols: int, board_columns: int, board_size: int) -> bool:

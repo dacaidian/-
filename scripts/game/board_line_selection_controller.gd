@@ -8,28 +8,45 @@ signal line_selected(slot_indices: Array[int])
 # vertically, or diagonally. The returned line includes both endpoints.
 
 var _game_manager: GameManager
+var _request: SelectionRequest
 var _line_length := 5
+var _direction_mode := BoardQuery.DIRECTIONS_8_WAY
 var _first_slot := -1
 var _buttons: Array[Button] = []
 var _layer: CanvasLayer
 var _panel: PanelContainer
 var _title_label: Label
+var _title := ""
 
 
 func select_line(game_manager: GameManager, line_length := 5, title := "选择一条直线兽径") -> Array[int]:
+	var request := SelectionRequest.line_vector(title, line_length)
+	var result := await select_line_result(game_manager, request)
+	return result.path_slots
+
+
+func select_line_result(game_manager: GameManager, request: SelectionRequest) -> SelectionResult:
 	_game_manager = game_manager
-	_line_length = maxi(line_length, 2)
+	_request = request
+	_line_length = maxi(request.line_length, 2) if request != null else 5
+	_direction_mode = request.directions if request != null else BoardQuery.DIRECTIONS_8_WAY
+	_title = request.title if request != null and request.title != "" else "选择一条直线"
 	_first_slot = -1
 	if _game_manager == null:
-		return []
+		return SelectionResult.cancelled_result(SelectionRequest.KIND_LINE_VECTOR)
 
-	setup_ui(title)
+	setup_ui(_title)
 	clear_marks()
 	mark_start_candidates()
 
 	var result: Array[int] = await line_selected
+	var selection_result := SelectionResult.line_vector_result(
+		result[0] if not result.is_empty() else -1,
+		result[result.size() - 1] if not result.is_empty() else -1,
+		result
+	)
 	cleanup()
-	return result
+	return selection_result
 
 
 func setup_ui(title: String) -> void:
@@ -90,7 +107,7 @@ func handle_slot_pressed(slot_index: int) -> void:
 		mark_first_slot()
 		mark_end_candidates()
 		if _title_label != null:
-			_title_label.text = "兽径：选择终点（必须为横、竖或斜向 %d 格）" % _line_length
+			_title_label.text = "%s：选择终点（必须为横、竖或斜向 %d 格）" % [_title, _line_length]
 		return
 
 	if slot_index == _first_slot:
@@ -98,7 +115,7 @@ func handle_slot_pressed(slot_index: int) -> void:
 		clear_marks()
 		mark_start_candidates()
 		if _title_label != null:
-			_title_label.text = "兽径：重新选择起点"
+			_title_label.text = "%s：重新选择起点" % _title
 		return
 
 	var path := get_line_slots(_first_slot, slot_index)
@@ -145,81 +162,27 @@ func clear_marks() -> void:
 
 
 func get_valid_end_slots(start_slot: int) -> Array[int]:
-	var slots: Array[int] = []
-	for direction in get_line_directions():
-		var end_slot := get_slot_at_offset(start_slot, direction * (_line_length - 1))
-		if end_slot >= 0:
-			slots.append(end_slot)
-	return slots
+	return BoardQuery.get_line_end_slots(
+		start_slot,
+		_line_length,
+		_game_manager.board_columns,
+		_game_manager.board_states.size(),
+		_direction_mode
+	)
 
 
 func get_line_slots(start_slot: int, end_slot: int) -> Array[int]:
-	if start_slot < 0 or end_slot < 0 or _game_manager == null:
+	if _game_manager == null:
 		return []
 
-	var start_row := floori(float(start_slot) / float(_game_manager.board_columns))
-	var start_col := start_slot % _game_manager.board_columns
-	var end_row := floori(float(end_slot) / float(_game_manager.board_columns))
-	var end_col := end_slot % _game_manager.board_columns
-	var row_delta := end_row - start_row
-	var col_delta := end_col - start_col
-	var steps := _line_length - 1
-
-	var is_horizontal := row_delta == 0 and abs(col_delta) == steps
-	var is_vertical := col_delta == 0 and abs(row_delta) == steps
-	var is_diagonal := abs(row_delta) == steps and abs(col_delta) == steps
-	if not (is_horizontal or is_vertical or is_diagonal):
-		return []
-
-	var row_step := signi(row_delta)
-	var col_step := signi(col_delta)
-	var slots: Array[int] = []
-	for index in range(_line_length):
-		var slot := get_slot_at_row_col(start_row + row_step * index, start_col + col_step * index)
-		if slot < 0:
-			return []
-		slots.append(slot)
-
-	return slots
-
-
-func get_line_directions() -> Array[Vector2i]:
-	return [
-		Vector2i(-1, -1),
-		Vector2i(-1, 0),
-		Vector2i(-1, 1),
-		Vector2i(0, -1),
-		Vector2i(0, 1),
-		Vector2i(1, -1),
-		Vector2i(1, 0),
-		Vector2i(1, 1)
-	]
-
-
-func get_slot_at_offset(start_slot: int, offset: Vector2i) -> int:
-	if _game_manager == null:
-		return -1
-	var row := floori(float(start_slot) / float(_game_manager.board_columns)) + offset.x
-	var col := start_slot % _game_manager.board_columns + offset.y
-	return get_slot_at_row_col(row, col)
-
-
-func get_slot_at_row_col(row: int, col: int) -> int:
-	if _game_manager == null:
-		return -1
-	if row < 0 or col < 0 or row >= _game_manager.board_rows or col >= _game_manager.board_columns:
-		return -1
-
-	var slot := row * _game_manager.board_columns + col
-	return slot if slot >= 0 and slot < _game_manager.board_states.size() else -1
-
-
-func signi(value: int) -> int:
-	if value > 0:
-		return 1
-	if value < 0:
-		return -1
-	return 0
+	return BoardQuery.get_line_slots(
+		start_slot,
+		end_slot,
+		_line_length,
+		_game_manager.board_columns,
+		_game_manager.board_states.size(),
+		_direction_mode
+	)
 
 
 func cleanup() -> void:
@@ -233,6 +196,8 @@ func cleanup() -> void:
 	_layer = null
 	_panel = null
 	_title_label = null
+	_game_manager = null
+	_request = null
 
 
 func create_panel_style() -> StyleBoxFlat:
