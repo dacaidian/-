@@ -108,6 +108,7 @@
 - 飞行单位可使用外圈和空中层。
 - 瞬移允许移动到全场任意合法空目的地。
 - 交换单元格时，格子的原始能力必须随格子移动。
+- 兽径等单元格地形效果存放在 `BoardCell`，通过 `BoardLayerResolver` 同步到 `CardState` 显示；奥术空间交换单元格时必须随 cell 一起移动。野兽人地面随从的兽径移动由 `MoveAction` 查询当前连通兽径图，不消耗主行动力和移动力，但不能绕过行动禁止状态。
 
 ## 攻击与伤害
 
@@ -213,7 +214,7 @@
 - 苗疆毒生态。
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
-- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、鹰身女妖咆哮体系、野性呼唤和万魔岩仪式。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/game/death_resolver.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池；按状态层数生成卡牌使用 `add_card_to_hand` + `amount_source: "status_stacks"` + `status_id`，需要消耗资源时配置 `consume_source_status: true`。
+- 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、兽径地形、鹰身女妖咆哮体系、野性呼唤和万魔岩仪式。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/effects/set_beast_path_effect.gd`、`scripts/game/board_line_selection_controller.gd`、`scripts/game/death_resolver.gd`、`scripts/data/board_cell.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；兽径使用 `set_beast_path` + 五格直线选择，不要写成单位状态；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池；按状态层数生成卡牌使用 `add_card_to_hand` + `amount_source: "status_stacks"` + `status_id`，需要消耗资源时配置 `consume_source_status: true`。
 
 ## 未来地图与设计笔记
 
@@ -265,8 +266,9 @@
 - 一次性特效放在 `CardAnimationController`。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。
+- 多格路径特效（例如 `beast_path`）走 `GameManager.play_path_effect_animation()`，由 `GameAnimationResolver` 收集格子 rect 后交给 `CardAnimationController`。
 - 猴妖仙法术/技能释放特效使用 `play_monkey_spell_at_rect()`，按 animation key 生成金瞳、筋斗云、毫毛、金铁、蟠桃、敕令、定身、气雾、法象等符号化部件；新增猴妖仙技能时优先扩展这一组主题函数，不要回退到通用光圈。
-- 野兽人特效按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。
+- 野兽人特效按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 持续状态表现放在 `CardStatusOverlay`。
 - 数值图标放在 `Card` 的状态/数值堆叠区域。

@@ -505,6 +505,18 @@ func sync_board_cell_state_flags(slot_index: int) -> void:
 	board_layer_resolver.sync_board_cell_state_flags(self, slot_index)
 
 
+func add_beast_path_to_slots(slot_indices: Array[int], path_id: String) -> void:
+	board_layer_resolver.add_beast_path_to_slots(self, slot_indices, path_id)
+
+
+func is_beast_path_slot(slot_index: int) -> bool:
+	return board_layer_resolver.is_beast_path_slot(self, slot_index)
+
+
+func are_slots_connected_by_beast_path(from_slot: int, to_slot: int) -> bool:
+	return board_layer_resolver.are_slots_connected_by_beast_path(self, from_slot, to_slot)
+
+
 func sync_slot_card_layout(slot_index: int) -> void:
 	var ground_card := get_card_by_slot(slot_index)
 	var aerial_card := get_aerial_card_by_slot(slot_index)
@@ -1459,6 +1471,10 @@ func play_slot_effect_animation(target_state: CardState, animation_key: String) 
 
 func play_board_effect_animation(animation_key: String) -> void:
 	await game_animation_resolver.play_board_effect_animation(self, animation_key)
+
+
+func play_path_effect_animation(slot_indices: Array[int], animation_key: String) -> void:
+	await game_animation_resolver.play_path_effect_animation(self, slot_indices, animation_key)
 
 
 func play_card_to_hand_animation(source_card: Card, card_data: CardData) -> void:

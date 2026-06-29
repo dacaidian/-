@@ -99,6 +99,7 @@ func sync_board_cell_state_flags(game_manager: GameManager, slot_index: int) -> 
 	if state.is_interactable != can_interact:
 		state.is_interactable = can_interact
 		state.state_changed.emit(state)
+	state.set_beast_path(cell.has_beast_path())
 
 	var aerial_state := get_aerial_state(game_manager, slot_index)
 	if aerial_state != null and aerial_state.is_interactable != true:
@@ -106,6 +107,49 @@ func sync_board_cell_state_flags(game_manager: GameManager, slot_index: int) -> 
 		aerial_state.state_changed.emit(aerial_state)
 
 	game_manager.sync_slot_card_layout(slot_index)
+
+
+func add_beast_path_to_slots(game_manager: GameManager, slot_indices: Array[int], path_id: String) -> void:
+	if game_manager == null or path_id == "":
+		return
+
+	for slot_index in slot_indices:
+		var cell := get_board_cell(game_manager, slot_index)
+		if cell == null:
+			continue
+		cell.add_beast_path(path_id)
+		sync_board_cell_state_flags(game_manager, slot_index)
+
+
+func is_beast_path_slot(game_manager: GameManager, slot_index: int) -> bool:
+	var cell := get_board_cell(game_manager, slot_index)
+	return cell != null and cell.has_beast_path()
+
+
+func are_slots_connected_by_beast_path(game_manager: GameManager, from_slot: int, to_slot: int) -> bool:
+	if game_manager == null or from_slot == to_slot:
+		return false
+	if not is_beast_path_slot(game_manager, from_slot) or not is_beast_path_slot(game_manager, to_slot):
+		return false
+
+	var visited: Array[int] = []
+	var queue: Array[int] = [from_slot]
+	while not queue.is_empty():
+		var current_slot := queue.pop_front() as int
+		if current_slot == to_slot:
+			return true
+		if visited.has(current_slot):
+			continue
+		visited.append(current_slot)
+
+		for neighbor_slot in BoardQuery.get_adjacent_slots(current_slot, game_manager.board_columns, game_manager.board_states.size()):
+			if visited.has(neighbor_slot):
+				continue
+			if not is_beast_path_slot(game_manager, neighbor_slot):
+				continue
+			queue.append(neighbor_slot)
+
+	return false
 
 
 func get_land_slot_states(game_manager: GameManager) -> Array[bool]:

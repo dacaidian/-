@@ -50,6 +50,7 @@ var is_valid_target := false
 var is_action_available_hint := false
 
 var is_area_preview := false
+var has_beast_path := false
 
 # 当前是否已经进入死亡结算队列。用于批量死亡时避免同一张牌重复入队。
 var is_pending_death := false
@@ -143,6 +144,7 @@ func set_card_data(value: CardData) -> void:
 		is_selected = false
 		is_valid_target = false
 		is_action_available_hint = false
+		has_beast_path = false
 		is_pending_death = false
 	else:
 		card_id = data.id
@@ -838,6 +840,13 @@ func set_area_preview(value: bool) -> void:
 	if is_area_preview == value:
 		return
 	is_area_preview = value
+	state_changed.emit(self)
+
+
+func set_beast_path(value: bool) -> void:
+	if has_beast_path == value:
+		return
+	has_beast_path = value
 	state_changed.emit(self)
 
 

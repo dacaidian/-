@@ -223,6 +223,28 @@ func play_board_effect_animation(game_manager: GameManager, animation_key: Strin
 	)
 
 
+func play_path_effect_animation(game_manager: GameManager, slot_indices: Array[int], animation_key: String) -> void:
+	if game_manager == null or animation_key == "" or slot_indices.is_empty():
+		return
+
+	var rects: Array[Rect2] = []
+	for slot_index in slot_indices:
+		var card := game_manager.get_card_by_slot(slot_index)
+		if card == null:
+			continue
+		rects.append(card.get_global_rect())
+
+	if rects.is_empty():
+		return
+
+	await game_manager.card_animation_controller.play_path_effect(
+		game_manager,
+		get_overlay_animation_root(game_manager),
+		rects,
+		animation_key
+	)
+
+
 func play_card_to_hand_animation(
 	game_manager: GameManager,
 	source_card: Card,

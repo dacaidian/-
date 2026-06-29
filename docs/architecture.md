@@ -31,7 +31,7 @@
 
 `PlayerState` 保存玩家身份、种族、手牌、装备、法力、资源分、坟场、种族资源、透视能力和当前回合计数。
 
-`BoardCell` 保存棋盘格子的身份和能力。7x7 棋盘中，内圈 5x5 是常规战场格，外圈通常不补牌、不允许地面单位放置，但飞行单位可以进入空中层。格子的能力会随着“交换单元格”移动，不能用当前位置推断能否补牌或放置。
+`BoardCell` 保存棋盘格子的身份和能力。7x7 棋盘中，内圈 5x5 是常规战场格，外圈通常不补牌、不允许地面单位放置，但飞行单位可以进入空中层。格子的能力会随着“交换单元格”移动，不能用当前位置推断能否补牌或放置。兽径这类地形/单元格效果也存放在 `BoardCell`，并随单元格交换移动；移动合法性使用当前兽径连通图判断，不能只看固定坐标或原始路径 id。
 
 ## 卡牌数据规则
 
@@ -76,7 +76,7 @@
 
 重要行动：
 
-- `MoveAction`：默认相邻移动；拥有瞬移能力时可选择全场合法空格。地面单位选地面层，飞行单位选空中层。
+- `MoveAction`：默认相邻移动；拥有瞬移能力时可选择全场合法空格。地面单位选地面层，飞行单位选空中层。野兽人地面随从在连通兽径上移动时可穿越中间单位和建筑，且不消耗主行动力和移动力，但仍受定身/冻结等行动禁止状态限制。
 - `DirectionalMoveAction`：无目标方向移动，用于通风猕猴“西行”等固定方向副动作。
 - `AttackAction`：普通攻击，包含远程规则、巨兽溅射、占领提示、护甲减伤、隐身目标过滤、攻击后破隐。
 - `SpellAction`：棋盘单位的施法动作。目标由 `SpellTargetResolver` 解析；施法后默认破除隐身，除非配置 `breaks_stealth: false`。
@@ -88,7 +88,7 @@
 
 效果由 JSON 配置驱动，在 `EffectRegistry` 中注册。新增效果 id 和配置键应先放入 `EffectData`，避免字符串散落。
 
-已实现的通用效果包括：治疗、伤害、护盾、资源分、法力、翻牌、施加/净化状态、授予行动/施法/关键词/复生、获取或选择卡牌入手、复活、进化、顺序献祭、棋盘陷阱、单元格交换、子母蛊链接、种族状态、透视、月刃、多目标法术、入场同步属性、友方攻击协同等。
+已实现的通用效果包括：治疗、伤害、护盾、资源分、法力、翻牌、施加/净化状态、授予行动/施法/关键词/复生、获取或选择卡牌入手、复活、进化、顺序献祭、棋盘陷阱、单元格交换、单元格地形/兽径、子母蛊链接、种族状态、透视、月刃、多目标法术、入场同步属性、友方攻击协同等。
 
 规则应优先使用通用效果。只有无法通过数据组合表达的机制，才考虑新增较专用的效果。
 
@@ -104,7 +104,7 @@
 
 隐身使敌方行动无法选中该单位。友方行动仍可选择己方隐身单位。
 
-多阶段目标选择应复用通用选择控制器，不要把流程写死在某张卡里。
+多阶段目标选择应复用通用选择控制器，不要把流程写死在某张卡里。矢量/直线选择使用 `BoardLineSelectionController`：先选起点，再选终点；终点必须与起点形成横、竖或 45 度斜线，并满足固定长度。当前用于野兽人“兽径”的 5 格直线选择。
 
 ## 状态系统
 
@@ -174,7 +174,7 @@
 - 苗疆族：毒、毒虫、剧毒之泉、注入毒液、毒爆、毒相关升级。
 - 狐妖仙：尾数、献祭种族技能、默认入手升级、魅惑和复生体系。
 - 猴妖仙：施法/移动/攻击互斥关系扩展、透视、定身、隐身/暴击、护甲装备、瞬移、分身协攻、固定方向副动作和阵营型净化。
-- 野兽人：同系斩杀进化。种族块通过 `evolution_rules` 描述进化链；卡牌通过 `evolution_line` 声明所属血脉。当前链条包括劣角兽 -> 角兽 -> 大角兽、剃刀兽 -> 剃刀兽战车、人马兽 -> 飞斧人马兽、鹰身女妖 -> 疯语兽、牛头怪 -> 重武牛头怪。规则牌“适者生存”默认入手，仅用于玩家理解种族规则，真实触发由死亡结算后的种族 resolver 统一处理。卡扎克·独眼通过普通攻击击败友方非英雄随从后，会获得目标卡牌原始攻击/生命上限，并使自身运行时混沌腐蚀 +1；这不是新动作。该成长写入 `CardState.permanent_stat_overrides`，优先级高于 `origin`，不会污染原始快照，也不能被净化/驱散；英雄死亡进入复活手牌后再放置，会以这些永久覆盖值作为新鲜状态初始化。部分野兽人卡牌带有 `chaos_corruption` 静态数值。默认入手升级牌“混沌腐蚀”在己方回合结束时触发 `chaos_corruption_burst`：统计场上己方正面随从的混沌腐蚀总数，每 10 点对全部敌方正面随从造成 1 点伤害，建筑不计入也不受伤害。2 阶升级牌“野蛮咆哮”通过手牌区 `grant_spell_actions` 授予鹰身女妖和疯语兽无目标施法动作；释放后使用 `apply_status` 给 `friendly_minions` 目标集合附加本回合 `attack_bonus +1` 状态。2 阶随从“嘶叫萨满”自带野性呼唤施法动作，使用 `add_card_to_hand` 的 `card_ids` 候选池随机获得一个初级野兽。3 阶建筑“万魔岩”监听成功的野兽人友军杀戮进化和卡扎克杀戮成长，给同 owner 的万魔岩附加不可净化的 `wanmo_charge` 储存资源状态；废灭仪式读取该状态层数，消耗充能并获得等量古尔兽。
+- 野兽人：同系斩杀进化。种族块通过 `evolution_rules` 描述进化链；卡牌通过 `evolution_line` 声明所属血脉。当前链条包括劣角兽 -> 角兽 -> 大角兽、剃刀兽 -> 剃刀兽战车、人马兽 -> 飞斧人马兽、鹰身女妖 -> 疯语兽、牛头怪 -> 重武牛头怪。规则牌“适者生存”默认入手，仅用于玩家理解种族规则，真实触发由死亡结算后的种族 resolver 统一处理。卡扎克·独眼通过普通攻击击败友方非英雄随从后，会获得目标卡牌原始攻击/生命上限，并使自身运行时混沌腐蚀 +1；这不是新动作。该成长写入 `CardState.permanent_stat_overrides`，优先级高于 `origin`，不会污染原始快照，也不能被净化/驱散；英雄死亡进入复活手牌后再放置，会以这些永久覆盖值作为新鲜状态初始化。部分野兽人卡牌带有 `chaos_corruption` 静态数值。默认入手升级牌“混沌腐蚀”在己方回合结束时触发 `chaos_corruption_burst`：统计场上己方正面随从的混沌腐蚀总数，每 10 点对全部敌方正面随从造成 1 点伤害，建筑不计入也不受伤害。1 阶法术“兽径”使用 `set_beast_path` 打开五格直线矢量选择，并把兽径写入 `BoardCell`；野兽人地面随从可在当前连通兽径网络内移动到合法空位，穿越中间单位和建筑，不消耗主行动力和移动力。2 阶升级牌“野蛮咆哮”通过手牌区 `grant_spell_actions` 授予鹰身女妖和疯语兽无目标施法动作；释放后使用 `apply_status` 给 `friendly_minions` 目标集合附加本回合 `attack_bonus +1` 状态。2 阶随从“嘶叫萨满”自带野性呼唤施法动作，使用 `add_card_to_hand` 的 `card_ids` 候选池随机获得一个初级野兽。3 阶建筑“万魔岩”监听成功的野兽人友军杀戮进化和卡扎克杀戮成长，给同 owner 的万魔岩附加不可净化的 `wanmo_charge` 储存资源状态；废灭仪式读取该状态层数，消耗充能并获得等量古尔兽。
 
 状态净化支持正负面筛选。`CardStatus` 保存 `status_valence`，可取 `positive`、`negative`、`neutral`；未显式配置时按状态 id、标签和属性修正数值推断。`CleanseEffect` 通过 `cleanse_mode` 控制净化范围：`all` 保持旧逻辑，`positive` 只移除正面状态，`negative` 只移除负面状态。全场阵营型净化使用效果目标 `friendly_units` / `enemy_units`，只影响随从时使用 `friendly_minions`，不要在单张卡牌里手写遍历逻辑。当前例子是猴妖仙“驱神大圣禺狨王”：驱散敌方单位正面状态，并解除己方单位负面状态。
 
@@ -190,7 +190,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
-野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波和仪式碎片等视觉由 `CardAnimationController` 统一生成。
+野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`；多格路径特效通过 `play_path_effect_animation()` 进入，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉由 `CardAnimationController` 统一生成。
 
 音频表现由 `AudioManager` 统一管理，配置在 `data/audio.json`。`GameManager` 只暴露 `play_sfx()`、`play_spell_sfx()` 和 `start_battle_music()` 门面；规则层不直接持有 `AudioStreamPlayer`，视觉动画层也不直接加载音频资源。进入棋盘后默认播放 `battle_default` 背景音乐；没有外部音频文件时可使用程序化 BGM 兜底。攻击音效使用 `attack_melee` / `attack_ranged`，法术优先读取卡牌或 spell action 的 `audio` key，否则可按 `spell_<animation>` 约定扩展。
 

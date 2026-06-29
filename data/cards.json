@@ -2908,6 +2908,26 @@
 				]
 			},
 			{
+				"id": "beast_path",
+				"name": "兽径",
+				"description": "选择一条直线上的5个单元格，挖掘兽径地道。野兽人地面随从可沿连通兽径移动至合法空位，穿越其他单位和建筑，且不消耗主行动力和移动力。",
+				"url": "res://assets/img/野兽人/兽径.png",
+				"type": "spell",
+				"count": 1,
+				"level": 1,
+				"animation": "beast_path",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "set_beast_path",
+						"line_length": 5,
+						"animation": "beast_path",
+						"selection_title": "选择兽径直线"
+					}
+				]
+			},
+			{
 				"id": "savage_roar",
 				"name": "野蛮咆哮",
 				"description": "升级牌。允许鹰身女妖和疯语兽释放野蛮咆哮，使本回合所有友方随从攻击力+1。",

@@ -144,6 +144,7 @@ const EFFECT_MODIFY_HERO_REVIVE_COOLDOWN := "modify_hero_revive_cooldown"
 const EFFECT_SYNC_STATS_FROM_OWNER_CARD := "sync_stats_from_owner_card"
 const EFFECT_ASSIST_ATTACK_ATTACK_TARGET := "assist_attack_attack_target"
 const EFFECT_CHAOS_CORRUPTION_BURST := "chaos_corruption_burst"
+const EFFECT_SET_BEAST_PATH := "set_beast_path"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"

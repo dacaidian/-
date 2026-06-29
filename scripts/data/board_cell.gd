@@ -16,6 +16,7 @@ var column := -1
 var is_land := true
 var ground_state: CardState
 var aerial_states: Array[CardState] = []
+var beast_path_ids: Array[String] = []
 
 
 func setup(index: int, board_columns: int, land_value: bool) -> void:
@@ -27,6 +28,17 @@ func setup(index: int, board_columns: int, land_value: bool) -> void:
 
 func can_hold_ground() -> bool:
 	return is_land
+
+
+func has_beast_path() -> bool:
+	return not beast_path_ids.is_empty()
+
+
+func add_beast_path(path_id: String) -> void:
+	if path_id == "" or beast_path_ids.has(path_id):
+		return
+
+	beast_path_ids.append(path_id)
 
 
 func can_refill_ground() -> bool:
@@ -60,6 +72,9 @@ func swap_cell_properties_with(other_cell: BoardCell) -> void:
 	var self_is_land := is_land
 	is_land = other_cell.is_land
 	other_cell.is_land = self_is_land
+	var self_beast_path_ids := beast_path_ids.duplicate()
+	beast_path_ids = other_cell.beast_path_ids.duplicate()
+	other_cell.beast_path_ids = self_beast_path_ids
 
 
 func has_aerial_units() -> bool:

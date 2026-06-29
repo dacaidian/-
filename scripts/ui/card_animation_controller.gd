@@ -373,6 +373,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_savage_roar_at_rect(owner, effect_root, target_card.get_global_rect())
 		"wild_call":
 			await play_wild_call_at_rect(owner, effect_root, target_card.get_global_rect())
+		"beast_path":
+			await play_wild_call_at_rect(owner, effect_root, target_card.get_global_rect())
 		"wanmo_ritual":
 			await play_wanmo_ritual_at_rect(owner, effect_root, target_card.get_global_rect())
 		"soul_hook":
@@ -448,6 +450,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		"savage_roar":
 			await play_savage_roar_at_rect(owner, effect_root, target_rect)
 		"wild_call":
+			await play_wild_call_at_rect(owner, effect_root, target_rect)
+		"beast_path":
 			await play_wild_call_at_rect(owner, effect_root, target_rect)
 		"wanmo_ritual":
 			await play_wanmo_ritual_at_rect(owner, effect_root, target_rect)
@@ -1944,6 +1948,62 @@ func play_board_effect(owner: Node, effect_root: Control, animation_key: String)
 			await play_chaos_corruption_board_burst(owner, effect_root)
 		_:
 			return
+
+
+func play_path_effect(owner: Node, effect_root: Control, target_rects: Array[Rect2], animation_key: String) -> void:
+	if owner == null or effect_root == null or target_rects.is_empty():
+		return
+
+	match animation_key:
+		"beast_path":
+			await play_beast_path_line_effect(owner, effect_root, target_rects)
+		_:
+			return
+
+
+func play_beast_path_line_effect(owner: Node, effect_root: Control, target_rects: Array[Rect2]) -> void:
+	var segments: Array[Panel] = []
+	var sigils: Array[Label] = []
+	for index in range(target_rects.size()):
+		var rect := target_rects[index]
+		if rect.size == Vector2.ZERO:
+			continue
+		var segment := create_rect_spell_effect(rect, "BeastPathSegment_%d" % index, create_beast_path_segment_style(index), 1.04)
+		var sigil := create_beastmen_spell_sigil(rect, "径", Color(0.86, 0.62, 0.26, 0.96), 0.32)
+		segment.z_index = 2260
+		sigil.z_index = 2268
+		effect_root.add_child(segment)
+		effect_root.add_child(sigil)
+		segments.append(segment)
+		sigils.append(sigil)
+
+	var dig_tween := owner.create_tween()
+	dig_tween.set_parallel(true)
+	dig_tween.set_trans(Tween.TRANS_BACK)
+	dig_tween.set_ease(Tween.EASE_OUT)
+	for index in range(segments.size()):
+		var delay := spell_animation_duration * 0.08 * float(index)
+		dig_tween.tween_property(segments[index], "modulate:a", 0.92, spell_animation_duration * 0.28).set_delay(delay)
+		dig_tween.tween_property(segments[index], "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.28).set_delay(delay)
+		dig_tween.tween_property(sigils[index], "modulate:a", 0.90, spell_animation_duration * 0.28).set_delay(delay)
+		dig_tween.tween_property(sigils[index], "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.28).set_delay(delay)
+	await dig_tween.finished
+
+	var settle_tween := owner.create_tween()
+	settle_tween.set_parallel(true)
+	settle_tween.set_trans(Tween.TRANS_SINE)
+	settle_tween.set_ease(Tween.EASE_IN_OUT)
+	for index in range(segments.size()):
+		settle_tween.tween_property(segments[index], "scale", Vector2(1.24, 1.24), spell_animation_duration * 0.62)
+		settle_tween.tween_property(segments[index], "modulate:a", 0.0, spell_animation_duration * 0.62)
+		settle_tween.tween_property(sigils[index], "global_position", sigils[index].global_position + Vector2(0.0, -target_rects[index].size.y * 0.12), spell_animation_duration * 0.62)
+		settle_tween.tween_property(sigils[index], "modulate:a", 0.0, spell_animation_duration * 0.62)
+	await settle_tween.finished
+
+	for segment in segments:
+		segment.queue_free()
+	for sigil in sigils:
+		sigil.queue_free()
 
 
 func play_chaos_corruption_board_burst(owner: Node, effect_root: Control) -> void:
@@ -3869,6 +3929,18 @@ func create_chaos_corruption_mote_style(index: int) -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.84, 0.00, 0.00, 0.56)
 	style.shadow_size = 18
+	return style
+
+
+func create_beast_path_segment_style(index: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	var pulse := 0.04 * float(index % 2)
+	style.bg_color = Color(0.30 + pulse, 0.16, 0.04, 0.42)
+	style.border_color = Color(0.86, 0.52 + pulse, 0.18, 0.82)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(10)
+	style.shadow_color = Color(0.24, 0.62, 0.10, 0.42)
+	style.shadow_size = 24
 	return style
 
 

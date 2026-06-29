@@ -52,6 +52,9 @@ signal face_changed(is_face_up: bool)
 @export var valid_target_backlight_margin := 12
 @export var area_preview_color := Color(0.26, 0.58, 1.0, 0.52)
 @export var area_preview_edge_color := Color(0.52, 0.85, 1.0, 0.88)
+@export var beast_path_color := Color(0.34, 0.19, 0.06, 0.34)
+@export var beast_path_edge_color := Color(0.74, 0.48, 0.18, 0.70)
+@export var beast_path_glow_color := Color(0.22, 0.52, 0.10, 0.28)
 @export var divine_shield_color := Color(1.0, 0.84, 0.24, 0.26)
 @export var divine_shield_edge_color := Color(1.0, 0.92, 0.48, 0.82)
 @export var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
@@ -606,6 +609,9 @@ func _draw() -> void:
 	if state == null:
 		return
 
+	if state.has_beast_path:
+		draw_beast_path()
+
 	# 焦点态优先显示金色背光；此时不显示当前回合的绿色可操纵提示。
 	if state.is_area_preview:
 		draw_area_preview()
@@ -653,3 +659,26 @@ func draw_area_preview() -> void:
 	var card_rect := Rect2(Vector2.ZERO, size)
 	draw_rect(card_rect, area_preview_color, true)
 	draw_rect(card_rect, area_preview_edge_color, false, 4)
+
+
+func draw_beast_path() -> void:
+	var card_rect := Rect2(Vector2.ZERO, size)
+	var inset := maxf(minf(size.x, size.y) * 0.10, 4.0)
+	var path_rect := card_rect.grow(-inset)
+	draw_rect(path_rect, beast_path_color, true)
+	draw_rect(path_rect, beast_path_edge_color, false, 3)
+
+	var center := card_rect.get_center()
+	var tunnel_width := maxf(minf(size.x, size.y) * 0.16, 8.0)
+	draw_line(
+		Vector2(inset, center.y),
+		Vector2(size.x - inset, center.y),
+		beast_path_glow_color,
+		tunnel_width
+	)
+	draw_line(
+		Vector2(center.x, inset),
+		Vector2(center.x, size.y - inset),
+		Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.55),
+		tunnel_width * 0.62
+	)

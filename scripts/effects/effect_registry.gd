@@ -9,6 +9,7 @@ const SyncStatsFromOwnerCardEffectScript := preload("res://scripts/effects/sync_
 const AssistAttackAttackTargetEffectScript := preload("res://scripts/effects/assist_attack_attack_target_effect.gd")
 const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit_effect.gd")
 const ChaosCorruptionBurstEffectScript := preload("res://scripts/effects/chaos_corruption_burst_effect.gd")
+const SetBeastPathEffectScript := preload("res://scripts/effects/set_beast_path_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -45,6 +46,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_SYNC_STATS_FROM_OWNER_CARD, SyncStatsFromOwnerCardEffectScript.new())
 	register_effect(EffectData.EFFECT_ASSIST_ATTACK_ATTACK_TARGET, AssistAttackAttackTargetEffectScript.new())
 	register_effect(EffectData.EFFECT_CHAOS_CORRUPTION_BURST, ChaosCorruptionBurstEffectScript.new())
+	register_effect(EffectData.EFFECT_SET_BEAST_PATH, SetBeastPathEffectScript.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:
