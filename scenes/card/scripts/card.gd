@@ -354,6 +354,9 @@ func setup_status_overlay() -> void:
 	status_overlay.offset_top = 0.0
 	status_overlay.offset_right = 0.0
 	status_overlay.offset_bottom = 0.0
+	status_overlay.beast_path_color = beast_path_color
+	status_overlay.beast_path_edge_color = beast_path_edge_color
+	status_overlay.beast_path_glow_color = beast_path_glow_color
 	status_overlay.divine_shield_color = divine_shield_color
 	status_overlay.divine_shield_edge_color = divine_shield_edge_color
 	status_overlay.divine_shield_glow_color = divine_shield_glow_color
@@ -609,9 +612,6 @@ func _draw() -> void:
 	if state == null:
 		return
 
-	if state.has_beast_path:
-		draw_beast_path()
-
 	# 焦点态优先显示金色背光；此时不显示当前回合的绿色可操纵提示。
 	if state.is_area_preview:
 		draw_area_preview()
@@ -660,25 +660,3 @@ func draw_area_preview() -> void:
 	draw_rect(card_rect, area_preview_color, true)
 	draw_rect(card_rect, area_preview_edge_color, false, 4)
 
-
-func draw_beast_path() -> void:
-	var card_rect := Rect2(Vector2.ZERO, size)
-	var inset := maxf(minf(size.x, size.y) * 0.10, 4.0)
-	var path_rect := card_rect.grow(-inset)
-	draw_rect(path_rect, beast_path_color, true)
-	draw_rect(path_rect, beast_path_edge_color, false, 3)
-
-	var center := card_rect.get_center()
-	var tunnel_width := maxf(minf(size.x, size.y) * 0.16, 8.0)
-	draw_line(
-		Vector2(inset, center.y),
-		Vector2(size.x - inset, center.y),
-		beast_path_glow_color,
-		tunnel_width
-	)
-	draw_line(
-		Vector2(center.x, inset),
-		Vector2(center.x, size.y - inset),
-		Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.55),
-		tunnel_width * 0.62
-	)

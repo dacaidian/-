@@ -5,6 +5,9 @@ class_name CardStatusOverlay
 # It is purely presentational: CardState remains the single source of truth.
 
 var state: CardState
+var beast_path_color := Color(0.30, 0.16, 0.04, 0.28)
+var beast_path_edge_color := Color(0.86, 0.58, 0.20, 0.88)
+var beast_path_glow_color := Color(0.28, 0.70, 0.16, 0.42)
 var divine_shield_color := Color(1.0, 0.84, 0.24, 0.26)
 var divine_shield_edge_color := Color(1.0, 0.92, 0.48, 0.82)
 var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
@@ -80,7 +83,11 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge()
+
+
+func should_show_beast_path() -> bool:
+	return state != null and state.has_beast_path
 
 
 func should_show_divine_shield() -> bool:
@@ -204,6 +211,8 @@ func should_show_wanmo_charge() -> bool:
 
 
 func _draw() -> void:
+	if should_show_beast_path():
+		draw_beast_path_overlay()
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_meteor_aura():
@@ -238,6 +247,41 @@ func _draw() -> void:
 		draw_divine_shield()
 	if should_show_freeze():
 		draw_freeze_overlay()
+
+
+func draw_beast_path_overlay() -> void:
+	var card_rect := Rect2(Vector2.ZERO, size)
+	var inset := maxf(minf(size.x, size.y) * 0.035, 2.0)
+	var path_rect := card_rect.grow(-inset)
+	var center := card_rect.get_center()
+	var tunnel_width := maxf(minf(size.x, size.y) * 0.22, 12.0)
+
+	draw_rect(path_rect, beast_path_color, true)
+	draw_rect(path_rect, beast_path_edge_color, false, 6)
+
+	draw_line(
+		Vector2(inset, center.y),
+		Vector2(size.x - inset, center.y),
+		beast_path_glow_color,
+		tunnel_width
+	)
+	draw_line(
+		Vector2(center.x, inset),
+		Vector2(center.x, size.y - inset),
+		Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.78),
+		tunnel_width * 0.72
+	)
+
+	var crack_color := Color(1.0, 0.74, 0.28, 0.60)
+	draw_line(Vector2(size.x * 0.16, size.y * 0.24), Vector2(size.x * 0.38, size.y * 0.42), crack_color, 3.0)
+	draw_line(Vector2(size.x * 0.38, size.y * 0.42), Vector2(size.x * 0.27, size.y * 0.58), crack_color, 2.0)
+	draw_line(Vector2(size.x * 0.78, size.y * 0.26), Vector2(size.x * 0.55, size.y * 0.48), crack_color, 3.0)
+	draw_line(Vector2(size.x * 0.55, size.y * 0.48), Vector2(size.x * 0.70, size.y * 0.70), crack_color, 2.0)
+
+	for index in range(5):
+		var angle := TAU * float(index) / 5.0 + 0.32
+		var point := center + Vector2(cos(angle), sin(angle)) * minf(size.x, size.y) * 0.28
+		draw_circle(point, 3.5, Color(0.86, 0.54, 0.16, 0.72))
 
 
 func draw_arcane_aura() -> void:
