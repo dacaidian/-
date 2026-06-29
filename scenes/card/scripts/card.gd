@@ -659,4 +659,3 @@ func draw_area_preview() -> void:
 	var card_rect := Rect2(Vector2.ZERO, size)
 	draw_rect(card_rect, area_preview_color, true)
 	draw_rect(card_rect, area_preview_edge_color, false, 4)
-
