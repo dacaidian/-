@@ -65,6 +65,12 @@ var wanmo_charge_edge_color := Color(1.0, 0.24, 0.08, 0.78)
 var wanmo_charge_core_color := Color(1.0, 0.46, 0.12, 0.92)
 var wanmo_charge_text_color := Color(1.0, 0.90, 0.58, 0.98)
 var wanmo_charge_shadow_color := Color(0.12, 0.0, 0.0, 0.96)
+var fel_infusion_color := Color(0.10, 0.82, 0.28, 0.18)
+var fel_infusion_edge_color := Color(0.44, 1.0, 0.26, 0.82)
+var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
+var fel_madness_color := Color(0.30, 0.88, 0.12, 0.14)
+var fel_madness_edge_color := Color(0.68, 1.0, 0.20, 0.78)
+var fel_madness_rune_color := Color(0.12, 0.02, 0.02, 0.82)
 
 
 func _ready() -> void:
@@ -83,7 +89,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_fel_infusion() or should_show_fel_madness()
 
 
 func should_show_beast_path() -> bool:
@@ -210,6 +216,20 @@ func should_show_wanmo_charge() -> bool:
 	return state.is_face_up and state.is_building() and status != null and status.get_wanmo_charge() > 0
 
 
+func should_show_fel_infusion() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FEL_INFUSION)
+
+
+func should_show_fel_madness() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.has_status(CardStatus.STATUS_FEL_MADNESS_CHAOS_ORC)
+
+
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
@@ -227,6 +247,10 @@ func _draw() -> void:
 		draw_reborn_overlay()
 	if should_show_wanmo_charge():
 		draw_wanmo_charge_overlay()
+	if should_show_fel_infusion():
+		draw_fel_infusion_overlay()
+	if should_show_fel_madness():
+		draw_fel_madness_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -356,6 +380,53 @@ func draw_wanmo_charge_overlay() -> void:
 	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
 	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_shadow_color)
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_text_color)
+
+
+func draw_fel_infusion_overlay() -> void:
+	var fel_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
+	var center := fel_rect.get_center()
+	var radius := minf(fel_rect.size.x, fel_rect.size.y) * 0.42
+	var status := state.get_status(CardStatus.STATUS_FEL_INFUSION) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 4)
+
+	draw_rect(fel_rect, fel_infusion_color, true)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 4.2
+		var alpha := fel_infusion_edge_color.a * (1.0 - float(index) * 0.13)
+		draw_arc(center, ring_radius, -PI * 0.12, TAU - PI * 0.12, 84, Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, alpha), 2.5, true)
+
+	for index in range(7):
+		var angle := -PI * 0.85 + float(index) * PI * 1.70 / 6.0
+		var from_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.20
+		var bend_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.66 + Vector2(-sin(angle), cos(angle)) * sin(float(index) * 1.9) * 7.0
+		var to_point := center + Vector2(cos(angle), sin(angle)) * radius * 1.02
+		draw_line(from_point, bend_point, fel_infusion_flame_color, 2.4)
+		draw_line(bend_point, to_point, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.48), 1.8)
+
+
+func draw_fel_madness_overlay() -> void:
+	var madness_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := madness_rect.get_center()
+	var radius := minf(madness_rect.size.x, madness_rect.size.y) * 0.34
+	var status := state.get_status(CardStatus.STATUS_FEL_MADNESS_CHAOS_ORC) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var claw_count: int = mini(maxi(stack_count + 2, 3), 6)
+
+	draw_rect(madness_rect, fel_madness_color, true)
+	for index in range(3):
+		var grow := float(index) * 4.0
+		var alpha := fel_madness_edge_color.a * (1.0 - float(index) * 0.18)
+		draw_rect(madness_rect.grow(grow), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, alpha), false, maxf(size.x * 0.020, 2.0), true)
+
+	for index in range(claw_count):
+		var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(index) * 0.56 / float(maxi(claw_count - 1, 1)))
+		var top := center.y - radius * (0.56 + 0.10 * float(index % 2))
+		var bottom := center.y + radius * 0.58
+		draw_line(Vector2(x - radius * 0.10, top), Vector2(x + radius * 0.08, bottom), fel_madness_edge_color, 2.6)
+		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.58), 1.6)
+
+	draw_circle(center, radius * 0.20, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.44))
 
 
 func draw_divine_shield() -> void:

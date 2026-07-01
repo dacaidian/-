@@ -163,6 +163,9 @@ func execute_hand_card(
 		EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_HAND_SPELL)
 		await game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
 
+	if game_manager.has_method("resolve_after_spell_cast"):
+		await game_manager.resolve_after_spell_cast(player.id, null, resolved_spell)
+
 	player.remove_from_hand_at(hand_index, card_data)
 	game_manager.update_hand_drawer_view()
 	game_manager.refresh_debug_panel()

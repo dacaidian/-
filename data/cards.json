@@ -3132,15 +3132,104 @@
 			{
 				"id": "guldan",
 				"name": "古尔丹",
-				"description": "影月议会英雄。古尔丹是邪能与背叛的化身，他以低语腐化氏族，以黑暗之门召来恶魔军团。当前仅作为影月议会的英雄骨架，后续会逐步接入邪能状态、恶魔召唤与黑暗之门体系。",
+				"description": "影月议会英雄。古尔丹以邪能低语统御兽人与恶魔，宁愿燃烧自己的生命也要换取更强的支配力。当前围绕邪能触发和疯狂增益展开，后续会继续接入恶魔召唤与黑暗之门体系。",
 				"url": "res://assets/img/影月议会/古尔丹.png",
 				"type": "minion",
 				"role": "hero",
 				"count": 1,
 				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 1,
+				"health": 18,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "fel_infusion",
+						"name": "邪能灌注",
+						"animation": "fel_infusion",
+						"target_rule": "friendly_non_hero_minions",
+						"spell_tags": [
+							"fel"
+						],
+						"effects": [
+							{
+								"id": "damage",
+								"target": "self",
+								"amount": 2,
+								"spell_power_scaling": false
+							},
+							{
+								"id": "apply_status",
+								"target": "self",
+								"status_id": "fel_infusion",
+								"status_name": "邪能灌注",
+								"status_description": "本回合攻击力+3。",
+								"status_tags": [
+									"attack_modifier"
+								],
+								"duration_turns": 1,
+								"expires_on_trigger": "after_turn_end",
+								"status_valence": "positive",
+								"payload": {
+									"attack_bonus": 3
+								},
+								"apply_animation": "fel_infusion"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "fel_madness",
+				"name": "邪能狂乱",
+				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人陷入疯狂，攻击力+1。",
+				"url": "res://assets/img/影月议会/邪能狂乱.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"trigger": "after_spell_cast",
+						"active_zone": "hand",
+						"required_spell_tags": [
+							"fel"
+						],
+						"target": "friendly_minions_by_card_ids",
+						"card_ids": [
+							"chaos_orc"
+						],
+						"status_id": "fel_madness_chaos_orc",
+						"status_name": "邪能疯狂",
+						"status_description": "疯狂：本回合攻击力+1。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"duration_turns": 1,
+						"expires_on_trigger": "after_turn_end",
+						"status_valence": "positive",
+						"payload": {
+							"attack_bonus": 1
+						},
+						"apply_animation": "fel_madness"
+					}
+				]
+			},
+			{
+				"id": "chaos_orc",
+				"name": "混乱兽人",
+				"description": "影月议会基础随从。疯狂：当你本回合触发邪能后，攻击力+1。",
+				"url": "res://assets/img/影月议会/混乱兽人.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
 				"keywords": [],
 				"attack": 2,
-				"health": 14,
+				"health": 4,
 				"effects": []
 			}
 		]

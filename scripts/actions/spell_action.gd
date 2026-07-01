@@ -84,7 +84,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	if EffectData.should_break_stealth_after_spell(spell_data):
 		break_attack_or_spell_stealth(user)
-	record_successful_spell_cast(user, game_manager)
+	await record_successful_spell_cast(user, game_manager)
 
 
 func requires_target() -> bool:
@@ -130,6 +130,8 @@ func record_successful_spell_cast(user: CardState, game_manager: GameManager) ->
 		return
 
 	owner.record_spell_action(user.card_id, spell_data)
+	if game_manager.has_method("resolve_after_spell_cast"):
+		await game_manager.resolve_after_spell_cast(owner.id, user, spell_data)
 
 
 func break_attack_or_spell_stealth(user: CardState) -> void:

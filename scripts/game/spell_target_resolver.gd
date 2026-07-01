@@ -6,6 +6,7 @@ class_name SpellTargetResolver
 
 const TARGET_RULE_ALL_MINIONS := "all_minions"
 const TARGET_RULE_NON_HERO_MINIONS := "non_hero_minions"
+const TARGET_RULE_FRIENDLY_NON_HERO_MINIONS := "friendly_non_hero_minions"
 const TARGET_RULE_LOW_STAT_NON_HERO_MINIONS := "low_stat_non_hero_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
 const TARGET_RULE_NONE := "none"
@@ -91,6 +92,13 @@ static func can_target(
 			return target.is_minion()
 		TARGET_RULE_NON_HERO_MINIONS:
 			return target.is_minion() and not target.is_hero()
+		TARGET_RULE_FRIENDLY_NON_HERO_MINIONS:
+			return (
+				target.is_minion()
+				and not target.is_hero()
+				and resolved_source_owner_id != ""
+				and target.owner_id == resolved_source_owner_id
+			)
 		TARGET_RULE_LOW_STAT_NON_HERO_MINIONS:
 			return target.is_minion() and not target.is_hero() and get_current_attribute_total(target) < 8
 		TARGET_RULE_ALL_UNITS:

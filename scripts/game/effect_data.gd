@@ -10,6 +10,8 @@ const KEY_ACTIVE_ZONE := "active_zone"
 const KEY_CARD_IDS := "card_ids"
 const KEY_SOURCE_CARD_IDS := "source_card_ids"
 const KEY_SPELL_IDS := "spell_ids"
+const KEY_SPELL_TAGS := "spell_tags"
+const KEY_REQUIRED_SPELL_TAGS := "required_spell_tags"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_ACTIONS := "actions"
 const KEY_ACTION_ID := "action_id"
@@ -154,6 +156,7 @@ const TRIGGER_WHILE_IN_HAND := "while_in_hand"
 const TRIGGER_WHILE_EQUIPPED := "while_equipped"
 const TRIGGER_WHILE_ON_BOARD := "while_on_board"
 const TRIGGER_PASSIVE := "passive"
+const TRIGGER_AFTER_SPELL_CAST := "after_spell_cast"
 
 const TARGET_SELF := "self"
 const TARGET_SELECTED := "selected"
@@ -173,6 +176,7 @@ const TARGET_ATTACK_TARGET_UNIT := "attack_target_unit"
 const TARGET_ENEMY_AND_NEUTRAL_UNITS := "enemy_and_neutral_units"
 const TARGET_FRIENDLY_UNITS := "friendly_units"
 const TARGET_FRIENDLY_MINIONS := "friendly_minions"
+const TARGET_FRIENDLY_MINIONS_BY_CARD_IDS := "friendly_minions_by_card_ids"
 const TARGET_ENEMY_UNITS := "enemy_units"
 
 const STATUS_VALENCE_POSITIVE := "positive"
@@ -311,6 +315,30 @@ static func get_spell_ids(effect_data: Dictionary) -> Array[String]:
 				spell_ids.append(normalized_spell_id)
 
 	return spell_ids
+
+
+static func get_spell_tags(spell_data: Dictionary) -> Array[String]:
+	var spell_tags: Array[String] = []
+	var raw_spell_tags: Variant = spell_data.get(KEY_SPELL_TAGS, [])
+	if raw_spell_tags is Array:
+		for spell_tag in raw_spell_tags:
+			var normalized_spell_tag := str(spell_tag)
+			if normalized_spell_tag != "" and not spell_tags.has(normalized_spell_tag):
+				spell_tags.append(normalized_spell_tag)
+
+	return spell_tags
+
+
+static func get_required_spell_tags(effect_data: Dictionary) -> Array[String]:
+	var spell_tags: Array[String] = []
+	var raw_spell_tags: Variant = effect_data.get(KEY_REQUIRED_SPELL_TAGS, [])
+	if raw_spell_tags is Array:
+		for spell_tag in raw_spell_tags:
+			var normalized_spell_tag := str(spell_tag)
+			if normalized_spell_tag != "" and not spell_tags.has(normalized_spell_tag):
+				spell_tags.append(normalized_spell_tag)
+
+	return spell_tags
 
 
 static func get_runtime_state_ids(effect_data: Dictionary) -> Array[String]:

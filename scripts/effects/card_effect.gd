@@ -110,6 +110,8 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			targets = get_friendly_units(source_state, effect_data, game_manager)
 		EffectData.TARGET_FRIENDLY_MINIONS:
 			targets = get_friendly_minions(source_state, effect_data, game_manager)
+		EffectData.TARGET_FRIENDLY_MINIONS_BY_CARD_IDS:
+			targets = get_friendly_minions_by_card_ids(source_state, effect_data, game_manager)
 		EffectData.TARGET_ENEMY_UNITS:
 			targets = get_enemy_units(source_state, effect_data, game_manager)
 		_:
@@ -334,6 +336,19 @@ func get_friendly_minions(source_state: CardState, effect_data: Dictionary, game
 	var targets: Array[CardState] = []
 	for target_state in get_friendly_units(source_state, effect_data, game_manager):
 		if target_state.is_minion():
+			targets.append(target_state)
+
+	return targets
+
+
+func get_friendly_minions_by_card_ids(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	var card_ids := EffectData.get_card_ids(effect_data)
+	if card_ids.is_empty():
+		return targets
+
+	for target_state in get_friendly_minions(source_state, effect_data, game_manager):
+		if is_state_in_card_filter(target_state, card_ids):
 			targets.append(target_state)
 
 	return targets

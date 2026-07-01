@@ -221,7 +221,7 @@
 - 狐妖仙尾数与献祭。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。
 - 野兽人同系斩杀进化、卡扎克杀戮成长、混沌腐蚀爆发、兽径地形、鹰身女妖咆哮体系、野性呼唤和万魔岩仪式。优先读 `scripts/game/beastmen_evolution_resolver.gd`、`scripts/effects/chaos_corruption_burst_effect.gd`、`scripts/effects/set_beast_path_effect.gd`、`scripts/game/board_selection_controller.gd`、`scripts/game/board_query.gd`、`scripts/game/death_resolver.gd`、`scripts/data/board_cell.gd`、`scripts/data/card_state.gd` 和 `data/cards.json` 中的 `evolution_rules` / `evolution_line`。进化规则放种族块，不要写死在单张随从里；规则展示牌可用 `start_in_hand` 默认入手。卡扎克成长由普通攻击击杀友方非英雄随从触发，不要做成新动作；永久成长写入 `CardState.permanent_stat_overrides`，不要改写 `origin`。野兽人卡牌可配置 `movement` 和 `chaos_corruption` 静态字段；混沌腐蚀爆发由手牌区升级牌的 `after_turn_end` 效果统一结算；兽径使用 `set_beast_path` + `SelectionRequest.KIND_LINE_VECTOR` 五格直线选择，不要写成单位状态；野蛮咆哮这类授予施法动作的升级牌走 `grant_spell_actions`，群体随从增益用 `apply_status` + `target: "friendly_minions"`；随机获得候选卡使用 `add_card_to_hand` + `card_ids` 候选池；按状态层数生成卡牌使用 `add_card_to_hand` + `amount_source: "status_stacks"` + `status_id`，需要消耗资源时配置 `consume_source_status: true`。
-- 影月议会骨架和古尔丹英雄。当前只接入 `data/cards.json` 和 `assets/img/影月议会/` 资源；邪能、恶魔召唤、黑暗之门等机制等到具体卡牌任务再实现。
+- 影月议会邪能基础体系。优先读 `scripts/game/spell_cast_trigger_resolver.gd`、`scripts/actions/spell_action.gd`、`scripts/game/hand_play_resolver.gd`、`scripts/game/spell_target_resolver.gd`、`scripts/effects/card_effect.gd`、`scripts/data/card_status.gd`、`scripts/ui/card_status_overlay.gd` 和 `data/cards.json` 中的 `shadowmoon_council`。邪能法术或施法动作通过 `spell_tags: ["fel"]` 标记；默认入手升级牌“邪能狂乱”通过 `trigger: "after_spell_cast"` + `active_zone: "hand"` + `required_spell_tags` 监听成功施法，再用 `apply_status` 给对应随从附加疯狂状态。新增更多疯狂分支时优先增加手牌升级牌的配置效果或通用筛选目标，不要在 `SpellAction`、`GameManager` 或具体随从代码中按卡牌 id 写死。
 
 ## 未来地图与设计笔记
 

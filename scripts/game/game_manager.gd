@@ -20,6 +20,7 @@ const HandPassiveResolverScript := preload("res://scripts/game/hand_passive_reso
 const VictoryResolverScript := preload("res://scripts/game/victory_resolver.gd")
 const TriggerResolverScript := preload("res://scripts/game/trigger_resolver.gd")
 const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_resolver.gd")
+const SpellCastTriggerResolverScript := preload("res://scripts/game/spell_cast_trigger_resolver.gd")
 const StatusResolverScript := preload("res://scripts/game/status_resolver.gd")
 const EquipmentTriggerResolverScript := preload("res://scripts/game/equipment_trigger_resolver.gd")
 const BoardSlotEffectResolverScript := preload("res://scripts/game/board_slot_effect_resolver.gd")
@@ -154,6 +155,7 @@ var hand_passive_resolver := HandPassiveResolverScript.new()
 var victory_resolver := VictoryResolverScript.new()
 var trigger_resolver := TriggerResolverScript.new()
 var turn_trigger_resolver := TurnTriggerResolverScript.new()
+var spell_cast_trigger_resolver := SpellCastTriggerResolverScript.new()
 var status_resolver := StatusResolverScript.new()
 var equipment_trigger_resolver := EquipmentTriggerResolverScript.new()
 var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
@@ -982,6 +984,10 @@ func resolve_turn_timing_triggers(trigger: String, turn_player_id: String) -> vo
 	status_resolver.resolve_pre_trigger_status_effects(self, trigger, turn_player_id)
 	await turn_trigger_resolver.queue_turn_timing_triggers(self, trigger, turn_player_id)
 	status_resolver.resolve_turn_timing(self, trigger, turn_player_id)
+
+
+func resolve_after_spell_cast(owner_id: String, caster_state: CardState, spell_data: Dictionary) -> void:
+	await spell_cast_trigger_resolver.resolve_after_spell_cast(self, owner_id, caster_state, spell_data)
 
 
 func activate_spell_turn() -> void:

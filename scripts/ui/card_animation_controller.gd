@@ -359,6 +359,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
+		"fel_infusion", "fel_madness":
+			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"thin_burial":
@@ -437,6 +439,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"gu_infusion":
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
+		"fel_infusion", "fel_madness":
+			await play_fel_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_rect)
 		"thin_burial":
@@ -499,6 +503,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
+		"fel_infusion", "fel_madness":
+			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"thin_burial":
@@ -1551,6 +1557,65 @@ func play_gu_infusion_at_rect(owner: Node, effect_root: Control, target_rect: Re
 	tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration)
 	await tween.finished
 	ring.queue_free()
+
+
+func play_fel_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var is_madness := animation_key == "fel_madness"
+	var rift := create_rect_spell_effect(target_rect, "FelRift", create_fel_rift_style(is_madness), 1.24)
+	var core := create_rect_spell_effect(target_rect, "FelCore", create_fel_core_style(is_madness), 0.54)
+	var sigil := create_fel_sigil(target_rect, is_madness)
+	var embers := create_fel_embers_for_rect(target_rect, is_madness)
+
+	effect_root.add_child(rift)
+	effect_root.add_child(core)
+	effect_root.add_child(sigil)
+	for ember in embers:
+		effect_root.add_child(ember)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_BACK)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(rift, "modulate:a", 0.92, spell_animation_duration * 0.34)
+	rise_tween.tween_property(rift, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.34)
+	rise_tween.tween_property(rift, "rotation", -0.24, spell_animation_duration * 0.34)
+	rise_tween.tween_property(core, "modulate:a", 0.88, spell_animation_duration * 0.34)
+	rise_tween.tween_property(core, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.34)
+	rise_tween.tween_property(sigil, "modulate:a", 0.96, spell_animation_duration * 0.34)
+	rise_tween.tween_property(sigil, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.34)
+	for ember in embers:
+		var offset: Vector2 = ember.get_meta("fel_ember_offset", Vector2.ZERO)
+		rise_tween.tween_property(ember, "global_position", ember.global_position + offset * 0.22, spell_animation_duration * 0.34)
+		rise_tween.tween_property(ember, "modulate:a", 0.86, spell_animation_duration * 0.34)
+	await rise_tween.finished
+
+	var burst_tween := owner.create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.set_trans(Tween.TRANS_CUBIC)
+	burst_tween.set_ease(Tween.EASE_OUT)
+	burst_tween.tween_property(rift, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.72)
+	burst_tween.tween_property(rift, "rotation", 0.58, spell_animation_duration * 0.72)
+	burst_tween.tween_property(rift, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(core, "scale", Vector2(0.38, 0.38) if is_madness else Vector2(1.56, 1.56), spell_animation_duration * 0.72)
+	burst_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "global_position", sigil.global_position + Vector2(0.0, -target_rect.size.y * 0.18), spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "scale", Vector2(1.46, 1.46), spell_animation_duration * 0.72)
+	burst_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for ember in embers:
+		var offset: Vector2 = ember.get_meta("fel_ember_offset", Vector2.ZERO)
+		burst_tween.tween_property(ember, "global_position", ember.global_position + offset, spell_animation_duration * 0.72)
+		burst_tween.tween_property(ember, "scale", Vector2(0.24, 0.24), spell_animation_duration * 0.72)
+		burst_tween.tween_property(ember, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await burst_tween.finished
+
+	rift.queue_free()
+	core.queue_free()
+	sigil.queue_free()
+	for ember in embers:
+		ember.queue_free()
 
 
 func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -3264,6 +3329,50 @@ func create_rect_spell_effect(target_rect: Rect2, effect_name: String, style: St
 	return effect
 
 
+func create_fel_sigil(target_rect: Rect2, is_madness: bool) -> Label:
+	var label := Label.new()
+	label.name = "FelSigil"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = "FEL" if not is_madness else "RAGE"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size = target_rect.size * (Vector2(0.78, 0.36) if is_madness else Vector2(0.66, 0.34))
+	label.pivot_offset = label.size * 0.5
+	label.global_position = target_rect.get_center() - label.pivot_offset
+	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	label.z_index = 2303
+	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * (0.17 if is_madness else 0.19)), 18))
+	label.add_theme_color_override("font_color", Color(0.56, 1.0, 0.18, 0.96) if not is_madness else Color(0.72, 1.0, 0.10, 0.98))
+	label.add_theme_color_override("font_shadow_color", Color(0.02, 0.0, 0.0, 0.96))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	return label
+
+
+func create_fel_embers_for_rect(target_rect: Rect2, is_madness: bool) -> Array[Panel]:
+	var embers: Array[Panel] = []
+	var ember_count := 9 if is_madness else 7
+	var ember_color := Color(0.42, 1.0, 0.08, 0.90) if is_madness else Color(0.18, 1.0, 0.42, 0.86)
+	var smoke_color := Color(0.02, 0.02, 0.02, 0.64)
+	var radius := minf(target_rect.size.x, target_rect.size.y) * 0.48
+	for index in range(ember_count):
+		var angle := TAU * float(index) / float(ember_count) + (0.24 if is_madness else -0.18)
+		var base_position := target_rect.get_center() + Vector2(cos(angle), sin(angle)) * radius * 0.42
+		var ember := Panel.new()
+		ember.name = "FelEmber"
+		ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ember.size = target_rect.size * Vector2(0.055, 0.055)
+		ember.pivot_offset = ember.size * 0.5
+		ember.global_position = base_position - ember.pivot_offset
+		ember.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		ember.z_index = 2302
+		ember.add_theme_stylebox_override("panel", create_fel_ember_style(ember_color if index % 3 != 0 else smoke_color))
+		ember.set_meta("fel_ember_offset", Vector2(cos(angle), sin(angle)) * radius * (0.92 if is_madness else 0.74))
+		embers.append(ember)
+
+	return embers
+
+
 func create_monkey_spell_aura_style(animation_key: String) -> StyleBoxFlat:
 	match animation_key:
 		"somersault_cloud":
@@ -3492,6 +3601,39 @@ func get_monkey_accent_fade_scale(animation_key: String, index: int) -> Vector2:
 			return Vector2(1.36, 1.08)
 		_:
 			return Vector2(1.42, 1.42)
+
+
+func create_fel_rift_style(is_madness: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.13, 0.04, 0.34) if not is_madness else Color(0.12, 0.18, 0.02, 0.36)
+	style.border_color = Color(0.36, 1.0, 0.08, 0.88) if not is_madness else Color(0.70, 1.0, 0.06, 0.90)
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.10, 1.0, 0.22, 0.44) if not is_madness else Color(0.40, 1.0, 0.02, 0.48)
+	style.shadow_size = 34
+	return style
+
+
+func create_fel_core_style(is_madness: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.02, 0.0, 0.0, 0.74)
+	style.border_color = Color(0.48, 1.0, 0.16, 0.92) if not is_madness else Color(0.82, 1.0, 0.08, 0.94)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.18, 1.0, 0.18, 0.58)
+	style.shadow_size = 22
+	return style
+
+
+func create_fel_ember_style(color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color(color.r, color.g, color.b, minf(color.a + 0.14, 1.0))
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(color.r, color.g, color.b, 0.42)
+	style.shadow_size = 10
+	return style
 
 
 func create_heal_spell_effect_style() -> StyleBoxFlat:
