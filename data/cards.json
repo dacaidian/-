@@ -3162,7 +3162,7 @@
 							},
 							{
 								"id": "apply_status",
-								"target": "self",
+								"target": "selected",
 								"status_id": "fel_infusion",
 								"status_name": "邪能灌注",
 								"status_description": "本回合攻击力+3。",
