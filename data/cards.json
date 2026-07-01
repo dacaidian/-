@@ -3118,6 +3118,34 @@
 		]
 	},
 	{
+		"id": "shadowmoon_council",
+		"name": "shadowmoonCouncil",
+		"displayName": "影月议会",
+		"description": "古尔丹以邪能低语统御影月议会，将兽人、恶魔与黑暗之门卷入同一场疯狂献祭。这个种族未来会围绕邪能状态、恶魔召唤和黑暗之门展开。",
+		"heroes": [
+			{
+				"card_id": "guldan",
+				"attached_cards": []
+			}
+		],
+		"cards": [
+			{
+				"id": "guldan",
+				"name": "古尔丹",
+				"description": "影月议会英雄。古尔丹是邪能与背叛的化身，他以低语腐化氏族，以黑暗之门召来恶魔军团。当前仅作为影月议会的英雄骨架，后续会逐步接入邪能状态、恶魔召唤与黑暗之门体系。",
+				"url": "res://assets/img/影月议会/古尔丹.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"attack": 2,
+				"health": 14,
+				"effects": []
+			}
+		]
+	},
+	{
 		"id": "neutral",
 		"name": "neutral",
 		"displayName": "中立牌库",
