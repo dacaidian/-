@@ -65,6 +65,11 @@ var wanmo_charge_edge_color := Color(1.0, 0.24, 0.08, 0.78)
 var wanmo_charge_core_color := Color(1.0, 0.46, 0.12, 0.92)
 var wanmo_charge_text_color := Color(1.0, 0.90, 0.58, 0.98)
 var wanmo_charge_shadow_color := Color(0.12, 0.0, 0.0, 0.96)
+var chaos_corruption_color := Color(0.22, 0.02, 0.30, 0.20)
+var chaos_corruption_edge_color := Color(0.86, 0.18, 1.0, 0.78)
+var chaos_corruption_core_color := Color(0.92, 0.20, 0.34, 0.88)
+var chaos_corruption_text_color := Color(1.0, 0.78, 0.98, 0.98)
+var chaos_corruption_shadow_color := Color(0.08, 0.0, 0.10, 0.96)
 var fel_infusion_color := Color(0.10, 0.82, 0.28, 0.18)
 var fel_infusion_edge_color := Color(0.44, 1.0, 0.26, 0.82)
 var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
@@ -89,7 +94,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_fel_infusion() or should_show_fel_madness()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_madness()
 
 
 func should_show_beast_path() -> bool:
@@ -216,6 +221,13 @@ func should_show_wanmo_charge() -> bool:
 	return state.is_face_up and state.is_building() and status != null and status.get_wanmo_charge() > 0
 
 
+func should_show_chaos_corruption() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.chaos_corruption > 0
+
+
 func should_show_fel_infusion() -> bool:
 	if state == null or state.data == null:
 		return false
@@ -247,6 +259,8 @@ func _draw() -> void:
 		draw_reborn_overlay()
 	if should_show_wanmo_charge():
 		draw_wanmo_charge_overlay()
+	if should_show_chaos_corruption():
+		draw_chaos_corruption_overlay()
 	if should_show_fel_infusion():
 		draw_fel_infusion_overlay()
 	if should_show_fel_madness():
@@ -380,6 +394,57 @@ func draw_wanmo_charge_overlay() -> void:
 	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
 	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_shadow_color)
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_text_color)
+
+
+func draw_chaos_corruption_overlay() -> void:
+	var corruption_value: int = maxi(state.chaos_corruption if state != null else 0, 0)
+	if corruption_value <= 0:
+		return
+
+	var corruption_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.055)
+	var center := corruption_rect.get_center()
+	var radius := minf(corruption_rect.size.x, corruption_rect.size.y) * 0.35
+	var ring_count: int = mini(corruption_value, 9)
+
+	draw_circle(center, radius * 0.96, chaos_corruption_color)
+	for index in range(ring_count):
+		var ring_radius := radius + float(index) * 3.2
+		var alpha := chaos_corruption_edge_color.a * (1.0 - float(index) * 0.075)
+		var start_angle := -PI * 0.35 + float(index) * 0.19
+		draw_arc(
+			center,
+			ring_radius,
+			start_angle,
+			start_angle + TAU * 0.82,
+			78,
+			Color(chaos_corruption_edge_color.r, chaos_corruption_edge_color.g, chaos_corruption_edge_color.b, alpha),
+			2.1,
+			true
+		)
+
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0 + PI * 0.10
+		var inner_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.30
+		var outer_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.86
+		draw_line(
+			inner_point,
+			outer_point,
+			Color(chaos_corruption_core_color.r, chaos_corruption_core_color.g, chaos_corruption_core_color.b, 0.40),
+			1.8
+		)
+
+	for index in range(mini(corruption_value, 12)):
+		var angle := TAU * float(index) / float(mini(corruption_value, 12)) - PI * 0.5
+		var point := center + Vector2(cos(angle), sin(angle)) * radius * 0.72
+		draw_circle(point, maxf(size.x * 0.010, 1.8), Color(chaos_corruption_core_color.r, chaos_corruption_core_color.g, chaos_corruption_core_color.b, 0.58))
+
+	var font := get_theme_default_font()
+	var font_size := maxi(int(size.x * 0.20), 20)
+	var text := str(corruption_value)
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size)
+	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
+	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, chaos_corruption_shadow_color)
+	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, chaos_corruption_text_color)
 
 
 func draw_fel_infusion_overlay() -> void:
