@@ -217,13 +217,10 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		if not should_reborn_death_event(death_event, state):
 			move_death_event_to_owner_zone(game_manager, death_event, state)
 
-		game_manager.trigger_resolver.queue_trigger(
-			state,
-			EventContext.TRIGGER_ON_DESTROYED,
-			death_event.get("destroy_context", {})
-		)
+		await resolve_destroyed_trigger(game_manager, state, death_event.get("destroy_context", {}))
 
-	await game_manager.trigger_resolver.resolve_queued(game_manager)
+	if not game_manager.trigger_resolver.is_resolving:
+		await game_manager.trigger_resolver.resolve_queued(game_manager)
 	await beastmen_evolution_resolver.resolve_after_death_batch(game_manager, death_events)
 
 	for death_event in death_events:
@@ -246,6 +243,16 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 	game_manager.refresh_action_available_hints()
 	game_manager.refresh_debug_panel()
+
+
+func resolve_destroyed_trigger(game_manager: GameManager, state: CardState, context: Dictionary) -> void:
+	if game_manager == null or state == null:
+		return
+
+	if game_manager.trigger_resolver.is_resolving:
+		await game_manager.effect_registry.execute_trigger(state, EventContext.TRIGGER_ON_DESTROYED, game_manager, context)
+	else:
+		game_manager.trigger_resolver.queue_trigger(state, EventContext.TRIGGER_ON_DESTROYED, context)
 
 
 func should_reborn_death_event(death_event: Dictionary, state: CardState) -> bool:
