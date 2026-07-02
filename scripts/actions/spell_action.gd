@@ -101,7 +101,7 @@ func can_target(user: CardState, target: CardState, game_manager: GameManager) -
 	if SpellTargetResolver.is_area_rule(target_rule) and not SpellTargetResolver.is_valid_area_target(target_rule, target, game_manager):
 		return false
 
-	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user):
+	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user, "", game_manager):
 		return false
 
 	return can_effects_execute_with_target(user, target, game_manager)

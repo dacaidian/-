@@ -337,12 +337,12 @@ func requires_target(card_data: CardData, player: PlayerState = null) -> bool:
 	return SpellTargetResolver.requires_target(get_target_rule(card_data, player))
 
 
-func can_target(card_data: CardData, target: CardState, _game_manager: GameManager, player: PlayerState = null) -> bool:
+func can_target(card_data: CardData, target: CardState, game_manager: GameManager, player: PlayerState = null) -> bool:
 	if card_data == null:
 		return false
 
 	var owner_id := player.id if player != null else ""
-	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target, [], null, owner_id)
+	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target, [], null, owner_id, game_manager)
 
 
 func get_target_rule(card_data: CardData, player: PlayerState = null) -> String:

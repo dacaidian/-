@@ -3184,7 +3184,7 @@
 			{
 				"id": "fel_madness",
 				"name": "邪能狂乱",
-				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人陷入疯狂，攻击力+1。",
+				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人攻击力+1，友方地狱犬获得副动作：法力燃烧。",
 				"url": "res://assets/img/影月议会/邪能狂乱.png",
 				"type": "upgrade",
 				"count": 0,
@@ -3216,6 +3216,45 @@
 							"attack_bonus": 1
 						},
 						"apply_animation": "fel_madness"
+					},
+					{
+						"id": "apply_status",
+						"trigger": "after_spell_cast",
+						"active_zone": "hand",
+						"required_spell_tags": [
+							"fel"
+						],
+						"target": "friendly_minions_by_card_ids",
+						"card_ids": [
+							"hellhound"
+						],
+						"status_id": "fel_madness_hellhound",
+						"status_name": "邪能疯狂",
+						"status_description": "疯狂：本回合获得副动作：法力燃烧。",
+						"status_valence": "positive",
+						"duration_turns": 1,
+						"expires_on_trigger": "after_turn_end",
+						"payload": {
+							"actions": [
+								{
+									"id": "mana_burn",
+									"name": "法力燃烧",
+									"animation": "mana_burn",
+									"target_rule": "spellcaster_minions_or_heroes",
+									"main_action_cost": 0,
+									"once_per_turn": true,
+									"effects": [
+										{
+											"id": "damage",
+											"target": "selected",
+											"amount": 2,
+											"spell_power_scaling": false
+										}
+									]
+								}
+							]
+						},
+						"apply_animation": "fel_madness"
 					}
 				]
 			},
@@ -3230,6 +3269,21 @@
 				"keywords": [],
 				"attack": 2,
 				"health": 4,
+				"effects": []
+			},
+			{
+				"id": "hellhound",
+				"name": "地狱犬",
+				"description": "影月议会恶魔随从。移动攻击。疯狂：本回合获得副动作：法力燃烧，对一个有施法动作的随从或英雄造成2点伤害。",
+				"url": "res://assets/img/影月议会/地狱犬.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 3,
+				"health": 6,
 				"effects": []
 			}
 		]

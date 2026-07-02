@@ -361,6 +361,10 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"fel_infusion", "fel_madness":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"mana_burn":
+			if caster_card == null or target_card == null:
+				return
+			await play_mana_burn_spell(owner, effect_root, caster_card, target_card)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"thin_burial":
@@ -1616,6 +1620,54 @@ func play_fel_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 	sigil.queue_free()
 	for ember in embers:
 		ember.queue_free()
+
+
+func play_mana_burn_spell(owner: Node, effect_root: Control, caster_card: Card, target_card: Card) -> void:
+	if owner == null or effect_root == null or caster_card == null or target_card == null:
+		return
+
+	var caster_rect := caster_card.get_global_rect()
+	var target_rect := target_card.get_global_rect()
+	var source_point := target_rect.get_center()
+	var destination_point := caster_rect.get_center()
+	var burn_vector := destination_point - source_point
+	if burn_vector.length() <= 0.01:
+		return
+
+	var pillar := create_rect_spell_effect(target_rect, "ManaBurnPillar", create_mana_burn_pillar_style(), 0.76)
+	var core := create_rect_spell_effect(caster_rect, "ManaBurnCore", create_mana_burn_core_style(), 0.46)
+	var beam := create_mana_burn_beam(source_point, destination_point)
+	effect_root.add_child(pillar)
+	effect_root.add_child(beam)
+	effect_root.add_child(core)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_SINE)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	rise_tween.tween_property(pillar, "scale", Vector2(1.12, 1.26), spell_animation_duration * 0.32)
+	rise_tween.tween_property(pillar, "modulate:a", 0.92, spell_animation_duration * 0.32)
+	rise_tween.tween_property(beam, "scale:x", 1.0, spell_animation_duration * 0.42)
+	rise_tween.tween_property(beam, "modulate:a", 0.88, spell_animation_duration * 0.42)
+	rise_tween.tween_property(core, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.42)
+	rise_tween.tween_property(core, "modulate:a", 0.82, spell_animation_duration * 0.42)
+	await rise_tween.finished
+
+	var drain_tween := owner.create_tween()
+	drain_tween.set_parallel(true)
+	drain_tween.set_trans(Tween.TRANS_CUBIC)
+	drain_tween.set_ease(Tween.EASE_OUT)
+	drain_tween.tween_property(pillar, "scale", Vector2(0.58, 1.82), spell_animation_duration * 0.70)
+	drain_tween.tween_property(pillar, "modulate:a", 0.0, spell_animation_duration * 0.70)
+	drain_tween.tween_property(beam, "scale:y", 1.80, spell_animation_duration * 0.46)
+	drain_tween.tween_property(beam, "modulate:a", 0.0, spell_animation_duration * 0.70)
+	drain_tween.tween_property(core, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.70)
+	drain_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.70)
+	await drain_tween.finished
+
+	pillar.queue_free()
+	beam.queue_free()
+	core.queue_free()
 
 
 func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -3329,6 +3381,24 @@ func create_rect_spell_effect(target_rect: Rect2, effect_name: String, style: St
 	return effect
 
 
+func create_mana_burn_beam(source_point: Vector2, destination_point: Vector2) -> Panel:
+	var beam_vector := destination_point - source_point
+	var beam_length := beam_vector.length()
+	var beam_size := Vector2(beam_length, 14.0)
+	var beam := Panel.new()
+	beam.name = "ManaBurnBeam"
+	beam.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	beam.size = beam_size
+	beam.pivot_offset = Vector2(0.0, beam_size.y * 0.5)
+	beam.global_position = source_point - beam.pivot_offset
+	beam.rotation = beam_vector.angle()
+	beam.scale = Vector2(0.0, 1.0)
+	beam.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	beam.z_index = 2310
+	beam.add_theme_stylebox_override("panel", create_mana_burn_beam_style())
+	return beam
+
+
 func create_fel_sigil(target_rect: Rect2, is_madness: bool) -> Label:
 	var label := Label.new()
 	label.name = "FelSigil"
@@ -3633,6 +3703,39 @@ func create_fel_ember_style(color: Color) -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(color.r, color.g, color.b, 0.42)
 	style.shadow_size = 10
+	return style
+
+
+func create_mana_burn_pillar_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.48, 0.10, 0.32)
+	style.border_color = Color(0.54, 1.0, 0.16, 0.92)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(10)
+	style.shadow_color = Color(0.18, 1.0, 0.10, 0.62)
+	style.shadow_size = 22
+	return style
+
+
+func create_mana_burn_core_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.16, 1.0, 0.24, 0.30)
+	style.border_color = Color(0.78, 1.0, 0.20, 0.96)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.20, 1.0, 0.04, 0.66)
+	style.shadow_size = 18
+	return style
+
+
+func create_mana_burn_beam_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.28, 1.0, 0.08, 0.72)
+	style.border_color = Color(0.76, 1.0, 0.26, 0.92)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(7)
+	style.shadow_color = Color(0.12, 1.0, 0.02, 0.70)
+	style.shadow_size = 18
 	return style
 
 

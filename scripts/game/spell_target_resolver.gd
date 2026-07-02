@@ -14,6 +14,7 @@ const TARGET_RULE_AREA_3X3 := "area_3x3"
 const TARGET_RULE_AREA_2X2 := "area_2x2"
 const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
 const TARGET_RULE_MINIONS_BY_CARD_IDS := "minions_by_card_ids"
+const TARGET_RULE_SPELLCASTER_MINIONS_OR_HEROES := "spellcaster_minions_or_heroes"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -55,7 +56,7 @@ static func get_valid_targets(
 				continue
 		if is_area_rule(target_rule) and not is_valid_area_target(target_rule, state, game_manager):
 			continue
-		if can_target(target_rule, state, card_ids, source_state, source_owner_id):
+		if can_target(target_rule, state, card_ids, source_state, source_owner_id, game_manager):
 			targets.append(state)
 
 	return targets
@@ -66,7 +67,8 @@ static func can_target(
 	target: CardState,
 	card_ids: Array[String] = [],
 	source_state: CardState = null,
-	source_owner_id: String = ""
+	source_owner_id: String = "",
+	game_manager: GameManager = null
 ) -> bool:
 	if target == null:
 		return false
@@ -105,6 +107,8 @@ static func can_target(
 			return target.is_unit()
 		TARGET_RULE_MINIONS_BY_CARD_IDS:
 			return target.is_minion() and target != source_state and is_state_in_card_filter(target, card_ids)
+		TARGET_RULE_SPELLCASTER_MINIONS_OR_HEROES:
+			return target.is_hero() or (target.is_minion() and has_spell_action_capability(target, game_manager))
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:
@@ -130,6 +134,20 @@ static func is_state_in_card_filter(state: CardState, card_ids: Array[String]) -
 			return true
 
 	return false
+
+
+static func has_spell_action_capability(target: CardState, game_manager: GameManager = null) -> bool:
+	if target == null or target.data == null or not target.is_minion():
+		return false
+
+	if not target.data.spell_actions.is_empty():
+		return true
+
+	if game_manager == null:
+		return false
+
+	var granted_spell_resolver := GrantedSpellResolver.new()
+	return not granted_spell_resolver.get_granted_spell_actions(target, game_manager).is_empty()
 
 
 static func can_select_area_center(target: CardState, source_owner_id: String = "") -> bool:

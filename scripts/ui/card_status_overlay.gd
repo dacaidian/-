@@ -239,7 +239,7 @@ func should_show_fel_madness() -> bool:
 	if state == null or state.data == null:
 		return false
 
-	return state.is_face_up and state.is_minion() and state.has_status(CardStatus.STATUS_FEL_MADNESS_CHAOS_ORC)
+	return state.is_face_up and state.is_minion() and get_fel_madness_status() != null
 
 
 func _draw() -> void:
@@ -474,7 +474,7 @@ func draw_fel_madness_overlay() -> void:
 	var madness_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
 	var center := madness_rect.get_center()
 	var radius := minf(madness_rect.size.x, madness_rect.size.y) * 0.34
-	var status := state.get_status(CardStatus.STATUS_FEL_MADNESS_CHAOS_ORC) if state != null else null
+	var status := get_fel_madness_status()
 	var stack_count := status.stacks if status != null else 1
 	var claw_count: int = mini(maxi(stack_count + 2, 3), 6)
 
@@ -492,6 +492,17 @@ func draw_fel_madness_overlay() -> void:
 		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.58), 1.6)
 
 	draw_circle(center, radius * 0.20, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.44))
+
+
+func get_fel_madness_status() -> CardStatus:
+	if state == null:
+		return null
+
+	var chaos_orc_status := state.get_status(CardStatus.STATUS_FEL_MADNESS_CHAOS_ORC)
+	if chaos_orc_status != null:
+		return chaos_orc_status
+
+	return state.get_status(CardStatus.STATUS_FEL_MADNESS_HELLHOUND)
 
 
 func draw_divine_shield() -> void:

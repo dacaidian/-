@@ -62,7 +62,7 @@ func get_valid_targets(user: CardState, game_manager: GameManager) -> Array[Card
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:
 	if not requires_target():
 		return true
-	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user):
+	if not SpellTargetResolver.can_target(target_rule, target, target_card_ids, user, "", game_manager):
 		return false
 
 	return can_effects_execute_with_target(user, target, game_manager)

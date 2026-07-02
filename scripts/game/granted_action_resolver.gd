@@ -19,6 +19,7 @@ func get_granted_actions(user: CardState, game_manager: GameManager) -> Array[Ca
 		actions.append(burst_action)
 
 	append_card_configured_actions(actions, user, game_manager)
+	append_status_granted_actions(actions, user, game_manager)
 	append_hand_granted_actions(actions, user, game_manager)
 	return actions
 
@@ -31,6 +32,20 @@ func append_card_configured_actions(actions: Array[CardAction], user: CardState,
 		var action := create_action_from_data(action_data)
 		if action != null and action.can_start(user, game_manager):
 			actions.append(action)
+
+
+func append_status_granted_actions(actions: Array[CardAction], user: CardState, _game_manager: GameManager) -> void:
+	if user == null:
+		return
+
+	for status in user.statuses:
+		if status == null or status.payload.is_empty():
+			continue
+
+		for action_data in EffectData.get_actions(status.payload):
+			var action := create_action_from_data(action_data)
+			if action != null:
+				actions.append(action)
 
 
 func append_hand_granted_actions(actions: Array[CardAction], user: CardState, game_manager: GameManager) -> void:

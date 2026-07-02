@@ -33,6 +33,7 @@ const STATUS_SAVAGE_ROAR_ATTACK := "savage_roar_attack"
 const STATUS_WANMO_CHARGE := "wanmo_charge"
 const STATUS_FEL_INFUSION := "fel_infusion"
 const STATUS_FEL_MADNESS_CHAOS_ORC := "fel_madness_chaos_orc"
+const STATUS_FEL_MADNESS_HELLHOUND := "fel_madness_hellhound"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -285,7 +286,8 @@ func get_cleanse_valence() -> String:
 		STATUS_GATHER_SCATTER_QI,
 		STATUS_SAVAGE_ROAR_ATTACK,
 		STATUS_FEL_INFUSION,
-		STATUS_FEL_MADNESS_CHAOS_ORC
+		STATUS_FEL_MADNESS_CHAOS_ORC,
+		STATUS_FEL_MADNESS_HELLHOUND
 	]
 	if positive_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_POSITIVE
