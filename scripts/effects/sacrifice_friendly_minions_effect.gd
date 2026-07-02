@@ -29,7 +29,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		if gm.has_method("play_status_apply_animation"):
 			await gm.play_status_apply_animation(target, "sacrifice")
 
-		gm.destroy_card_with_refill(target, "mass_sacrifice", source_state, true)
+		await gm.destroy_card_with_refill(target, "mass_sacrifice", source_state, true)
 		if not should_suppress_resource_gain(modifiers):
 			player.gain_faction_resource(
 				str(effect_data.get(EffectData.KEY_RESOURCE_ID, RESOURCE_TAIL)),

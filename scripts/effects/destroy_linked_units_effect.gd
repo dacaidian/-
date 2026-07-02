@@ -15,7 +15,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	for linked_state in get_linked_states(gm, source_state, link_id):
-		gm.destroy_card_with_refill(linked_state, EffectData.DEATH_REASON_LINKED, source_state, true)
+		await gm.destroy_card_with_refill(linked_state, EffectData.DEATH_REASON_LINKED, source_state, true)
 
 
 func get_link_id(effect_data: Dictionary) -> String:

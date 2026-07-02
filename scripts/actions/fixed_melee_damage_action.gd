@@ -61,4 +61,4 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	await game_manager.play_card_attack_animation(user, target, true)
 	target.take_damage(damage)
-	game_manager.resolve_dead_states([target], EffectData.DEATH_REASON_EFFECT, user)
+	await game_manager.resolve_dead_states([target], EffectData.DEATH_REASON_EFFECT, user)

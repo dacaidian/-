@@ -39,7 +39,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 	var death_reason := EffectData.get_death_reason(effect_data, EffectData.DEATH_REASON_SPELL)
 	if game_manager.has_method("destroy_card_with_refill"):
-		game_manager.destroy_card_with_refill(target_state, death_reason, source_state, true)
+		await game_manager.destroy_card_with_refill(target_state, death_reason, source_state, true)
 
 
 func can_devour_target(source_state: CardState, target_state: CardState, allowed_card_ids: Array[String]) -> bool:

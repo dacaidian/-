@@ -64,7 +64,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 	if not splash_targets.is_empty():
-		game_manager.resolve_dead_states(splash_targets, "attack", user)
+		await game_manager.resolve_dead_states(splash_targets, EffectData.DEATH_REASON_ATTACK, user)
 
 	break_attack_or_spell_stealth(user)
 	var trigger_source := user
@@ -90,7 +90,7 @@ func resolve_bronze_head_iron_arms(
 	if game_manager.has_method("play_status_apply_animation"):
 		await game_manager.play_status_apply_animation(defender, "bronze_head_iron_arms")
 	attacker.take_damage(damage)
-	game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
+	await game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
 	return true
 
 

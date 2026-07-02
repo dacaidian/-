@@ -39,7 +39,7 @@ func resolve_unit_entered(game_manager: GameManager, state: CardState) -> void:
 		if slot_effect.trigger_animation != "":
 			await game_manager.play_slot_effect_animation(state, slot_effect.trigger_animation)
 
-		game_manager.destroy_card_with_refill(state, slot_effect.death_reason, null, true)
+		await game_manager.destroy_card_with_refill(state, slot_effect.death_reason, null, true)
 		return
 
 

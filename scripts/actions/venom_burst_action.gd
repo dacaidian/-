@@ -73,7 +73,7 @@ func execute(user: CardState, _target: CardState, game_manager: GameManager) -> 
 		damaged_states.append(target_state)
 
 	if not damaged_states.is_empty():
-		game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, user)
+		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, user)
 
 
 func requires_target() -> bool:

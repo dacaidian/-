@@ -63,7 +63,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if game_manager.has_method("play_status_apply_animation"):
 		await game_manager.play_status_apply_animation(target, "sacrifice")
 
-	game_manager.destroy_card_with_refill(target, "faction_skill_sacrifice", user, true)
+	await game_manager.destroy_card_with_refill(target, "faction_skill_sacrifice", user, true)
 	if not should_suppress_resource_gain(matching_modifiers):
 		player.gain_faction_resource(str(skill_data.get("resource_id", RESOURCE_TAIL)), int(skill_data.get("amount", 1)))
 	if game_manager.has_method("refresh_hand_passives_for_player"):

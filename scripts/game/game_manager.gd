@@ -981,9 +981,9 @@ func _set_end_turn_button_enabled(enabled: bool) -> void:
 
 
 func resolve_turn_timing_triggers(trigger: String, turn_player_id: String) -> void:
-	status_resolver.resolve_pre_trigger_status_effects(self, trigger, turn_player_id)
+	await status_resolver.resolve_pre_trigger_status_effects(self, trigger, turn_player_id)
 	await turn_trigger_resolver.queue_turn_timing_triggers(self, trigger, turn_player_id)
-	status_resolver.resolve_turn_timing(self, trigger, turn_player_id)
+	await status_resolver.resolve_turn_timing(self, trigger, turn_player_id)
 
 
 func resolve_after_spell_cast(owner_id: String, caster_state: CardState, spell_data: Dictionary) -> void:
@@ -1163,19 +1163,19 @@ func _transition_to_start_menu() -> void:
 
 
 func check_and_destroy_if_dead(state: CardState, reason: String = "damage", source_state: CardState = null) -> bool:
-	return death_resolver.check_and_destroy_if_dead(self, state, reason, source_state)
+	return await death_resolver.check_and_destroy_if_dead(self, state, reason, source_state)
 
 
 func resolve_dead_units(reason: String = "damage", source_state: CardState = null) -> bool:
-	return death_resolver.resolve_dead_units(self, reason, source_state)
+	return await death_resolver.resolve_dead_units(self, reason, source_state)
 
 
 func resolve_dead_states(states_to_check: Array, reason: String = "damage", source_state: CardState = null) -> bool:
-	return death_resolver.resolve_dead_states(self, states_to_check, reason, source_state)
+	return await death_resolver.resolve_dead_states(self, states_to_check, reason, source_state)
 
 
 func destroy_card(state: CardState, reason: String = "destroy", source_state: CardState = null) -> void:
-	death_resolver.destroy_card(self, state, reason, source_state)
+	await death_resolver.destroy_card(self, state, reason, source_state)
 
 
 func destroy_card_with_refill(
@@ -1184,7 +1184,7 @@ func destroy_card_with_refill(
 	source_state: CardState = null,
 	should_refill_slot := true
 ) -> void:
-	death_resolver.destroy_card_with_refill(self, state, reason, source_state, should_refill_slot)
+	await death_resolver.destroy_card_with_refill(self, state, reason, source_state, should_refill_slot)
 
 
 func resolve_attack_kill(attacker_state: CardState, defeated_state: CardState, can_occupy := true) -> void:

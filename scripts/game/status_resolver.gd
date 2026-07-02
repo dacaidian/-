@@ -10,7 +10,7 @@ func resolve_pre_trigger_status_effects(game_manager: GameManager, trigger: Stri
 	if trigger != EventContext.TRIGGER_AFTER_TURN_END:
 		return
 
-	resolve_poison_damage(game_manager, trigger, turn_player_id)
+	await resolve_poison_damage(game_manager, trigger, turn_player_id)
 
 
 func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
@@ -34,7 +34,7 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 		game_manager.refresh_debug_panel()
 
 	if not death_immunity_expired_states.is_empty():
-		game_manager.resolve_dead_states(
+		await game_manager.resolve_dead_states(
 			death_immunity_expired_states,
 			EffectData.DEATH_REASON_STATUS_EXPIRED,
 			null
@@ -61,7 +61,7 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 		damaged_states.append(state)
 
 	if not damaged_states.is_empty():
-		game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, null)
+		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, null)
 
 
 func should_check_death_after_status_expiry(state: CardState, expired_statuses: Array[CardStatus]) -> bool:

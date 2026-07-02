@@ -22,14 +22,14 @@ func check_and_destroy_if_dead(game_manager: GameManager, state: CardState, reas
 	if state.current_health > 0:
 		return false
 
-	return resolve_dead_states(game_manager, [state], reason, source_state)
+	return await resolve_dead_states(game_manager, [state], reason, source_state)
 
 
 func resolve_dead_units(game_manager: GameManager, reason: String = "damage", source_state: CardState = null) -> bool:
 	if game_manager == null:
 		return false
 
-	return resolve_dead_states(game_manager, game_manager.get_all_board_states(), reason, source_state)
+	return await resolve_dead_states(game_manager, game_manager.get_all_board_states(), reason, source_state)
 
 
 func resolve_dead_states(
@@ -71,7 +71,7 @@ func resolve_dead_states(
 
 		if not death_events.is_empty():
 			destroyed_any = true
-			resolve_death_batch(game_manager, death_events)
+			await resolve_death_batch(game_manager, death_events)
 
 		if queued_death_scan_requests.is_empty():
 			break
@@ -86,7 +86,7 @@ func destroy_card(game_manager: GameManager, state: CardState, reason: String = 
 	if state == null or state.is_empty():
 		return
 
-	destroy_card_with_refill(game_manager, state, reason, source_state, true)
+	await destroy_card_with_refill(game_manager, state, reason, source_state, true)
 
 
 func destroy_card_with_refill(
@@ -99,7 +99,7 @@ func destroy_card_with_refill(
 	if game_manager == null or state == null or state.is_empty():
 		return
 
-	resolve_dead_states(game_manager, [state], reason, source_state, should_refill_slot, true)
+	await resolve_dead_states(game_manager, [state], reason, source_state, should_refill_slot, true)
 
 
 func collect_death_events(
@@ -347,7 +347,7 @@ func resolve_attack_kill(game_manager: GameManager, attacker_state: CardState, d
 	if should_occupy:
 		await resolve_attack_occupy(game_manager, attacker_state, defeated_state)
 	else:
-		destroy_card_with_refill(game_manager, defeated_state, "attack", attacker_state, true)
+		await destroy_card_with_refill(game_manager, defeated_state, "attack", attacker_state, true)
 
 
 func can_offer_attack_occupy(attacker_state: CardState, defeated_state: CardState) -> bool:
@@ -411,7 +411,7 @@ func resolve_attack_occupy(game_manager: GameManager, attacker_state: CardState,
 
 	var attacker_slot_index := attacker_state.slot_index
 	var defeated_slot_index := defeated_state.slot_index
-	destroy_card_with_refill(game_manager, defeated_state, "attack_occupied", attacker_state, false)
+	await destroy_card_with_refill(game_manager, defeated_state, "attack_occupied", attacker_state, false)
 
 	var attacker_after_death := game_manager.get_board_state(attacker_slot_index)
 	var defeated_after_death := game_manager.get_board_state(defeated_slot_index)
