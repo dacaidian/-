@@ -514,7 +514,11 @@ func get_fel_madness_status() -> CardStatus:
 	if chaos_orc_status != null:
 		return chaos_orc_status
 
-	return state.get_status(CardStatus.STATUS_FEL_MADNESS_HELLHOUND)
+	var hellhound_status := state.get_status(CardStatus.STATUS_FEL_MADNESS_HELLHOUND)
+	if hellhound_status != null:
+		return hellhound_status
+
+	return state.get_status(CardStatus.STATUS_FEL_MADNESS_SUCCUBUS)
 
 
 func draw_divine_shield() -> void:

@@ -58,8 +58,10 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var attack_damage := calculate_attack_damage(user, target)
 	var was_reflected := await resolve_bronze_head_iron_arms(user, target, attack_damage, game_manager)
 	var splash_targets: Array[CardState] = []
+	var actual_life_damage := 0
 	if not was_reflected:
-		target.take_damage(apply_armor_to_attack_damage(target, attack_damage))
+		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
+		await resolve_lifesteal(user, actual_life_damage, game_manager)
 		splash_targets = apply_giant_splash_damage(user, target, game_manager)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
@@ -130,6 +132,39 @@ func apply_giant_splash_damage(user: CardState, target: CardState, game_manager:
 			damaged_targets.append(splash_target)
 
 	return damaged_targets
+
+
+func deal_attack_damage_to_target(target: CardState, damage: int) -> int:
+	if target == null or damage <= 0:
+		return 0
+
+	var previous_health := target.current_health
+	target.take_damage(damage)
+	return maxi(previous_health - target.current_health, 0)
+
+
+func resolve_lifesteal(user: CardState, actual_life_damage: int, game_manager: GameManager) -> void:
+	if user == null or game_manager == null:
+		return
+	if actual_life_damage <= 0:
+		return
+	if not user.has_keyword(CardData.KEYWORD_LIFESTEAL):
+		return
+
+	var healed_amount := user.heal(actual_life_damage)
+	if healed_amount <= 0:
+		return
+
+	if game_manager.has_method("play_effect_heal_animation"):
+		await game_manager.play_effect_heal_animation(user)
+
+	if game_manager.has_method("queue_card_trigger"):
+		game_manager.queue_card_trigger(user, EventContext.TRIGGER_ON_EFFECTIVE_HEAL, {
+			EventContext.EFFECTIVE_HEAL_AMOUNT: healed_amount,
+			EventContext.SOURCE_STATE: user
+		})
+	if game_manager.has_method("resolve_queued_triggers"):
+		await game_manager.resolve_queued_triggers()
 
 
 func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns: int, board_size: int) -> Array[int]:
