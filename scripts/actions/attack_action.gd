@@ -210,6 +210,9 @@ func get_attack_profile(user: CardState, target: CardState, game_manager: GameMa
 	if not is_attackable_unit_target(user, target):
 		return profile
 
+	if is_blocked_by_enemy_taunt(user, target, game_manager):
+		return profile
+
 	if is_melee_attack_target(user, target, game_manager.board_columns):
 		profile[PROFILE_CAN_ATTACK] = true
 		profile[PROFILE_IS_MELEE] = true
@@ -236,6 +239,40 @@ func is_attackable_unit_target(user: CardState, target: CardState) -> bool:
 		return false
 
 	return true
+
+
+func is_blocked_by_enemy_taunt(user: CardState, target: CardState, game_manager: GameManager) -> bool:
+	if user == null or target == null or game_manager == null:
+		return false
+	if user.owner_id == "":
+		return false
+	if target.owner_id == "":
+		return false
+	if target.owner_id == user.owner_id:
+		return false
+	if target.has_keyword(CardData.KEYWORD_TAUNT):
+		return false
+
+	return has_visible_enemy_taunt_minion(user, game_manager)
+
+
+func has_visible_enemy_taunt_minion(user: CardState, game_manager: GameManager) -> bool:
+	if user == null or game_manager == null or user.owner_id == "":
+		return false
+
+	for state in game_manager.get_all_board_states():
+		if state == null or state == user:
+			continue
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id == "" or state.owner_id == user.owner_id:
+			continue
+		if state.is_stealthed_from_player(user.owner_id):
+			continue
+		if state.has_keyword(CardData.KEYWORD_TAUNT):
+			return true
+
+	return false
 
 
 func is_melee_attack_target(user: CardState, target: CardState, board_columns: int) -> bool:

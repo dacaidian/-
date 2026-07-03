@@ -79,6 +79,7 @@
 - `MoveAction`：默认相邻移动；拥有瞬移能力时可选择全场合法空格。地面单位选地面层，飞行单位选空中层。野兽人地面随从在连通兽径上移动时可穿越中间单位和建筑，且不消耗主行动力和移动力，但仍受定身/冻结等行动禁止状态限制。
 - `DirectionalMoveAction`：无目标方向移动，用于通风猕猴“西行”等固定方向副动作。
 - `AttackAction`：普通攻击，包含远程规则、巨兽溅射、占领提示、护甲减伤、隐身目标过滤、攻击后破隐。
+- `AttackAction` 同时处理嘲讽关键字 `taunt`：当防守方存在正面、可见的嘲讽随从时，攻击者普通攻击敌方单位只能选择嘲讽单位；攻击中立单位和攻击友方单位不受影响。嘲讽只限制普通攻击的目标选择，不限制法术、副动作伤害或巨兽溅射的额外受伤单位。
 - `SpellAction`：棋盘单位的施法动作。目标由 `SpellTargetResolver` 解析；施法后默认破除隐身，除非配置 `breaks_stealth: false`。
 - `EffectAction`：通用“选目标并执行效果”的配置行动。
 - `MountedAttackAction`：骑乘单位的独立攻击，如角鹰骑士上的弓箭手。
@@ -192,7 +193,7 @@
 - 狐妖仙：尾数、献祭种族技能、默认入手升级、魅惑和复生体系。
 - 猴妖仙：施法/移动/攻击互斥关系扩展、透视、定身、隐身/暴击、护甲装备、瞬移、分身协攻、固定方向副动作和阵营型净化。
 - 野兽人：同系斩杀进化。种族块通过 `evolution_rules` 描述进化链；卡牌通过 `evolution_line` 声明所属血脉。当前链条包括劣角兽 -> 角兽 -> 大角兽、剃刀兽 -> 剃刀兽战车、人马兽 -> 飞斧人马兽、鹰身女妖 -> 疯语兽、牛头怪 -> 重武牛头怪。规则牌“适者生存”默认入手，仅用于玩家理解种族规则，真实触发由死亡结算后的种族 resolver 统一处理。卡扎克·独眼通过普通攻击击败友方非英雄随从后，会获得目标卡牌原始攻击/生命上限，并使自身运行时混沌腐蚀 +1；这不是新动作。该成长写入 `CardState.permanent_stat_overrides`，优先级高于 `origin`，不会污染原始快照，也不能被净化/驱散；英雄死亡进入复活手牌后再放置，会以这些永久覆盖值作为新鲜状态初始化。部分野兽人卡牌带有 `chaos_corruption` 静态数值，运行时当前值保存在 `CardState.chaos_corruption`，由 `CardStatusOverlay` 直接绘制腐蚀圆环和中央数值；它不是 `CardStatus`，不要用驱散/净化状态的路径修改。默认入手升级牌“混沌腐蚀”在己方回合结束时触发 `chaos_corruption_burst`：统计场上己方正面随从的混沌腐蚀总数，每 10 点对全部敌方正面随从造成 1 点伤害，建筑不计入也不受伤害。1 阶法术“兽径”使用 `set_beast_path` 打开五格直线矢量选择，并把兽径写入 `BoardCell`；野兽人地面随从可在当前连通兽径网络内移动到合法空位，穿越中间单位和建筑，不消耗主行动力和移动力。2 阶升级牌“野蛮咆哮”通过手牌区 `grant_spell_actions` 授予鹰身女妖和疯语兽无目标施法动作；释放后使用 `apply_status` 给 `friendly_minions` 目标集合附加本回合 `attack_bonus +1` 状态。2 阶随从“嘶叫萨满”自带野性呼唤施法动作，使用 `add_card_to_hand` 的 `card_ids` 候选池随机获得一个初级野兽。3 阶建筑“万魔岩”监听成功的野兽人友军杀戮进化和卡扎克杀戮成长，给同 owner 的万魔岩附加不可净化的 `wanmo_charge` 储存资源状态；废灭仪式读取该状态层数，消耗充能并获得等量古尔兽。
-- 影月议会：已接入英雄古尔丹、默认入手升级牌“邪能狂乱”、基础随从“混乱兽人”和 2 阶随从“地狱犬”。邪能体系使用法术/施法动作的 `spell_tags` 标记，例如 `spell_tags: ["fel"]`；手牌区升级牌通过 `trigger: "after_spell_cast"`、`active_zone: "hand"` 和 `required_spell_tags` 监听成功施法。古尔丹的“邪能灌注”目标规则为 `friendly_non_hero_minions`，对古尔丹自身造成固定 2 点自伤，并给选中的友方非英雄随从附加本回合 `fel_infusion` 攻击状态，同时触发邪能。混乱兽人的疯狂增益由“邪能狂乱”给 `friendly_minions_by_card_ids` 附加临时攻击状态实现；地狱犬的疯狂状态使用 `CardStatus.payload.actions` 临时授予副动作“法力燃烧”，由 `GrantedActionResolver` 统一读取。后续恶魔召唤、黑暗之门和更多疯狂分支应继续沿用 spell tag + hand trigger + 状态配置，而不是在 `SpellAction` 或 `GameManager` 中按卡牌 id 分支。
+- 影月议会：已接入英雄古尔丹、默认入手升级牌“邪能狂乱”、基础随从“混乱兽人”、2 阶随从“地狱犬”和古尔丹英雄法术“恶魔召唤”。邪能体系使用法术/施法动作的 `spell_tags` 标记，例如 `spell_tags: ["fel"]`；手牌区升级牌通过 `trigger: "after_spell_cast"`、`active_zone: "hand"` 和 `required_spell_tags` 监听成功施法。古尔丹的“邪能灌注”目标规则为 `friendly_non_hero_minions`，对古尔丹自身造成固定 2 点自伤，并给选中的友方非英雄随从附加本回合 `fel_infusion` 攻击状态，同时触发邪能。混乱兽人的疯狂增益由“邪能狂乱”给 `friendly_minions_by_card_ids` 附加临时攻击状态实现；地狱犬的疯狂状态使用 `CardStatus.payload.actions` 临时授予副动作“法力燃烧”，由 `GrantedActionResolver` 统一读取。“恶魔召唤”使用通用 `add_card_to_hand` 生成同族 `tokens[]` 衍生牌“魅魔”；魅魔带 `taunt` 关键字，普通攻击目标过滤由 `AttackAction` 统一处理。后续恶魔召唤、黑暗之门和更多疯狂分支应继续沿用 spell tag + hand trigger + 状态配置，而不是在 `SpellAction` 或 `GameManager` 中按卡牌 id 分支。
 
 状态净化支持正负面筛选。`CardStatus` 保存 `status_valence`，可取 `positive`、`negative`、`neutral`；未显式配置时按状态 id、标签和属性修正数值推断。`CleanseEffect` 通过 `cleanse_mode` 控制净化范围：`all` 保持旧逻辑，`positive` 只移除正面状态，`negative` 只移除负面状态。全场阵营型净化使用效果目标 `friendly_units` / `enemy_units`，只影响随从时使用 `friendly_minions`，不要在单张卡牌里手写遍历逻辑。当前例子是猴妖仙“驱神大圣禺狨王”：驱散敌方单位正面状态，并解除己方单位负面状态。
 

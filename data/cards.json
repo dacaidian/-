@@ -3129,7 +3129,26 @@
 		"heroes": [
 			{
 				"card_id": "guldan",
-				"attached_cards": []
+				"attached_cards": [
+					"demon_summon"
+				]
+			}
+		],
+		"tokens": [
+			{
+				"id": "succubus",
+				"name": "魅魔",
+				"description": "影月议会衍生恶魔随从。嘲讽：敌方普通攻击若要攻击你的单位，必须优先选择嘲讽随从；攻击中立单位和攻击友方单位不受影响。",
+				"url": "res://assets/img/影月议会/魅魔.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"taunt"
+				],
+				"attack": 3,
+				"health": 10,
+				"effects": []
 			}
 		],
 		"cards": [
@@ -3289,6 +3308,24 @@
 				"attack": 3,
 				"health": 6,
 				"effects": []
+			},
+			{
+				"id": "demon_summon",
+				"name": "恶魔召唤",
+				"description": "英雄法术。将一张魅魔置入手牌。",
+				"url": "res://assets/img/影月议会/恶魔召唤.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "demon_summon",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "add_card_to_hand",
+						"card_id": "succubus"
+					}
+				]
 			}
 		]
 	},
