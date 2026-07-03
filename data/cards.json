@@ -1240,7 +1240,9 @@
 				"type": "minion",
 				"count": 0,
 				"level": 3,
-				"keywords": [],
+				"keywords": [
+					"siege_2"
+				],
 				"attack": 4,
 				"health": 10,
 				"effects": [

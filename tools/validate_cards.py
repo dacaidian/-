@@ -376,8 +376,22 @@ class CardValidator:
             return
         for index, keyword_raw in enumerate(raw_keywords):
             keyword = str(keyword_raw)
-            if keyword not in self.keywords:
+            if not self.is_known_keyword(keyword):
                 self.reporter.warn(f"{path}.keywords[{index}]", f"unknown keyword '{keyword}'")
+
+    def is_known_keyword(self, keyword: str) -> bool:
+        if keyword in self.keywords:
+            return True
+
+        if keyword.startswith("siege_"):
+            amount_text = keyword.removeprefix("siege_")
+            return amount_text.isdigit() and int(amount_text) >= 0
+
+        if keyword.startswith("reborn_"):
+            amount_text = keyword.removeprefix("reborn_")
+            return amount_text.isdigit() and int(amount_text) >= 0
+
+        return False
 
     def validate_spell_actions(self, raw_actions: Any, path: str) -> None:
         if raw_actions in (None, []):
