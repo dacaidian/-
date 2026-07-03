@@ -57,6 +57,7 @@ war-card/
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
+- **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
 - **状态可驱散**：可被净化/驱散的属性变化应实现为状态，不直接永久改数值。
 - **衍生牌可查不可入池**：衍生牌定义在种族 `tokens[]`，注册到全局卡牌表，但不进入常规牌池。
 - **文档 UTF-8**：所有文档保持 UTF-8；若出现乱码，先修复编码再继续编辑。

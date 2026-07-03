@@ -47,6 +47,10 @@ func resolve_dead_states(
 		"states_to_check": states_to_check,
 		"reason": reason,
 		"source_state": source_state,
+		# Death scans can be queued while the current death batch is still resolving.
+		# Keep attribution data now, because the live source_state may be cleared before
+		# the queued request becomes a death event.
+		"source_snapshot": create_source_snapshot(source_state),
 		"should_refill_slots": should_refill_slots,
 		"force_destroy": force_destroy
 	}
@@ -65,6 +69,7 @@ func resolve_dead_states(
 			active_request.get("states_to_check", []),
 			str(active_request.get("reason", "damage")),
 			active_request.get("source_state") as CardState,
+			active_request.get("source_snapshot", {}) as Dictionary,
 			bool(active_request.get("should_refill_slots", true)),
 			bool(active_request.get("force_destroy", false))
 		)
@@ -107,6 +112,7 @@ func collect_death_events(
 	states_to_check: Array,
 	reason: String,
 	source_state: CardState,
+	source_snapshot: Dictionary = {},
 	should_refill_slots := true,
 	force_destroy := false
 ) -> Array[Dictionary]:
@@ -123,7 +129,7 @@ func collect_death_events(
 			continue
 
 		state.is_pending_death = true
-		death_events.append(create_death_event(game_manager, state, reason, source_state, should_refill_slots))
+		death_events.append(create_death_event(game_manager, state, reason, source_state, source_snapshot, should_refill_slots))
 
 	sort_death_events(game_manager, death_events)
 	return death_events
@@ -162,16 +168,18 @@ func create_death_event(
 	state: CardState,
 	reason: String,
 	source_state: CardState = null,
+	source_snapshot: Dictionary = {},
 	should_refill_slot := true
 ) -> Dictionary:
-	var death_metadata := create_death_metadata(game_manager, state, reason, source_state)
-	var destroy_context := create_destroy_context(state, source_state, death_metadata)
+	var death_metadata := create_death_metadata(game_manager, state, reason, source_state, source_snapshot)
+	var destroy_context := create_destroy_context(state, source_state, death_metadata, source_snapshot)
 	return {
 		"state": state,
 		"slot_index": state.slot_index,
 		"owner_id": state.owner_id,
 		"reason": reason,
 		"source_state": source_state,
+		"source_snapshot": source_snapshot.duplicate(true),
 		"should_refill_slot": should_refill_slot,
 		"has_reborn": state.has_reborn(),
 		"death_metadata": death_metadata,
@@ -422,7 +430,12 @@ func resolve_attack_occupy(game_manager: GameManager, attacker_state: CardState,
 	game_manager.refill_board_slot_from_pool(attacker_slot_index)
 
 
-func create_destroy_context(state: CardState, source_state: CardState = null, death_metadata: Dictionary = {}) -> Dictionary:
+func create_destroy_context(
+	state: CardState,
+	source_state: CardState = null,
+	death_metadata: Dictionary = {},
+	source_snapshot: Dictionary = {}
+) -> Dictionary:
 	var context := {
 		EventContext.DEAD_STATE: state,
 		EventContext.DEATH: death_metadata.duplicate(true),
@@ -432,11 +445,19 @@ func create_destroy_context(state: CardState, source_state: CardState = null, de
 	if source_state != null and not source_state.is_empty():
 		context[EventContext.DESTROYER_PLAYER_ID] = source_state.owner_id
 		context[EventContext.SOURCE_STATE] = source_state
+	elif not source_snapshot.is_empty():
+		context[EventContext.DESTROYER_PLAYER_ID] = str(source_snapshot.get("owner_id", ""))
 
 	return context
 
 
-func create_death_metadata(game_manager: GameManager, state: CardState, reason: String = "destroy", source_state: CardState = null) -> Dictionary:
+func create_death_metadata(
+	game_manager: GameManager,
+	state: CardState,
+	reason: String = "destroy",
+	source_state: CardState = null,
+	source_snapshot: Dictionary = {}
+) -> Dictionary:
 	var metadata := {
 		"reason": reason,
 		"turn": game_manager.turn_number,
@@ -449,5 +470,22 @@ func create_death_metadata(game_manager: GameManager, state: CardState, reason: 
 		metadata["source_owner_id"] = source_state.owner_id
 		metadata["source_card_id"] = source_state.card_id
 		metadata["source_display_name"] = source_state.display_name
+	elif not source_snapshot.is_empty():
+		metadata["source_slot_index"] = int(source_snapshot.get("slot_index", -1))
+		metadata["source_owner_id"] = str(source_snapshot.get("owner_id", ""))
+		metadata["source_card_id"] = str(source_snapshot.get("card_id", ""))
+		metadata["source_display_name"] = str(source_snapshot.get("display_name", ""))
 
 	return metadata
+
+
+func create_source_snapshot(source_state: CardState) -> Dictionary:
+	if source_state == null or source_state.is_empty():
+		return {}
+
+	return {
+		"slot_index": source_state.slot_index,
+		"owner_id": source_state.owner_id,
+		"card_id": source_state.card_id,
+		"display_name": source_state.display_name
+	}

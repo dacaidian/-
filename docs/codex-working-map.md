@@ -188,6 +188,9 @@
 - 指定卡牌复活应复用 `resurrect` 的 `card_ids` 过滤，例如孙悟空“身外身法”只复活 `hair_clone`。
 - 只有具备补牌能力的格子才补牌。
 - 任何补牌入口都应调用 `GameManager.refill_board_slot_from_pool()` / `draw_card_to_slot()`，不要直接从 `card_pool.draw_random()` 后写入棋盘。
+- 所有死亡入口都必须 `await`。范围伤害、巨兽溅射、月刃、毒爆、反弹、陷阱、献祭、吞噬、链接死亡等都应走 `GameManager.resolve_dead_states()` / `destroy_card_with_refill()`，不要直接清空卡牌。
+- 需要给矿脉等 `on_destroyed` 奖励归属时，调用死亡入口必须传入造成击杀的 `source_state`。`DeathResolver` 会保存 `source_snapshot`，防止嵌套亡语或排队死亡在 source 被清空后丢失 destroyer。
+- 普通攻击中心目标死亡可进入占领流程；巨兽溅射和其他范围死亡不占领，但必须正常触发亡语、资源分、复生和补牌。
 - 顺序献祭使用 `sacrifice_friendly_minions`，保证前一个死亡能影响后一个死亡。
 
 ## 装备

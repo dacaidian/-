@@ -155,6 +155,12 @@
 
 死亡由 `DeathResolver` 统一处理。它负责坟场快照、亡语、英雄复活、复生、子母蛊链接、资源分、补牌和占领副作用。
 
+所有可能导致死亡的入口都必须 `await GameManager.resolve_dead_states()`、`check_and_destroy_if_dead()` 或 `destroy_card_with_refill()`。不要在效果或行动里直接 `clear_card()`，也不要调用死亡入口后立即假设补牌、亡语或资源分已经完成，除非已经 `await`。巨兽溅射、月刃、毒爆、混沌腐蚀、反弹伤害、陷阱、献祭、吞噬和链接死亡都走同一条链路。
+
+击杀来源由 `source_state` 传入死亡链路，并在死亡请求创建时保存 `source_snapshot`。这是为了处理亡语或嵌套触发：如果来源单位在后续批次结算前已经被清空，`on_destroyed` 仍然能通过快照拿到 `destroyer` 玩家，从而让矿脉等 `gain_resource_score` 效果正确归属。需要依赖“击杀者仍在场”的种族成长可以继续检查 live `source_state`，例如野兽人进化和卡扎克杀戮成长。
+
+普通攻击击杀中心目标时，如果允许近战占领，走 `resolve_attack_kill()` 和占领选择；巨兽溅射造成的额外死亡只走 `resolve_dead_states()`，不会触发占领，但会正常触发亡语、资源分、复生和补牌。范围伤害的 source 必须传造成伤害的单位或法术来源，不能传被伤害目标。
+
 英雄死亡不进坟场，而是进入手牌并带复活冷却。装备可以修改复活冷却。
 
 通用 `resurrect` 效果支持按 `filter_type`、`filter_owner` 和 `card_ids` 过滤坟场候选。需要“复活指定卡牌”时应优先配置 `card_ids`，不要新增专用效果。
