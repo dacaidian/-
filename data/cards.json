@@ -922,19 +922,21 @@
 			{
 				"id": "mother_child_gu",
 				"name": "子母蛊",
-				"description": "英雄法术。链接两个随从，其中一个死亡时另一个也会直接死亡。",
+				"description": "英雄法术。对两个随从注入子母蛊幼虫。施术者下个回合开始时，幼虫成熟并建立同命链接：其中一个死亡时另一个也会直接死亡。",
 				"url": "res://assets/img/苗疆族/子母蛊.png",
 				"type": "spell",
 				"count": 2,
 				"level": 2,
-				"animation": "gu_life_link",
+				"animation": "gu_life_link_larva",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
 					{
 						"id": "link_units",
-						"selection_title": "选择两个随从建立子母蛊",
-						"animation": "gu_life_link"
+						"selection_title": "选择两个随从注入子母蛊",
+						"animation": "gu_life_link_larva",
+						"larva_animation": "gu_life_link_larva",
+						"mature_animation": "gu_life_link"
 					}
 				]
 			},

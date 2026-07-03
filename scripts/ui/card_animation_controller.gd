@@ -365,6 +365,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_mana_burn_spell(owner, effect_root, caster_card, target_card)
+		"gu_life_link_larva":
+			await play_gu_life_link_larva_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"thin_burial":
@@ -445,6 +447,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
 		"fel_infusion", "fel_madness":
 			await play_fel_spell_at_rect(owner, effect_root, target_rect, animation_key)
+		"gu_life_link_larva":
+			await play_gu_life_link_larva_at_rect(owner, effect_root, target_rect)
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_rect)
 		"thin_burial":
@@ -509,6 +513,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"fel_infusion", "fel_madness":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"gu_life_link_larva":
+			await play_gu_life_link_larva_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_life_link":
 			await play_gu_life_link_at_rect(owner, effect_root, target_card.get_global_rect())
 		"thin_burial":
@@ -1724,6 +1730,40 @@ func play_gu_life_link_at_rect(owner: Node, effect_root: Control, target_rect: R
 	ring.queue_free()
 
 
+func play_gu_life_link_larva_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var cocoon := create_life_link_larva_effect_for_rect(target_rect)
+	var pulse := create_rect_spell_effect(target_rect, "GuLifeLinkLarvaPulse", create_life_link_larva_pulse_style(), 0.62)
+	effect_root.add_child(cocoon)
+	effect_root.add_child(pulse)
+
+	var bind_tween := owner.create_tween()
+	bind_tween.set_parallel(true)
+	bind_tween.set_trans(Tween.TRANS_SINE)
+	bind_tween.set_ease(Tween.EASE_OUT)
+	bind_tween.tween_property(cocoon, "scale", Vector2(1.20, 1.20), spell_animation_duration * 0.42)
+	bind_tween.tween_property(cocoon, "modulate:a", 0.92, spell_animation_duration * 0.42)
+	bind_tween.tween_property(pulse, "scale", Vector2(0.84, 0.84), spell_animation_duration * 0.42)
+	bind_tween.tween_property(pulse, "modulate:a", 0.78, spell_animation_duration * 0.42)
+	await bind_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_CUBIC)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.tween_property(cocoon, "scale", Vector2(1.44, 1.44), spell_animation_duration * 0.66)
+	fade_tween.tween_property(cocoon, "rotation", 0.22, spell_animation_duration * 0.66)
+	fade_tween.tween_property(cocoon, "modulate:a", 0.0, spell_animation_duration * 0.66)
+	fade_tween.tween_property(pulse, "scale", Vector2(0.28, 0.28), spell_animation_duration * 0.66)
+	fade_tween.tween_property(pulse, "modulate:a", 0.0, spell_animation_duration * 0.66)
+	await fade_tween.finished
+
+	cocoon.queue_free()
+	pulse.queue_free()
+
+
 func play_thin_burial_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
@@ -2297,19 +2337,21 @@ func play_life_link_spell(
 	effect_root: Control,
 	first_card: Card,
 	second_card: Card,
-	_spell_data: Dictionary
+	spell_data: Dictionary
 ) -> void:
 	if owner == null or effect_root == null or first_card == null or second_card == null:
 		return
 
+	var animation_key := str(spell_data.get("animation", "gu_life_link"))
+	var is_larva := animation_key == "gu_life_link_larva"
 	var first_rect := first_card.get_global_rect()
 	var second_rect := second_card.get_global_rect()
-	var first_ring := create_life_link_effect_for_rect(first_rect)
-	var second_ring := create_life_link_effect_for_rect(second_rect)
+	var first_ring := create_life_link_larva_effect_for_rect(first_rect) if is_larva else create_life_link_effect_for_rect(first_rect)
+	var second_ring := create_life_link_larva_effect_for_rect(second_rect) if is_larva else create_life_link_effect_for_rect(second_rect)
 	var tether := Line2D.new()
-	tether.name = "GuLifeLinkTether"
-	tether.width = 7.0
-	tether.default_color = Color(0.56, 1.0, 0.28, 0.0)
+	tether.name = "GuLifeLinkLarvaTether" if is_larva else "GuLifeLinkTether"
+	tether.width = 4.5 if is_larva else 7.0
+	tether.default_color = Color(0.90, 0.84, 0.20, 0.0) if is_larva else Color(0.56, 1.0, 0.28, 0.0)
 	tether.z_index = 2310
 	tether.points = PackedVector2Array([first_rect.get_center(), second_rect.get_center()])
 	tether.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -2781,6 +2823,10 @@ func create_gu_trap_trigger_effect_for_rect(target_rect: Rect2) -> Panel:
 
 func create_life_link_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "GuLifeLinkEffect", create_life_link_effect_style(), 1.20)
+
+
+func create_life_link_larva_effect_for_rect(target_rect: Rect2) -> Panel:
+	return create_rect_spell_effect(target_rect, "GuLifeLinkLarvaEffect", create_life_link_larva_effect_style(), 1.04)
 
 
 func create_thin_burial_effect_for_rect(target_rect: Rect2) -> Panel:
@@ -3945,6 +3991,28 @@ func create_life_link_effect_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.36, 1.0, 0.18, 0.56)
 	style.shadow_size = 34
+	return style
+
+
+func create_life_link_larva_effect_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.34, 0.24, 0.05, 0.22)
+	style.border_color = Color(0.90, 0.84, 0.20, 0.82)
+	style.set_border_width_all(6)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.54, 1.0, 0.18, 0.42)
+	style.shadow_size = 28
+	return style
+
+
+func create_life_link_larva_pulse_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.54, 1.0, 0.20, 0.34)
+	style.border_color = Color(1.0, 0.92, 0.32, 0.78)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(0.72, 1.0, 0.22, 0.58)
+	style.shadow_size = 24
 	return style
 
 

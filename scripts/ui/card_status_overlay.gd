@@ -24,6 +24,9 @@ var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
 var snake_venom_color := Color(0.26, 0.10, 0.36, 0.22)
 var snake_venom_edge_color := Color(0.72, 0.38, 1.0, 0.70)
 var snake_venom_fang_color := Color(0.82, 1.0, 0.34, 0.80)
+var life_link_larva_color := Color(0.36, 0.22, 0.04, 0.20)
+var life_link_larva_edge_color := Color(0.88, 0.82, 0.24, 0.74)
+var life_link_larva_core_color := Color(0.70, 1.0, 0.26, 0.80)
 var life_link_color := Color(0.10, 0.36, 0.08, 0.18)
 var life_link_edge_color := Color(0.62, 1.0, 0.32, 0.76)
 var life_link_thread_color := Color(0.46, 1.0, 0.24, 0.78)
@@ -94,7 +97,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_madness()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_madness()
 
 
 func should_show_beast_path() -> bool:
@@ -176,6 +179,13 @@ func should_show_life_link() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_LIFE_LINK)
+
+
+func should_show_life_link_larva() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_LIFE_LINK_LARVA)
 
 
 func should_show_death_immunity() -> bool:
@@ -269,6 +279,8 @@ func _draw() -> void:
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
 		draw_snake_venom_overlay()
+	if should_show_life_link_larva():
+		draw_life_link_larva_overlay()
 	if should_show_life_link():
 		draw_life_link_overlay()
 	if should_show_death_immunity():
@@ -876,6 +888,33 @@ func draw_snake_venom_overlay() -> void:
 		var drop_x := venom_rect.position.x + venom_rect.size.x * (0.28 + t * 0.44)
 		var drop_y := venom_rect.position.y + venom_rect.size.y * (0.60 + sin(t * TAU) * 0.06)
 		draw_circle(Vector2(drop_x, drop_y), 2.2 + float(index % 2), Color(snake_venom_fang_color.r, snake_venom_fang_color.g, snake_venom_fang_color.b, 0.56))
+
+
+func draw_life_link_larva_overlay() -> void:
+	var larva_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
+	var center := larva_rect.get_center()
+	var edge_width := maxf(size.x * 0.020, 2.0)
+	var status := state.get_status(CardStatus.STATUS_LIFE_LINK_LARVA) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 3)
+
+	draw_rect(larva_rect, life_link_larva_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 3.5
+		var alpha := life_link_larva_edge_color.a * (1.0 - float(index) * 0.18)
+		draw_rect(larva_rect.grow(grow), Color(life_link_larva_edge_color.r, life_link_larva_edge_color.g, life_link_larva_edge_color.b, alpha), false, edge_width, true)
+
+	var cocoon_radius := minf(larva_rect.size.x, larva_rect.size.y) * 0.18
+	var cocoon_center := center + Vector2(0.0, -larva_rect.size.y * 0.02)
+	draw_circle(cocoon_center, cocoon_radius * 1.12, Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.18))
+	draw_arc(cocoon_center, cocoon_radius, -PI * 0.15, TAU - PI * 0.15, 36, life_link_larva_core_color, maxf(size.x * 0.018, 1.8), true)
+	draw_line(cocoon_center + Vector2(-cocoon_radius * 0.82, -cocoon_radius * 0.28), cocoon_center + Vector2(cocoon_radius * 0.78, cocoon_radius * 0.30), Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.58), 2.0)
+	draw_line(cocoon_center + Vector2(-cocoon_radius * 0.62, cocoon_radius * 0.36), cocoon_center + Vector2(cocoon_radius * 0.66, -cocoon_radius * 0.34), Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.46), 1.6)
+
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0 + 0.34
+		var point := center + Vector2(cos(angle), sin(angle)) * minf(larva_rect.size.x, larva_rect.size.y) * 0.30
+		draw_circle(point, maxf(size.x * 0.012, 2.0), Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.54))
 
 
 func draw_life_link_overlay() -> void:

@@ -16,6 +16,7 @@ const STATUS_ENCOURAGE_GU := "encourage_gu"
 const STATUS_POISON := "poison"
 const STATUS_SNAKE_VENOM := "snake_venom"
 const STATUS_DEVOUR := "devour"
+const STATUS_LIFE_LINK_LARVA := "life_link_larva"
 const STATUS_LIFE_LINK := "life_link"
 const STATUS_DEATH_IMMUNITY := "death_immunity"
 const STATUS_STORED_VENOM := "stored_venom"
@@ -295,6 +296,7 @@ func get_cleanse_valence() -> String:
 	var negative_status_ids := [
 		STATUS_POISON,
 		STATUS_SNAKE_VENOM,
+		STATUS_LIFE_LINK_LARVA,
 		STATUS_LIFE_LINK,
 		STATUS_SOUL_HOOK,
 		STATUS_CHARM,

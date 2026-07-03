@@ -3,9 +3,10 @@ class_name LinkUnitsEffect
 
 const BoardUnitPairSelectionControllerScript := preload("res://scripts/game/board_unit_pair_selection_controller.gd")
 
-# Links two face-up minions. If either linked unit is destroyed, the status on it
-# triggers direct destruction of the linked partner. Each cast creates a unique
-# link id, so independent pairs do not affect one another.
+# Injects two face-up minions with child/mother gu larvae. The larvae mature at
+# the caster's next turn start; only the mature life_link status destroys the
+# linked partner. Each cast creates a unique link id, so independent pairs do not
+# affect one another.
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
@@ -27,7 +28,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		pair = await controller.select_unit_pair(
 			gm,
 			candidates,
-			EffectData.get_selection_title(effect_data, "选择两个随从建立同命蛊")
+			EffectData.get_selection_title(effect_data, "选择两个随从注入子母蛊")
 		)
 
 	if pair.size() < 2:
@@ -41,11 +42,15 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	if gm.has_method("play_link_units_animation"):
-		await gm.play_link_units_animation(first_state, second_state, str(effect_data.get("animation", "gu_life_link")))
+		await gm.play_link_units_animation(
+			first_state,
+			second_state,
+			str(effect_data.get("larva_animation", effect_data.get("animation", "gu_life_link_larva")))
+		)
 
 	var link_id := create_link_id(owner_id, first_state, second_state)
-	apply_life_link_status(first_state, second_state, link_id, owner_id)
-	apply_life_link_status(second_state, first_state, link_id, owner_id)
+	apply_life_link_larva_status(first_state, second_state, link_id, owner_id, effect_data)
+	apply_life_link_larva_status(second_state, first_state, link_id, owner_id, effect_data)
 
 
 func can_execute(_source_state: CardState, _effect_data: Dictionary, game_manager: Node) -> bool:
@@ -111,6 +116,36 @@ func get_unit_value(state: CardState) -> float:
 
 func create_link_id(owner_id: String, first_state: CardState, second_state: CardState) -> String:
 	return "%s:%d:%d:%d" % [owner_id, Time.get_ticks_usec(), first_state.slot_index, second_state.slot_index]
+
+
+func apply_life_link_larva_status(
+	target_state: CardState,
+	linked_state: CardState,
+	link_id: String,
+	owner_id: String,
+	effect_data: Dictionary
+) -> void:
+	var status := CardStatus.new()
+	status.status_id = CardStatus.STATUS_LIFE_LINK_LARVA
+	status.display_name = "子母蛊幼虫"
+	status.description = "蛊虫正在成长，施术者下个回合开始时成熟为同命蛊。"
+	status.stacks = 1
+	status.stack_policy = CardStatus.STACK_POLICY_STACK
+	status.is_permanent = true
+	status.remaining_turns = -1
+	status.source_card_id = "life_link_larva:%s" % link_id
+	status.source_owner_id = owner_id
+	status.duration_scope = CardStatus.DURATION_SCOPE_SOURCE_OWNER
+	status.duration_owner_id = owner_id
+	status.valence = EffectData.STATUS_VALENCE_NEGATIVE
+	status.payload = {
+		EffectData.KEY_LINK_ID: link_id,
+		"linked_card_id": linked_state.card_id,
+		"linked_display_name": linked_state.display_name,
+		"mature_on_owner_id": owner_id,
+		"mature_animation": str(effect_data.get("mature_animation", "gu_life_link"))
+	}
+	target_state.add_status(status)
 
 
 func apply_life_link_status(target_state: CardState, linked_state: CardState, link_id: String, owner_id: String) -> void:
