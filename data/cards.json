@@ -2839,8 +2839,8 @@
 				"keywords": [
 					"giant"
 				],
-				"attack": 16,
-				"health": 20,
+				"attack": 18,
+				"health": 18,
 				"effects": []
 			},
 			{
@@ -3111,8 +3111,8 @@
 				"chaos_corruption": 3,
 				"evolution_line": "minotaur",
 				"keywords": [],
-				"attack": 8,
-				"health": 10,
+				"attack": 9,
+				"health": 9,
 				"effects": []
 			}
 		]
