@@ -107,6 +107,20 @@ func get_spell_modifiers(player: PlayerState) -> Array[Dictionary]:
 
 			modifiers.append(effect_data)
 
+	for equipment_data in player.get_equipped_cards():
+		if equipment_data == null:
+			continue
+
+		for effect_data in equipment_data.effects:
+			if not effect_data is Dictionary:
+				continue
+			if not is_spell_modifier_effect(effect_data):
+				continue
+			if not is_equipped_modifier(effect_data):
+				continue
+
+			modifiers.append(effect_data)
+
 	return modifiers
 
 
@@ -124,6 +138,10 @@ func is_active_modifier(effect_data: Dictionary) -> bool:
 		return EffectData.is_active_in_hand(effect_data)
 
 	return trigger == EffectData.TRIGGER_WHILE_IN_HAND or trigger == EffectData.TRIGGER_PASSIVE
+
+
+func is_equipped_modifier(effect_data: Dictionary) -> bool:
+	return EffectData.get_trigger(effect_data) == EffectData.TRIGGER_WHILE_EQUIPPED
 
 
 func applies_to_spell(

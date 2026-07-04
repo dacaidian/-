@@ -76,6 +76,9 @@ var chaos_corruption_shadow_color := Color(0.08, 0.0, 0.10, 0.96)
 var fel_infusion_color := Color(0.10, 0.82, 0.28, 0.18)
 var fel_infusion_edge_color := Color(0.44, 1.0, 0.26, 0.82)
 var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
+var fel_overload_color := Color(0.06, 0.48, 0.12, 0.24)
+var fel_overload_edge_color := Color(0.68, 1.0, 0.20, 0.90)
+var fel_overload_crack_color := Color(0.10, 1.0, 0.34, 0.82)
 var fel_madness_color := Color(0.30, 0.88, 0.12, 0.14)
 var fel_madness_edge_color := Color(0.68, 1.0, 0.20, 0.78)
 var fel_madness_rune_color := Color(0.12, 0.02, 0.02, 0.82)
@@ -97,7 +100,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_madness()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness()
 
 
 func should_show_beast_path() -> bool:
@@ -245,6 +248,13 @@ func should_show_fel_infusion() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FEL_INFUSION)
 
 
+func should_show_fel_overload() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FEL_OVERLOAD)
+
+
 func should_show_fel_madness() -> bool:
 	if state == null or state.data == null:
 		return false
@@ -273,6 +283,8 @@ func _draw() -> void:
 		draw_chaos_corruption_overlay()
 	if should_show_fel_infusion():
 		draw_fel_infusion_overlay()
+	if should_show_fel_overload():
+		draw_fel_overload_overlay()
 	if should_show_fel_madness():
 		draw_fel_madness_overlay()
 	if should_show_encourage_gu():
@@ -480,6 +492,31 @@ func draw_fel_infusion_overlay() -> void:
 		var to_point := center + Vector2(cos(angle), sin(angle)) * radius * 1.02
 		draw_line(from_point, bend_point, fel_infusion_flame_color, 2.4)
 		draw_line(bend_point, to_point, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.48), 1.8)
+
+
+func draw_fel_overload_overlay() -> void:
+	var overload_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
+	var center := overload_rect.get_center()
+	var radius := minf(overload_rect.size.x, overload_rect.size.y) * 0.42
+
+	draw_rect(overload_rect, fel_overload_color, true)
+	for index in range(4):
+		var alpha := fel_overload_edge_color.a * (1.0 - float(index) * 0.16)
+		draw_arc(center, radius + float(index) * 3.8, PI * 0.08, TAU + PI * 0.08, 90, Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, alpha), 2.4, true)
+
+	var crack_points := [
+		[Vector2(0.50, 0.12), Vector2(0.44, 0.34), Vector2(0.55, 0.50), Vector2(0.48, 0.78)],
+		[Vector2(0.24, 0.24), Vector2(0.38, 0.38), Vector2(0.28, 0.58)],
+		[Vector2(0.76, 0.22), Vector2(0.62, 0.42), Vector2(0.72, 0.64)],
+	]
+	for crack in crack_points:
+		for point_index in range(crack.size() - 1):
+			var from_point: Vector2 = overload_rect.position + Vector2(overload_rect.size.x * crack[point_index].x, overload_rect.size.y * crack[point_index].y)
+			var to_point: Vector2 = overload_rect.position + Vector2(overload_rect.size.x * crack[point_index + 1].x, overload_rect.size.y * crack[point_index + 1].y)
+			draw_line(from_point, to_point, fel_overload_crack_color, 2.6)
+			draw_line(from_point, to_point, Color(0.0, 0.10, 0.0, 0.52), 1.0)
+
+	draw_circle(center, radius * 0.18, Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.44))
 
 
 func draw_fel_madness_overlay() -> void:

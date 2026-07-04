@@ -88,6 +88,8 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 				targets.append(selected_state)
 		EffectData.TARGET_ADJACENT_TURN_PLAYER_MINIONS:
 			targets = get_adjacent_turn_player_minions(source_state, effect_data, game_manager)
+		EffectData.TARGET_ADJACENT_MINIONS:
+			targets = get_adjacent_minions(source_state, game_manager)
 		EffectData.TARGET_TURN_PLAYER_MINIONS_BY_CARD_IDS:
 			targets = get_turn_player_minions_by_card_ids(effect_data, game_manager)
 		EffectData.TARGET_SELECTED_ADJACENT_ENEMY_MINIONS:
@@ -191,6 +193,23 @@ func get_adjacent_turn_player_minions(source_state: CardState, effect_data: Dict
 				continue
 
 			targets.append(target_state)
+
+	return targets
+
+
+func get_adjacent_minions(source_state: CardState, game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if source_state == null or game_manager == null:
+		return targets
+
+	var board_columns: int = int(game_manager.board_columns)
+	var board_size: int = game_manager.board_states.size()
+	var adjacent_slots := BoardQuery.get_adjacent_slots(source_state.slot_index, board_columns, board_size)
+
+	for slot_index in adjacent_slots:
+		for target_state in game_manager.get_board_states_at_slot(slot_index):
+			if BoardQuery.is_face_up_minion(target_state):
+				targets.append(target_state)
 
 	return targets
 

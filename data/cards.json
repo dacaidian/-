@@ -3130,7 +3130,8 @@
 			{
 				"card_id": "guldan",
 				"attached_cards": [
-					"demon_summon"
+					"demon_summon",
+					"staff_of_guldan"
 				]
 			}
 		],
@@ -3332,6 +3333,74 @@
 				"attack": 3,
 				"health": 6,
 				"effects": []
+			},
+			{
+				"id": "staff_of_guldan",
+				"name": "古尔丹之杖",
+				"description": "英雄装备，武器。装备后古尔丹的邪能灌注升级：古尔丹受到4点伤害，目标随从本回合攻击力+6，并在你的回合结束时爆裂死亡，对相邻随从造成2点伤害。",
+				"url": "res://assets/img/影月议会/古尔丹之杖.png",
+				"type": "equipment",
+				"equipment_type": "weapon",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "modify_spell_ability",
+						"trigger": "while_equipped",
+						"spell_ids": [
+							"fel_infusion"
+						],
+						"animation": "fel_overload",
+						"replace_effects": [
+							{
+								"id": "damage",
+								"target": "self",
+								"amount": 4,
+								"spell_power_scaling": false
+							},
+							{
+								"id": "apply_status",
+								"target": "selected",
+								"status_id": "fel_overload",
+								"status_name": "邪能过载",
+								"status_description": "本回合攻击力+6。己方回合结束时爆裂死亡，并对相邻随从造成2点伤害。",
+								"status_tags": [
+									"attack_modifier"
+								],
+								"duration_turns": 1,
+								"duration_scope": "source_owner",
+								"expires_on_trigger": "after_turn_end",
+								"status_valence": "negative",
+								"payload": {
+									"attack_bonus": 6,
+									"consume_on_trigger": true,
+									"turn_effects": [
+										{
+											"id": "damage",
+											"trigger": "after_turn_end",
+											"trigger_player": "source_owner",
+											"target": "adjacent_minions",
+											"amount": 2,
+											"animation": "fel_burst",
+											"death_reason": "effect",
+											"spell_power_scaling": false
+										},
+										{
+											"id": "destroy_units",
+											"trigger": "after_turn_end",
+											"trigger_player": "source_owner",
+											"target": "self",
+											"animation": "fel_burst",
+											"death_reason": "effect"
+										}
+									]
+								},
+								"apply_animation": "fel_overload"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "demon_summon",
