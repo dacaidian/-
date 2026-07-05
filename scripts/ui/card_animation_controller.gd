@@ -361,7 +361,7 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"mana_burn", "fel_bite":
+		"mana_burn", "fel_bite", "life_drain":
 			if caster_card == null or target_card == null:
 				return
 			await play_mana_burn_spell(owner, effect_root, caster_card, target_card)
@@ -445,7 +445,7 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"gu_infusion":
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
-		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon":
+		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "life_drain":
 			await play_fel_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_rect)
@@ -513,6 +513,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"life_drain":
+			await play_life_drain_from_rect_to_card(owner, effect_root, source_rect, target_card)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_life_link":
@@ -1634,14 +1636,28 @@ func play_mana_burn_spell(owner: Node, effect_root: Control, caster_card: Card, 
 
 	var caster_rect := caster_card.get_global_rect()
 	var target_rect := target_card.get_global_rect()
+	await play_life_drain_between_rects(owner, effect_root, caster_rect, target_rect)
+
+
+func play_life_drain_from_rect_to_card(owner: Node, effect_root: Control, source_rect: Rect2, target_card: Card) -> void:
+	if owner == null or effect_root == null or source_rect.size == Vector2.ZERO or target_card == null:
+		return
+
+	await play_life_drain_between_rects(owner, effect_root, source_rect, target_card.get_global_rect())
+
+
+func play_life_drain_between_rects(owner: Node, effect_root: Control, recipient_rect: Rect2, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or recipient_rect.size == Vector2.ZERO or target_rect.size == Vector2.ZERO:
+		return
+
 	var source_point := target_rect.get_center()
-	var destination_point := caster_rect.get_center()
+	var destination_point := recipient_rect.get_center()
 	var burn_vector := destination_point - source_point
 	if burn_vector.length() <= 0.01:
 		return
 
 	var pillar := create_rect_spell_effect(target_rect, "ManaBurnPillar", create_mana_burn_pillar_style(), 0.76)
-	var core := create_rect_spell_effect(caster_rect, "ManaBurnCore", create_mana_burn_core_style(), 0.46)
+	var core := create_rect_spell_effect(recipient_rect, "ManaBurnCore", create_mana_burn_core_style(), 0.46)
 	var beam := create_mana_burn_beam(source_point, destination_point)
 	effect_root.add_child(pillar)
 	effect_root.add_child(beam)

@@ -11,6 +11,7 @@ const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit
 const ChaosCorruptionBurstEffectScript := preload("res://scripts/effects/chaos_corruption_burst_effect.gd")
 const SetBeastPathEffectScript := preload("res://scripts/effects/set_beast_path_effect.gd")
 const DestroyUnitsEffectScript := preload("res://scripts/effects/destroy_units_effect.gd")
+const LifeDrainEffectScript := preload("res://scripts/effects/life_drain_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -29,6 +30,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())
 	register_effect(EffectData.EFFECT_DESTROY_UNITS, DestroyUnitsEffectScript.new())
+	register_effect(EffectData.EFFECT_LIFE_DRAIN, LifeDrainEffectScript.new())
 	register_effect(EffectData.EFFECT_RESURRECT, ResurrectEffect.new())
 	register_effect(EffectData.EFFECT_ADD_CARD_TO_HAND, AddCardToHandEffect.new())
 	register_effect(EffectData.EFFECT_CHOOSE_CARD_TO_HAND, ChooseCardToHandEffect.new())

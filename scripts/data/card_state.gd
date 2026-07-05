@@ -1333,6 +1333,8 @@ func heal(amount: int) -> int:
 	# 治疗减少已受伤害，当前生命不会超过 max_health。
 	if amount <= 0:
 		return 0
+	if damage_taken <= 0:
+		return 0
 	if has_keyword(CardData.KEYWORD_MECHANICAL):
 		return 0
 
@@ -1344,6 +1346,17 @@ func heal(amount: int) -> int:
 
 	state_changed.emit(self)
 	return healed_amount
+
+
+func gain_temporary_health(amount: int) -> int:
+	# 生命吸取等特殊效果可以临时让当前生命超过 max_health。
+	# 普通治疗仍然只会把 damage_taken 恢复到 0，因此无法重新治疗到临时超上限值。
+	if amount <= 0:
+		return 0
+
+	damage_taken -= amount
+	state_changed.emit(self)
+	return amount
 
 
 func take_damage(amount: int) -> void:

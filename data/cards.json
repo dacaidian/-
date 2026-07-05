@@ -3130,6 +3130,7 @@
 			{
 				"card_id": "guldan",
 				"attached_cards": [
+					"soul_siphon",
 					"demon_summon",
 					"staff_of_guldan"
 				]
@@ -3348,6 +3349,29 @@
 							]
 						},
 						"apply_animation": "fel_madness"
+					}
+				]
+			},
+			{
+				"id": "soul_siphon",
+				"name": "灵魂虹吸",
+				"description": "英雄法术。吸取一个敌方单位最多3点生命，并使古尔丹获得等量当前生命。该生命可以临时超过生命上限，但不会提高生命上限。",
+				"url": "res://assets/img/影月议会/灵魂虹吸.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"animation": "life_drain",
+				"target_rule": "enemy_units",
+				"spell_tags": [
+					"fel"
+				],
+				"keywords": [],
+				"effects": [
+					{
+						"id": "life_drain",
+						"target": "selected",
+						"target_card_id": "guldan",
+						"amount": 3
 					}
 				]
 			},
