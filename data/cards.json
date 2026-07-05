@@ -3428,6 +3428,50 @@
 				"effects": []
 			},
 			{
+				"id": "warlock",
+				"name": "术士",
+				"description": "影月议会施法随从。远程。施法：诅咒，使一个随从本回合伤害加深+2，攻击力-2。",
+				"url": "res://assets/img/影月议会/术士.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 4,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "curse",
+						"name": "诅咒",
+						"animation": "curse",
+						"target_rule": "non_hero_minions",
+						"effects": [
+							{
+								"id": "apply_status",
+								"target": "selected",
+								"status_id": "damage_amplify",
+								"status_name": "伤害加深",
+								"status_description": "本回合受到伤害时，额外受到2点伤害，攻击力-2。",
+								"status_tags": [
+									"attack_modifier"
+								],
+								"duration_turns": 1,
+								"duration_scope": "source_owner",
+								"expires_on_trigger": "after_turn_end",
+								"status_valence": "negative",
+								"payload": {
+									"attack_bonus": -2,
+									"damage_amplify": 2
+								},
+								"apply_animation": "curse"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "chaos_wolf_rider",
 				"name": "混乱狼骑兵",
 				"description": "影月议会狼骑兵。移动攻击，移动力3。疯狂：座狼陷入邪能影响，本回合获得副动作：撕咬，对一个相邻随从造成2点伤害，并恢复自身4点生命。",

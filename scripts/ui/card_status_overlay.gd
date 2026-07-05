@@ -82,6 +82,11 @@ var fel_overload_crack_color := Color(0.10, 1.0, 0.34, 0.82)
 var fel_madness_color := Color(0.30, 0.88, 0.12, 0.14)
 var fel_madness_edge_color := Color(0.68, 1.0, 0.20, 0.78)
 var fel_madness_rune_color := Color(0.12, 0.02, 0.02, 0.82)
+var damage_amplify_color := Color(0.34, 0.02, 0.42, 0.22)
+var damage_amplify_edge_color := Color(0.96, 0.20, 1.0, 0.78)
+var damage_amplify_crack_color := Color(0.20, 1.0, 0.34, 0.72)
+var damage_amplify_text_color := Color(1.0, 0.80, 1.0, 0.96)
+var damage_amplify_shadow_color := Color(0.08, 0.0, 0.12, 0.96)
 
 
 func _ready() -> void:
@@ -100,7 +105,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness()
+	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -262,6 +267,13 @@ func should_show_fel_madness() -> bool:
 	return state.is_face_up and state.is_minion() and get_fel_madness_status() != null
 
 
+func should_show_damage_amplify() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_DAMAGE_AMPLIFY)
+
+
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
@@ -287,6 +299,8 @@ func _draw() -> void:
 		draw_fel_overload_overlay()
 	if should_show_fel_madness():
 		draw_fel_madness_overlay()
+	if should_show_damage_amplify():
+		draw_damage_amplify_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -541,6 +555,58 @@ func draw_fel_madness_overlay() -> void:
 		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.58), 1.6)
 
 	draw_circle(center, radius * 0.20, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.44))
+
+
+func draw_damage_amplify_overlay() -> void:
+	var status := state.get_status(CardStatus.STATUS_DAMAGE_AMPLIFY) if state != null else null
+	if status == null:
+		return
+
+	var amplify_value: int = maxi(state.get_damage_amplify_bonus() if state != null else 0, 0)
+	if amplify_value <= 0:
+		return
+
+	var curse_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
+	var center := curse_rect.get_center()
+	var radius := minf(curse_rect.size.x, curse_rect.size.y) * 0.38
+	var ring_count: int = mini(maxi(status.stacks, 1), 5)
+
+	draw_rect(curse_rect, damage_amplify_color, true)
+	for index in range(ring_count):
+		var grow := float(index) * 4.0
+		var alpha := damage_amplify_edge_color.a * (1.0 - float(index) * 0.14)
+		draw_rect(
+			curse_rect.grow(grow),
+			Color(damage_amplify_edge_color.r, damage_amplify_edge_color.g, damage_amplify_edge_color.b, alpha),
+			false,
+			maxf(size.x * 0.020, 2.0),
+			true
+		)
+
+	var crack_paths := [
+		[Vector2(0.22, 0.18), Vector2(0.42, 0.38), Vector2(0.34, 0.62), Vector2(0.50, 0.82)],
+		[Vector2(0.78, 0.16), Vector2(0.58, 0.36), Vector2(0.70, 0.58), Vector2(0.52, 0.76)],
+		[Vector2(0.32, 0.30), Vector2(0.52, 0.48), Vector2(0.42, 0.66)]
+	]
+	for crack in crack_paths:
+		for point_index in range(crack.size() - 1):
+			var from_point: Vector2 = curse_rect.position + Vector2(curse_rect.size.x * crack[point_index].x, curse_rect.size.y * crack[point_index].y)
+			var to_point: Vector2 = curse_rect.position + Vector2(curse_rect.size.x * crack[point_index + 1].x, curse_rect.size.y * crack[point_index + 1].y)
+			draw_line(from_point, to_point, damage_amplify_crack_color, maxf(size.x * 0.018, 1.8))
+			draw_line(from_point, to_point, Color(0.04, 0.0, 0.06, 0.58), maxf(size.x * 0.008, 1.0))
+
+	draw_arc(center, radius, -PI * 0.20, TAU - PI * 0.20, 72, damage_amplify_edge_color, maxf(size.x * 0.020, 2.0), true)
+	draw_arc(center, radius * 0.68, PI * 0.18, TAU + PI * 0.18, 64, Color(damage_amplify_crack_color.r, damage_amplify_crack_color.g, damage_amplify_crack_color.b, 0.48), maxf(size.x * 0.014, 1.4), true)
+
+	var font := get_theme_default_font()
+	if font == null:
+		return
+	var font_size := maxi(int(size.x * 0.18), 18)
+	var text := "+%d" % amplify_value
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size)
+	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
+	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, damage_amplify_shadow_color)
+	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, damage_amplify_text_color)
 
 
 func get_fel_madness_status() -> CardStatus:

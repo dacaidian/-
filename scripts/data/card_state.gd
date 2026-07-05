@@ -1364,10 +1364,14 @@ func take_damage(amount: int) -> void:
 	if amount <= 0:
 		return
 
+	var effective_amount := amount + get_damage_amplify_bonus()
+	if effective_amount <= 0:
+		return
+
 	if consume_divine_shield():
 		return
 
-	var remaining_damage := amount
+	var remaining_damage := effective_amount
 	var did_receive_damage := false
 	if shield > 0:
 		var absorbed_damage: int = mini(shield, remaining_damage)
@@ -1383,6 +1387,17 @@ func take_damage(amount: int) -> void:
 		remove_status(CardStatus.STATUS_ROOTED)
 
 	state_changed.emit(self)
+
+
+func get_damage_amplify_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status == null:
+			continue
+
+		bonus += calculate_status_numeric_modifier(status, EffectData.KEY_DAMAGE_AMPLIFY)
+
+	return maxi(bonus, 0)
 
 
 func consume_divine_shield() -> bool:

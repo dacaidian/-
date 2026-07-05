@@ -39,6 +39,7 @@ const STATUS_FEL_MADNESS_HELLHOUND := "fel_madness_hellhound"
 const STATUS_FEL_MADNESS_SUCCUBUS := "fel_madness_succubus"
 const STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER := "fel_madness_chaos_wolf_rider"
 const STATUS_FEL_MADNESS_DOOMGUARD := "fel_madness_doomguard"
+const STATUS_DAMAGE_AMPLIFY := "damage_amplify"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -308,7 +309,8 @@ func get_cleanse_valence() -> String:
 		STATUS_SOUL_HOOK,
 		STATUS_CHARM,
 		STATUS_ROOTED,
-		STATUS_FREEZE
+		STATUS_FREEZE,
+		STATUS_DAMAGE_AMPLIFY
 	]
 	if negative_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_NEGATIVE
