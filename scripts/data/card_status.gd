@@ -38,6 +38,7 @@ const STATUS_FEL_MADNESS_CHAOS_ORC := "fel_madness_chaos_orc"
 const STATUS_FEL_MADNESS_HELLHOUND := "fel_madness_hellhound"
 const STATUS_FEL_MADNESS_SUCCUBUS := "fel_madness_succubus"
 const STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER := "fel_madness_chaos_wolf_rider"
+const STATUS_FEL_MADNESS_DOOMGUARD := "fel_madness_doomguard"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -293,7 +294,8 @@ func get_cleanse_valence() -> String:
 		STATUS_FEL_MADNESS_CHAOS_ORC,
 		STATUS_FEL_MADNESS_HELLHOUND,
 		STATUS_FEL_MADNESS_SUCCUBUS,
-		STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER
+		STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER,
+		STATUS_FEL_MADNESS_DOOMGUARD
 	]
 	if positive_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_POSITIVE
