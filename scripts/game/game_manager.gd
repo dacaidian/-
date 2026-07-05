@@ -27,12 +27,12 @@ const BoardSlotEffectResolverScript := preload("res://scripts/game/board_slot_ef
 const TargetStateResolverScript := preload("res://scripts/game/target_state_resolver.gd")
 const BoardLayerResolverScript := preload("res://scripts/game/board_layer_resolver.gd")
 const BoardMovementResolverScript := preload("res://scripts/game/board_movement_resolver.gd")
+const FactionSkillResolverScript := preload("res://scripts/game/faction_skill_resolver.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
 const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
 const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
-const SacrificeFactionSkillActionScript := preload("res://scripts/actions/sacrifice_faction_skill_action.gd")
 const RIGHT_HUD_MARGIN := 16.0
 const RIGHT_HUD_GAP := 12.0
 
@@ -162,6 +162,7 @@ var board_slot_effect_resolver := BoardSlotEffectResolverScript.new()
 var target_state_resolver := TargetStateResolverScript.new()
 var board_layer_resolver := BoardLayerResolverScript.new()
 var board_movement_resolver := BoardMovementResolverScript.new()
+var faction_skill_resolver := FactionSkillResolverScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
@@ -671,7 +672,7 @@ func update_faction_skill_panel_view() -> void:
 	faction_skill_panel_controller.update(
 		current_player,
 		get_parent() as Control,
-		get_usable_faction_skill_ids(current_player)
+		faction_skill_resolver.get_usable_skill_ids(self, current_player)
 	)
 	call_deferred("update_right_side_hud_layout")
 
@@ -1623,116 +1624,13 @@ func _on_faction_skill_requested(skill_id: String) -> void:
 		return
 
 	var player := get_current_player()
-	if player == null or not player.can_use_faction_skill(skill_id):
-		refresh_debug_panel()
-		return
-
-	var skill_config: Dictionary = player.faction_skill_configs.get(skill_id, {})
-	if skill_config.is_empty():
-		refresh_debug_panel()
-		return
-
-	var action := create_faction_skill_action(skill_config)
-	if action == null:
-		refresh_debug_panel()
-		return
-
-	var source_state := get_faction_skill_source_state(player)
-	if source_state == null:
-		refresh_debug_panel()
-		return
-
-	if action.get_valid_targets(source_state, self).is_empty():
+	if not faction_skill_resolver.start_skill_selection(self, player, skill_id):
 		update_faction_skill_panel_view()
 		refresh_debug_panel()
 		return
 
-	var source_hand_index := get_faction_skill_source_hand_index(player, skill_id)
-	var source_hand_card_data := HandCardState.get_card_data(player.hand[source_hand_index]) if source_hand_index >= 0 else null
-	if source_hand_card_data == null:
-		refresh_debug_panel()
-		return
-
-	cancel_interaction()
-	action_registry.register_action(action)
-	hide_action_menu()
-	hand_interaction_controller.capture_anchor(hand_drawer_controller.get_hand_card_control(source_hand_index))
-	interaction_manager.start_hand_anchored_action_selection(
-		action,
-		source_state,
-		source_hand_card_data,
-		player.id,
-		source_hand_index,
-		get_all_board_states(),
-		self
-	)
 	update_hand_drawer_view()
 	refresh_debug_panel()
-
-
-func get_usable_faction_skill_ids(player: PlayerState) -> Array[String]:
-	var usable_skill_ids: Array[String] = []
-	if player == null:
-		return usable_skill_ids
-
-	for skill_config in player.get_unlocked_faction_skill_configs():
-		var skill_id := str(skill_config.get("id", ""))
-		if skill_id == "" or not player.can_use_faction_skill(skill_id):
-			continue
-
-		var action := create_faction_skill_action(skill_config)
-		if action == null:
-			continue
-
-		var source_state := get_faction_skill_source_state(player)
-		if source_state == null:
-			continue
-
-		if not action.get_valid_targets(source_state, self).is_empty():
-			usable_skill_ids.append(skill_id)
-
-	return usable_skill_ids
-
-
-func get_faction_skill_source_hand_index(player: PlayerState, skill_id: String) -> int:
-	if player == null or skill_id == "":
-		return -1
-
-	for hand_index in range(player.hand.size()):
-		var card_data := HandCardState.get_card_data(player.hand[hand_index])
-		if card_data == null:
-			continue
-
-		for effect_data in card_data.effects:
-			if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_FACTION_SKILLS:
-				continue
-			if EffectData.get_skill_ids(effect_data).has(skill_id):
-				return hand_index
-
-	return -1
-
-
-func create_faction_skill_action(skill_config: Dictionary) -> CardAction:
-	match str(skill_config.get("action_id", skill_config.get("id", ""))):
-		"sacrifice":
-			return SacrificeFactionSkillActionScript.new().setup(skill_config)
-		_:
-			return null
-
-
-func get_faction_skill_source_state(player: PlayerState) -> CardState:
-	if player == null:
-		return null
-
-	for state in get_all_board_states():
-		if BoardQuery.is_face_up_unit(state) and state.is_owned_by(player.id) and state.is_hero():
-			return state
-
-	for state in get_all_board_states():
-		if BoardQuery.is_face_up_unit(state) and state.is_owned_by(player.id):
-			return state
-
-	return null
 
 
 func _on_card_state_changed(state: CardState) -> void:

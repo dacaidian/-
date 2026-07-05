@@ -187,6 +187,8 @@
 
 种族资源和种族技能属于玩家状态，不属于 UI 状态。
 
+种族技能面板只负责展示资源和按钮，并发出 `skill_requested`。`FactionSkillResolver` 负责把已解锁的 skill config 转成具体 `CardAction`、判断可用目标、定位授权技能的手牌来源，并启动目标选择。`GameManager` 只连接 UI 信号和刷新面板，不直接维护每个种族技能的 action 构造细节。
+
 已实现例子：
 
 - 暗夜精灵：日出、正午、黄昏、月升、满月、月落的时间循环。
