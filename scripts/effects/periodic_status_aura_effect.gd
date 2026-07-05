@@ -4,23 +4,22 @@ class_name PeriodicStatusAuraEffect
 # 通用周期光环效果。
 # 用于手牌/装备等持续来源按回合相位给场上单位附加或移除某个状态。
 
+const PeriodicCycleResolverScript := preload("res://scripts/game/periodic_cycle_resolver.gd")
+
+var periodic_cycle_resolver := PeriodicCycleResolverScript.new()
+
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var player := get_owner_player(source_state, effect_data, game_manager)
 	if player == null:
 		return
 
-	var runtime_key := get_runtime_key(effect_data)
+	var runtime_key := periodic_cycle_resolver.get_runtime_key(effect_data, "periodic_status_aura")
 	if runtime_key == "":
 		return
 
-	var cycle_length: int = maxi(int(effect_data.get(EffectData.KEY_CYCLE_LENGTH, 2)), 1)
-	var phase := get_current_phase(player, runtime_key)
-	if should_advance_phase(effect_data):
-		phase = posmod(phase + 1, cycle_length)
-	player.set_effect_runtime_value(runtime_key, phase)
-
-	var is_active := get_active_phases(effect_data).has(phase)
+	var cycle_result := periodic_cycle_resolver.resolve_cycle(player, effect_data, runtime_key)
+	var is_active := bool(cycle_result.get("is_active", false))
 	await sync_status(source_state, effect_data, game_manager, player, is_active)
 
 
@@ -35,44 +34,6 @@ func get_owner_player(source_state: CardState, effect_data: Dictionary, game_man
 		return null
 
 	return game_manager.get_player_by_id(owner_id) as PlayerState
-
-
-func get_runtime_key(effect_data: Dictionary) -> String:
-	var runtime_id := str(effect_data.get(EffectData.KEY_RUNTIME_STATE_ID, ""))
-	if runtime_id == "":
-		runtime_id = EffectData.get_status_id(effect_data)
-	if runtime_id == "":
-		return ""
-
-	return "periodic_status_aura:%s" % runtime_id
-
-
-func get_current_phase(player: PlayerState, runtime_key: String) -> int:
-	var raw_value: Variant = player.get_effect_runtime_value(runtime_key, null)
-	if raw_value == null:
-		return 0
-
-	return maxi(int(raw_value), 0)
-
-
-func should_advance_phase(effect_data: Dictionary) -> bool:
-	var trigger := EffectData.get_trigger(effect_data)
-	return trigger != EffectData.TRIGGER_WHILE_IN_HAND and trigger != EffectData.TRIGGER_PASSIVE
-
-
-func get_active_phases(effect_data: Dictionary) -> Array[int]:
-	var phases: Array[int] = []
-	var raw_phases: Variant = effect_data.get(EffectData.KEY_ACTIVE_PHASES, [0])
-	if raw_phases is Array:
-		for raw_phase in raw_phases:
-			var phase := maxi(int(raw_phase), 0)
-			if not phases.has(phase):
-				phases.append(phase)
-
-	if phases.is_empty():
-		phases.append(0)
-
-	return phases
 
 
 func sync_status(

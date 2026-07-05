@@ -13,6 +13,7 @@ const SetBeastPathEffectScript := preload("res://scripts/effects/set_beast_path_
 const DestroyUnitsEffectScript := preload("res://scripts/effects/destroy_units_effect.gd")
 const LifeDrainEffectScript := preload("res://scripts/effects/life_drain_effect.gd")
 const PeriodicStatusAuraEffectScript := preload("res://scripts/effects/periodic_status_aura_effect.gd")
+const PeriodicTriggerEffectScript := preload("res://scripts/effects/periodic_trigger_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -53,6 +54,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_CHAOS_CORRUPTION_BURST, ChaosCorruptionBurstEffectScript.new())
 	register_effect(EffectData.EFFECT_SET_BEAST_PATH, SetBeastPathEffectScript.new())
 	register_effect(EffectData.EFFECT_PERIODIC_STATUS_AURA, PeriodicStatusAuraEffectScript.new())
+	register_effect(EffectData.EFFECT_PERIODIC_TRIGGER, PeriodicTriggerEffectScript.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

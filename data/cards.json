@@ -3132,7 +3132,8 @@
 				"attached_cards": [
 					"soul_siphon",
 					"demon_summon",
-					"staff_of_guldan"
+					"staff_of_guldan",
+					"dark_portal"
 				]
 			}
 		],
@@ -3598,6 +3599,67 @@
 									"fire_damage": 3
 								},
 								"apply_animation": "immolation"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "dark_portal",
+				"name": "黑暗之门",
+				"description": "英雄建筑。翻出时立即从地狱火、末日守卫、混乱狼骑兵、魅魔中随机获得一张；之后每两个自己的回合开始再次触发。",
+				"url": "res://assets/img/影月议会/黑暗之门.png",
+				"type": "building",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"attack": 0,
+				"health": 20,
+				"effects": [
+					{
+						"id": "periodic_trigger",
+						"trigger": "on_reveal",
+						"runtime_state_id": "dark_portal_cycle",
+						"cycle_length": 2,
+						"active_phases": [
+							0
+						],
+						"advance_phase": false,
+						"reset_phase": true,
+						"animation": "dark_portal",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_ids": [
+									"infernal",
+									"doomguard",
+									"chaos_wolf_rider",
+									"succubus"
+								],
+								"amount": 1
+							}
+						]
+					},
+					{
+						"id": "periodic_trigger",
+						"trigger": "before_turn_start",
+						"trigger_player": "source_owner",
+						"runtime_state_id": "dark_portal_cycle",
+						"cycle_length": 2,
+						"active_phases": [
+							0
+						],
+						"animation": "dark_portal",
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_ids": [
+									"infernal",
+									"doomguard",
+									"chaos_wolf_rider",
+									"succubus"
+								],
+								"amount": 1
 							}
 						]
 					}
