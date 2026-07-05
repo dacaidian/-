@@ -7,6 +7,7 @@ const FactionTimePanelControllerScript := preload("res://scripts/ui/faction_time
 const FactionSkillPanelControllerScript := preload("res://scripts/ui/faction_skill_panel_controller.gd")
 const HandDrawerControllerScript := preload("res://scripts/ui/hand_drawer_controller.gd")
 const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_display_controller.gd")
+const RightSideHudLayoutControllerScript := preload("res://scripts/ui/right_side_hud_layout_controller.gd")
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 const GameAnimationResolverScript := preload("res://scripts/game/game_animation_resolver.gd")
@@ -33,8 +34,6 @@ const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
 const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
 const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
-const RIGHT_HUD_MARGIN := 16.0
-const RIGHT_HUD_GAP := 12.0
 
 # GameManager 是战局编排入口。
 # 它持有玩家、棋盘、牌池和交互状态，并串起回合、行动、死亡、补位等规则流程。
@@ -142,6 +141,7 @@ var faction_time_panel_controller := FactionTimePanelControllerScript.new()
 var faction_skill_panel_controller := FactionSkillPanelControllerScript.new()
 var hand_drawer_controller := HandDrawerControllerScript.new()
 var equipment_display_controller := EquipmentDisplayControllerScript.new()
+var right_side_hud_layout_controller := RightSideHudLayoutControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
 var card_animation_controller := CardAnimationControllerScript.new()
 var game_animation_resolver := GameAnimationResolverScript.new()
@@ -696,38 +696,12 @@ func update_equipment_display_view() -> void:
 
 
 func update_right_side_hud_layout() -> void:
-	var root := get_parent() as Control
-	if root == null:
-		return
-
-	var viewport := root.get_viewport()
-	if viewport == null:
-		return
-
-	var viewport_size: Vector2 = viewport.get_visible_rect().size
-	var next_y := RIGHT_HUD_MARGIN
-	next_y = layout_right_side_panel(turn_status_controller.panel, viewport_size, next_y)
-	next_y = layout_right_side_panel(faction_skill_panel_controller.panel, viewport_size, next_y)
-	next_y = layout_right_side_panel(faction_time_panel_controller.panel, viewport_size, next_y)
-	layout_right_side_panel(equipment_display_controller.panel, viewport_size, next_y)
-
-
-func layout_right_side_panel(panel: Control, viewport_size: Vector2, y_position: float) -> float:
-	if panel == null or not panel.visible:
-		return y_position
-
-	var panel_size := panel.size
-	var minimum_size := panel.get_combined_minimum_size()
-	if panel_size.x <= 0.0:
-		panel_size.x = minimum_size.x
-	if panel_size.y <= 0.0:
-		panel_size.y = minimum_size.y
-
-	panel.position = Vector2(
-		maxf(RIGHT_HUD_MARGIN, viewport_size.x - panel_size.x - RIGHT_HUD_MARGIN),
-		clampf(y_position, RIGHT_HUD_MARGIN, maxf(RIGHT_HUD_MARGIN, viewport_size.y - panel_size.y - RIGHT_HUD_MARGIN))
-	)
-	return panel.position.y + panel_size.y + RIGHT_HUD_GAP
+	right_side_hud_layout_controller.update(get_parent() as Control, [
+		turn_status_controller.panel,
+		faction_skill_panel_controller.panel,
+		faction_time_panel_controller.panel,
+		equipment_display_controller.panel
+	])
 
 
 func update_card_pool_view() -> void:

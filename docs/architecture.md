@@ -210,6 +210,8 @@ AI 分为候选行为生成、棋盘评估、手牌评估和行为执行。AI �
 
 UI 控制器只负责表现，不应直接修改规则数据，除非通过明确回调进入 game/action/effect 层。
 
+`RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
+
 一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。
 
 野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`；多格路径特效通过 `play_path_effect_animation()` 进入，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉由 `CardAnimationController` 统一生成。

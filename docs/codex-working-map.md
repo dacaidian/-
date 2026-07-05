@@ -274,6 +274,7 @@
 - `data/audio.json`
 - `scenes/card/scripts/card.gd`
 - `scripts/ui/hand_drawer_controller.gd`
+- `scripts/ui/right_side_hud_layout_controller.gd`
 - 相关 panel controller
 
 常见规则：
@@ -287,6 +288,7 @@
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 持续状态表现放在 `CardStatusOverlay`。
 - 数值图标放在 `Card` 的状态/数值堆叠区域。
+- 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - UI 控制器不拥有玩法规则。
 
 ## VFX 与素材资源
