@@ -207,6 +207,8 @@
 
 - 装备类型决定替换关系。
 - 持续装备加成使用 `trigger: "while_equipped"`。
+- 手牌/装备持续被动统一由 `HandPassiveResolver.collect_active_passive_effects()` 收集一次，再由各子刷新器消费；新增属性型被动时优先接入这个 snapshot，不要在多个刷新函数里重复扫描手牌。
+- 场上单位被动应用范围使用 owner 的 face-up minion 集合，飞行层和地面层都通过 `GameManager.get_all_board_states()` 进入。
 - 不要把装备属性逻辑写进 UI。
 
 ## 种族系统

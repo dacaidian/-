@@ -1,26 +1,28 @@
 extends RefCounted
 class_name HandPassiveResolver
 
-# HandPassiveResolver 统一解析“在手牌中持续生效”的被动效果。
-# 当前支持金手指一类的翻牌上限加成；未来手牌冷却、费用、资源等持续修正也优先放这里。
+# HandPassiveResolver 统一解析手牌与装备区的持续被动。
+# 刷新时先收集一次 active passive effects，再把同一批配置传给各个子刷新器。
+# 规则效果来源和场上应用范围在这里集中，避免 UI、PlayerState 或单张行动里重复扫描。
 
 func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips := false, game_manager: GameManager = null) -> void:
 	if player == null:
 		return
 
+	var passive_effects := collect_active_passive_effects(player)
 	var previous_capacity := player.max_flips_per_turn
-	var flip_bonus := get_flip_capacity_bonus(player)
+	var flip_bonus := get_flip_capacity_bonus(passive_effects)
 	player.set_flip_capacity_bonus(flip_bonus)
-	refresh_faction_runtime_cycle_passives(player, game_manager)
-	refresh_unit_evolution_passives(player, game_manager)
-	refresh_unit_movement_passives(player, game_manager)
-	refresh_unit_keyword_passives(player, game_manager)
-	refresh_unit_attack_passives(player, game_manager)
-	refresh_unit_armor_passives(player, game_manager)
-	refresh_unit_attack_speed_passives(player, game_manager)
-	refresh_mounted_attack_speed_passives(player, game_manager)
-	refresh_faction_skill_passives(player)
-	refresh_periodic_status_aura_passives(player, game_manager)
+	refresh_faction_runtime_cycle_passives(player, game_manager, passive_effects)
+	refresh_unit_evolution_passives(player, game_manager, passive_effects)
+	refresh_unit_movement_passives(player, game_manager, passive_effects)
+	refresh_unit_keyword_passives(player, game_manager, passive_effects)
+	refresh_unit_attack_passives(player, game_manager, passive_effects)
+	refresh_unit_armor_passives(player, game_manager, passive_effects)
+	refresh_unit_attack_speed_passives(player, game_manager, passive_effects)
+	refresh_mounted_attack_speed_passives(player, game_manager, passive_effects)
+	refresh_faction_skill_passives(player, passive_effects)
+	refresh_periodic_status_aura_passives(player, game_manager, passive_effects)
 
 	if should_adjust_remaining_flips:
 		var delta := player.max_flips_per_turn - previous_capacity
@@ -28,11 +30,11 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 			player.gain_flips(delta)
 
 
-func refresh_unit_evolution_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_evolution_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null or game_manager.effect_registry == null:
 		return
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_EVOLVE_UNITS:
@@ -43,11 +45,11 @@ func refresh_unit_evolution_passives(player: PlayerState, game_manager: GameMana
 		game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
 
 
-func refresh_periodic_status_aura_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_periodic_status_aura_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null or game_manager.effect_registry == null:
 		return
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_PERIODIC_STATUS_AURA:
@@ -58,12 +60,10 @@ func refresh_periodic_status_aura_passives(player: PlayerState, game_manager: Ga
 		game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
 
 
-func get_flip_capacity_bonus(player: PlayerState) -> int:
+func get_flip_capacity_bonus(passive_effects: Array[Dictionary]) -> int:
 	var bonus := 0
-	if player == null:
-		return bonus
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		match EffectData.get_id(effect_data):
 			EffectData.EFFECT_MODIFY_FLIP_CAPACITY, EffectData.EFFECT_PASSIVE_FLIP_BONUS:
 				bonus += EffectData.get_amount(effect_data)
@@ -71,12 +71,12 @@ func get_flip_capacity_bonus(player: PlayerState) -> int:
 	return bonus
 
 
-func refresh_faction_skill_passives(player: PlayerState) -> void:
+func refresh_faction_skill_passives(player: PlayerState, passive_effects: Array[Dictionary]) -> void:
 	if player == null:
 		return
 
 	var skill_ids: Array[String] = []
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_FACTION_SKILLS:
 			continue
 
@@ -87,13 +87,13 @@ func refresh_faction_skill_passives(player: PlayerState) -> void:
 	player.set_unlocked_faction_skills(skill_ids)
 
 
-func refresh_faction_runtime_cycle_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_faction_runtime_cycle_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null:
 		return
 
 	var override_state_ids: Array[String] = []
 	var fallback_state_id := ""
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_RESTRICT_FACTION_RUNTIME_CYCLE:
 			continue
 
@@ -119,18 +119,13 @@ func is_board_passive_effect(effect_data: Dictionary) -> bool:
 	return EffectData.get_trigger(effect_data) == EffectData.TRIGGER_WHILE_ON_BOARD
 
 
-func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var movement_by_card_id := get_unit_movement_overrides(player)
-	var movement_bonus_by_card_id := get_unit_movement_bonuses(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id:
-			continue
-
+	var movement_by_card_id := get_unit_movement_overrides(player, passive_effects)
+	var movement_bonus_by_card_id := get_unit_movement_bonuses(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
 		var base_movement := get_origin_movement(state)
 		var target_movement: int = base_movement
 		var movement_override: Variant = get_represented_card_value(state, movement_by_card_id, null)
@@ -143,17 +138,12 @@ func refresh_unit_movement_passives(player: PlayerState, game_manager: GameManag
 		state.set_max_movement(target_movement, true)
 
 
-func refresh_unit_keyword_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_keyword_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var keywords_by_card_id := get_unit_keyword_grants(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id:
-			continue
-
+	var keywords_by_card_id := get_unit_keyword_grants(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
 		var keywords: Array[String] = []
 		var raw_keywords: Variant = get_represented_card_value(state, keywords_by_card_id, [])
 		if raw_keywords is Array:
@@ -165,17 +155,12 @@ func refresh_unit_keyword_passives(player: PlayerState, game_manager: GameManage
 		state.set_passive_keywords(keywords)
 
 
-func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var attack_bonus_by_card_id := get_unit_attack_bonuses(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id:
-			continue
-
+	var attack_bonus_by_card_id := get_unit_attack_bonuses(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
 		var attack_bonus := 0
 		var attack_bonus_value: Variant = get_represented_card_value(state, attack_bonus_by_card_id, null)
 		if attack_bonus_value != null:
@@ -185,17 +170,12 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 		state.set_passive_attack_bonus(attack_bonus)
 
 
-func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var armor_bonus_by_card_id := get_unit_armor_bonuses(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id:
-			continue
-
+	var armor_bonus_by_card_id := get_unit_armor_bonuses(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
 		var armor_bonus := 0
 		var armor_bonus_value: Variant = get_represented_card_value(state, armor_bonus_by_card_id, null)
 		if armor_bonus_value != null:
@@ -204,17 +184,12 @@ func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager)
 		state.set_armor(armor_bonus)
 
 
-func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id:
-			continue
-
+	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
 		var base_attack_speed := get_origin_attack_speed(state)
 		var attack_speed_bonus := 0
 		var attack_speed_bonus_value: Variant = get_represented_card_value(state, attack_speed_bonus_by_card_id, null)
@@ -224,15 +199,13 @@ func refresh_unit_attack_speed_passives(player: PlayerState, game_manager: GameM
 		state.set_max_attack_speed(base_attack_speed + attack_speed_bonus, true)
 
 
-func refresh_mounted_attack_speed_passives(player: PlayerState, game_manager: GameManager) -> void:
+func refresh_mounted_attack_speed_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
 	if player == null or game_manager == null:
 		return
 
-	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player)
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.owner_id != player.id or state.data == null:
+	var attack_speed_bonus_by_card_id := get_unit_attack_speed_bonuses(player, passive_effects)
+	for state in get_owned_face_up_minions(player, game_manager):
+		if state.data == null:
 			continue
 
 		for mounted_attack in state.data.mounted_attacks:
@@ -249,12 +222,12 @@ func refresh_mounted_attack_speed_passives(player: PlayerState, game_manager: Ga
 			state.set_mounted_attack_max_uses(action_id, base_attack_speed + attack_speed_bonus, true)
 
 
-func get_unit_movement_overrides(player: PlayerState) -> Dictionary:
+func get_unit_movement_overrides(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var movement_by_card_id := {}
 	if player == null:
 		return movement_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_SET_UNIT_MOVEMENT:
@@ -281,12 +254,12 @@ func get_represented_card_value(state: CardState, values_by_card_id: Dictionary,
 	return default_value
 
 
-func get_unit_movement_bonuses(player: PlayerState) -> Dictionary:
+func get_unit_movement_bonuses(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var movement_bonus_by_card_id := {}
 	if player == null:
 		return movement_bonus_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_MOVEMENT:
@@ -299,12 +272,12 @@ func get_unit_movement_bonuses(player: PlayerState) -> Dictionary:
 	return movement_bonus_by_card_id
 
 
-func get_unit_keyword_grants(player: PlayerState) -> Dictionary:
+func get_unit_keyword_grants(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var keywords_by_card_id := {}
 	if player == null:
 		return keywords_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_GRANT_UNIT_KEYWORDS:
@@ -333,12 +306,12 @@ func get_unit_keyword_grants(player: PlayerState) -> Dictionary:
 	return keywords_by_card_id
 
 
-func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
+func get_unit_attack_bonuses(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var attack_bonus_by_card_id := {}
 	if player == null:
 		return attack_bonus_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ATTACK:
@@ -351,12 +324,12 @@ func get_unit_attack_bonuses(player: PlayerState) -> Dictionary:
 	return attack_bonus_by_card_id
 
 
-func get_unit_armor_bonuses(player: PlayerState) -> Dictionary:
+func get_unit_armor_bonuses(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var armor_bonus_by_card_id := {}
 	if player == null:
 		return armor_bonus_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ARMOR:
@@ -392,12 +365,12 @@ func get_board_attack_resource_bonus(state: CardState, player: PlayerState) -> i
 	return bonus
 
 
-func get_unit_attack_speed_bonuses(player: PlayerState) -> Dictionary:
+func get_unit_attack_speed_bonuses(player: PlayerState, passive_effects: Array[Dictionary]) -> Dictionary:
 	var attack_speed_bonus_by_card_id := {}
 	if player == null:
 		return attack_speed_bonus_by_card_id
 
-	for effect_data in get_hand_passive_effects(player):
+	for effect_data in passive_effects:
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ATTACK_SPEED:
@@ -424,7 +397,7 @@ func is_effect_condition_met(effect_data: Dictionary, player: PlayerState) -> bo
 	return true
 
 
-func get_hand_passive_effects(player: PlayerState) -> Array[Dictionary]:
+func collect_active_passive_effects(player: PlayerState) -> Array[Dictionary]:
 	var effects: Array[Dictionary] = []
 	if player == null:
 		return effects
@@ -444,6 +417,22 @@ func get_hand_passive_effects(player: PlayerState) -> Array[Dictionary]:
 				effects.append(effect_data)
 
 	return effects
+
+
+func get_owned_face_up_minions(player: PlayerState, game_manager: GameManager) -> Array[CardState]:
+	var states: Array[CardState] = []
+	if player == null or game_manager == null:
+		return states
+
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != player.id:
+			continue
+
+		states.append(state)
+
+	return states
 
 
 func get_origin_movement(state: CardState) -> int:

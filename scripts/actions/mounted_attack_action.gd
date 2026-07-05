@@ -119,7 +119,8 @@ func get_rider_attack_bonus(user: CardState, game_manager: GameManager) -> int:
 		return 0
 
 	var passive_resolver := HandPassiveResolver.new()
-	var attack_bonus_by_card_id := passive_resolver.get_unit_attack_bonuses(owner)
+	var passive_effects := passive_resolver.collect_active_passive_effects(owner)
+	var attack_bonus_by_card_id := passive_resolver.get_unit_attack_bonuses(owner, passive_effects)
 	return int(attack_bonus_by_card_id.get(rider_card_id, 0))
 
 

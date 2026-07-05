@@ -181,7 +181,7 @@
 
 装备按类型唯一。装备同类型新装备时，旧装备返回手牌。
 
-装备被动使用 `trigger: "while_equipped"`。属性型装备被动由 `HandPassiveResolver` 刷新；施法能力改写型装备也使用 `modify_spell_ability` / `modify_hand_spell_effects`，由 `HandSpellModifierResolver` 从已装备区读取。不要把装备属性逻辑写进 UI 或 `PlayerState.equip_card()`，除非只是区域 bookkeeping。
+装备被动使用 `trigger: "while_equipped"`。属性型装备被动由 `HandPassiveResolver` 刷新；施法能力改写型装备也使用 `modify_spell_ability` / `modify_hand_spell_effects`，由 `HandSpellModifierResolver` 从已装备区读取。`HandPassiveResolver` 的刷新流程分成两步：先从手牌与装备区收集一次 active passive effect snapshot，再把同一批配置应用到翻牌上限、种族技能、单位移动力、关键字、攻击、护甲、攻速、骑乘攻击和周期光环。场上应用范围统一走 owner 的 face-up minion 集合，覆盖地面层和飞行层，避免每个刷新器重复判断。不要把装备属性逻辑写进 UI 或 `PlayerState.equip_card()`，除非只是区域 bookkeeping。
 
 ## 种族运行时系统
 
