@@ -24,6 +24,8 @@ func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: 
 		return false
 
 	if card_data.is_spell():
+		if requires_target(card_data, player) and get_valid_targets(card_data, game_manager, player).is_empty():
+			return false
 		return not card_data.effects.is_empty() and has_playable_effects(player, card_data, game_manager)
 
 	if card_data.is_minion():

@@ -36,6 +36,8 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 		return false
 	if get_drain_recipients(source_state, effect_data, game_manager).is_empty():
 		return false
+	if EffectData.get_target(effect_data) == EffectData.TARGET_SELECTED and EffectData.get_selected_target_state(effect_data) == null:
+		return true
 	return not get_target_states(source_state, effect_data, game_manager).is_empty()
 
 
