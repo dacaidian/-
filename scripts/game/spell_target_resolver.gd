@@ -15,6 +15,7 @@ const TARGET_RULE_AREA_2X2 := "area_2x2"
 const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
 const TARGET_RULE_MINIONS_BY_CARD_IDS := "minions_by_card_ids"
 const TARGET_RULE_SPELLCASTER_MINIONS_OR_HEROES := "spellcaster_minions_or_heroes"
+const TARGET_RULE_ADJACENT_MINIONS := "adjacent_minions"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -86,6 +87,9 @@ static func can_target(
 	if target.is_stealthed_from_player(resolved_source_owner_id):
 		return false
 
+	if target_rule == TARGET_RULE_ADJACENT_MINIONS:
+		return is_adjacent_minion_target(source_state, target, game_manager)
+
 	if is_magic_immune(target):
 		return false
 
@@ -109,6 +113,8 @@ static func can_target(
 			return target.is_minion() and target != source_state and is_state_in_card_filter(target, card_ids)
 		TARGET_RULE_SPELLCASTER_MINIONS_OR_HEROES:
 			return target.is_hero() or (target.is_minion() and has_spell_action_capability(target, game_manager))
+		TARGET_RULE_ADJACENT_MINIONS:
+			return is_adjacent_minion_target(source_state, target, game_manager)
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:
@@ -148,6 +154,19 @@ static func has_spell_action_capability(target: CardState, game_manager: GameMan
 
 	var granted_spell_resolver := GrantedSpellResolver.new()
 	return not granted_spell_resolver.get_granted_spell_actions(target, game_manager).is_empty()
+
+
+static func is_adjacent_minion_target(source_state: CardState, target: CardState, game_manager: GameManager = null) -> bool:
+	if source_state == null or target == null or game_manager == null:
+		return false
+	if source_state == target:
+		return false
+	if not target.is_minion():
+		return false
+	if source_state.slot_index == target.slot_index:
+		return true
+
+	return BoardQuery.is_neighbor(source_state.slot_index, target.slot_index, game_manager.board_columns)
 
 
 static func can_select_area_center(target: CardState, source_owner_id: String = "") -> bool:

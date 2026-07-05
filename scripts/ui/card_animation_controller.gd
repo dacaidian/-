@@ -361,7 +361,7 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"mana_burn":
+		"mana_burn", "fel_bite":
 			if caster_card == null or target_card == null:
 				return
 			await play_mana_burn_spell(owner, effect_root, caster_card, target_card)
