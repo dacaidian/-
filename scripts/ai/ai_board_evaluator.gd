@@ -434,6 +434,7 @@ func _score_apply_status_effect(target: CardState, effect_data: Dictionary, play
 	var status_payload := EffectData.get_status_payload(effect_data)
 	var attack_bonus := int(status_payload.get(EffectData.KEY_ATTACK_BONUS, 0))
 	var poison_damage := int(status_payload.get(EffectData.KEY_POISON_DAMAGE, 0))
+	var fire_damage := int(status_payload.get(EffectData.KEY_FIRE_DAMAGE, 0))
 	var poison_turns := int(effect_data.get(EffectData.KEY_STATUS_DURATION_TURNS, 0))
 	var is_own := target.owner_id == player.id
 	var is_enemy := target.owner_id != "" and target.owner_id != player.id
@@ -453,8 +454,8 @@ func _score_apply_status_effect(target: CardState, effect_data: Dictionary, play
 			return -threat * 0.4 - 2.0
 		return 0.0
 
-	if status_id == CardStatus.STATUS_POISON or status_tags.has(CardStatus.TAG_DAMAGE_OVER_TIME):
-		var poison_value := float(poison_damage * maxi(poison_turns, 1))
+	if status_id == CardStatus.STATUS_POISON or status_id == CardStatus.STATUS_FIRE or status_tags.has(CardStatus.TAG_DAMAGE_OVER_TIME):
+		var poison_value := float((poison_damage + fire_damage) * maxi(poison_turns, 1))
 		if is_enemy:
 			return poison_value * 1.8 + threat * 0.35
 		elif is_own:

@@ -1007,6 +1007,9 @@ func add_status(status: CardStatus) -> void:
 			return
 		add_unique_poison_status(status)
 		return
+	if status.status_id == CardStatus.STATUS_FIRE:
+		add_unique_fire_status(status)
+		return
 	if status.status_id == CardStatus.STATUS_STORED_VENOM:
 		add_stored_venom_status(status)
 		return
@@ -1027,6 +1030,18 @@ func add_unique_poison_status(status: CardStatus) -> void:
 	var existing_status := get_status(CardStatus.STATUS_POISON)
 	if existing_status != null:
 		if not status.is_stronger_poison_than(existing_status):
+			return
+
+		statuses.erase(existing_status)
+
+	statuses.append(status)
+	state_changed.emit(self)
+
+
+func add_unique_fire_status(status: CardStatus) -> void:
+	var existing_status := get_status(CardStatus.STATUS_FIRE)
+	if existing_status != null:
+		if not status.is_stronger_fire_than(existing_status):
 			return
 
 		statuses.erase(existing_status)

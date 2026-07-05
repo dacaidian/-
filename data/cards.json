@@ -3564,6 +3564,46 @@
 				"effects": []
 			},
 			{
+				"id": "infernal",
+				"name": "地狱火",
+				"description": "影月议会恶魔随从。施法：献祭，对相邻敌方非英雄随从施加火焰伤害，每回合结束受到3点伤害，持续2回合。",
+				"url": "res://assets/img/影月议会/地狱火.png",
+				"type": "minion",
+				"count": 2,
+				"level": 3,
+				"keywords": [],
+				"attack": 8,
+				"health": 8,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "immolation",
+						"name": "献祭",
+						"animation": "immolation",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "apply_status",
+								"target": "adjacent_enemy_non_hero_minions",
+								"status_id": "fire",
+								"status_name": "火焰伤害",
+								"status_description": "回合结束时受到3点火焰伤害，持续2回合。",
+								"status_tags": [
+									"damage_over_time"
+								],
+								"duration_turns": 2,
+								"expires_on_trigger": "after_turn_end",
+								"status_valence": "negative",
+								"payload": {
+									"fire_damage": 3
+								},
+								"apply_animation": "immolation"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "staff_of_guldan",
 				"name": "古尔丹之杖",
 				"description": "英雄装备，武器。装备后古尔丹的邪能灌注升级：古尔丹受到4点伤害，目标随从本回合攻击力+6，并在你的回合结束时爆裂死亡，对相邻随从造成2点伤害。",

@@ -31,6 +31,7 @@ signal face_changed(is_face_up: bool)
 @export var shield_number_dir := "res://assets/img/护盾数字"
 
 @export var poison_number_dir := "res://assets/img/毒性数字"
+@export var fire_number_dir := "res://assets/img/火焰数字"
 @export var armor_number_dir := "res://assets/img/护甲数字"
 @export var status_number_icon_gap := 2
 
@@ -67,6 +68,7 @@ signal face_changed(is_face_up: bool)
 var state: CardState
 var shield_texture: TextureRect
 var poison_texture: TextureRect
+var fire_texture: TextureRect
 var armor_texture: TextureRect
 var armor_label: Label
 var attack_texture: TextureRect
@@ -95,6 +97,7 @@ func _ready() -> void:
 	setup_health_texture()
 	setup_shield_texture()
 	setup_poison_texture()
+	setup_fire_texture()
 	setup_armor_texture()
 	setup_attack_texture()
 	update_card_texture()
@@ -308,6 +311,13 @@ func setup_poison_texture() -> void:
 	poison_texture = create_value_texture("PoisonTexture")
 
 
+func setup_fire_texture() -> void:
+	if fire_texture != null:
+		return
+
+	fire_texture = create_value_texture("FireTexture")
+
+
 func setup_armor_texture() -> void:
 	if armor_texture != null:
 		return
@@ -376,6 +386,7 @@ func update_status_number_textures() -> void:
 	var stack_index := 0
 	stack_index = update_shield_texture(stack_index)
 	stack_index = update_poison_texture(stack_index)
+	stack_index = update_fire_texture(stack_index)
 	update_armor_texture(stack_index)
 
 
@@ -424,6 +435,30 @@ func should_show_poison_number() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and get_poison_total_damage() > 0
+
+
+func update_fire_texture(stack_index: int) -> int:
+	if fire_texture == null:
+		return stack_index
+
+	if not should_show_fire_number():
+		fire_texture.hide()
+		return stack_index
+
+	var fire_total_damage := get_fire_total_damage()
+	var fire_texture_path := "%s/%d.png" % [fire_number_dir, fire_total_damage]
+	if set_value_texture(fire_texture, fire_texture_path, "火焰"):
+		position_status_number_texture(fire_texture, stack_index)
+		return stack_index + 1
+
+	return stack_index
+
+
+func should_show_fire_number() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and get_fire_total_damage() > 0
 
 
 func update_armor_texture(stack_index: int) -> int:
@@ -478,6 +513,17 @@ func get_poison_total_damage() -> int:
 		stored_venom_damage = stored_venom_status.get_stored_venom_damage()
 
 	return poison_damage + stored_venom_damage
+
+
+func get_fire_total_damage() -> int:
+	if state == null:
+		return 0
+
+	var fire_status := state.get_status(CardStatus.STATUS_FIRE)
+	if fire_status == null:
+		return 0
+
+	return fire_status.get_fire_total_remaining_damage()
 
 
 func position_status_number_texture(value_texture: TextureRect, stack_index: int) -> void:
@@ -585,6 +631,10 @@ func hide_value_textures() -> void:
 		shield_texture.hide()
 	if poison_texture != null:
 		poison_texture.hide()
+	if fire_texture != null:
+		fire_texture.hide()
+	if armor_texture != null:
+		armor_texture.hide()
 	if attack_texture != null:
 		attack_texture.hide()
 

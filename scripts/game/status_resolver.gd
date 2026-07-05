@@ -13,6 +13,7 @@ func resolve_pre_trigger_status_effects(game_manager: GameManager, trigger: Stri
 			await mature_life_link_larvae(game_manager, turn_player_id)
 		EventContext.TRIGGER_AFTER_TURN_END:
 			await resolve_poison_damage(game_manager, trigger, turn_player_id)
+			await resolve_fire_damage(game_manager, trigger, turn_player_id)
 
 
 func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
@@ -64,6 +65,27 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 
 	if not damaged_states.is_empty():
 		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, null)
+
+
+func resolve_fire_damage(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
+	var damaged_states: Array[CardState] = []
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_unit(state):
+			continue
+
+		var fire := state.get_status(CardStatus.STATUS_FIRE)
+		if fire == null or not fire.should_tick(trigger, turn_player_id):
+			continue
+
+		var fire_damage := fire.get_fire_damage()
+		if fire_damage <= 0:
+			continue
+
+		state.take_damage(fire_damage)
+		damaged_states.append(state)
+
+	if not damaged_states.is_empty():
+		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_FIRE, null)
 
 
 func mature_life_link_larvae(game_manager: GameManager, turn_player_id: String) -> void:

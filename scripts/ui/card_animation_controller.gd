@@ -361,6 +361,8 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "curse", "kiljaeden_whisper":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"immolation", "fire":
+			await play_immolation_at_rect(owner, effect_root, target_card.get_global_rect())
 		"mana_burn", "fel_bite", "life_drain":
 			if caster_card == null or target_card == null:
 				return
@@ -447,6 +449,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "life_drain", "curse", "kiljaeden_whisper":
 			await play_fel_spell_at_rect(owner, effect_root, target_rect, animation_key)
+		"immolation", "fire":
+			await play_immolation_at_rect(owner, effect_root, target_rect)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_rect)
 		"gu_life_link":
@@ -513,6 +517,8 @@ func play_spell_cast_from_rect_to_card(
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
 		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "curse", "kiljaeden_whisper":
 			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+		"immolation", "fire":
+			await play_immolation_at_rect(owner, effect_root, target_card.get_global_rect())
 		"life_drain":
 			await play_life_drain_from_rect_to_card(owner, effect_root, source_rect, target_card)
 		"gu_life_link_larva":
@@ -1626,6 +1632,52 @@ func play_fel_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect
 	rift.queue_free()
 	core.queue_free()
 	sigil.queue_free()
+	for ember in embers:
+		ember.queue_free()
+
+
+func play_immolation_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	var outer_ring := create_rect_spell_effect(target_rect, "ImmolationOuterRing", create_immolation_ring_style(), 1.24)
+	var inner_flame := create_rect_spell_effect(target_rect, "ImmolationInnerFlame", create_immolation_flame_style(), 0.72)
+	var embers := create_immolation_embers_for_rect(target_rect)
+
+	effect_root.add_child(outer_ring)
+	effect_root.add_child(inner_flame)
+	for ember in embers:
+		effect_root.add_child(ember)
+
+	var flare_tween := owner.create_tween()
+	flare_tween.set_parallel(true)
+	flare_tween.set_trans(Tween.TRANS_BACK)
+	flare_tween.set_ease(Tween.EASE_OUT)
+	flare_tween.tween_property(outer_ring, "modulate:a", 0.9, spell_animation_duration * 0.28)
+	flare_tween.tween_property(outer_ring, "scale", Vector2(1.16, 1.16), spell_animation_duration * 0.28)
+	flare_tween.tween_property(inner_flame, "modulate:a", 0.95, spell_animation_duration * 0.28)
+	flare_tween.tween_property(inner_flame, "scale", Vector2(1.22, 1.22), spell_animation_duration * 0.28)
+	for ember in embers:
+		flare_tween.tween_property(ember, "modulate:a", 0.86, spell_animation_duration * 0.28)
+	await flare_tween.finished
+
+	var burn_tween := owner.create_tween()
+	burn_tween.set_parallel(true)
+	burn_tween.set_trans(Tween.TRANS_CUBIC)
+	burn_tween.set_ease(Tween.EASE_OUT)
+	burn_tween.tween_property(outer_ring, "scale", Vector2(1.92, 1.92), spell_animation_duration * 0.72)
+	burn_tween.tween_property(outer_ring, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	burn_tween.tween_property(inner_flame, "scale", Vector2(1.54, 1.54), spell_animation_duration * 0.72)
+	burn_tween.tween_property(inner_flame, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	for ember in embers:
+		var offset: Vector2 = ember.get_meta("immolation_ember_offset", Vector2.ZERO)
+		burn_tween.tween_property(ember, "global_position", ember.global_position + offset, spell_animation_duration * 0.72)
+		burn_tween.tween_property(ember, "scale", Vector2(0.22, 0.22), spell_animation_duration * 0.72)
+		burn_tween.tween_property(ember, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await burn_tween.finished
+
+	outer_ring.queue_free()
+	inner_flame.queue_free()
 	for ember in embers:
 		ember.queue_free()
 
@@ -3505,6 +3557,30 @@ func create_fel_embers_for_rect(target_rect: Rect2, is_madness: bool) -> Array[P
 	return embers
 
 
+func create_immolation_embers_for_rect(target_rect: Rect2) -> Array[Panel]:
+	var embers: Array[Panel] = []
+	var ember_count := 10
+	var radius := minf(target_rect.size.x, target_rect.size.y) * 0.50
+	for index in range(ember_count):
+		var angle := TAU * float(index) / float(ember_count) - 0.35
+		var base_position := target_rect.get_center() + Vector2(cos(angle), sin(angle)) * radius * 0.36
+		var ember := Panel.new()
+		ember.name = "ImmolationEmber"
+		ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ember.size = target_rect.size * Vector2(0.052, 0.070)
+		ember.pivot_offset = ember.size * 0.5
+		ember.global_position = base_position - ember.pivot_offset
+		ember.rotation = angle
+		ember.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		ember.z_index = 2304
+		var ember_color := Color(1.0, 0.30, 0.04, 0.90) if index % 3 != 0 else Color(1.0, 0.76, 0.16, 0.86)
+		ember.add_theme_stylebox_override("panel", create_immolation_ember_style(ember_color))
+		ember.set_meta("immolation_ember_offset", Vector2(cos(angle), sin(angle) - 0.45) * radius * 0.78)
+		embers.append(ember)
+
+	return embers
+
+
 func create_monkey_spell_aura_style(animation_key: String) -> StyleBoxFlat:
 	match animation_key:
 		"somersault_cloud":
@@ -3765,6 +3841,39 @@ func create_fel_ember_style(color: Color) -> StyleBoxFlat:
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(color.r, color.g, color.b, 0.42)
 	style.shadow_size = 10
+	return style
+
+
+func create_immolation_ring_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.40, 0.04, 0.0, 0.26)
+	style.border_color = Color(1.0, 0.42, 0.06, 0.92)
+	style.set_border_width_all(6)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.20, 0.02, 0.58)
+	style.shadow_size = 36
+	return style
+
+
+func create_immolation_flame_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.20, 0.02, 0.62)
+	style.border_color = Color(1.0, 0.82, 0.22, 0.96)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.36, 0.04, 0.66)
+	style.shadow_size = 28
+	return style
+
+
+func create_immolation_ember_style(color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color(1.0, 0.88, 0.30, 0.94)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(1.0, 0.28, 0.02, 0.48)
+	style.shadow_size = 12
 	return style
 
 

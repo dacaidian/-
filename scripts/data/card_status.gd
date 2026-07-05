@@ -14,6 +14,7 @@ const STATUS_POWER_WORD_SHIELD := "power_word_shield"
 const STATUS_ARCANE_AURA := "arcane_aura"
 const STATUS_ENCOURAGE_GU := "encourage_gu"
 const STATUS_POISON := "poison"
+const STATUS_FIRE := "fire"
 const STATUS_SNAKE_VENOM := "snake_venom"
 const STATUS_DEVOUR := "devour"
 const STATUS_LIFE_LINK_LARVA := "life_link_larva"
@@ -194,6 +195,17 @@ func get_poison_total_remaining_damage() -> int:
 	return get_poison_damage() * maxi(remaining_turns, 0)
 
 
+func get_fire_damage() -> int:
+	return int(payload.get(EffectData.KEY_FIRE_DAMAGE, 0))
+
+
+func get_fire_total_remaining_damage() -> int:
+	if status_id != STATUS_FIRE:
+		return 0
+
+	return get_fire_damage() * maxi(remaining_turns, 0)
+
+
 func get_stored_venom_damage() -> int:
 	return int(payload.get(EffectData.KEY_STORED_VENOM_DAMAGE, 0))
 
@@ -217,6 +229,20 @@ func is_stronger_poison_than(other: CardStatus) -> bool:
 		return total_damage > other_total_damage
 
 	return get_poison_damage() > other.get_poison_damage()
+
+
+func is_stronger_fire_than(other: CardStatus) -> bool:
+	if status_id != STATUS_FIRE:
+		return false
+	if other == null:
+		return true
+
+	var total_damage := get_fire_total_remaining_damage()
+	var other_total_damage := other.get_fire_total_remaining_damage()
+	if total_damage != other_total_damage:
+		return total_damage > other_total_damage
+
+	return get_fire_damage() > other.get_fire_damage()
 
 
 func to_snapshot() -> Dictionary:
@@ -304,6 +330,7 @@ func get_cleanse_valence() -> String:
 
 	var negative_status_ids := [
 		STATUS_POISON,
+		STATUS_FIRE,
 		STATUS_SNAKE_VENOM,
 		STATUS_LIFE_LINK_LARVA,
 		STATUS_LIFE_LINK,
