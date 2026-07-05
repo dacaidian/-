@@ -20,6 +20,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	refresh_unit_attack_speed_passives(player, game_manager)
 	refresh_mounted_attack_speed_passives(player, game_manager)
 	refresh_faction_skill_passives(player)
+	refresh_periodic_status_aura_passives(player, game_manager)
 
 	if should_adjust_remaining_flips:
 		var delta := player.max_flips_per_turn - previous_capacity
@@ -35,6 +36,21 @@ func refresh_unit_evolution_passives(player: PlayerState, game_manager: GameMana
 		if not is_effect_condition_met(effect_data, player):
 			continue
 		if EffectData.get_id(effect_data) != EffectData.EFFECT_EVOLVE_UNITS:
+			continue
+
+		var runtime_effect_data := effect_data.duplicate(true)
+		EffectData.mark_effect_owner(runtime_effect_data, player.id)
+		game_manager.effect_registry.execute_effect(null, runtime_effect_data, game_manager)
+
+
+func refresh_periodic_status_aura_passives(player: PlayerState, game_manager: GameManager) -> void:
+	if player == null or game_manager == null or game_manager.effect_registry == null:
+		return
+
+	for effect_data in get_hand_passive_effects(player):
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_PERIODIC_STATUS_AURA:
 			continue
 
 		var runtime_effect_data := effect_data.duplicate(true)

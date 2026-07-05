@@ -50,6 +50,7 @@ var discard_pile: Array = []
 var equipped_cards_by_type: Dictionary = {}
 var spell_history_sequence := 0
 var last_spell_records_by_source_card_id: Dictionary = {}
+var effect_runtime_values: Dictionary = {}
 
 # 玩家独立坟场，保存离场卡牌的 origin + last_state + death 元数据快照。
 var graveyard: Array[Dictionary] = []
@@ -590,6 +591,21 @@ func get_latest_spell_action_for_sources(source_card_ids: Array[String]) -> Dict
 		latest_spell_data = spell_data
 
 	return latest_spell_data.duplicate(true)
+
+
+func get_effect_runtime_value(key: String, default_value: Variant = null) -> Variant:
+	if key == "":
+		return default_value
+
+	return effect_runtime_values.get(key, default_value)
+
+
+func set_effect_runtime_value(key: String, value: Variant) -> void:
+	if key == "":
+		return
+
+	effect_runtime_values[key] = value
+	state_changed.emit(self)
 
 
 func get_spell_power_bonus() -> int:

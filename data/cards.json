@@ -3472,6 +3472,69 @@
 				]
 			},
 			{
+				"id": "kiljaeden_whisper",
+				"name": "基尔加丹的低语",
+				"description": "升级牌。翻开入手后开始周期性低语：生效回合中，己方古尔丹和术士攻击力+2，伤害加深+2；下一个自己的回合开始失效，再下一个自己的回合开始重新生效。",
+				"url": "res://assets/img/影月议会/基尔加丹的低语.png",
+				"type": "upgrade",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "periodic_status_aura",
+						"trigger": "while_in_hand",
+						"runtime_state_id": "kiljaeden_whisper_cycle",
+						"cycle_length": 2,
+						"active_phases": [
+							0
+						],
+						"card_ids": [
+							"guldan",
+							"warlock"
+						],
+						"status_id": "kiljaeden_whisper",
+						"status_name": "基尔加丹的低语",
+						"status_description": "基尔加丹的低语正在回响：攻击力+2，受到伤害时额外受到2点伤害。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"status_valence": "positive",
+						"payload": {
+							"attack_bonus": 2,
+							"damage_amplify": 2
+						},
+						"apply_animation": "kiljaeden_whisper"
+					},
+					{
+						"id": "periodic_status_aura",
+						"trigger": "before_turn_start",
+						"active_zone": "hand",
+						"runtime_state_id": "kiljaeden_whisper_cycle",
+						"cycle_length": 2,
+						"active_phases": [
+							0
+						],
+						"card_ids": [
+							"guldan",
+							"warlock"
+						],
+						"status_id": "kiljaeden_whisper",
+						"status_name": "基尔加丹的低语",
+						"status_description": "基尔加丹的低语正在回响：攻击力+2，受到伤害时额外受到2点伤害。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"status_valence": "positive",
+						"payload": {
+							"attack_bonus": 2,
+							"damage_amplify": 2
+						},
+						"apply_animation": "kiljaeden_whisper"
+					}
+				]
+			},
+			{
 				"id": "chaos_wolf_rider",
 				"name": "混乱狼骑兵",
 				"description": "影月议会狼骑兵。移动攻击，移动力3。疯狂：座狼陷入邪能影响，本回合获得副动作：撕咬，对一个相邻随从造成2点伤害，并恢复自身4点生命。",

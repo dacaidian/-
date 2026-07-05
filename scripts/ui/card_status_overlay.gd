@@ -271,7 +271,7 @@ func should_show_damage_amplify() -> bool:
 	if state == null or state.data == null:
 		return false
 
-	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_DAMAGE_AMPLIFY)
+	return state.is_face_up and state.is_unit() and state.get_damage_amplify_bonus() > 0
 
 
 func _draw() -> void:
@@ -558,8 +558,8 @@ func draw_fel_madness_overlay() -> void:
 
 
 func draw_damage_amplify_overlay() -> void:
-	var status := state.get_status(CardStatus.STATUS_DAMAGE_AMPLIFY) if state != null else null
-	if status == null:
+	var status := get_damage_amplify_status()
+	if state == null:
 		return
 
 	var amplify_value: int = maxi(state.get_damage_amplify_bonus() if state != null else 0, 0)
@@ -569,7 +569,8 @@ func draw_damage_amplify_overlay() -> void:
 	var curse_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
 	var center := curse_rect.get_center()
 	var radius := minf(curse_rect.size.x, curse_rect.size.y) * 0.38
-	var ring_count: int = mini(maxi(status.stacks, 1), 5)
+	var stack_count := status.stacks if status != null else 1
+	var ring_count: int = mini(maxi(stack_count, 1), 5)
 
 	draw_rect(curse_rect, damage_amplify_color, true)
 	for index in range(ring_count):
@@ -607,6 +608,19 @@ func draw_damage_amplify_overlay() -> void:
 	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
 	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, damage_amplify_shadow_color)
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, damage_amplify_text_color)
+
+
+func get_damage_amplify_status() -> CardStatus:
+	if state == null:
+		return null
+
+	for status in state.statuses:
+		if status == null:
+			continue
+		if int(status.payload.get(EffectData.KEY_DAMAGE_AMPLIFY, 0)) > 0:
+			return status
+
+	return null
 
 
 func get_fel_madness_status() -> CardStatus:
