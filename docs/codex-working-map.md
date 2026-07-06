@@ -126,6 +126,7 @@
 - 法术、毒、固定伤害、反弹伤害不默认受护甲影响。
 - 巨兽溅射集中在 `AttackAction`。
 - 同格地面/空中单位在近战相关逻辑中视为可近战接触。
+- 嘲讽规则集中在 `AttackAction`；常态标识在 `CardStatusOverlay`，普通攻击选目标时的动态嘲讽光晕由 `InteractionManager.is_taunt_target_hint` + `Card` 绘制。
 
 ## 状态
 

@@ -87,6 +87,10 @@ var damage_amplify_edge_color := Color(0.96, 0.20, 1.0, 0.78)
 var damage_amplify_crack_color := Color(0.20, 1.0, 0.34, 0.72)
 var damage_amplify_text_color := Color(1.0, 0.80, 1.0, 0.96)
 var damage_amplify_shadow_color := Color(0.08, 0.0, 0.12, 0.96)
+var taunt_color := Color(0.95, 0.54, 0.12, 0.14)
+var taunt_edge_color := Color(1.0, 0.74, 0.20, 0.86)
+var taunt_plate_color := Color(0.52, 0.24, 0.06, 0.42)
+var taunt_rivet_color := Color(1.0, 0.88, 0.48, 0.86)
 
 
 func _ready() -> void:
@@ -105,11 +109,18 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
 	return state != null and state.has_beast_path
+
+
+func should_show_taunt() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.has_keyword(CardData.KEYWORD_TAUNT)
 
 
 func should_show_divine_shield() -> bool:
@@ -277,6 +288,8 @@ func should_show_damage_amplify() -> bool:
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
+	if should_show_taunt():
+		draw_taunt_overlay()
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_meteor_aura():
@@ -347,6 +360,44 @@ func draw_beast_path_overlay() -> void:
 		Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.78),
 		tunnel_width * 0.72
 	)
+
+
+func draw_taunt_overlay() -> void:
+	var guard_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
+	var center := guard_rect.get_center()
+	var edge_width := maxf(size.x * 0.020, 2.0)
+
+	draw_rect(guard_rect, taunt_color, true)
+	draw_rect(guard_rect, taunt_edge_color, false, edge_width, true)
+
+	var shield_height := guard_rect.size.y * 0.38
+	var shield_width := guard_rect.size.x * 0.34
+	var top_y := guard_rect.position.y + guard_rect.size.y * 0.16
+	var shield_points := PackedVector2Array([
+		center + Vector2(-shield_width * 0.50, -shield_height * 0.42),
+		center + Vector2(shield_width * 0.50, -shield_height * 0.42),
+		center + Vector2(shield_width * 0.42, shield_height * 0.12),
+		center + Vector2(0.0, shield_height * 0.58),
+		center + Vector2(-shield_width * 0.42, shield_height * 0.12)
+	])
+	for index in range(shield_points.size()):
+		shield_points[index].y = shield_points[index].y - center.y + top_y + shield_height * 0.50
+
+	draw_colored_polygon(shield_points, taunt_plate_color)
+	draw_polyline(shield_points, taunt_edge_color, maxf(size.x * 0.018, 1.8), true)
+
+	for index in range(4):
+		var t := float(index) / 3.0
+		var x := lerpf(guard_rect.position.x + guard_rect.size.x * 0.18, guard_rect.position.x + guard_rect.size.x * 0.82, t)
+		draw_line(
+			Vector2(x, guard_rect.position.y + guard_rect.size.y * 0.10),
+			Vector2(x, guard_rect.position.y + guard_rect.size.y * 0.90),
+			Color(taunt_edge_color.r, taunt_edge_color.g, taunt_edge_color.b, 0.22),
+			maxf(size.x * 0.010, 1.2)
+		)
+
+	for point in shield_points:
+		draw_circle(point, maxf(size.x * 0.010, 1.6), taunt_rivet_color)
 
 	var crack_color := Color(1.0, 0.74, 0.28, 0.60)
 	draw_line(Vector2(size.x * 0.16, size.y * 0.24), Vector2(size.x * 0.38, size.y * 0.42), crack_color, 3.0)

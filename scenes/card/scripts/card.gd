@@ -51,6 +51,10 @@ signal face_changed(is_face_up: bool)
 @export var valid_target_backlight_color := Color(1.0, 1.0, 1.0, 0.70)
 @export var valid_target_backlight_size := 24
 @export var valid_target_backlight_margin := 12
+@export var taunt_target_backlight_color := Color(1.0, 0.56, 0.10, 0.86)
+@export var taunt_target_pulse_color := Color(1.0, 0.86, 0.26, 0.72)
+@export var taunt_target_backlight_size := 38
+@export var taunt_target_backlight_margin := 18
 @export var area_preview_color := Color(0.26, 0.58, 1.0, 0.52)
 @export var area_preview_edge_color := Color(0.52, 0.85, 1.0, 0.88)
 @export var beast_path_color := Color(0.34, 0.19, 0.06, 0.34)
@@ -104,6 +108,12 @@ func _ready() -> void:
 
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
+	set_process(false)
+
+
+func _process(_delta: float) -> void:
+	if should_draw_taunt_target_pulse():
+		queue_redraw()
 
 
 func _on_mouse_entered() -> void:
@@ -642,6 +652,7 @@ func hide_value_textures() -> void:
 func update_interaction_visual() -> void:
 	if state == null:
 		self_modulate = Color.WHITE
+		set_process(false)
 		queue_redraw()
 		return
 
@@ -652,6 +663,7 @@ func update_interaction_visual() -> void:
 	else:
 		self_modulate = Color.WHITE
 
+	set_process(should_draw_taunt_target_pulse())
 	queue_redraw()
 
 
@@ -671,7 +683,10 @@ func _draw() -> void:
 		return
 
 	if state.is_valid_target:
-		draw_backlight(valid_target_backlight_color, valid_target_backlight_size, valid_target_backlight_margin)
+		if should_draw_taunt_target_pulse():
+			draw_taunt_target_backlight()
+		else:
+			draw_backlight(valid_target_backlight_color, valid_target_backlight_size, valid_target_backlight_margin)
 		return
 
 	if state.is_action_available_hint:
@@ -709,3 +724,31 @@ func draw_area_preview() -> void:
 	var card_rect := Rect2(Vector2.ZERO, size)
 	draw_rect(card_rect, area_preview_color, true)
 	draw_rect(card_rect, area_preview_edge_color, false, 4)
+
+
+func should_draw_taunt_target_pulse() -> bool:
+	return (
+		not is_content_temporarily_hidden
+		and state != null
+		and state.is_taunt_target_hint
+	)
+
+
+func draw_taunt_target_backlight() -> void:
+	var pulse := (sin(float(Time.get_ticks_msec()) / 180.0) + 1.0) * 0.5
+	var glow_color := Color(
+		taunt_target_backlight_color.r,
+		taunt_target_backlight_color.g,
+		taunt_target_backlight_color.b,
+		lerpf(taunt_target_backlight_color.a * 0.72, taunt_target_backlight_color.a, pulse)
+	)
+	draw_backlight(glow_color, taunt_target_backlight_size + int(pulse * 10.0), taunt_target_backlight_margin)
+
+	var card_rect := Rect2(Vector2.ZERO, size)
+	var ring_color := Color(
+		taunt_target_pulse_color.r,
+		taunt_target_pulse_color.g,
+		taunt_target_pulse_color.b,
+		lerpf(taunt_target_pulse_color.a * 0.38, taunt_target_pulse_color.a, pulse)
+	)
+	draw_rect(card_rect.grow(lerpf(7.0, 16.0, pulse)), ring_color, false, maxf(size.x * 0.030, 3.0), true)

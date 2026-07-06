@@ -46,6 +46,9 @@ var is_selected := false
 # 当前是否是某个操作的合法目标，只用于 UI 高亮和调试显示。
 var is_valid_target := false
 
+# 当前是否是普通攻击目标选择里的敌方嘲讽目标，只用于 UI 强提示。
+var is_taunt_target_hint := false
+
 # 当前是否应该显示“可行动”提示。只用于表现层提示，具体可用动作由 ActionRegistry 决定。
 var is_action_available_hint := false
 
@@ -145,6 +148,7 @@ func set_card_data(value: CardData) -> void:
 		is_face_up = false
 		is_selected = false
 		is_valid_target = false
+		is_taunt_target_hint = false
 		is_action_available_hint = false
 		is_pending_death = false
 	else:
@@ -538,6 +542,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	is_pending_death = false
 	is_selected = false
 	is_valid_target = false
+	is_taunt_target_hint = false
 	state_changed.emit(self)
 
 
@@ -789,6 +794,7 @@ func revive_from_reborn(health_value: int) -> void:
 	is_pending_death = false
 	is_selected = false
 	is_valid_target = false
+	is_taunt_target_hint = false
 	is_action_available_hint = false
 	apply_keyword_passives()
 	state_changed.emit(self)
@@ -826,6 +832,14 @@ func set_valid_target(value: bool) -> void:
 		return
 
 	is_valid_target = value
+	state_changed.emit(self)
+
+
+func set_taunt_target_hint(value: bool) -> void:
+	if is_taunt_target_hint == value:
+		return
+
+	is_taunt_target_hint = value
 	state_changed.emit(self)
 
 

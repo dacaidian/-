@@ -96,6 +96,7 @@ func start_action_selection(action: CardAction, board_states: Array[CardState], 
 
 	for state in action.get_valid_targets(focused_state, game_manager):
 		state.set_valid_target(true)
+		state.set_taunt_target_hint(is_enemy_taunt_attack_target(action, focused_state, state))
 		valid_target_slots.append(state.slot_index)
 
 	interaction_changed.emit()
@@ -252,6 +253,19 @@ func clear_focus_and_targets(board_states: Array[CardState]) -> void:
 func clear_targets(board_states: Array[CardState]) -> void:
 	for state in board_states:
 		state.set_valid_target(false)
+		state.set_taunt_target_hint(false)
+
+
+func is_enemy_taunt_attack_target(action: CardAction, user_state: CardState, target_state: CardState) -> bool:
+	return (
+		action != null
+		and action.id == "attack"
+		and user_state != null
+		and target_state != null
+		and target_state.owner_id != ""
+		and target_state.owner_id != user_state.owner_id
+		and target_state.has_keyword(CardData.KEYWORD_TAUNT)
+	)
 
 
 func get_mode_name() -> String:
