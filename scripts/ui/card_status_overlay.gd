@@ -643,6 +643,10 @@ func get_fel_madness_status() -> CardStatus:
 	if wolf_rider_status != null:
 		return wolf_rider_status
 
+	var warlock_status := state.get_status(CardStatus.STATUS_FEL_MADNESS_WARLOCK)
+	if warlock_status != null:
+		return warlock_status
+
 	return state.get_status(CardStatus.STATUS_FEL_MADNESS_DOOMGUARD)
 
 

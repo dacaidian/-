@@ -3210,7 +3210,7 @@
 			{
 				"id": "fel_madness",
 				"name": "邪能狂乱",
-				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人攻击力+1，友方地狱犬获得副动作：法力燃烧，友方魅魔获得吸血，友方混乱狼骑兵获得副动作：撕咬，友方末日守卫获得巨兽。",
+				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人攻击力+1，友方地狱犬获得副动作：法力燃烧，友方魅魔获得吸血，友方术士的诅咒会额外造成伤害，友方混乱狼骑兵获得副动作：撕咬，友方末日守卫获得巨兽。",
 				"url": "res://assets/img/影月议会/邪能狂乱.png",
 				"type": "upgrade",
 				"count": 0,
@@ -3374,6 +3374,44 @@
 							]
 						},
 						"apply_animation": "fel_madness"
+					},
+					{
+						"id": "apply_status",
+						"trigger": "after_spell_cast",
+						"active_zone": "hand",
+						"required_spell_tags": [
+							"fel"
+						],
+						"target": "friendly_minions_by_card_ids",
+						"card_ids": [
+							"warlock"
+						],
+						"status_id": "fel_madness_warlock",
+						"status_name": "邪能疯狂",
+						"status_description": "疯狂：本回合诅咒会在施加状态后额外造成1点伤害。",
+						"status_valence": "positive",
+						"duration_turns": 1,
+						"expires_on_trigger": "after_turn_end",
+						"payload": {
+							"spell_modifiers": [
+								{
+									"id": "modify_spell_ability",
+									"spell_ids": [
+										"curse"
+									],
+									"append_effects": [
+										{
+											"id": "damage",
+											"target": "selected",
+											"amount": 1,
+											"spell_power_scaling": false,
+											"animation": "curse"
+										}
+									]
+								}
+							]
+						},
+						"apply_animation": "fel_madness"
 					}
 				]
 			},
@@ -3431,7 +3469,7 @@
 			{
 				"id": "warlock",
 				"name": "术士",
-				"description": "影月议会施法随从。远程。施法：诅咒，使一个随从本回合伤害加深+2，攻击力-2。",
+				"description": "影月议会施法随从。远程。施法：诅咒，使一个随从本回合伤害加深+2，攻击力-2。疯狂：诅咒还会在施加状态后额外造成1点伤害。",
 				"url": "res://assets/img/影月议会/术士.png",
 				"type": "minion",
 				"count": 4,

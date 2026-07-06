@@ -14,9 +14,16 @@ func resolve_hand_spell(
 	var resolved_effects := duplicate_effects(card_data.effects if card_data != null else [])
 	var resolved_animation := card_data.animation if card_data != null else ""
 	var resolved_target_rule := SpellTargetResolver.get_rule_from_card_data(card_data)
+	var resolved_spell_tags: Array[String] = []
+	if card_data != null:
+		for spell_tag in card_data.spell_tags:
+			resolved_spell_tags.append(spell_tag)
 
 	if player == null or card_data == null:
 		return {
+			EffectData.KEY_ID: card_data.id if card_data != null else "",
+			"name": card_data.display_name if card_data != null else "",
+			EffectData.KEY_SPELL_TAGS: resolved_spell_tags,
 			"effects": resolved_effects,
 			"animation": resolved_animation,
 			"target_rule": resolved_target_rule
@@ -43,6 +50,9 @@ func resolve_hand_spell(
 			resolved_target_rule = modifier_target_rule
 
 	return {
+		EffectData.KEY_ID: card_data.id,
+		"name": card_data.display_name,
+		EffectData.KEY_SPELL_TAGS: resolved_spell_tags,
 		"effects": resolved_effects,
 		"animation": resolved_animation,
 		"target_rule": resolved_target_rule
@@ -52,14 +62,15 @@ func resolve_hand_spell(
 func resolve_spell_action(
 	player: PlayerState,
 	spell_data: Dictionary,
-	target_state: CardState = null
+	target_state: CardState = null,
+	user_state: CardState = null
 ) -> Dictionary:
 	var resolved_spell := spell_data.duplicate(true)
 	if player == null or spell_data.is_empty():
 		return resolved_spell
 
 	var spell_id := str(resolved_spell.get("id", ""))
-	for modifier_data in get_spell_modifiers(player):
+	for modifier_data in get_spell_modifiers(player, user_state):
 		if not applies_to_spell_id(modifier_data, spell_id):
 			continue
 		if not matches_target_relation(EffectData.get_target_relation(modifier_data), player, target_state):
@@ -87,7 +98,7 @@ func resolve_spell_action(
 	return resolved_spell
 
 
-func get_spell_modifiers(player: PlayerState) -> Array[Dictionary]:
+func get_spell_modifiers(player: PlayerState, user_state: CardState = null) -> Array[Dictionary]:
 	var modifiers: Array[Dictionary] = []
 	if player == null:
 		return modifiers
@@ -121,7 +132,30 @@ func get_spell_modifiers(player: PlayerState) -> Array[Dictionary]:
 
 			modifiers.append(effect_data)
 
+	append_status_spell_modifiers(modifiers, user_state)
+
 	return modifiers
+
+
+func append_status_spell_modifiers(modifiers: Array[Dictionary], user_state: CardState) -> void:
+	if user_state == null:
+		return
+
+	for status in user_state.statuses:
+		if status == null or status.payload.is_empty():
+			continue
+
+		var raw_modifiers: Variant = status.payload.get(EffectData.KEY_SPELL_MODIFIERS, [])
+		if not raw_modifiers is Array:
+			continue
+
+		for modifier_data in raw_modifiers:
+			if not modifier_data is Dictionary:
+				continue
+			if not is_spell_modifier_effect(modifier_data):
+				continue
+
+			modifiers.append(modifier_data)
 
 
 func is_spell_modifier_effect(effect_data: Dictionary) -> bool:

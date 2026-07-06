@@ -89,7 +89,7 @@ func get_spell_action_data_for_user(user: CardState, game_manager: GameManager) 
 
 	var resolved_spell_actions: Array[Dictionary] = []
 	for spell_data in spell_actions:
-		resolved_spell_actions.append(spell_modifier_resolver.resolve_spell_action(owner, spell_data))
+		resolved_spell_actions.append(spell_modifier_resolver.resolve_spell_action(owner, spell_data, null, user))
 
 	return resolved_spell_actions
 
