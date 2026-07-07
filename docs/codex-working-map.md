@@ -31,7 +31,7 @@
 - 衍生牌放在对应种族的 `tokens[]`。
 - 新增可选种族时，先在 `cards.json` 中加入种族块、`heroes[]` 和至少一张英雄牌；中立牌库必须继续保持最后一个 faction。
 - 英雄附属牌必须加入 `heroes[].attached_cards`。
-- 棋盘展示图使用同目录同名 `-table.png` 自动覆盖，例如 `牧师.png` -> `牧师-table.png`；没有 table 图时回退原 `url` 卡图。手牌、悬浮预览和装备预览仍使用原图。
+- 棋盘展示图使用同目录同名 `-table.png` 自动覆盖，例如 `牧师.png` -> `牧师-table.png`；没有 table 图时回退原 `url` 卡图。手牌、悬浮预览和装备预览仍使用原图。战场翻开的随从和建筑左上角会自动读取卡图同目录 `logo.png` 作为种族标识。
 - 指定拥有者英雄/卡牌时，优先使用 `target: "owner_card_by_id"` 加 `target_card_id` 或 `card_ids`。
 - 修改后运行 `python tools/validate_cards.py`。
 
@@ -289,7 +289,7 @@
 - 野兽人特效按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 持续状态表现放在 `CardStatusOverlay`。
-- 数值图标放在 `Card` 的状态/数值堆叠区域。
+- 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - UI 控制器不拥有玩法规则。
 

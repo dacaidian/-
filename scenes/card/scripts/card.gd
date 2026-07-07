@@ -3,6 +3,7 @@ class_name Card
 
 const CardStatusOverlayScript := preload("res://scripts/ui/card_status_overlay.gd")
 const VALUE_ICON_SIZE := Vector2(40, 40)
+const FACTION_LOGO_ICON_SIZE := Vector2(34, 34)
 
 # 玩家点击卡牌时发出的信号。
 # Card 不直接修改游戏状态，而是把操作交给 GameManager。
@@ -76,6 +77,7 @@ var fire_texture: TextureRect
 var armor_texture: TextureRect
 var armor_label: Label
 var attack_texture: TextureRect
+var faction_logo_texture: TextureRect
 var status_overlay: CardStatusOverlay
 
 # 当前是否正在播放翻牌动画，播放期间忽略新的点击。
@@ -104,6 +106,7 @@ func _ready() -> void:
 	setup_fire_texture()
 	setup_armor_texture()
 	setup_attack_texture()
+	setup_faction_logo_texture()
 	update_card_texture()
 
 	mouse_entered.connect(_on_mouse_entered)
@@ -226,6 +229,7 @@ func update_card_texture() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP if allows_empty_clicks else Control.MOUSE_FILTER_IGNORE
 		texture_rect.texture = null
 		health_texture.hide()
+		update_faction_logo_texture()
 		update_status_number_textures()
 		update_attack_texture()
 		update_status_overlay()
@@ -241,6 +245,7 @@ func update_card_texture() -> void:
 		texture_rect.texture = get_back_texture()
 
 	update_health_texture()
+	update_faction_logo_texture()
 	update_status_number_textures()
 	update_attack_texture()
 	update_status_overlay()
@@ -360,6 +365,29 @@ func setup_attack_texture() -> void:
 	attack_texture.offset_bottom = 0.0
 
 
+func setup_faction_logo_texture() -> void:
+	if faction_logo_texture != null:
+		return
+
+	faction_logo_texture = TextureRect.new()
+	faction_logo_texture.name = "FactionLogoTexture"
+	faction_logo_texture.visible = false
+	faction_logo_texture.custom_minimum_size = FACTION_LOGO_ICON_SIZE
+	faction_logo_texture.size = FACTION_LOGO_ICON_SIZE
+	faction_logo_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	faction_logo_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	faction_logo_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	faction_logo_texture.anchor_left = 0.0
+	faction_logo_texture.anchor_top = 0.0
+	faction_logo_texture.anchor_right = 0.0
+	faction_logo_texture.anchor_bottom = 0.0
+	faction_logo_texture.offset_left = 3.0
+	faction_logo_texture.offset_top = 3.0
+	faction_logo_texture.offset_right = 3.0 + FACTION_LOGO_ICON_SIZE.x
+	faction_logo_texture.offset_bottom = 3.0 + FACTION_LOGO_ICON_SIZE.y
+	add_child(faction_logo_texture)
+
+
 func setup_status_overlay() -> void:
 	if status_overlay != null:
 		return
@@ -390,6 +418,40 @@ func update_status_overlay() -> void:
 		return
 
 	status_overlay.set_state(null if is_content_temporarily_hidden else state)
+
+
+func update_faction_logo_texture() -> void:
+	if faction_logo_texture == null:
+		return
+
+	if not should_show_faction_logo():
+		faction_logo_texture.hide()
+		return
+
+	var logo_path := get_faction_logo_texture_path()
+	if logo_path == "" or not ResourceLoader.exists(logo_path):
+		faction_logo_texture.hide()
+		return
+
+	faction_logo_texture.texture = load(logo_path) as Texture2D
+	faction_logo_texture.show()
+
+
+func should_show_faction_logo() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit()
+
+
+func get_faction_logo_texture_path() -> String:
+	if state == null or state.data == null:
+		return ""
+
+	if state.data.front_texture_path == "":
+		return ""
+
+	return "%s/logo.png" % state.data.front_texture_path.get_base_dir()
 
 
 func update_status_number_textures() -> void:
@@ -637,6 +699,8 @@ func set_value_texture(value_texture: TextureRect, texture_path: String, label: 
 func hide_value_textures() -> void:
 	if health_texture != null:
 		health_texture.hide()
+	if faction_logo_texture != null:
+		faction_logo_texture.hide()
 	if shield_texture != null:
 		shield_texture.hide()
 	if poison_texture != null:
