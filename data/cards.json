@@ -1873,7 +1873,7 @@
 			{
 				"id": "charm_spell",
 				"name": "魅惑",
-				"description": "控制一个属性低于8的非英雄随从。",
+				"description": "控制一个属性和为8及以下的非英雄随从。",
 				"url": "res://assets/img/狐妖仙/魅惑.png",
 				"type": "spell",
 				"count": 2,
@@ -1901,7 +1901,7 @@
 			{
 				"id": "yousu_fox_spirit",
 				"name": "有苏氏狐妖",
-				"description": "狐妖仙二阶随从。狐念之术可以短暂控制属性较低的非英雄随从。",
+				"description": "狐妖仙二阶随从。狐念之术可以短暂控制属性和为8及以下的非英雄随从。",
 				"url": "res://assets/img/狐妖仙/有苏氏狐妖.png",
 				"type": "minion",
 				"count": 4,
@@ -2022,7 +2022,7 @@
 			{
 				"id": "mirage",
 				"name": "魅影",
-				"description": "升级牌。魅惑和狐念之术不再限定目标属性小于8，仍不能选择英雄。",
+				"description": "升级牌。魅惑和狐念之术不再限定目标属性和，仍不能选择英雄。",
 				"url": "res://assets/img/狐妖仙/魅影.png",
 				"type": "upgrade",
 				"count": 1,

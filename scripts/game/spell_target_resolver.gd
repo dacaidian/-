@@ -114,7 +114,7 @@ static func can_target(
 				and target.owner_id != resolved_source_owner_id
 			)
 		TARGET_RULE_LOW_STAT_NON_HERO_MINIONS:
-			return target.is_minion() and not target.is_hero() and get_current_attribute_total(target) < 8
+			return target.is_minion() and not target.is_hero() and get_current_attribute_total(target) <= 8
 		TARGET_RULE_ALL_UNITS:
 			return target.is_unit()
 		TARGET_RULE_MINIONS_BY_CARD_IDS:
