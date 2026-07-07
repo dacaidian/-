@@ -139,7 +139,7 @@ func refresh_preview() -> void:
 	var hero := _card_database.get_card(hero_id)
 	if hero != null:
 		play_hero_switch_animation()
-		hero_texture.texture = hero.front_texture
+		hero_texture.texture = get_hero_preview_texture(hero)
 		hero_label.text = hero.description if hero.description != "" else hero.display_name
 	else:
 		hero_texture.texture = null
@@ -169,6 +169,14 @@ func load_faction_logo(faction_id: String) -> Texture2D:
 	if ResourceLoader.exists(logo_path):
 		return load(logo_path) as Texture2D
 	return null
+
+
+func get_hero_preview_texture(hero: CardData) -> Texture2D:
+	if hero == null:
+		return null
+	if hero.table_texture != null:
+		return hero.table_texture
+	return hero.front_texture
 
 
 func play_hero_switch_animation() -> void:
