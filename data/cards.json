@@ -2311,6 +2311,54 @@
 				]
 			},
 			{
+				"id": "wukong_fiery_eyes_golden_gaze_guide",
+				"name": "火眼金睛",
+				"description": "孙悟空一阶神通说明牌。火眼金睛可以让孙悟空本回合获得全局透视，鼠标悬浮未翻开卡牌时也能查看其大图。",
+				"url": "res://assets/img/猴妖仙/火眼金睛.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "wukong_somersault_cloud_guide",
+				"name": "筋斗云",
+				"description": "孙悟空一阶神通说明牌。筋斗云使孙悟空本回合获得瞬移，移动时可以选择全场任意合法空格。",
+				"url": "res://assets/img/猴妖仙/筋斗云.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "wukong_bronze_head_iron_arms_guide",
+				"name": "铜头铁臂",
+				"description": "孙悟空一阶神通说明牌。铜头铁臂可以叠加；被普通攻击击中时，抵挡此次伤害并反弹给攻击者。",
+				"url": "res://assets/img/猴妖仙/铜头铁臂.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "wukong_body_beyond_body_guide",
+				"name": "身外身法",
+				"description": "孙悟空一阶神通说明牌。身外身法可以从己方坟场复活一个毫毛，将其置入手牌。",
+				"url": "res://assets/img/猴妖仙/身外身法.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
 				"id": "little_monkey_spirit",
 				"name": "小猴妖",
 				"description": "花果山的小猴妖，身手灵活，擅长在战场边缘穿插袭扰。",
