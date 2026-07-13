@@ -87,10 +87,10 @@ var damage_amplify_edge_color := Color(0.96, 0.20, 1.0, 0.78)
 var damage_amplify_crack_color := Color(0.20, 1.0, 0.34, 0.72)
 var damage_amplify_text_color := Color(1.0, 0.80, 1.0, 0.96)
 var damage_amplify_shadow_color := Color(0.08, 0.0, 0.12, 0.96)
-var taunt_color := Color(0.95, 0.54, 0.12, 0.14)
-var taunt_edge_color := Color(1.0, 0.74, 0.20, 0.86)
-var taunt_plate_color := Color(0.52, 0.24, 0.06, 0.42)
-var taunt_rivet_color := Color(1.0, 0.88, 0.48, 0.86)
+var taunt_color := Color(0.42, 0.22, 0.08, 0.08)
+var taunt_edge_color := Color(0.95, 0.60, 0.18, 0.50)
+var taunt_plate_color := Color(0.34, 0.16, 0.06, 0.26)
+var taunt_rivet_color := Color(0.98, 0.72, 0.28, 0.56)
 
 
 func _ready() -> void:
@@ -365,7 +365,7 @@ func draw_beast_path_overlay() -> void:
 func draw_taunt_overlay() -> void:
 	var guard_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
 	var center := guard_rect.get_center()
-	var edge_width := maxf(size.x * 0.020, 2.0)
+	var edge_width := maxf(size.x * 0.014, 1.5)
 
 	draw_rect(guard_rect, taunt_color, true)
 	draw_rect(guard_rect, taunt_edge_color, false, edge_width, true)
@@ -384,7 +384,7 @@ func draw_taunt_overlay() -> void:
 		shield_points[index].y = shield_points[index].y - center.y + top_y + shield_height * 0.50
 
 	draw_colored_polygon(shield_points, taunt_plate_color)
-	draw_polyline(shield_points, taunt_edge_color, maxf(size.x * 0.018, 1.8), true)
+	draw_polyline(shield_points, Color(taunt_edge_color.r, taunt_edge_color.g, taunt_edge_color.b, 0.62), maxf(size.x * 0.014, 1.5), true)
 
 	for index in range(4):
 		var t := float(index) / 3.0
@@ -392,23 +392,23 @@ func draw_taunt_overlay() -> void:
 		draw_line(
 			Vector2(x, guard_rect.position.y + guard_rect.size.y * 0.10),
 			Vector2(x, guard_rect.position.y + guard_rect.size.y * 0.90),
-			Color(taunt_edge_color.r, taunt_edge_color.g, taunt_edge_color.b, 0.22),
-			maxf(size.x * 0.010, 1.2)
+			Color(taunt_edge_color.r, taunt_edge_color.g, taunt_edge_color.b, 0.12),
+			maxf(size.x * 0.008, 1.0)
 		)
 
 	for point in shield_points:
 		draw_circle(point, maxf(size.x * 0.010, 1.6), taunt_rivet_color)
 
-	var crack_color := Color(1.0, 0.74, 0.28, 0.60)
-	draw_line(Vector2(size.x * 0.16, size.y * 0.24), Vector2(size.x * 0.38, size.y * 0.42), crack_color, 3.0)
-	draw_line(Vector2(size.x * 0.38, size.y * 0.42), Vector2(size.x * 0.27, size.y * 0.58), crack_color, 2.0)
-	draw_line(Vector2(size.x * 0.78, size.y * 0.26), Vector2(size.x * 0.55, size.y * 0.48), crack_color, 3.0)
-	draw_line(Vector2(size.x * 0.55, size.y * 0.48), Vector2(size.x * 0.70, size.y * 0.70), crack_color, 2.0)
+	var crack_color := Color(0.92, 0.54, 0.18, 0.26)
+	draw_line(Vector2(size.x * 0.16, size.y * 0.24), Vector2(size.x * 0.38, size.y * 0.42), crack_color, 2.0)
+	draw_line(Vector2(size.x * 0.38, size.y * 0.42), Vector2(size.x * 0.27, size.y * 0.58), crack_color, 1.4)
+	draw_line(Vector2(size.x * 0.78, size.y * 0.26), Vector2(size.x * 0.55, size.y * 0.48), crack_color, 2.0)
+	draw_line(Vector2(size.x * 0.55, size.y * 0.48), Vector2(size.x * 0.70, size.y * 0.70), crack_color, 1.4)
 
 	for index in range(5):
 		var angle := TAU * float(index) / 5.0 + 0.32
 		var point := center + Vector2(cos(angle), sin(angle)) * minf(size.x, size.y) * 0.28
-		draw_circle(point, 3.5, Color(0.86, 0.54, 0.16, 0.72))
+		draw_circle(point, 2.6, Color(0.76, 0.42, 0.12, 0.38))
 
 
 func draw_arcane_aura() -> void:

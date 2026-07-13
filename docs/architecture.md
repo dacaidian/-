@@ -80,7 +80,7 @@
 - `DirectionalMoveAction`：无目标方向移动，用于通风猕猴“西行”等固定方向副动作。
 - `AttackAction`：普通攻击，包含远程规则、巨兽溅射、占领提示、护甲减伤、隐身目标过滤、攻击后破隐。
 - `AttackAction` 同时处理普通攻击关键字。嘲讽 `taunt`：当防守方存在正面、可见的嘲讽随从时，攻击者普通攻击敌方单位只能选择嘲讽单位；攻击中立单位和攻击友方单位不受影响。吸血 `lifesteal`：普通攻击对中心目标造成的实际生命伤害会治疗攻击者等量生命，护甲、圣盾、护盾和过量伤害不计入；吸血治疗会走 `on_effective_heal` 触发链路。嘲讽只限制普通攻击的目标选择，不限制法术、副动作伤害或巨兽溅射的额外受伤单位；吸血目前也只统计中心目标的普通攻击生命伤害。
-- 嘲讽表现分两层：常态由 `CardStatusOverlay` 绘制盾墙标识；普通攻击进入目标选择时，`InteractionManager` 给敌方合法嘲讽目标设置 `is_taunt_target_hint`，由 `Card` 绘制动态橙金光晕。嘲讽规则不要直接创建 UI 节点。
+- 嘲讽表现分两层：常态由 `CardStatusOverlay` 绘制克制的盾墙标识，避免遮挡卡面；普通攻击进入目标选择时，`InteractionManager` 给敌方合法嘲讽目标设置 `is_taunt_target_hint`，由 `Card` 绘制动态橙金光晕承担强提示。嘲讽规则不要直接创建 UI 节点。
 - `SpellAction`：棋盘单位的施法动作。目标由 `SpellTargetResolver` 解析；施法后默认破除隐身，除非配置 `breaks_stealth: false`。
 - `EffectAction`：通用“选目标并执行效果”的配置行动。
 - `MountedAttackAction`：骑乘单位的独立攻击，如角鹰骑士上的弓箭手。
