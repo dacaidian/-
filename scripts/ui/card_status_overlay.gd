@@ -79,9 +79,9 @@ var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
 var fel_overload_color := Color(0.06, 0.48, 0.12, 0.24)
 var fel_overload_edge_color := Color(0.68, 1.0, 0.20, 0.90)
 var fel_overload_crack_color := Color(0.10, 1.0, 0.34, 0.82)
-var fel_madness_color := Color(0.30, 0.88, 0.12, 0.14)
-var fel_madness_edge_color := Color(0.68, 1.0, 0.20, 0.78)
-var fel_madness_rune_color := Color(0.12, 0.02, 0.02, 0.82)
+var fel_madness_color := Color(0.18, 0.04, 0.22, 0.22)
+var fel_madness_edge_color := Color(0.64, 0.96, 0.16, 0.64)
+var fel_madness_rune_color := Color(0.72, 0.06, 0.10, 0.72)
 var damage_amplify_color := Color(0.34, 0.02, 0.42, 0.22)
 var damage_amplify_edge_color := Color(0.96, 0.20, 1.0, 0.78)
 var damage_amplify_crack_color := Color(0.20, 1.0, 0.34, 0.72)
@@ -593,6 +593,7 @@ func draw_fel_madness_overlay() -> void:
 	var claw_count: int = mini(maxi(stack_count + 2, 3), 6)
 
 	draw_rect(madness_rect, fel_madness_color, true)
+	draw_circle(center, radius * 0.98, Color(0.03, 0.0, 0.04, 0.20))
 	for index in range(3):
 		var grow := float(index) * 4.0
 		var alpha := fel_madness_edge_color.a * (1.0 - float(index) * 0.18)
@@ -602,10 +603,20 @@ func draw_fel_madness_overlay() -> void:
 		var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(index) * 0.56 / float(maxi(claw_count - 1, 1)))
 		var top := center.y - radius * (0.56 + 0.10 * float(index % 2))
 		var bottom := center.y + radius * 0.58
-		draw_line(Vector2(x - radius * 0.10, top), Vector2(x + radius * 0.08, bottom), fel_madness_edge_color, 2.6)
-		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.58), 1.6)
+		var claw_from := Vector2(x - radius * 0.10, top)
+		var claw_to := Vector2(x + radius * 0.08, bottom)
+		draw_line(claw_from, claw_to, Color(0.04, 0.0, 0.02, 0.70), 4.0)
+		draw_line(claw_from, claw_to, fel_madness_rune_color, 2.2)
+		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, 0.40), 1.4)
 
-	draw_circle(center, radius * 0.20, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.44))
+	for index in range(5):
+		var angle := TAU * float(index) / 5.0 - PI * 0.38
+		var inner := center + Vector2(cos(angle), sin(angle)) * radius * 0.28
+		var outer := center + Vector2(cos(angle), sin(angle)) * radius * 0.68
+		draw_line(inner, outer, Color(0.42, 0.88, 0.12, 0.30), 1.5)
+
+	draw_circle(center, radius * 0.18, Color(0.58, 0.92, 0.12, 0.30))
+	draw_circle(center, radius * 0.08, Color(0.08, 0.0, 0.06, 0.58))
 
 
 func draw_damage_amplify_overlay() -> void:

@@ -3529,7 +3529,7 @@ func create_fel_sigil(target_rect: Rect2, animation_key: String) -> Label:
 	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	label.z_index = 2303
 	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * (0.38 if is_portal else (0.17 if is_madness else 0.19))), 18))
-	label.add_theme_color_override("font_color", Color(0.44, 1.0, 0.08, 0.98) if is_portal else (Color(0.56, 1.0, 0.18, 0.96) if not is_madness else Color(0.72, 1.0, 0.10, 0.98)))
+	label.add_theme_color_override("font_color", Color(0.44, 1.0, 0.08, 0.98) if is_portal else (Color(0.56, 1.0, 0.18, 0.96) if not is_madness else Color(0.86, 0.18, 0.16, 0.96)))
 	label.add_theme_color_override("font_shadow_color", Color(0.02, 0.0, 0.0, 0.96))
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
@@ -3539,8 +3539,9 @@ func create_fel_sigil(target_rect: Rect2, animation_key: String) -> Label:
 func create_fel_embers_for_rect(target_rect: Rect2, is_madness: bool, is_portal := false) -> Array[Panel]:
 	var embers: Array[Panel] = []
 	var ember_count := 13 if is_portal else (9 if is_madness else 7)
-	var ember_color := Color(0.58, 1.0, 0.04, 0.94) if is_portal else (Color(0.42, 1.0, 0.08, 0.90) if is_madness else Color(0.18, 1.0, 0.42, 0.86))
-	var smoke_color := Color(0.01, 0.02, 0.01, 0.72) if is_portal else Color(0.02, 0.02, 0.02, 0.64)
+	var ember_color := Color(0.58, 1.0, 0.04, 0.94) if is_portal else (Color(0.70, 0.94, 0.10, 0.72) if is_madness else Color(0.18, 1.0, 0.42, 0.86))
+	var smoke_color := Color(0.01, 0.02, 0.01, 0.72) if is_portal else (Color(0.10, 0.01, 0.12, 0.68) if is_madness else Color(0.02, 0.02, 0.02, 0.64))
+	var blood_color := Color(0.78, 0.05, 0.07, 0.74)
 	var radius := minf(target_rect.size.x, target_rect.size.y) * (0.58 if is_portal else 0.48)
 	for index in range(ember_count):
 		var angle := TAU * float(index) / float(ember_count) + (0.24 if is_madness else -0.18)
@@ -3553,7 +3554,8 @@ func create_fel_embers_for_rect(target_rect: Rect2, is_madness: bool, is_portal 
 		ember.global_position = base_position - ember.pivot_offset
 		ember.modulate = Color(1.0, 1.0, 1.0, 0.0)
 		ember.z_index = 2302
-		ember.add_theme_stylebox_override("panel", create_fel_ember_style(ember_color if index % 3 != 0 else smoke_color))
+		var chosen_color := smoke_color if index % 3 == 0 else (blood_color if is_madness and index % 4 == 1 else ember_color)
+		ember.add_theme_stylebox_override("panel", create_fel_ember_style(chosen_color))
 		ember.set_meta("fel_ember_offset", Vector2(cos(angle), sin(angle)) * radius * (1.04 if is_portal else (0.92 if is_madness else 0.74)))
 		embers.append(ember)
 
@@ -3816,22 +3818,22 @@ func get_monkey_accent_fade_scale(animation_key: String, index: int) -> Vector2:
 
 func create_fel_rift_style(is_madness: bool, is_portal := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.02, 0.0, 0.58) if is_portal else (Color(0.04, 0.13, 0.04, 0.34) if not is_madness else Color(0.12, 0.18, 0.02, 0.36))
-	style.border_color = Color(0.44, 1.0, 0.02, 0.96) if is_portal else (Color(0.36, 1.0, 0.08, 0.88) if not is_madness else Color(0.70, 1.0, 0.06, 0.90))
+	style.bg_color = Color(0.0, 0.02, 0.0, 0.58) if is_portal else (Color(0.04, 0.13, 0.04, 0.34) if not is_madness else Color(0.10, 0.02, 0.12, 0.42))
+	style.border_color = Color(0.44, 1.0, 0.02, 0.96) if is_portal else (Color(0.36, 1.0, 0.08, 0.88) if not is_madness else Color(0.62, 0.92, 0.12, 0.72))
 	style.set_border_width_all(7 if is_portal else 5)
 	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.16, 1.0, 0.02, 0.66) if is_portal else (Color(0.10, 1.0, 0.22, 0.44) if not is_madness else Color(0.40, 1.0, 0.02, 0.48))
+	style.shadow_color = Color(0.16, 1.0, 0.02, 0.66) if is_portal else (Color(0.10, 1.0, 0.22, 0.44) if not is_madness else Color(0.24, 0.72, 0.04, 0.26))
 	style.shadow_size = 46 if is_portal else 34
 	return style
 
 
 func create_fel_core_style(is_madness: bool, is_portal := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.86) if is_portal else Color(0.02, 0.0, 0.0, 0.74)
-	style.border_color = Color(0.66, 1.0, 0.06, 0.98) if is_portal else (Color(0.48, 1.0, 0.16, 0.92) if not is_madness else Color(0.82, 1.0, 0.08, 0.94))
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.86) if is_portal else (Color(0.02, 0.0, 0.0, 0.74) if not is_madness else Color(0.08, 0.0, 0.08, 0.82))
+	style.border_color = Color(0.66, 1.0, 0.06, 0.98) if is_portal else (Color(0.48, 1.0, 0.16, 0.92) if not is_madness else Color(0.92, 0.18, 0.12, 0.86))
 	style.set_border_width_all(4)
 	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.28, 1.0, 0.02, 0.72) if is_portal else Color(0.18, 1.0, 0.18, 0.58)
+	style.shadow_color = Color(0.28, 1.0, 0.02, 0.72) if is_portal else (Color(0.18, 1.0, 0.18, 0.58) if not is_madness else Color(0.42, 0.86, 0.06, 0.32))
 	style.shadow_size = 34 if is_portal else 22
 	return style
 
