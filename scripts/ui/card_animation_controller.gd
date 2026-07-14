@@ -1,6 +1,9 @@
 extends RefCounted
 class_name CardAnimationController
 
+const SpellAnimationRouterScript := preload("res://scripts/ui/animation/spell_animation_router.gd")
+const ShadowmoonAnimationProviderScript := preload("res://scripts/ui/animation/shadowmoon_animation_provider.gd")
+
 # CardAnimationController 只负责卡牌相关的表现动画。
 # 它可以移动、缩放、闪烁 Card 节点或创建临时特效节点，但不直接修改 CardState。
 # 规则状态变化统一由 GameManager 在 await 动画之后处理。
@@ -40,6 +43,8 @@ var gu_trap_trigger_color := Color(0.30, 0.04, 0.10, 0.32)
 var gu_trap_trigger_glow_color := Color(0.92, 0.18, 0.36, 0.76)
 var gu_summon_color := Color(0.08, 0.30, 0.06, 0.30)
 var gu_summon_glow_color := Color(0.66, 1.0, 0.20, 0.70)
+var spell_animation_router := SpellAnimationRouterScript.new()
+var shadowmoon_animation_provider := ShadowmoonAnimationProviderScript.new()
 
 
 func setup(config: Dictionary) -> void:
@@ -58,6 +63,8 @@ func setup(config: Dictionary) -> void:
 	shield_spell_effect_glow_color = config.get("shield_spell_effect_glow_color", shield_spell_effect_glow_color)
 	arcane_spell_effect_color = config.get("arcane_spell_effect_color", arcane_spell_effect_color)
 	arcane_spell_effect_glow_color = config.get("arcane_spell_effect_glow_color", arcane_spell_effect_glow_color)
+	shadowmoon_animation_provider.setup(spell_animation_duration)
+	shadowmoon_animation_provider.register_routes(spell_animation_router)
 
 
 func play_card_swap(
@@ -310,6 +317,14 @@ func create_ranged_attack_projectile_style() -> StyleBoxFlat:
 
 func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, target_card: Card, spell_data: Dictionary) -> void:
 	var animation_key := str(spell_data.get("animation", spell_data.get("id", "")))
+	if await spell_animation_router.try_play_targeted(
+		animation_key,
+		owner,
+		effect_root,
+		caster_card,
+		target_card
+	):
+		return
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell(owner, effect_root, target_card)
@@ -359,14 +374,6 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_gu_infusion_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
-		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "dark_portal", "curse", "kiljaeden_whisper":
-			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"immolation", "fire":
-			await play_immolation_at_rect(owner, effect_root, target_card.get_global_rect())
-		"mana_burn", "fel_bite", "life_drain":
-			if caster_card == null or target_card == null:
-				return
-			await play_mana_burn_spell(owner, effect_root, caster_card, target_card)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_life_link":
@@ -410,6 +417,8 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 		return
 
 	var animation_key := str(spell_data.get("animation", spell_data.get("id", "")))
+	if await spell_animation_router.try_play_at_rect(animation_key, owner, effect_root, target_rect):
+		return
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
@@ -447,10 +456,6 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"gu_infusion":
 			await play_gu_infusion_at_rect(owner, effect_root, target_rect)
-		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "dark_portal", "life_drain", "curse", "kiljaeden_whisper":
-			await play_fel_spell_at_rect(owner, effect_root, target_rect, animation_key)
-		"immolation", "fire":
-			await play_immolation_at_rect(owner, effect_root, target_rect)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_rect)
 		"gu_life_link":
@@ -498,6 +503,14 @@ func play_spell_cast_from_rect_to_card(
 		return
 
 	var animation_key := str(spell_data.get("animation", spell_data.get("id", "")))
+	if await spell_animation_router.try_play_from_rect(
+		animation_key,
+		owner,
+		effect_root,
+		source_rect,
+		target_card
+	):
+		return
 	match animation_key:
 		"fireball":
 			await play_fireball_from_point(owner, effect_root, source_rect.get_center(), target_card)
@@ -515,12 +528,6 @@ func play_spell_cast_from_rect_to_card(
 			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_infusion":
 			await play_gu_infusion_spell(owner, effect_root, source_rect.get_center(), target_card)
-		"fel_infusion", "fel_overload", "fel_burst", "fel_madness", "demon_summon", "dark_portal", "curse", "kiljaeden_whisper":
-			await play_fel_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"immolation", "fire":
-			await play_immolation_at_rect(owner, effect_root, target_card.get_global_rect())
-		"life_drain":
-			await play_life_drain_from_rect_to_card(owner, effect_root, source_rect, target_card)
 		"gu_life_link_larva":
 			await play_gu_life_link_larva_at_rect(owner, effect_root, target_card.get_global_rect())
 		"gu_life_link":
@@ -1575,174 +1582,6 @@ func play_gu_infusion_at_rect(owner: Node, effect_root: Control, target_rect: Re
 	tween.tween_property(ring, "modulate:a", 0.0, spell_animation_duration)
 	await tween.finished
 	ring.queue_free()
-
-
-func play_fel_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var is_madness := animation_key == "fel_madness"
-	var is_portal := animation_key == "dark_portal"
-	var rift := create_rect_spell_effect(target_rect, "FelRift", create_fel_rift_style(is_madness, is_portal), 1.42 if is_portal else 1.24)
-	var core := create_rect_spell_effect(target_rect, "FelCore", create_fel_core_style(is_madness, is_portal), 0.78 if is_portal else 0.54)
-	var sigil := create_fel_sigil(target_rect, animation_key)
-	var embers := create_fel_embers_for_rect(target_rect, is_madness, is_portal)
-
-	effect_root.add_child(rift)
-	effect_root.add_child(core)
-	effect_root.add_child(sigil)
-	for ember in embers:
-		effect_root.add_child(ember)
-
-	var rise_tween := owner.create_tween()
-	rise_tween.set_parallel(true)
-	rise_tween.set_trans(Tween.TRANS_BACK)
-	rise_tween.set_ease(Tween.EASE_OUT)
-	rise_tween.tween_property(rift, "modulate:a", 0.92, spell_animation_duration * 0.34)
-	rise_tween.tween_property(rift, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.34)
-	rise_tween.tween_property(rift, "rotation", -0.24, spell_animation_duration * 0.34)
-	rise_tween.tween_property(core, "modulate:a", 0.88, spell_animation_duration * 0.34)
-	rise_tween.tween_property(core, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.34)
-	rise_tween.tween_property(sigil, "modulate:a", 0.96, spell_animation_duration * 0.34)
-	rise_tween.tween_property(sigil, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.34)
-	for ember in embers:
-		var offset: Vector2 = ember.get_meta("fel_ember_offset", Vector2.ZERO)
-		rise_tween.tween_property(ember, "global_position", ember.global_position + offset * 0.22, spell_animation_duration * 0.34)
-		rise_tween.tween_property(ember, "modulate:a", 0.86, spell_animation_duration * 0.34)
-	await rise_tween.finished
-
-	var burst_tween := owner.create_tween()
-	burst_tween.set_parallel(true)
-	burst_tween.set_trans(Tween.TRANS_CUBIC)
-	burst_tween.set_ease(Tween.EASE_OUT)
-	burst_tween.tween_property(rift, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.72)
-	burst_tween.tween_property(rift, "rotation", 0.58, spell_animation_duration * 0.72)
-	burst_tween.tween_property(rift, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	burst_tween.tween_property(core, "scale", Vector2(0.38, 0.38) if is_madness else (Vector2(1.82, 1.82) if is_portal else Vector2(1.56, 1.56)), spell_animation_duration * 0.72)
-	burst_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	burst_tween.tween_property(sigil, "global_position", sigil.global_position + Vector2(0.0, -target_rect.size.y * 0.18), spell_animation_duration * 0.72)
-	burst_tween.tween_property(sigil, "scale", Vector2(1.46, 1.46), spell_animation_duration * 0.72)
-	burst_tween.tween_property(sigil, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	for ember in embers:
-		var offset: Vector2 = ember.get_meta("fel_ember_offset", Vector2.ZERO)
-		burst_tween.tween_property(ember, "global_position", ember.global_position + offset, spell_animation_duration * 0.72)
-		burst_tween.tween_property(ember, "scale", Vector2(0.24, 0.24), spell_animation_duration * 0.72)
-		burst_tween.tween_property(ember, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	await burst_tween.finished
-
-	rift.queue_free()
-	core.queue_free()
-	sigil.queue_free()
-	for ember in embers:
-		ember.queue_free()
-
-
-func play_immolation_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var outer_ring := create_rect_spell_effect(target_rect, "ImmolationOuterRing", create_immolation_ring_style(), 1.24)
-	var inner_flame := create_rect_spell_effect(target_rect, "ImmolationInnerFlame", create_immolation_flame_style(), 0.72)
-	var embers := create_immolation_embers_for_rect(target_rect)
-
-	effect_root.add_child(outer_ring)
-	effect_root.add_child(inner_flame)
-	for ember in embers:
-		effect_root.add_child(ember)
-
-	var flare_tween := owner.create_tween()
-	flare_tween.set_parallel(true)
-	flare_tween.set_trans(Tween.TRANS_BACK)
-	flare_tween.set_ease(Tween.EASE_OUT)
-	flare_tween.tween_property(outer_ring, "modulate:a", 0.9, spell_animation_duration * 0.28)
-	flare_tween.tween_property(outer_ring, "scale", Vector2(1.16, 1.16), spell_animation_duration * 0.28)
-	flare_tween.tween_property(inner_flame, "modulate:a", 0.95, spell_animation_duration * 0.28)
-	flare_tween.tween_property(inner_flame, "scale", Vector2(1.22, 1.22), spell_animation_duration * 0.28)
-	for ember in embers:
-		flare_tween.tween_property(ember, "modulate:a", 0.86, spell_animation_duration * 0.28)
-	await flare_tween.finished
-
-	var burn_tween := owner.create_tween()
-	burn_tween.set_parallel(true)
-	burn_tween.set_trans(Tween.TRANS_CUBIC)
-	burn_tween.set_ease(Tween.EASE_OUT)
-	burn_tween.tween_property(outer_ring, "scale", Vector2(1.92, 1.92), spell_animation_duration * 0.72)
-	burn_tween.tween_property(outer_ring, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	burn_tween.tween_property(inner_flame, "scale", Vector2(1.54, 1.54), spell_animation_duration * 0.72)
-	burn_tween.tween_property(inner_flame, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	for ember in embers:
-		var offset: Vector2 = ember.get_meta("immolation_ember_offset", Vector2.ZERO)
-		burn_tween.tween_property(ember, "global_position", ember.global_position + offset, spell_animation_duration * 0.72)
-		burn_tween.tween_property(ember, "scale", Vector2(0.22, 0.22), spell_animation_duration * 0.72)
-		burn_tween.tween_property(ember, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	await burn_tween.finished
-
-	outer_ring.queue_free()
-	inner_flame.queue_free()
-	for ember in embers:
-		ember.queue_free()
-
-
-func play_mana_burn_spell(owner: Node, effect_root: Control, caster_card: Card, target_card: Card) -> void:
-	if owner == null or effect_root == null or caster_card == null or target_card == null:
-		return
-
-	var caster_rect := caster_card.get_global_rect()
-	var target_rect := target_card.get_global_rect()
-	await play_life_drain_between_rects(owner, effect_root, caster_rect, target_rect)
-
-
-func play_life_drain_from_rect_to_card(owner: Node, effect_root: Control, source_rect: Rect2, target_card: Card) -> void:
-	if owner == null or effect_root == null or source_rect.size == Vector2.ZERO or target_card == null:
-		return
-
-	await play_life_drain_between_rects(owner, effect_root, source_rect, target_card.get_global_rect())
-
-
-func play_life_drain_between_rects(owner: Node, effect_root: Control, recipient_rect: Rect2, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or recipient_rect.size == Vector2.ZERO or target_rect.size == Vector2.ZERO:
-		return
-
-	var source_point := target_rect.get_center()
-	var destination_point := recipient_rect.get_center()
-	var burn_vector := destination_point - source_point
-	if burn_vector.length() <= 0.01:
-		return
-
-	var pillar := create_rect_spell_effect(target_rect, "ManaBurnPillar", create_mana_burn_pillar_style(), 0.76)
-	var core := create_rect_spell_effect(recipient_rect, "ManaBurnCore", create_mana_burn_core_style(), 0.46)
-	var beam := create_mana_burn_beam(source_point, destination_point)
-	effect_root.add_child(pillar)
-	effect_root.add_child(beam)
-	effect_root.add_child(core)
-
-	var rise_tween := owner.create_tween()
-	rise_tween.set_parallel(true)
-	rise_tween.set_trans(Tween.TRANS_SINE)
-	rise_tween.set_ease(Tween.EASE_OUT)
-	rise_tween.tween_property(pillar, "scale", Vector2(1.12, 1.26), spell_animation_duration * 0.32)
-	rise_tween.tween_property(pillar, "modulate:a", 0.92, spell_animation_duration * 0.32)
-	rise_tween.tween_property(beam, "scale:x", 1.0, spell_animation_duration * 0.42)
-	rise_tween.tween_property(beam, "modulate:a", 0.88, spell_animation_duration * 0.42)
-	rise_tween.tween_property(core, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.42)
-	rise_tween.tween_property(core, "modulate:a", 0.82, spell_animation_duration * 0.42)
-	await rise_tween.finished
-
-	var drain_tween := owner.create_tween()
-	drain_tween.set_parallel(true)
-	drain_tween.set_trans(Tween.TRANS_CUBIC)
-	drain_tween.set_ease(Tween.EASE_OUT)
-	drain_tween.tween_property(pillar, "scale", Vector2(0.58, 1.82), spell_animation_duration * 0.70)
-	drain_tween.tween_property(pillar, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	drain_tween.tween_property(beam, "scale:y", 1.80, spell_animation_duration * 0.46)
-	drain_tween.tween_property(beam, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	drain_tween.tween_property(core, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.70)
-	drain_tween.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	await drain_tween.finished
-
-	pillar.queue_free()
-	beam.queue_free()
-	core.queue_free()
 
 
 func play_gu_lure_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -3496,96 +3335,6 @@ func create_rect_spell_effect(target_rect: Rect2, effect_name: String, style: St
 	return effect
 
 
-func create_mana_burn_beam(source_point: Vector2, destination_point: Vector2) -> Panel:
-	var beam_vector := destination_point - source_point
-	var beam_length := beam_vector.length()
-	var beam_size := Vector2(beam_length, 14.0)
-	var beam := Panel.new()
-	beam.name = "ManaBurnBeam"
-	beam.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	beam.size = beam_size
-	beam.pivot_offset = Vector2(0.0, beam_size.y * 0.5)
-	beam.global_position = source_point - beam.pivot_offset
-	beam.rotation = beam_vector.angle()
-	beam.scale = Vector2(0.0, 1.0)
-	beam.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	beam.z_index = 2310
-	beam.add_theme_stylebox_override("panel", create_mana_burn_beam_style())
-	return beam
-
-
-func create_fel_sigil(target_rect: Rect2, animation_key: String) -> Label:
-	var is_madness := animation_key == "fel_madness"
-	var is_portal := animation_key == "dark_portal"
-	var label := Label.new()
-	label.name = "FelSigil"
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = "门" if is_portal else ("RAGE" if is_madness else "FEL")
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.size = target_rect.size * (Vector2(0.82, 0.82) if is_portal else (Vector2(0.78, 0.36) if is_madness else Vector2(0.66, 0.34)))
-	label.pivot_offset = label.size * 0.5
-	label.global_position = target_rect.get_center() - label.pivot_offset
-	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	label.z_index = 2303
-	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * (0.38 if is_portal else (0.17 if is_madness else 0.19))), 18))
-	label.add_theme_color_override("font_color", Color(0.44, 1.0, 0.08, 0.98) if is_portal else (Color(0.56, 1.0, 0.18, 0.96) if not is_madness else Color(0.86, 0.18, 0.16, 0.96)))
-	label.add_theme_color_override("font_shadow_color", Color(0.02, 0.0, 0.0, 0.96))
-	label.add_theme_constant_override("shadow_offset_x", 2)
-	label.add_theme_constant_override("shadow_offset_y", 2)
-	return label
-
-
-func create_fel_embers_for_rect(target_rect: Rect2, is_madness: bool, is_portal := false) -> Array[Panel]:
-	var embers: Array[Panel] = []
-	var ember_count := 13 if is_portal else (9 if is_madness else 7)
-	var ember_color := Color(0.58, 1.0, 0.04, 0.94) if is_portal else (Color(0.70, 0.94, 0.10, 0.72) if is_madness else Color(0.18, 1.0, 0.42, 0.86))
-	var smoke_color := Color(0.01, 0.02, 0.01, 0.72) if is_portal else (Color(0.10, 0.01, 0.12, 0.68) if is_madness else Color(0.02, 0.02, 0.02, 0.64))
-	var blood_color := Color(0.78, 0.05, 0.07, 0.74)
-	var radius := minf(target_rect.size.x, target_rect.size.y) * (0.58 if is_portal else 0.48)
-	for index in range(ember_count):
-		var angle := TAU * float(index) / float(ember_count) + (0.24 if is_madness else -0.18)
-		var base_position := target_rect.get_center() + Vector2(cos(angle), sin(angle)) * radius * 0.42
-		var ember := Panel.new()
-		ember.name = "FelEmber"
-		ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ember.size = target_rect.size * Vector2(0.055, 0.055)
-		ember.pivot_offset = ember.size * 0.5
-		ember.global_position = base_position - ember.pivot_offset
-		ember.modulate = Color(1.0, 1.0, 1.0, 0.0)
-		ember.z_index = 2302
-		var chosen_color := smoke_color if index % 3 == 0 else (blood_color if is_madness and index % 4 == 1 else ember_color)
-		ember.add_theme_stylebox_override("panel", create_fel_ember_style(chosen_color))
-		ember.set_meta("fel_ember_offset", Vector2(cos(angle), sin(angle)) * radius * (1.04 if is_portal else (0.92 if is_madness else 0.74)))
-		embers.append(ember)
-
-	return embers
-
-
-func create_immolation_embers_for_rect(target_rect: Rect2) -> Array[Panel]:
-	var embers: Array[Panel] = []
-	var ember_count := 10
-	var radius := minf(target_rect.size.x, target_rect.size.y) * 0.50
-	for index in range(ember_count):
-		var angle := TAU * float(index) / float(ember_count) - 0.35
-		var base_position := target_rect.get_center() + Vector2(cos(angle), sin(angle)) * radius * 0.36
-		var ember := Panel.new()
-		ember.name = "ImmolationEmber"
-		ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ember.size = target_rect.size * Vector2(0.052, 0.070)
-		ember.pivot_offset = ember.size * 0.5
-		ember.global_position = base_position - ember.pivot_offset
-		ember.rotation = angle
-		ember.modulate = Color(1.0, 1.0, 1.0, 0.0)
-		ember.z_index = 2304
-		var ember_color := Color(1.0, 0.30, 0.04, 0.90) if index % 3 != 0 else Color(1.0, 0.76, 0.16, 0.86)
-		ember.add_theme_stylebox_override("panel", create_immolation_ember_style(ember_color))
-		ember.set_meta("immolation_ember_offset", Vector2(cos(angle), sin(angle) - 0.45) * radius * 0.78)
-		embers.append(ember)
-
-	return embers
-
-
 func create_monkey_spell_aura_style(animation_key: String) -> StyleBoxFlat:
 	match animation_key:
 		"somersault_cloud":
@@ -3814,105 +3563,6 @@ func get_monkey_accent_fade_scale(animation_key: String, index: int) -> Vector2:
 			return Vector2(1.36, 1.08)
 		_:
 			return Vector2(1.42, 1.42)
-
-
-func create_fel_rift_style(is_madness: bool, is_portal := false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.02, 0.0, 0.58) if is_portal else (Color(0.04, 0.13, 0.04, 0.34) if not is_madness else Color(0.10, 0.02, 0.12, 0.42))
-	style.border_color = Color(0.44, 1.0, 0.02, 0.96) if is_portal else (Color(0.36, 1.0, 0.08, 0.88) if not is_madness else Color(0.62, 0.92, 0.12, 0.72))
-	style.set_border_width_all(7 if is_portal else 5)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.16, 1.0, 0.02, 0.66) if is_portal else (Color(0.10, 1.0, 0.22, 0.44) if not is_madness else Color(0.24, 0.72, 0.04, 0.26))
-	style.shadow_size = 46 if is_portal else 34
-	return style
-
-
-func create_fel_core_style(is_madness: bool, is_portal := false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.86) if is_portal else (Color(0.02, 0.0, 0.0, 0.74) if not is_madness else Color(0.08, 0.0, 0.08, 0.82))
-	style.border_color = Color(0.66, 1.0, 0.06, 0.98) if is_portal else (Color(0.48, 1.0, 0.16, 0.92) if not is_madness else Color(0.92, 0.18, 0.12, 0.86))
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.28, 1.0, 0.02, 0.72) if is_portal else (Color(0.18, 1.0, 0.18, 0.58) if not is_madness else Color(0.42, 0.86, 0.06, 0.32))
-	style.shadow_size = 34 if is_portal else 22
-	return style
-
-
-func create_fel_ember_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = Color(color.r, color.g, color.b, minf(color.a + 0.14, 1.0))
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(color.r, color.g, color.b, 0.42)
-	style.shadow_size = 10
-	return style
-
-
-func create_immolation_ring_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.40, 0.04, 0.0, 0.26)
-	style.border_color = Color(1.0, 0.42, 0.06, 0.92)
-	style.set_border_width_all(6)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(1.0, 0.20, 0.02, 0.58)
-	style.shadow_size = 36
-	return style
-
-
-func create_immolation_flame_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(1.0, 0.20, 0.02, 0.62)
-	style.border_color = Color(1.0, 0.82, 0.22, 0.96)
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(1.0, 0.36, 0.04, 0.66)
-	style.shadow_size = 28
-	return style
-
-
-func create_immolation_ember_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = Color(1.0, 0.88, 0.30, 0.94)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(1.0, 0.28, 0.02, 0.48)
-	style.shadow_size = 12
-	return style
-
-
-func create_mana_burn_pillar_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.04, 0.48, 0.10, 0.32)
-	style.border_color = Color(0.54, 1.0, 0.16, 0.92)
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(10)
-	style.shadow_color = Color(0.18, 1.0, 0.10, 0.62)
-	style.shadow_size = 22
-	return style
-
-
-func create_mana_burn_core_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.16, 1.0, 0.24, 0.30)
-	style.border_color = Color(0.78, 1.0, 0.20, 0.96)
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.20, 1.0, 0.04, 0.66)
-	style.shadow_size = 18
-	return style
-
-
-func create_mana_burn_beam_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.28, 1.0, 0.08, 0.72)
-	style.border_color = Color(0.76, 1.0, 0.26, 0.92)
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(7)
-	style.shadow_color = Color(0.12, 1.0, 0.02, 0.70)
-	style.shadow_size = 18
-	return style
 
 
 func create_heal_spell_effect_style() -> StyleBoxFlat:

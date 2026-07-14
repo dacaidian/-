@@ -10,6 +10,7 @@
 - `python tools/validate_cards.py`：修改 `data/cards.json` 后运行。
 - `godot --headless --path . --check-only`：修改脚本或场景后运行。
 - `godot --headless --path . --quit-after 1`：修改玩法或 UI 后运行。
+- 多个 Godot 校验命令必须串行运行；不要并行启动 editor、check-only 和主场景，它们会争用 `user://logs` 与导入缓存。
 - 每波完成后提交并推送。若 GitHub 无法连接，报告本地 commit hash 和 ahead 数量。
 - 新机制先确定唯一 owner：数据模型、action/effect、resolver、对局协调器或 UI controller。若两个层都在判断同一合法性，先收拢边界再加功能。
 
@@ -272,6 +273,8 @@
 
 - `scripts/game/game_animation_resolver.gd`
 - `scripts/ui/card_animation_controller.gd`
+- `scripts/ui/animation/spell_animation_router.gd`
+- 对应种族的 `scripts/ui/animation/*_animation_provider.gd`
 - `scripts/ui/card_status_overlay.gd`
 - `scripts/audio/audio_manager.gd`
 - `data/audio.json`
@@ -294,7 +297,8 @@
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
-- `CardAnimationController` 已是历史聚合入口；新增复杂种族特效时优先设计可注册的 animation provider，并逐族迁移。不要让规则层直接调用某个种族特效实现，也不要在 `GameManager` 按 animation key 分支。
+- 种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌三种上下文声明 key。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。不要让规则层直接调用某个 provider，也不要在 `GameManager` 按 animation key 分支。
+- 新增或迁移动画 key 后运行 `python tools/validate_cards.py`；校验器会同时扫描中央控制器和 `scripts/ui/animation/` 下 provider 的 `*_KEYS` 常量。
 - UI 控制器不拥有玩法规则。
 
 ## VFX 与素材资源

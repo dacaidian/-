@@ -62,16 +62,25 @@ def parse_effect_registry_ids() -> set[str]:
 
 
 def parse_animation_keys() -> set[str]:
-    content = read_text("scripts/ui/card_animation_controller.gd")
     keys: set[str] = set()
-    for line in content.splitlines():
-        stripped = line.strip()
-        if not stripped.endswith(":"):
-            continue
-        if not stripped.startswith('"'):
-            continue
-        for key in re.findall(r'"([^"]+)"', stripped):
-            keys.add(key)
+    animation_files = [ROOT / "scripts/ui/card_animation_controller.gd"]
+    provider_root = ROOT / "scripts/ui/animation"
+    if provider_root.exists():
+        animation_files.extend(provider_root.glob("*_animation_provider.gd"))
+
+    for animation_file in animation_files:
+        content = animation_file.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.endswith(":") and stripped.startswith('"'):
+                keys.update(re.findall(r'"([^"]+)"', stripped))
+
+        for match in re.finditer(
+            r"const\s+[A-Z0-9_]*KEYS\s*:[^=]+?=\s*\[(.*?)\]",
+            content,
+            re.DOTALL,
+        ):
+            keys.update(re.findall(r'"([^"]+)"', match.group(1)))
     return keys
 
 
