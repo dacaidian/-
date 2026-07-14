@@ -21,6 +21,17 @@
 - `scripts/audio/`：背景音乐、音效池和音频配置解析。
 - `assets/`：卡面、UI、音乐和未来 VFX 贴图资源。
 
+## 依赖方向与编排边界
+
+项目按“数据模型 -> 规则能力 -> 对局编排 -> 表现适配”的方向组织。下层不反向持有上层 UI 节点：
+
+- 数据模型：`CardData`、`CardState`、`PlayerState`、`BoardCell` 只表达静态定义和运行时状态。
+- 规则能力：action、effect、status、target/death/board resolver 负责合法性与状态变化；同一规则只保留一个权威入口。
+- 对局编排：`GameManager` 持有本局对象并暴露稳定门面，负责把回合、交互、触发、死亡和表现请求串起来，不应继续吸收具体卡牌算法或 panel 细节。
+- 表现适配：`GameAnimationResolver` 把规则对象解析成 UI 锚点，`GameHudCoordinator` 编排 HUD 生命周期，各 UI controller 维护自己的节点，layout controller 只负责几何排列。
+
+跨层调用优先使用明确类型和稳定门面。`has_method()` 仅用于真正可选的宿主能力或兼容边界；核心对局服务不应靠字符串探测来形成隐式接口。新增机制时先确定权威 owner，再决定 facade，避免在 `GameManager`、action、effect 和 UI 中各写一份判断。
+
 ## 核心数据模型
 
 `CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则 `CardData` 会自动加载为 `table_texture`，用于棋盘正面展示和种族选择界面的英雄预览。
@@ -67,6 +78,8 @@
 `InteractionManager` 管理空闲、棋盘卡牌焦点、棋盘目标选择、手牌焦点、手牌目标选择、多阶段选择等状态。右键和 Escape 应在焦点/目标选择状态下保持一致的退回逻辑。
 
 `ActionMenuController` 只负责展示行动菜单，不负责判断行动是否可用。行动可用性应放在行动类或 resolver 中。
+
+`GameHudCoordinator` 负责对局 HUD 的生命周期编排：统一创建和刷新回合状态、种族技能、种族时间、手牌抽屉、装备区、牌池视图，并在内容变化后请求右侧布局。各 panel controller 仍只维护自身节点；`GameHudCoordinator` 不修改规则状态，`GameManager.update_*_view()` 只保留稳定的兼容门面。新增 HUD 面板时，应把创建/刷新顺序接入协调器，把几何排列接入 `RightSideHudLayoutController`，不要再把面板细节写回 `GameManager`。
 
 ## 行动系统
 
@@ -217,6 +230,10 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 `RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
 
 一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
+
+`CardAnimationController` 当前仍是历史聚合入口，但后续不应继续按种族无限增长。新一代复杂特效应按“通用、种族主题、区域/路径”拆成可注册的 animation provider，由统一路由按 animation key 分派；provider 只接收表现上下文（根节点、来源/目标矩形、动画参数），不能读取或修改规则状态。迁移采用逐族渐进方式，现有 key 和 `GameAnimationResolver` 门面保持兼容，避免一次性搬迁造成视觉回归。
+
+当前结构优化优先级：先把新增 HUD 接入 `GameHudCoordinator`，再逐族迁移 `CardAnimationController` 的主题特效；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。
 
 野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`；多格路径特效通过 `play_path_effect_animation()` 进入，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉由 `CardAnimationController` 统一生成。
 

@@ -29,6 +29,7 @@ const TargetStateResolverScript := preload("res://scripts/game/target_state_reso
 const BoardLayerResolverScript := preload("res://scripts/game/board_layer_resolver.gd")
 const BoardMovementResolverScript := preload("res://scripts/game/board_movement_resolver.gd")
 const FactionSkillResolverScript := preload("res://scripts/game/faction_skill_resolver.gd")
+const GameHudCoordinatorScript := preload("res://scripts/game/game_hud_coordinator.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
@@ -163,6 +164,7 @@ var target_state_resolver := TargetStateResolverScript.new()
 var board_layer_resolver := BoardLayerResolverScript.new()
 var board_movement_resolver := BoardMovementResolverScript.new()
 var faction_skill_resolver := FactionSkillResolverScript.new()
+var game_hud_coordinator := GameHudCoordinatorScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
 
@@ -188,16 +190,8 @@ func _ready() -> void:
 	initialize_players()
 	setup_card_animation_controller()
 	setup_audio_manager()
-	setup_turn_status_view()
-	setup_faction_time_panel_view()
-	setup_faction_skill_panel_view()
-	setup_hand_drawer_view()
-	setup_equipment_display_view()
-	update_turn_status_view()
-	update_faction_time_panel_view()
-	update_faction_skill_panel_view()
-	update_hand_drawer_view()
-	update_equipment_display_view()
+	game_hud_coordinator.setup(self)
+	game_hud_coordinator.refresh_all(self)
 	card_pool = create_initial_card_pool()
 	initialize_board()
 	setup_card_pool_view()
@@ -579,15 +573,7 @@ func create_initial_card_state(card_data: CardData, slot_index: int) -> CardStat
 
 
 func setup_card_pool_view() -> void:
-	card_pool_view_controller.setup(
-		self,
-		card_pool_view_path,
-		card_pool_animation_root_path,
-		default_back_texture,
-		card_pool_view_size,
-		card_pool_view_margin,
-		refill_animation_duration
-	)
+	game_hud_coordinator.setup_card_pool(self)
 
 
 func setup_card_animation_controller() -> void:
@@ -626,92 +612,32 @@ func play_spell_sfx(spell_data: Dictionary) -> void:
 	audio_manager.play_spell_sfx(spell_data)
 
 
-func setup_turn_status_view() -> void:
-	turn_status_controller.setup(self, turn_status_panel_path)
-	if not turn_status_controller.spell_turn_requested.is_connected(activate_spell_turn):
-		turn_status_controller.spell_turn_requested.connect(activate_spell_turn)
-
-
 func update_turn_status_view() -> void:
-	var current_player := get_current_player()
-	var can_activate := (
-		current_player != null
-		and not is_spell_turn_active
-		and current_player.mana >= spell_turn_mana_cost
-	)
-	turn_status_controller.update(
-		current_player,
-		turn_number,
-		is_spell_turn_active,
-		spell_turn_mana_cost,
-		can_activate,
-		victory_resource_score,
-		is_game_over,
-		get_winner_player()
-	)
-	call_deferred("update_right_side_hud_layout")
-
-
-func setup_faction_time_panel_view() -> void:
-	faction_time_panel_controller.setup(get_parent() as Control)
+	game_hud_coordinator.update_turn_status(self)
 
 
 func update_faction_time_panel_view() -> void:
-	faction_time_panel_controller.update(players, card_database, get_parent() as Control)
-	call_deferred("update_right_side_hud_layout")
-
-
-func setup_faction_skill_panel_view() -> void:
-	faction_skill_panel_controller.setup(get_parent() as Control)
-	if not faction_skill_panel_controller.skill_requested.is_connected(_on_faction_skill_requested):
-		faction_skill_panel_controller.skill_requested.connect(_on_faction_skill_requested)
+	game_hud_coordinator.update_faction_time(self)
 
 
 func update_faction_skill_panel_view() -> void:
-	var current_player := get_current_player()
-	faction_skill_panel_controller.update(
-		current_player,
-		get_parent() as Control,
-		faction_skill_resolver.get_usable_skill_ids(self, current_player)
-	)
-	call_deferred("update_right_side_hud_layout")
-
-
-func setup_hand_drawer_view() -> void:
-	hand_interaction_controller.setup(self)
+	game_hud_coordinator.update_faction_skill(self)
 
 
 func update_hand_drawer_view() -> void:
-	hand_interaction_controller.update_hand_drawer_view(self)
-	update_equipment_display_view()
-
-
-func setup_equipment_display_view() -> void:
-	equipment_display_controller.setup(get_parent() as Control)
+	game_hud_coordinator.update_hand_drawer(self)
 
 
 func update_equipment_display_view() -> void:
-	equipment_display_controller.update(get_current_player())
-	call_deferred("update_right_side_hud_layout")
+	game_hud_coordinator.update_equipment(self)
 
 
 func update_right_side_hud_layout() -> void:
-	right_side_hud_layout_controller.update(get_parent() as Control, [
-		turn_status_controller.panel,
-		faction_skill_panel_controller.panel,
-		faction_time_panel_controller.panel,
-		equipment_display_controller.panel
-	])
+	game_hud_coordinator.update_right_side_layout(self)
 
 
 func update_card_pool_view() -> void:
-	var remaining: int = 0
-	var next_back_texture: Texture2D = default_back_texture
-	if card_pool != null:
-		remaining = card_pool.remaining()
-		next_back_texture = get_card_pool_next_back_texture()
-
-	card_pool_view_controller.update(remaining, get_parent(), next_back_texture)
+	game_hud_coordinator.update_card_pool(self)
 
 
 func get_card_pool_next_back_texture() -> Texture2D:

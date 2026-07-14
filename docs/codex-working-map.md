@@ -11,6 +11,7 @@
 - `godot --headless --path . --check-only`：修改脚本或场景后运行。
 - `godot --headless --path . --quit-after 1`：修改玩法或 UI 后运行。
 - 每波完成后提交并推送。若 GitHub 无法连接，报告本地 commit hash 和 ahead 数量。
+- 新机制先确定唯一 owner：数据模型、action/effect、resolver、对局协调器或 UI controller。若两个层都在判断同一合法性，先收拢边界再加功能。
 
 ## 编码规则
 
@@ -276,6 +277,7 @@
 - `data/audio.json`
 - `scenes/card/scripts/card.gd`
 - `scripts/ui/hand_drawer_controller.gd`
+- `scripts/game/game_hud_coordinator.gd`
 - `scripts/ui/right_side_hud_layout_controller.gd`
 - 相关 panel controller
 
@@ -291,6 +293,8 @@
 - 持续状态表现放在 `CardStatusOverlay`。
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
+- 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
+- `CardAnimationController` 已是历史聚合入口；新增复杂种族特效时优先设计可注册的 animation provider，并逐族迁移。不要让规则层直接调用某个种族特效实现，也不要在 `GameManager` 按 animation key 分支。
 - UI 控制器不拥有玩法规则。
 
 ## VFX 与素材资源
