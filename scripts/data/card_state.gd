@@ -171,7 +171,7 @@ func set_card_data(value: CardData) -> void:
 		status_attack_bonus = 0
 		status_attack_floor_debt = 0
 		status_max_health_bonus = 0
-		passive_armor_bonus = 0
+		passive_armor_bonus = data.armor
 		status_armor_bonus = 0
 		passive_max_movement = 0
 		status_movement_bonus = 0
@@ -179,7 +179,7 @@ func set_card_data(value: CardData) -> void:
 		max_health = data.health
 		damage_taken = 0
 		shield = 0
-		armor = 0
+		armor = passive_armor_bonus
 		chaos_corruption = data.chaos_corruption
 		reborn_health_values = create_initial_reborn_health_values()
 		is_action_available_hint = false
@@ -584,14 +584,14 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
 	status_max_health_bonus = 0
-	passive_armor_bonus = 0
+	passive_armor_bonus = maxi(int(permanent_stat_overrides.get("armor", origin.get("armor", data.armor))), 0)
 	status_armor_bonus = 0
 	status_movement_bonus = 0
 	status_control_base_owner_id = ""
 	max_health = int(permanent_stat_overrides.get("health", origin.get("health", max_health)))
 	damage_taken = 0
 	shield = 0
-	armor = 0
+	armor = passive_armor_bonus
 	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", chaos_corruption)))
 	reborn_health_values = normalize_int_array(origin.get("reborn_health_values", []))
 	max_movement = int(origin.get("movement", max_movement))
@@ -701,6 +701,7 @@ func create_origin_snapshot() -> Dictionary:
 		"spell_actions": data.spell_actions.duplicate(true),
 		"attack": data.attack,
 		"health": data.health,
+		"armor": data.armor,
 		"chaos_corruption": data.chaos_corruption,
 		"movement": max_movement,
 		"attack_speed": max_attack_speed,
@@ -800,7 +801,7 @@ func revive_from_reborn(health_value: int) -> void:
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
 	status_max_health_bonus = 0
-	passive_armor_bonus = 0
+	passive_armor_bonus = maxi(int(permanent_stat_overrides.get("armor", origin.get("armor", data.armor))), 0)
 	status_armor_bonus = 0
 	status_movement_bonus = 0
 	status_control_base_owner_id = ""
@@ -809,7 +810,7 @@ func revive_from_reborn(health_value: int) -> void:
 	if health_value > 0:
 		damage_taken = maxi(max_health - mini(health_value, max_health), 0)
 	shield = 0
-	armor = 0
+	armor = passive_armor_bonus
 	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", data.chaos_corruption)))
 	reborn_health_values = remaining_reborn_values
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))

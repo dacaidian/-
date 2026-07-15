@@ -3892,6 +3892,69 @@
 				"effects": []
 			},
 			{
+				"id": "black_goat_agent",
+				"name": "黑山羊特工",
+				"description": "黑山羊的基层战斗人员。拥有1点护甲与甲赫，在赫子解放时获得额外护甲，高RC浓度下还会反弹普通攻击。",
+				"url": "res://assets/img/东京喰种/黑山羊特工.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [
+					"koukaku"
+				],
+				"attack": 2,
+				"health": 1,
+				"armor": 1,
+				"effects": []
+			},
+			{
+				"id": "anteiku_wanderer",
+				"name": "安定区流浪者",
+				"description": "栖身安定区的流浪喰种。拥有麟赫，在赫子解放时提高攻击力，高RC浓度下还能通过普通攻击吸取生命。",
+				"url": "res://assets/img/东京喰种/安定区流浪者.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"rinkaku"
+				],
+				"attack": 3,
+				"health": 5,
+				"effects": []
+			},
+			{
+				"id": "aogiri_tree_member",
+				"name": "青铜树成员",
+				"description": "青铜树的空中袭击者。拥有远程、飞行与羽赫，在赫子解放时可以使用副动作羽针对随从造成伤害。",
+				"url": "res://assets/img/东京喰种/青铜树成员.png",
+				"type": "minion",
+				"count": 4,
+				"level": 2,
+				"keywords": [
+					"ranged",
+					"flying",
+					"ukaku"
+				],
+				"attack": 3,
+				"health": 3,
+				"effects": []
+			},
+			{
+				"id": "clown_temp_worker",
+				"name": "小丑临时工",
+				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时获得移动攻击，高RC浓度下移动力进一步提升。",
+				"url": "res://assets/img/东京喰种/小丑临时工.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"keywords": [
+					"bikaku"
+				],
+				"attack": 5,
+				"health": 12,
+				"effects": []
+			},
+			{
 				"id": "kagune_power_guide",
 				"name": "赫子之力",
 				"description": "东京喰种种族规则。开启施法回合时进入赫子解放：尾赫获得移动攻击，高浓度额外获得移动力+2；麟赫攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",

@@ -8,7 +8,9 @@ const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_reso
 func _init() -> void:
 	test_rc_transitions()
 	test_turn_event_ledger()
+	test_card_definitions()
 	test_status_numeric_modifiers()
+	test_base_armor()
 	test_kagune_payloads()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
@@ -57,6 +59,36 @@ func create_minion(card_id: String, owner_id: String, is_hero := false) -> CardS
 	return state
 
 
+func test_card_definitions() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+
+	var black_goat := database.get_card("black_goat_agent")
+	assert(black_goat != null)
+	assert(black_goat.level == 1 and black_goat.count == 5)
+	assert(black_goat.attack == 2 and black_goat.health == 1 and black_goat.armor == 1)
+	assert(black_goat.has_keyword(CardData.KEYWORD_KAGUNE_KOUKAKU))
+
+	var wanderer := database.get_card("anteiku_wanderer")
+	assert(wanderer != null)
+	assert(wanderer.level == 2 and wanderer.count == 4)
+	assert(wanderer.attack == 3 and wanderer.health == 5)
+	assert(wanderer.has_keyword(CardData.KEYWORD_KAGUNE_RINKAKU))
+
+	var aogiri_member := database.get_card("aogiri_tree_member")
+	assert(aogiri_member != null)
+	assert(aogiri_member.level == 2 and aogiri_member.count == 4)
+	assert(aogiri_member.has_keyword(CardData.KEYWORD_RANGED))
+	assert(aogiri_member.has_keyword(CardData.KEYWORD_FLYING))
+	assert(aogiri_member.has_keyword(CardData.KEYWORD_KAGUNE_UKAKU))
+
+	var clown_worker := database.get_card("clown_temp_worker")
+	assert(clown_worker != null)
+	assert(clown_worker.level == 3 and clown_worker.count == 4)
+	assert(clown_worker.attack == 5 and clown_worker.health == 12)
+	assert(clown_worker.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
+
+
 func test_status_numeric_modifiers() -> void:
 	var data := CardData.new()
 	data.id = "modifier_target"
@@ -85,6 +117,31 @@ func test_status_numeric_modifiers() -> void:
 	assert(state.current_attack == 2)
 	assert(state.armor == 0)
 	assert(state.max_movement == 1)
+
+
+func test_base_armor() -> void:
+	var data := CardData.new()
+	data.id = "black_goat_agent"
+	data.type = CardData.TYPE_MINION
+	data.attack = 2
+	data.health = 1
+	data.armor = 1
+	var state := CardState.new()
+	state.set_card_data(data)
+	assert(state.armor == 1)
+
+	var status := CardStatus.new()
+	status.status_id = "base_armor_stack_test"
+	status.payload = {EffectData.KEY_ARMOR_BONUS: 2}
+	state.add_status(status)
+	assert(state.armor == 3)
+	state.remove_status(status.status_id)
+	assert(state.armor == 1)
+
+	state.add_reborn_health_value()
+	state.consume_next_reborn_health_value()
+	state.revive_from_reborn(0)
+	assert(state.armor == 1)
 
 
 func test_kagune_payloads() -> void:

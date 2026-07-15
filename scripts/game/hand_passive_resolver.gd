@@ -176,10 +176,10 @@ func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager,
 
 	var armor_bonus_by_card_id := get_unit_armor_bonuses(player, passive_effects)
 	for state in get_owned_face_up_minions(player, game_manager):
-		var armor_bonus := 0
+		var armor_bonus := get_origin_armor(state)
 		var armor_bonus_value: Variant = get_represented_card_value(state, armor_bonus_by_card_id, null)
 		if armor_bonus_value != null:
-			armor_bonus = int(armor_bonus_value)
+			armor_bonus += int(armor_bonus_value)
 
 		state.set_armor(armor_bonus)
 
@@ -447,6 +447,13 @@ func get_origin_attack_speed(state: CardState) -> int:
 		return 0
 
 	return int(state.origin.get("attack_speed", state.max_attack_speed))
+
+
+func get_origin_armor(state: CardState) -> int:
+	if state == null:
+		return 0
+
+	return maxi(int(state.origin.get("armor", 0)), 0)
 
 
 func get_card_data_from_hand_entry(card_entry: Variant) -> CardData:

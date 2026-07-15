@@ -359,6 +359,12 @@ class CardValidator:
         if card_type in {"minion", "building"}:
             self.require_int(card, "attack", path)
             self.require_int(card, "health", path)
+            if "armor" in card:
+                armor = card["armor"]
+                if not isinstance(armor, int):
+                    self.reporter.error(f"{path}.armor", "must be an integer")
+                elif armor < 0:
+                    self.reporter.error(f"{path}.armor", "must be non-negative")
         if card_type == "building" and int(card.get("attack", 0)) != 0:
             self.reporter.warn(f"{path}.attack", "buildings are expected to have 0 attack")
         if card_type == "equipment":

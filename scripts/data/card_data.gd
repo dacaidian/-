@@ -64,6 +64,7 @@ var audio := ""
 var equipment_type := ""
 var attack := 0
 var health := 0
+var armor := 0
 var movement := 1
 var attack_speed := 1
 var chaos_corruption := 0
@@ -161,6 +162,7 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.equipment_type = str(card_dictionary.get("equipment_type", ""))
 	data.attack = int(card_dictionary.get("attack", 0))
 	data.health = int(card_dictionary.get("health", 0))
+	data.armor = maxi(int(card_dictionary.get("armor", 0)), 0)
 	data.movement = int(card_dictionary.get("movement", 1))
 	data.attack_speed = int(card_dictionary.get("attack_speed", 1))
 	data.chaos_corruption = int(card_dictionary.get("chaos_corruption", 0))
