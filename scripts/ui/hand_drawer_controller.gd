@@ -1,6 +1,8 @@
 extends RefCounted
 class_name HandDrawerController
 
+const HandSectionLayoutPolicyScript := preload("res://scripts/ui/hand_section_layout_policy.gd")
+
 signal hand_card_clicked(card_entry: Variant, source_control: Control, hand_index: int)
 
 # HandDrawerController 只负责左侧手牌抽屉的表现。
@@ -23,13 +25,35 @@ const HAND_CARD_GLOW_PADDING := 8
 const HAND_CARD_FLIGHT_DURATION := 0.34
 const PREVIEW_SIZE := Vector2(360, 504)
 const PREVIEW_GAP := 16.0
+const SECTION_TYPES: Array[String] = [
+	CARD_TYPE_SPELL,
+	CARD_TYPE_MINION,
+	CARD_TYPE_UPGRADE,
+	CARD_TYPE_EQUIPMENT
+]
+const SECTION_NAMES := {
+	CARD_TYPE_SPELL: "SpellSection",
+	CARD_TYPE_MINION: "MinionSection",
+	CARD_TYPE_UPGRADE: "UpgradeSection",
+	CARD_TYPE_EQUIPMENT: "EquipmentSection"
+}
+const SECTION_LABELS := {
+	CARD_TYPE_SPELL: "法术牌",
+	CARD_TYPE_MINION: "随从牌",
+	CARD_TYPE_UPGRADE: "升级牌",
+	CARD_TYPE_EQUIPMENT: "装备牌"
+}
 
 var panel: Panel
 var drawer_body: Control
 var toggle_button: Button
 var title_label: Label
 var owner_label: Label
+var sections_container: VBoxContainer
 var section_lists: Dictionary = {}
+var section_panels: Dictionary = {}
+var section_titles: Dictionary = {}
+var section_card_counts: Dictionary = {}
 var is_open := true
 var drawer_tween: Tween
 var preview_rect: TextureRect
@@ -37,6 +61,8 @@ var selected_hand_index := -1
 var playable_hand_indices: Array[int] = []
 var card_controls: Dictionary = {}
 var section_scroll_offsets: Dictionary = {}
+var section_layout_policy := HandSectionLayoutPolicyScript.new()
+var section_layout_generation := 0
 
 
 func setup(root: Node, panel_path: NodePath) -> void:
@@ -51,12 +77,20 @@ func setup(root: Node, panel_path: NodePath) -> void:
 	toggle_button = panel.get_node_or_null("ToggleButton") as Button
 	title_label = panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Header/TitleLabel") as Label
 	owner_label = panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Header/OwnerLabel") as Label
+	sections_container = panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections") as VBoxContainer
 	section_lists = {
 		CARD_TYPE_SPELL: panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections/SpellSection/VBoxContainer/CardList"),
 		CARD_TYPE_MINION: panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections/MinionSection/VBoxContainer/CardList"),
 		CARD_TYPE_UPGRADE: panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections/UpgradeSection/VBoxContainer/CardList"),
 		CARD_TYPE_EQUIPMENT: panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections/EquipmentSection/VBoxContainer/CardList")
 	}
+	for card_type in SECTION_TYPES:
+		var section_name := str(SECTION_NAMES.get(card_type, ""))
+		var section_path := "DrawerBody/MarginContainer/VBoxContainer/Sections/%s" % section_name
+		var section := panel.get_node_or_null(section_path) as PanelContainer
+		section_panels[card_type] = section
+		section_titles[card_type] = panel.get_node_or_null("%s/VBoxContainer/SectionTitle" % section_path)
+		section_card_counts[card_type] = 0
 
 	panel.z_index = 2600
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -130,6 +164,8 @@ func update(
 
 	for card_type in cards_by_type.keys():
 		render_section(card_type, cards_by_type[card_type])
+
+	request_adaptive_section_layout()
 
 
 func update_selection_state(new_selected_hand_index := -1, new_playable_hand_indices: Array[int] = []) -> void:
@@ -251,13 +287,17 @@ func render_section(card_type: String, cards: Array) -> void:
 	var card_list := section_lists.get(card_type) as VBoxContainer
 	if card_list == null:
 		return
+	section_card_counts[card_type] = cards.size()
+	update_section_title(card_type, cards.size())
 
 	for child in card_list.get_children():
+		card_list.remove_child(child)
 		child.queue_free()
 
 	if cards.is_empty():
-		card_list.add_child(create_empty_label())
+		card_list.hide()
 		return
+	card_list.show()
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "CardScroll"
@@ -287,7 +327,55 @@ func render_section(card_type: String, cards: Array) -> void:
 	for card_entry in cards:
 		flow.add_child(create_hand_card_view(card_entry))
 
-	restore_section_scroll_offset.call_deferred(card_type)
+
+func update_section_title(card_type: String, card_count: int) -> void:
+	var title := section_titles.get(card_type) as Label
+	if title == null:
+		return
+	var base_label := str(SECTION_LABELS.get(card_type, card_type))
+	title.text = "%s  ·  %d" % [base_label, card_count]
+
+
+func request_adaptive_section_layout() -> void:
+	section_layout_generation += 1
+	apply_adaptive_section_layout.call_deferred(section_layout_generation)
+
+
+func apply_adaptive_section_layout(generation: int) -> void:
+	if generation != section_layout_generation or sections_container == null:
+		return
+	var available_height := sections_container.size.y
+	if available_height <= 0.0:
+		return
+
+	var separation := float(sections_container.get_theme_constant("separation"))
+	var allocations := section_layout_policy.allocate(
+		SECTION_TYPES,
+		section_card_counts,
+		available_height,
+		separation,
+		get_cards_per_row()
+	)
+	for card_type in SECTION_TYPES:
+		var section := section_panels.get(card_type) as PanelContainer
+		if section == null:
+			continue
+		section.size_flags_vertical = Control.SIZE_FILL
+		section.custom_minimum_size.y = float(allocations.get(card_type, 0.0))
+
+	restore_all_section_scroll_offsets.call_deferred(generation)
+
+
+func restore_all_section_scroll_offsets(generation: int) -> void:
+	if generation != section_layout_generation:
+		return
+	var tree := panel.get_tree() if panel != null else null
+	if tree != null:
+		await tree.process_frame
+	if generation != section_layout_generation:
+		return
+	for card_type in SECTION_TYPES:
+		restore_section_scroll_offset(card_type)
 
 
 func capture_section_scroll_offsets() -> void:
@@ -317,18 +405,17 @@ func restore_section_scroll_offset(card_type: String) -> void:
 	scroll.scroll_vertical = offset.y
 
 
-func create_empty_label() -> Label:
-	var label := Label.new()
-	label.text = "暂无"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", Color(0.86, 0.82, 0.74, 0.56))
-	label.add_theme_font_size_override("font_size", 13)
-	return label
-
-
 func get_card_flow_width() -> float:
 	var content_padding := float(HAND_CARD_GLOW_PADDING * 2)
 	return maxf(get_drawer_width() - TOGGLE_WIDTH - 56.0 - content_padding, HAND_CARD_SIZE.x)
+
+
+func get_cards_per_row() -> int:
+	var horizontal_separation := 12.0
+	return maxi(
+		int(floor((get_card_flow_width() + horizontal_separation) / (HAND_CARD_SIZE.x + horizontal_separation))),
+		1
+	)
 
 
 func create_hand_card_view(card_entry: Variant) -> PanelContainer:
@@ -634,10 +721,11 @@ func style_sections() -> void:
 	if panel == null:
 		return
 
-	for section_name in ["SpellSection", "MinionSection", "UpgradeSection", "EquipmentSection"]:
-		var section := panel.get_node_or_null("DrawerBody/MarginContainer/VBoxContainer/Sections/%s" % section_name) as PanelContainer
+	for card_type in SECTION_TYPES:
+		var section := section_panels.get(card_type) as PanelContainer
 		if section == null:
 			continue
+		section.size_flags_vertical = Control.SIZE_FILL
 		section.add_theme_stylebox_override("panel", create_section_style())
 
 
@@ -668,6 +756,7 @@ func refresh_drawer_layout() -> void:
 		return
 
 	apply_drawer_position(panel.offset_left)
+	request_adaptive_section_layout()
 
 
 func create_panel_style() -> StyleBoxFlat:

@@ -290,6 +290,7 @@
 - 一次性特效放在 `CardAnimationController`。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如普通施法回合 `spell_turn_activation`、赫子解放 `kagune_release`、野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。普通施法回合表现位于 `scripts/ui/animation/generic_spell_animation_provider.gd`；种族专属表现应使用不同 key 覆盖调用分支，避免与通用效果重复播放。
+- 手牌四区布局优先读 `scenes/ui/hand_drawer_panel.tscn`、`scripts/ui/hand_drawer_controller.gd` 和 `scripts/ui/hand_section_layout_policy.gd`。分区高度只由可用高度、卡牌数量和每行容量决定：空区折叠，非空区按内容需求加权分配；不要重新给四个 section 设置 `EXPAND_FILL`，也不要让焦点卡牌或动作菜单参与高度权重。刷新时必须先捕获各区滚动偏移，立即移除旧滚动节点，并在自适应高度生效后恢复。修改算法后运行 `tools/test_hand_section_layout.gd` 和 `tools/test_hand_drawer_layout.gd`。
 - 多格路径特效（例如 `beast_path`）走 `GameManager.play_path_effect_animation()`，由 `GameAnimationResolver` 收集格子 rect 后交给 `CardAnimationController`。
 - 猴妖仙法术/技能释放特效使用 `play_monkey_spell_at_rect()`，按 animation key 生成金瞳、筋斗云、毫毛、金铁、蟠桃、敕令、定身、气雾、法象等符号化部件；新增猴妖仙技能时优先扩展这一组主题函数，不要回退到通用光圈。
 - 野兽人特效按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。
