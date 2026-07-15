@@ -932,10 +932,14 @@ func activate_spell_turn() -> void:
 	update_turn_status_view()
 	refresh_debug_panel()
 
-	if kagune_power_resolver.handles(current_player):
-		is_resolving_card_action = true
-		await play_board_effect_animation(KagunePowerResolver.RELEASE_ANIMATION_KEY)
-		is_resolving_card_action = false
+	is_resolving_card_action = true
+	var activation_animation_key := (
+		KagunePowerResolver.RELEASE_ANIMATION_KEY
+		if kagune_power_resolver.handles(current_player)
+		else GameAnimationResolver.SPELL_TURN_ACTIVATION_ANIMATION_KEY
+	)
+	await play_board_effect_animation(activation_animation_key)
+	is_resolving_card_action = false
 
 	refresh_action_available_hints()
 	update_action_menu()

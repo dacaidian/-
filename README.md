@@ -58,7 +58,7 @@ war-card/
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
-- **种族特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源路径和全战场等表现上下文分派 animation key，种族 provider 独立维护主题视觉；影月议会与东京喰种已接入独立 provider，赫子解放会播放专属全战场演出。
+- **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源路径和全战场等表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，种族 provider 可维护独立主题视觉，例如东京喰种的赫子解放全战场演出。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
 - **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
 - **状态可驱散**：可被净化/驱散的属性变化应实现为状态，不直接永久改数值。

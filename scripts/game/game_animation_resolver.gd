@@ -1,6 +1,8 @@
 extends RefCounted
 class_name GameAnimationResolver
 
+const SPELL_TURN_ACTIVATION_ANIMATION_KEY := "spell_turn_activation"
+
 # GameAnimationResolver owns animation orchestration that needs both runtime
 # board state and UI nodes. GameManager keeps stable facade methods, while this
 # resolver keeps the animation bridge out of the main rules coordinator.

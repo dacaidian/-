@@ -2,6 +2,7 @@ extends RefCounted
 class_name CardAnimationController
 
 const SpellAnimationRouterScript := preload("res://scripts/ui/animation/spell_animation_router.gd")
+const GenericSpellAnimationProviderScript := preload("res://scripts/ui/animation/generic_spell_animation_provider.gd")
 const ShadowmoonAnimationProviderScript := preload("res://scripts/ui/animation/shadowmoon_animation_provider.gd")
 const TokyoGhoulAnimationProviderScript := preload("res://scripts/ui/animation/tokyo_ghoul_animation_provider.gd")
 
@@ -45,6 +46,7 @@ var gu_trap_trigger_glow_color := Color(0.92, 0.18, 0.36, 0.76)
 var gu_summon_color := Color(0.08, 0.30, 0.06, 0.30)
 var gu_summon_glow_color := Color(0.66, 1.0, 0.20, 0.70)
 var spell_animation_router := SpellAnimationRouterScript.new()
+var generic_spell_animation_provider := GenericSpellAnimationProviderScript.new()
 var shadowmoon_animation_provider := ShadowmoonAnimationProviderScript.new()
 var tokyo_ghoul_animation_provider := TokyoGhoulAnimationProviderScript.new()
 
@@ -65,6 +67,8 @@ func setup(config: Dictionary) -> void:
 	shield_spell_effect_glow_color = config.get("shield_spell_effect_glow_color", shield_spell_effect_glow_color)
 	arcane_spell_effect_color = config.get("arcane_spell_effect_color", arcane_spell_effect_color)
 	arcane_spell_effect_glow_color = config.get("arcane_spell_effect_glow_color", arcane_spell_effect_glow_color)
+	generic_spell_animation_provider.setup(spell_animation_duration)
+	generic_spell_animation_provider.register_routes(spell_animation_router)
 	shadowmoon_animation_provider.setup(spell_animation_duration)
 	shadowmoon_animation_provider.register_routes(spell_animation_router)
 	tokyo_ghoul_animation_provider.setup(spell_animation_duration)
