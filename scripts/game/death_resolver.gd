@@ -38,7 +38,8 @@ func resolve_dead_states(
 	reason: String = "damage",
 	source_state: CardState = null,
 	should_refill_slots := true,
-	force_destroy := false
+	force_destroy := false,
+	source_owner_id := ""
 ) -> bool:
 	if game_manager == null:
 		return false
@@ -51,6 +52,7 @@ func resolve_dead_states(
 		# Keep attribution data now, because the live source_state may be cleared before
 		# the queued request becomes a death event.
 		"source_snapshot": create_source_snapshot(source_state),
+		"source_owner_id": source_owner_id,
 		"should_refill_slots": should_refill_slots,
 		"force_destroy": force_destroy
 	}
@@ -71,7 +73,8 @@ func resolve_dead_states(
 			active_request.get("source_state") as CardState,
 			active_request.get("source_snapshot", {}) as Dictionary,
 			bool(active_request.get("should_refill_slots", true)),
-			bool(active_request.get("force_destroy", false))
+			bool(active_request.get("force_destroy", false)),
+			str(active_request.get("source_owner_id", ""))
 		)
 
 		if not death_events.is_empty():
@@ -99,12 +102,13 @@ func destroy_card_with_refill(
 	state: CardState,
 	reason: String = "destroy",
 	source_state: CardState = null,
-	should_refill_slot := true
+	should_refill_slot := true,
+	source_owner_id := ""
 ) -> void:
 	if game_manager == null or state == null or state.is_empty():
 		return
 
-	await resolve_dead_states(game_manager, [state], reason, source_state, should_refill_slot, true)
+	await resolve_dead_states(game_manager, [state], reason, source_state, should_refill_slot, true, source_owner_id)
 
 
 func collect_death_events(
@@ -114,7 +118,8 @@ func collect_death_events(
 	source_state: CardState,
 	source_snapshot: Dictionary = {},
 	should_refill_slots := true,
-	force_destroy := false
+	force_destroy := false,
+	source_owner_id := ""
 ) -> Array[Dictionary]:
 	var death_events: Array[Dictionary] = []
 
@@ -129,7 +134,15 @@ func collect_death_events(
 			continue
 
 		state.is_pending_death = true
-		death_events.append(create_death_event(game_manager, state, reason, source_state, source_snapshot, should_refill_slots))
+		death_events.append(create_death_event(
+			game_manager,
+			state,
+			reason,
+			source_state,
+			source_snapshot,
+			should_refill_slots,
+			source_owner_id
+		))
 
 	sort_death_events(game_manager, death_events)
 	return death_events
@@ -169,9 +182,17 @@ func create_death_event(
 	reason: String,
 	source_state: CardState = null,
 	source_snapshot: Dictionary = {},
-	should_refill_slot := true
+	should_refill_slot := true,
+	source_owner_id := ""
 ) -> Dictionary:
-	var death_metadata := create_death_metadata(game_manager, state, reason, source_state, source_snapshot)
+	var death_metadata := create_death_metadata(
+		game_manager,
+		state,
+		reason,
+		source_state,
+		source_snapshot,
+		source_owner_id
+	)
 	var destroy_context := create_destroy_context(state, source_state, death_metadata, source_snapshot)
 	return {
 		"state": state,
@@ -218,6 +239,8 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		var state := death_event.get("state") as CardState
 		if state == null or state.is_empty():
 			continue
+
+		game_manager.record_turn_death_event(death_event)
 
 		if is_interaction_related_to_state(game_manager, state):
 			should_cancel_interaction = true
@@ -447,6 +470,8 @@ func create_destroy_context(
 		context[EventContext.SOURCE_STATE] = source_state
 	elif not source_snapshot.is_empty():
 		context[EventContext.DESTROYER_PLAYER_ID] = str(source_snapshot.get("owner_id", ""))
+	else:
+		context[EventContext.DESTROYER_PLAYER_ID] = str(death_metadata.get("source_owner_id", ""))
 
 	return context
 
@@ -456,7 +481,8 @@ func create_death_metadata(
 	state: CardState,
 	reason: String = "destroy",
 	source_state: CardState = null,
-	source_snapshot: Dictionary = {}
+	source_snapshot: Dictionary = {},
+	source_owner_id := ""
 ) -> Dictionary:
 	var metadata := {
 		"reason": reason,
@@ -475,8 +501,31 @@ func create_death_metadata(
 		metadata["source_owner_id"] = str(source_snapshot.get("owner_id", ""))
 		metadata["source_card_id"] = str(source_snapshot.get("card_id", ""))
 		metadata["source_display_name"] = str(source_snapshot.get("display_name", ""))
+	else:
+		var resolved_source_owner_id := resolve_status_source_owner_id(state, reason, source_owner_id)
+		if resolved_source_owner_id != "":
+			metadata["source_owner_id"] = resolved_source_owner_id
 
 	return metadata
+
+
+func resolve_status_source_owner_id(state: CardState, reason: String, explicit_owner_id: String) -> String:
+	if explicit_owner_id != "":
+		return explicit_owner_id
+	if state == null:
+		return ""
+
+	var status_id := ""
+	match reason:
+		EffectData.DEATH_REASON_POISON:
+			status_id = CardStatus.STATUS_POISON
+		EffectData.DEATH_REASON_FIRE:
+			status_id = CardStatus.STATUS_FIRE
+		_:
+			return ""
+
+	var status := state.get_status(status_id)
+	return status.source_owner_id if status != null else ""
 
 
 func create_source_snapshot(source_state: CardState) -> Dictionary:

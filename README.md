@@ -22,7 +22,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
 - **猴妖仙**：孙悟空神通、瞬移、透视、隐身、护甲、分身协攻、变身和猴族副动作。
 - **野兽人**：同类斩杀进化、混沌腐蚀、兽径地形、兽王杀戮成长、鹰身女妖咆哮增益、萨满野性呼唤和万魔岩仪式。
-- **东京喰种**：基础框架已接入，当前包含英雄金木研；后续将围绕赫子、RC 细胞、施法回合强化和多形态变身展开。
+- **东京喰种**：RC 细胞浓度会按本回合杀戮结果在低/中/高之间变化；施法回合在该种族中表现为“赫子解放”，四类赫子通过动态状态提供移动攻击、攻击/吸血、护甲/反伤或羽针副动作。当前英雄金木研为尾赫。
 - **影月议会**：古尔丹、灵魂虹吸、邪能灌注、邪能狂乱、混乱兽人、地狱犬、术士、基尔加丹的低语、混乱狼骑兵、末日守卫、地狱火、黑暗之门、魅魔与古尔丹之杖；以邪能标签触发本回合疯狂状态，装备可升级施法动作并引发邪能过载，术士诅咒引入可复用的伤害加深状态，地狱火引入火焰伤害持续状态，黑暗之门使用通用周期触发持续提供恶魔兵源。
 
 ## 项目结构
@@ -58,7 +58,7 @@ war-card/
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
-- **种族特效模块化**：`SpellAnimationRouter` 按表现上下文分派 animation key，种族 provider 独立维护主题视觉；影月议会已完成首批迁移。
+- **种族特效模块化**：`SpellAnimationRouter` 按表现上下文分派 animation key，种族 provider 独立维护主题视觉；影月议会与东京喰种已接入独立 provider。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
 - **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
 - **状态可驱散**：可被净化/驱散的属性变化应实现为状态，不直接永久改数值。
@@ -78,6 +78,7 @@ war-card/
 python tools/validate_cards.py
 godot --headless --path . --check-only
 godot --headless --path . --quit-after 1
+godot --headless --path . --script res://tools/test_tokyo_ghoul.gd
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。

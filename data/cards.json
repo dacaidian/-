@@ -3843,7 +3843,31 @@
 		"id": "tokyo_ghoul",
 		"name": "tokyoGhoul",
 		"displayName": "东京喰种",
-		"description": "隐藏在现代都市阴影中的喰种势力，以赫子、RC细胞和形态爆发撕开战场节奏。金木研将在多种赫子形态之间成长，未来围绕施法回合强化、形态变身和高阶喰种同伴展开。",
+		"description": "隐藏在现代都市阴影中的喰种势力，以杀戮维持RC细胞浓度，并在赫子解放时爆发出不同赫子的战斗本能。金木研将在饥饿、理智与进化之间寻找属于自己的道路。",
+		"runtime_state": {
+			"id": "rc_concentration",
+			"name": "RC细胞浓度",
+			"panel_hint": "根据本回合杀戮结果结算",
+			"default_state_id": "rc_medium",
+			"transition_policy": "rc_concentration",
+			"cycle": [
+				{
+					"id": "rc_low",
+					"name": "低浓度",
+					"card_id": "tokyo_ghoul_rc_low"
+				},
+				{
+					"id": "rc_medium",
+					"name": "中浓度",
+					"card_id": "tokyo_ghoul_rc_medium"
+				},
+				{
+					"id": "rc_high",
+					"name": "高浓度",
+					"card_id": "tokyo_ghoul_rc_high"
+				}
+			]
+		},
 		"heroes": [
 			{
 				"card_id": "kaneki_ken",
@@ -3854,15 +3878,62 @@
 			{
 				"id": "kaneki_ken",
 				"name": "金木研",
-				"description": "东京喰种英雄。曾在普通人与喰种之间痛苦徘徊的独眼喰种，拥有惊人的恢复力与不断进化的赫子潜能。当前作为种族框架英雄入场，后续会接入蜈蚣、龙、圣剑等形态体系。",
+				"description": "东京喰种英雄。曾在普通人与喰种之间痛苦徘徊的独眼喰种，拥有惊人的恢复力与不断进化的赫子潜能。尾赫令他在赫子解放时获得灵活的移动攻击能力。",
 				"url": "res://assets/img/东京喰种/金木研.png",
 				"type": "minion",
 				"role": "hero",
 				"count": 1,
 				"level": 1,
-				"keywords": [],
+				"keywords": [
+					"bikaku"
+				],
 				"attack": 3,
-				"health": 14,
+				"health": 16,
+				"effects": []
+			},
+			{
+				"id": "kagune_power_guide",
+				"name": "赫子之力",
+				"description": "东京喰种种族规则。开启施法回合时进入赫子解放：尾赫获得移动攻击，高浓度额外获得移动力+2；麟赫攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
+				"url": "res://assets/img/东京喰种/赫子之力.png",
+				"type": "upgrade",
+				"count": 0,
+				"level": 1,
+				"start_in_hand": true,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "tokyo_ghoul_rc_low",
+				"name": "低RC浓度",
+				"description": "回合内完成合格杀戮则升至中浓度；否则保持低浓度，并在回合结束随机分食一个友方非英雄喰种随从。",
+				"url": "res://assets/img/东京喰种/低RC浓度.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "tokyo_ghoul_rc_medium",
+				"name": "中RC浓度",
+				"description": "没有合格杀戮则降至低浓度；发生杀戮则保持中浓度；若本回合杀死过敌方随从且回合结束时敌方已无随从，则升至高浓度。",
+				"url": "res://assets/img/东京喰种/中RC浓度.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "tokyo_ghoul_rc_high",
+				"name": "高RC浓度",
+				"description": "赫子解放会获得强化能力。回合内有合格杀戮则保持高浓度，否则在回合结束时降至中浓度。",
+				"url": "res://assets/img/东京喰种/高RC浓度.png",
+				"type": "time",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
 				"effects": []
 			}
 		]

@@ -28,7 +28,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 	if not damaged_targets.is_empty() and game_manager != null and game_manager.has_method("resolve_dead_states"):
 		var death_reason := EffectData.get_death_reason(effect_data)
-		await game_manager.resolve_dead_states(damaged_targets, death_reason, source_state)
+		await game_manager.resolve_dead_states(
+			damaged_targets,
+			death_reason,
+			source_state,
+			EffectData.get_effect_owner_id(effect_data)
+		)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

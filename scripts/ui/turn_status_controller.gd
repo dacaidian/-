@@ -154,14 +154,19 @@ func update(
 		victory_label.text = "%s 获胜" % winner_player.display_name if winner_player != null else ""
 
 	if spell_turn_button != null:
+		var is_kagune_release := current_player.faction_id == "tokyo_ghoul"
 		if is_game_over:
 			spell_turn_button.text = "对战结束"
 			spell_turn_button.disabled = true
 		elif is_spell_turn_active:
-			spell_turn_button.text = "施法已开启"
+			spell_turn_button.text = "赫子已解放" if is_kagune_release else "施法已开启"
 			spell_turn_button.disabled = true
 		else:
-			spell_turn_button.text = "开启施法  -%d" % spell_turn_cost
+			spell_turn_button.text = (
+				"赫子解放  -%d" % spell_turn_cost
+				if is_kagune_release
+				else "开启施法  -%d" % spell_turn_cost
+			)
 			spell_turn_button.disabled = not can_activate_spell_turn
 
 	update_logo(current_player)

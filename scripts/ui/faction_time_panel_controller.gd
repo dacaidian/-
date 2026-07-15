@@ -169,7 +169,7 @@ func create_player_state_row(player: PlayerState, card_database: CardDatabase) -
 	info.add_child(state_label)
 
 	var hint_label := Label.new()
-	hint_label.text = "回合结束后推进"
+	hint_label.text = str(player.faction_runtime_state_config.get("panel_hint", "回合结束后推进"))
 	hint_label.add_theme_font_size_override("font_size", 12)
 	hint_label.add_theme_color_override("font_color", Color(0.70, 0.78, 0.82, 0.88))
 	hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE

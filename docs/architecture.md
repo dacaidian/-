@@ -134,6 +134,8 @@
 
 `CardStatus` 记录临时或持续状态。状态可以有 id、标签、持续时间、持续范围、叠加规则、属性修正、触发效果、回合效果和死亡后是否保留。
 
+状态派生数值统一由 `CardState.recalculate_status_modifiers()` 重算。当前除攻击和生命上限外，`payload.armor_bonus` 与 `payload.movement_bonus` 也属于通用状态修正；`CardState` 分别保存被动基础值和状态增量，移除状态时按差值恢复，不能在单张卡牌里手动减回。状态 `payload.keywords` 可临时授予规则关键字，例如 `reflect`；普通攻击反伤由 `AttackAction.resolve_attack_reflection()` 统一处理，有限层数状态可消费，临时关键字则在状态有效期间持续生效。
+
 没有回合持续时间的状态，不一定等于“死亡后也保留”。大多数增益、圣盾、魅惑、链接、法术授予状态都应在死亡后消失，除非明确配置 `persists_after_death`。
 
 状态也可以通过 `payload.spell_modifiers` 临时改写场上单位的施法动作。这里复用 `modify_spell_ability` / `modify_hand_spell_effects` 的配置语言，由 `HandSpellModifierResolver` 在构建随从 `spell_actions` 时读取；适合“疯狂后强化某个已有法术”这类效果，不应为每张卡写专用动作分支。
@@ -177,7 +179,9 @@
 
 所有可能导致死亡的入口都必须 `await GameManager.resolve_dead_states()`、`check_and_destroy_if_dead()` 或 `destroy_card_with_refill()`。不要在效果或行动里直接 `clear_card()`，也不要调用死亡入口后立即假设补牌、亡语或资源分已经完成，除非已经 `await`。巨兽溅射、月刃、毒爆、混沌腐蚀、反弹伤害、陷阱、献祭、吞噬和链接死亡都走同一条链路。
 
-击杀来源由 `source_state` 传入死亡链路，并在死亡请求创建时保存 `source_snapshot`。这是为了处理亡语或嵌套触发：如果来源单位在后续批次结算前已经被清空，`on_destroyed` 仍然能通过快照拿到 `destroyer` 玩家，从而让矿脉等 `gain_resource_score` 效果正确归属。需要依赖“击杀者仍在场”的种族成长可以继续检查 live `source_state`，例如野兽人进化和卡扎克杀戮成长。
+击杀来源由 `source_state` 传入死亡链路，并在死亡请求创建时保存 `source_snapshot`。这是为了处理亡语或嵌套触发：如果来源单位在后续批次结算前已经被清空，`on_destroyed` 仍然能通过快照拿到 `destroyer` 玩家，从而让矿脉等 `gain_resource_score` 效果正确归属。无场上来源的手牌法术必须把运行时 `effect_owner_id` 作为显式 `source_owner_id` 传入；毒和火焰死亡可从对应状态的 `source_owner_id` 回溯。需要依赖“击杀者仍在场”的种族成长可以继续检查 live `source_state`，例如野兽人进化和卡扎克杀戮成长。
+
+`TurnEventLedger` 只记录当前行动玩家回合内已经通过死亡链路确认的事件，供 RC 浓度等跨行动规则查询，不反向修改死亡流程。当前“合格杀戮”定义为：来源归属于当前行动玩家，目标是有玩家归属的非英雄随从；可包含敌方或友方，不包含英雄、中立单位和建筑。死亡后复生仍算一次实际死亡；没有归属来源的强制分食不会反过来计为杀戮。
 
 普通攻击击杀中心目标时，如果允许近战占领，走 `resolve_attack_kill()` 和占领选择；巨兽溅射造成的额外死亡只走 `resolve_dead_states()`，不会触发占领，但会正常触发亡语、资源分、复生和补牌。范围伤害的 source 必须传造成伤害的单位或法术来源，不能传被伤害目标。
 
@@ -203,6 +207,8 @@
 
 种族资源和种族技能属于玩家状态，不属于 UI 状态。
 
+种族运行时状态分为两类：固定循环由 `PlayerState.advance_faction_runtime_state()` 处理；依赖本回合事件的条件状态由 `FactionRuntimeStateResolver` 分派给专用策略。面板继续读取统一的 `runtime_state` 配置与状态卡图，`panel_hint` 可覆盖默认的“回合结束后推进”提示。UI 不计算状态迁移。
+
 种族技能面板只负责展示资源和按钮，并发出 `skill_requested`。`FactionSkillResolver` 负责把已解锁的 skill config 转成具体 `CardAction`、判断可用目标、定位授权技能的手牌来源，并启动目标选择。`GameManager` 只连接 UI 信号和刷新面板，不直接维护每个种族技能的 action 构造细节。
 
 已实现例子：
@@ -212,7 +218,7 @@
 - 狐妖仙：尾数、献祭种族技能、默认入手升级、魅惑和复生体系。
 - 猴妖仙：施法/移动/攻击互斥关系扩展、透视、定身、隐身/暴击、护甲装备、瞬移、分身协攻、固定方向副动作和阵营型净化。孙悟空的火眼金睛、筋斗云、铜头铁臂、身外身法各有一张 1 阶默认入手说明升级牌；这些牌 `count: 0`、`start_in_hand: true`、`effects: []`，只负责展示神通文本，不提供额外规则效果。
 - 野兽人：同系斩杀进化。种族块通过 `evolution_rules` 描述进化链；卡牌通过 `evolution_line` 声明所属血脉。当前链条包括劣角兽 -> 角兽 -> 大角兽、剃刀兽 -> 剃刀兽战车、人马兽 -> 飞斧人马兽、鹰身女妖 -> 疯语兽、牛头怪 -> 重武牛头怪。规则牌“适者生存”默认入手，仅用于玩家理解种族规则，真实触发由死亡结算后的种族 resolver 统一处理。卡扎克·独眼通过普通攻击击败友方非英雄随从后，会获得目标卡牌原始攻击/生命上限，并使自身运行时混沌腐蚀 +1；这不是新动作。该成长写入 `CardState.permanent_stat_overrides`，优先级高于 `origin`，不会污染原始快照，也不能被净化/驱散；英雄死亡进入复活手牌后再放置，会以这些永久覆盖值作为新鲜状态初始化。部分野兽人卡牌带有 `chaos_corruption` 静态数值，运行时当前值保存在 `CardState.chaos_corruption`，由 `CardStatusOverlay` 直接绘制腐蚀圆环和中央数值；它不是 `CardStatus`，不要用驱散/净化状态的路径修改。默认入手升级牌“混沌腐蚀”在己方回合结束时触发 `chaos_corruption_burst`：统计场上己方正面随从的混沌腐蚀总数，每 10 点对全部敌方正面随从造成 1 点伤害，建筑不计入也不受伤害。1 阶法术“兽径”使用 `set_beast_path` 打开五格直线矢量选择，并把兽径写入 `BoardCell`；野兽人地面随从可在当前连通兽径网络内移动到合法空位，穿越中间单位和建筑，不消耗主行动力和移动力。2 阶升级牌“野蛮咆哮”通过手牌区 `grant_spell_actions` 授予鹰身女妖和疯语兽无目标施法动作；释放后使用 `apply_status` 给 `friendly_minions` 目标集合附加本回合 `attack_bonus +1` 状态。2 阶随从“嘶叫萨满”自带野性呼唤施法动作，使用 `add_card_to_hand` 的 `card_ids` 候选池随机获得一个初级野兽。3 阶建筑“万魔岩”监听成功的野兽人友军杀戮进化和卡扎克杀戮成长，给同 owner 的万魔岩附加不可净化的 `wanmo_charge` 储存资源状态；废灭仪式读取该状态层数，消耗充能并获得等量古尔兽。
-- 东京喰种：基础框架已接入，当前包含种族块 `tokyo_ghoul` 和 1 阶英雄金木研。后续核心方向是四类赫子、RC 细胞、施法回合强化、金木研多形态变身和高阶喰种同伴。
+- 东京喰种：`runtime_state.transition_policy: "rc_concentration"` 使用 `RcConcentrationResolver` 在玩家回合结束时读取 `TurnEventLedger`。低浓度有合格杀戮升中浓度，无杀戮则保持低浓度并随机分食一个友方非英雄东京喰种随从；中浓度无杀戮降为低浓度，有杀戮保持中浓度，若本回合杀死过敌方非英雄随从且回合结束时敌方已无非英雄随从则升为高浓度；高浓度有杀戮保持，无杀戮降为中浓度。RC 面板复用通用种族运行时状态面板，并显示低/中/高状态卡图。该种族的施法回合在 UI 中命名为“赫子解放”；`KagunePowerResolver` 只在当前玩家赫子解放期间，为带 `bikaku` / `rinkaku` / `koukaku` / `ukaku` 关键字的己方正面随从附加不可净化的派生状态，结束时移除。尾赫获得移动攻击，高浓度额外移动力 +2；麟赫攻击 +1，高浓度改为 +2 并获得吸血；甲赫护甲 +1，高浓度改为 +2 并获得通用 `reflect`；羽赫获得每回合一次、不消耗主行动力的状态授予 `EffectAction`“羽针”，普通浓度造成 1 点伤害，高浓度造成 3 点。状态授予动作必须继续经过 `GrantedActionResolver` / `ActionRegistry`，从而让玩家、提示和 AI 共用合法性。规则说明升级牌“赫子之力”默认入手但无效果，只展示规则。表现使用 `TokyoGhoulAnimationProvider` 处理羽针和低浓度分食，持续赫子状态由 `CardStatusOverlay` 展示。
 - 影月议会：已接入英雄古尔丹、默认入手升级牌“邪能狂乱”、基础随从“混乱兽人”、2 阶随从“地狱犬”和“术士”、3 阶随从“混乱狼骑兵”“末日守卫”和“地狱火”、3 阶建筑“黑暗之门”、2 阶升级牌“基尔加丹的低语”、古尔丹英雄法术“灵魂虹吸”“恶魔召唤”和 2 阶武器“古尔丹之杖”。邪能体系使用法术/施法动作的 `spell_tags` 标记，例如 `spell_tags: ["fel"]`；手牌区升级牌通过 `trigger: "after_spell_cast"`、`active_zone: "hand"` 和 `required_spell_tags` 监听成功施法。古尔丹的“邪能灌注”目标规则为 `friendly_non_hero_minions`，对古尔丹自身造成固定 2 点自伤，并给选中的友方非英雄随从附加本回合 `fel_infusion` 攻击状态，同时触发邪能。“灵魂虹吸”使用通用 `life_drain` 效果：对敌方单位造成最多 3 点实际生命损失，并把实际吸取量作为古尔丹的临时当前生命；该生命可超过上限，但不提高 `max_health`，普通治疗也无法恢复到这个临时超上限值。“古尔丹之杖”是装备区 `while_equipped` 施法改写器，使用 `modify_spell_ability` 把 `fel_infusion` 改成 `fel_overload`：自伤 4、目标攻击 +6，并在施法者回合结束时通过状态 `turn_effects` 对相邻随从造成 2 点伤害，然后用通用 `destroy_units` 直接摧毁自身。混乱兽人的疯狂增益由“邪能狂乱”给 `friendly_minions_by_card_ids` 附加临时攻击状态实现；地狱犬和混乱狼骑兵的疯狂状态使用 `CardStatus.payload.actions` 临时授予副动作，分别是“法力燃烧”和“撕咬”，由 `GrantedActionResolver` 统一读取；魅魔和末日守卫的疯狂状态使用 `CardStatus.payload.keywords` 临时授予关键字，分别是 `lifesteal` 和 `giant`；术士疯狂状态使用 `CardStatus.payload.spell_modifiers` 临时改写已有“诅咒”，让它先施加 `damage_amplify` 和攻击降低，再追加 1 点伤害。地狱火“献祭”是无目标施法动作，使用通用 `apply_status` 对 `adjacent_enemy_non_hero_minions` 施加 `fire`，回合结束由 `StatusResolver` 结算。术士“诅咒”使用通用负面状态 `damage_amplify`：`payload.damage_amplify` 会在 `CardState.take_damage()` 中并入同一次伤害事件，因此可被圣盾一次性格挡，并会影响普通攻击、法术、毒、火焰、溅射等所有统一伤害入口。“基尔加丹的低语”使用通用 `periodic_status_aura` 同步周期光环；“黑暗之门”使用通用 `periodic_trigger` 执行周期子效果。二者的相位都由 `PeriodicCycleResolver` 维护，并保存在 `PlayerState.effect_runtime_values`。黑暗之门翻出时 `advance_phase: false` 且 `reset_phase: true`，立即触发一次并建立新的周期；之后只在建筑拥有者自己的 `before_turn_start` 推进相位，每两个自己的回合随机获得一张地狱火、末日守卫、混乱狼骑兵或魅魔。狼骑兵“撕咬”使用通用 `EffectAction`、目标规则 `adjacent_minions` 和 `damage + heal` 效果组合，不新增专用动作类。“恶魔召唤”使用通用 `add_card_to_hand` 生成同族 `tokens[]` 衍生牌“魅魔”；魅魔常驻 `taunt` 关键字，普通攻击目标过滤由 `AttackAction` 统一处理。后续恶魔召唤、黑暗之门和更多疯狂分支应继续沿用 spell tag + hand/equipment modifier + 状态配置，而不是在 `SpellAction` 或 `GameManager` 中按卡牌 id 分支。
 
 状态净化支持正负面筛选。`CardStatus` 保存 `status_valence`，可取 `positive`、`negative`、`neutral`；未显式配置时按状态 id、标签和属性修正数值推断。`CleanseEffect` 通过 `cleanse_mode` 控制净化范围：`all` 保持旧逻辑，`positive` 只移除正面状态，`negative` 只移除负面状态。全场阵营型净化使用效果目标 `friendly_units` / `enemy_units`，只影响随从时使用 `friendly_minions`，不要在单张卡牌里手写遍历逻辑。当前例子是猴妖仙“驱神大圣禺狨王”：驱散敌方单位正面状态，并解除己方单位负面状态。
@@ -352,7 +358,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 - 霍格沃兹：没有施法回合，法术直接消耗法力。哈利可以用法力学习不可饶恕咒、防御咒、攻击咒、基础咒等。伙伴和神奇动物是重要支援。
 - 黄金学院：黄金是种族资源，来自斩杀、法术和建筑。黄金可购买随从和装备。金属法术、炼金术和黄金溶流提供破坏力。
 - 影月氏族：古尔丹用邪能强化兽人和恶魔，黑暗之门提供持续兵源。
-- 东京喰种：基础框架已接入。未来由四种赫子提供不同加成，施法回合强化赫子；金木研通过多形态提供强攻，S/SSS 级角色作为后期高峰。
+- 东京喰种：RC 浓度与四类赫子解放的基础机制已接入；后续为麟赫、甲赫、羽赫补充具体随从，并让金木研多形态、S/SSS 级角色形成中后期高峰。
 - 共生体：毒液剥离组织，组织在子代池中进化，附着到人类随从后入场。纳尔是后期全局强化点。
 - 破坏者联盟：微光提供本回合攻击爆发。金克斯/爆爆人格切换形成不同模式，武器、偷窃、罪犯和通缉令构成玩法。
 - 光荣进化：机械随从通过升级后可消耗法力复活、交换意识，并解锁维克托的多条时间线。

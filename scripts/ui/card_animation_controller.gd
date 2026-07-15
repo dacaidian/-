@@ -3,6 +3,7 @@ class_name CardAnimationController
 
 const SpellAnimationRouterScript := preload("res://scripts/ui/animation/spell_animation_router.gd")
 const ShadowmoonAnimationProviderScript := preload("res://scripts/ui/animation/shadowmoon_animation_provider.gd")
+const TokyoGhoulAnimationProviderScript := preload("res://scripts/ui/animation/tokyo_ghoul_animation_provider.gd")
 
 # CardAnimationController 只负责卡牌相关的表现动画。
 # 它可以移动、缩放、闪烁 Card 节点或创建临时特效节点，但不直接修改 CardState。
@@ -45,6 +46,7 @@ var gu_summon_color := Color(0.08, 0.30, 0.06, 0.30)
 var gu_summon_glow_color := Color(0.66, 1.0, 0.20, 0.70)
 var spell_animation_router := SpellAnimationRouterScript.new()
 var shadowmoon_animation_provider := ShadowmoonAnimationProviderScript.new()
+var tokyo_ghoul_animation_provider := TokyoGhoulAnimationProviderScript.new()
 
 
 func setup(config: Dictionary) -> void:
@@ -65,6 +67,8 @@ func setup(config: Dictionary) -> void:
 	arcane_spell_effect_glow_color = config.get("arcane_spell_effect_glow_color", arcane_spell_effect_glow_color)
 	shadowmoon_animation_provider.setup(spell_animation_duration)
 	shadowmoon_animation_provider.register_routes(spell_animation_router)
+	tokyo_ghoul_animation_provider.setup(spell_animation_duration)
+	tokyo_ghoul_animation_provider.register_routes(spell_animation_router)
 
 
 func play_card_swap(

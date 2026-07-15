@@ -29,6 +29,9 @@ const TargetStateResolverScript := preload("res://scripts/game/target_state_reso
 const BoardLayerResolverScript := preload("res://scripts/game/board_layer_resolver.gd")
 const BoardMovementResolverScript := preload("res://scripts/game/board_movement_resolver.gd")
 const FactionSkillResolverScript := preload("res://scripts/game/faction_skill_resolver.gd")
+const TurnEventLedgerScript := preload("res://scripts/game/turn_event_ledger.gd")
+const FactionRuntimeStateResolverScript := preload("res://scripts/game/faction_runtime_state_resolver.gd")
+const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
 const GameHudCoordinatorScript := preload("res://scripts/game/game_hud_coordinator.gd")
 const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
@@ -164,6 +167,9 @@ var target_state_resolver := TargetStateResolverScript.new()
 var board_layer_resolver := BoardLayerResolverScript.new()
 var board_movement_resolver := BoardMovementResolverScript.new()
 var faction_skill_resolver := FactionSkillResolverScript.new()
+var turn_event_ledger := TurnEventLedgerScript.new()
+var faction_runtime_state_resolver := FactionRuntimeStateResolverScript.new()
+var kagune_power_resolver := KagunePowerResolverScript.new()
 var game_hud_coordinator := GameHudCoordinatorScript.new()
 var victory_screen_controller: VictoryScreenController
 var ai_controller := AIControllerScript.new()
@@ -313,6 +319,7 @@ func initialize_players() -> void:
 		refresh_hand_passives_for_player(players[index], false)
 
 	if not players.is_empty():
+		turn_event_ledger.begin_turn(players[current_player_index].id)
 		players[current_player_index].start_turn()
 
 
@@ -775,14 +782,17 @@ func end_turn() -> void:
 		current_player.end_turn()
 		get_tree().call_group("card_hover_previews", "hide_preview")
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_AFTER_TURN_END, current_player.id)
-		advance_faction_runtime_state_for_player(current_player)
+		await advance_faction_runtime_state_for_player(current_player)
 
 	is_spell_turn_active = false
+	if current_player != null:
+		refresh_hand_passives_for_player(current_player, false)
 	current_player_index = (current_player_index + 1) % players.size()
 	turn_number += 1
 
 	current_player = get_current_player()
 	if current_player != null:
+		turn_event_ledger.begin_turn(current_player.id)
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_BEFORE_TURN_START, current_player.id)
 		refresh_hand_passives_for_player(current_player, false)
 		current_player.start_turn()
@@ -802,12 +812,23 @@ func advance_faction_runtime_state_for_player(player: PlayerState) -> void:
 	if player == null:
 		return
 
-	if not player.should_advance_faction_runtime_state_on(EventContext.TRIGGER_AFTER_TURN_END):
-		return
-
-	if player.advance_faction_runtime_state():
+	if await faction_runtime_state_resolver.resolve_after_turn_end(self, player, turn_event_ledger):
 		refresh_hand_passives_for_player(player, false)
 		update_faction_time_panel_view()
+
+
+func record_turn_death_event(death_event: Dictionary) -> void:
+	var current_player := get_current_player()
+	var state := death_event.get("state") as CardState
+	if current_player == null or state == null:
+		return
+
+	var death_metadata: Dictionary = death_event.get("death_metadata", {})
+	turn_event_ledger.record_death(
+		state,
+		str(death_metadata.get("source_owner_id", "")),
+		str(death_event.get("reason", ""))
+	)
 
 
 func schedule_ai_turn_if_needed() -> void:
@@ -907,6 +928,7 @@ func activate_spell_turn() -> void:
 		return
 
 	is_spell_turn_active = true
+	refresh_hand_passives_for_player(current_player, false)
 	refresh_action_available_hints()
 	update_action_menu()
 	update_turn_status_view()
@@ -999,6 +1021,7 @@ func resolve_queued_triggers() -> void:
 
 func refresh_hand_passives_for_player(player: PlayerState, should_adjust_remaining_flips := false) -> void:
 	hand_passive_resolver.refresh_player_passives(player, should_adjust_remaining_flips, self)
+	kagune_power_resolver.refresh_player(player, self)
 	update_turn_status_view()
 	update_faction_skill_panel_view()
 	refresh_action_available_hints()
@@ -1071,8 +1094,21 @@ func resolve_dead_units(reason: String = "damage", source_state: CardState = nul
 	return await death_resolver.resolve_dead_units(self, reason, source_state)
 
 
-func resolve_dead_states(states_to_check: Array, reason: String = "damage", source_state: CardState = null) -> bool:
-	return await death_resolver.resolve_dead_states(self, states_to_check, reason, source_state)
+func resolve_dead_states(
+	states_to_check: Array,
+	reason: String = "damage",
+	source_state: CardState = null,
+	source_owner_id := ""
+) -> bool:
+	return await death_resolver.resolve_dead_states(
+		self,
+		states_to_check,
+		reason,
+		source_state,
+		true,
+		false,
+		source_owner_id
+	)
 
 
 func destroy_card(state: CardState, reason: String = "destroy", source_state: CardState = null) -> void:
@@ -1083,9 +1119,17 @@ func destroy_card_with_refill(
 	state: CardState,
 	reason: String = "destroy",
 	source_state: CardState = null,
-	should_refill_slot := true
+	should_refill_slot := true,
+	source_owner_id := ""
 ) -> void:
-	await death_resolver.destroy_card_with_refill(self, state, reason, source_state, should_refill_slot)
+	await death_resolver.destroy_card_with_refill(
+		self,
+		state,
+		reason,
+		source_state,
+		should_refill_slot,
+		source_owner_id
+	)
 
 
 func resolve_attack_kill(attacker_state: CardState, defeated_state: CardState, can_occupy := true) -> void:

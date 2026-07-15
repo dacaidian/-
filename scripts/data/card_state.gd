@@ -75,6 +75,10 @@ var passive_keywords: Array[String] = []
 var status_attack_bonus := 0
 var status_attack_floor_debt := 0
 var status_max_health_bonus := 0
+var passive_armor_bonus := 0
+var status_armor_bonus := 0
+var passive_max_movement := 0
+var status_movement_bonus := 0
 var status_control_base_owner_id := ""
 var max_health := 0
 var damage_taken := 0
@@ -126,6 +130,10 @@ func set_card_data(value: CardData) -> void:
 		status_attack_bonus = 0
 		status_attack_floor_debt = 0
 		status_max_health_bonus = 0
+		passive_armor_bonus = 0
+		status_armor_bonus = 0
+		passive_max_movement = 0
+		status_movement_bonus = 0
 		status_control_base_owner_id = ""
 		max_health = 0
 		damage_taken = 0
@@ -163,6 +171,10 @@ func set_card_data(value: CardData) -> void:
 		status_attack_bonus = 0
 		status_attack_floor_debt = 0
 		status_max_health_bonus = 0
+		passive_armor_bonus = 0
+		status_armor_bonus = 0
+		passive_max_movement = 0
+		status_movement_bonus = 0
 		status_control_base_owner_id = ""
 		max_health = data.health
 		damage_taken = 0
@@ -174,6 +186,7 @@ func set_card_data(value: CardData) -> void:
 		is_pending_death = false
 		if data.is_minion():
 			max_movement = maxi(data.movement, 0)
+			passive_max_movement = max_movement
 			current_movement = max_movement
 			max_attack_speed = maxi(data.attack_speed, 0)
 			current_attacks = max_attack_speed
@@ -185,6 +198,7 @@ func set_card_data(value: CardData) -> void:
 			used_action_ids.clear()
 			allowed_action_group_pairs.clear()
 			apply_keyword_passives()
+			passive_max_movement = max_movement
 		elif data.is_building():
 			max_movement = 0
 			current_movement = 0
@@ -463,6 +477,10 @@ func create_card_snapshot() -> Dictionary:
 		"status_attack_bonus": status_attack_bonus,
 		"status_attack_floor_debt": status_attack_floor_debt,
 		"status_max_health_bonus": status_max_health_bonus,
+		"passive_armor_bonus": passive_armor_bonus,
+		"status_armor_bonus": status_armor_bonus,
+		"passive_max_movement": passive_max_movement,
+		"status_movement_bonus": status_movement_bonus,
 		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
 		"damage_taken": damage_taken,
@@ -511,6 +529,10 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
 	status_attack_floor_debt = int(snapshot.get("status_attack_floor_debt", 0))
 	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
+	passive_armor_bonus = int(snapshot.get("passive_armor_bonus", snapshot.get("armor", 0)))
+	status_armor_bonus = int(snapshot.get("status_armor_bonus", 0))
+	passive_max_movement = int(snapshot.get("passive_max_movement", snapshot.get("max_movement", 0)))
+	status_movement_bonus = int(snapshot.get("status_movement_bonus", 0))
 	status_control_base_owner_id = str(snapshot.get("status_control_base_owner_id", ""))
 	max_health = int(snapshot.get("max_health", snapshot.get("current_health", 0)))
 	damage_taken = int(snapshot.get("damage_taken", 0))
@@ -536,6 +558,12 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		status_attack_floor_debt = 0
 	if not snapshot.has("status_max_health_bonus"):
 		status_max_health_bonus = calculate_status_max_health_bonus()
+	if not snapshot.has("status_armor_bonus"):
+		status_armor_bonus = calculate_status_armor_bonus()
+		passive_armor_bonus = maxi(armor - status_armor_bonus, 0)
+	if not snapshot.has("status_movement_bonus"):
+		status_movement_bonus = calculate_status_movement_bonus()
+		passive_max_movement = maxi(max_movement - status_movement_bonus, 0)
 	if not snapshot.has("status_control_base_owner_id"):
 		status_control_base_owner_id = ""
 	is_action_available_hint = bool(snapshot.get("is_action_available_hint", false))
@@ -556,6 +584,9 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
 	status_max_health_bonus = 0
+	passive_armor_bonus = 0
+	status_armor_bonus = 0
+	status_movement_bonus = 0
 	status_control_base_owner_id = ""
 	max_health = int(permanent_stat_overrides.get("health", origin.get("health", max_health)))
 	damage_taken = 0
@@ -564,6 +595,7 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", chaos_corruption)))
 	reborn_health_values = normalize_int_array(origin.get("reborn_health_values", []))
 	max_movement = int(origin.get("movement", max_movement))
+	passive_max_movement = max_movement
 	current_movement = max_movement
 	max_attack_speed = int(origin.get("attack_speed", max_attack_speed))
 	current_attacks = max_attack_speed
@@ -768,6 +800,9 @@ func revive_from_reborn(health_value: int) -> void:
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
 	status_max_health_bonus = 0
+	passive_armor_bonus = 0
+	status_armor_bonus = 0
+	status_movement_bonus = 0
 	status_control_base_owner_id = ""
 	max_health = int(permanent_stat_overrides.get("health", origin.get("health", data.health)))
 	damage_taken = 0
@@ -778,6 +813,7 @@ func revive_from_reborn(health_value: int) -> void:
 	chaos_corruption = int(permanent_stat_overrides.get("chaos_corruption", origin.get("chaos_corruption", data.chaos_corruption)))
 	reborn_health_values = remaining_reborn_values
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
+	passive_max_movement = max_movement
 	current_movement = max_movement
 	max_attack_speed = int(origin.get("attack_speed", data.attack_speed if data.is_minion() else 0))
 	current_attacks = max_attack_speed
@@ -1256,11 +1292,12 @@ func restore_movement() -> void:
 
 func set_max_movement(value: int, should_preserve_spent_movement := true) -> void:
 	var normalized_value: int = maxi(value, 0)
-	if max_movement == normalized_value:
+	if passive_max_movement == normalized_value:
 		return
 
 	var spent_movement: int = maxi(max_movement - current_movement, 0)
-	max_movement = normalized_value
+	passive_max_movement = normalized_value
+	max_movement = maxi(passive_max_movement + status_movement_bonus, 0)
 	if should_preserve_spent_movement:
 		current_movement = maxi(max_movement - spent_movement, 0)
 	else:
@@ -1455,6 +1492,12 @@ func consume_bronze_head_iron_arms() -> bool:
 	return remove_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
 
 
+func trigger_attack_reflection() -> bool:
+	if has_keyword(CardData.KEYWORD_REFLECT):
+		return true
+	return consume_bronze_head_iron_arms()
+
+
 func gain_shield(amount: int) -> void:
 	if amount <= 0:
 		return
@@ -1465,10 +1508,11 @@ func gain_shield(amount: int) -> void:
 
 func set_armor(value: int) -> void:
 	var normalized_value := maxi(value, 0)
-	if armor == normalized_value:
+	if passive_armor_bonus == normalized_value:
 		return
 
-	armor = normalized_value
+	passive_armor_bonus = normalized_value
+	armor = maxi(passive_armor_bonus + status_armor_bonus, 0)
 	state_changed.emit(self)
 
 
@@ -1529,6 +1573,22 @@ func calculate_status_max_health_bonus() -> int:
 	return bonus
 
 
+func calculate_status_armor_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status != null:
+			bonus += calculate_status_numeric_modifier(status, EffectData.KEY_ARMOR_BONUS)
+	return bonus
+
+
+func calculate_status_movement_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status != null:
+			bonus += calculate_status_numeric_modifier(status, EffectData.KEY_MOVEMENT_BONUS)
+	return bonus
+
+
 func get_status_control_owner_id() -> String:
 	var control_owner_id := ""
 	for status in statuses:
@@ -1559,6 +1619,8 @@ func calculate_status_numeric_modifier(status: CardStatus, payload_key: String) 
 func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	var next_status_attack_bonus := calculate_status_attack_bonus()
 	var next_status_max_health_bonus := calculate_status_max_health_bonus()
+	var next_status_armor_bonus := calculate_status_armor_bonus()
+	var next_status_movement_bonus := calculate_status_movement_bonus()
 	var next_control_owner_id := get_status_control_owner_id()
 	var next_owner_id := owner_id
 	if next_control_owner_id != "":
@@ -1572,6 +1634,8 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	if (
 		status_attack_bonus == next_status_attack_bonus
 		and status_max_health_bonus == next_status_max_health_bonus
+		and status_armor_bonus == next_status_armor_bonus
+		and status_movement_bonus == next_status_movement_bonus
 		and owner_id == next_owner_id
 	):
 		return
@@ -1582,6 +1646,13 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	status_attack_floor_debt = mini(raw_attack - current_attack, 0)
 	status_attack_bonus = next_status_attack_bonus
 	owner_id = next_owner_id
+	status_armor_bonus = next_status_armor_bonus
+	armor = maxi(passive_armor_bonus + status_armor_bonus, 0)
+
+	var spent_movement := maxi(max_movement - current_movement, 0)
+	status_movement_bonus = next_status_movement_bonus
+	max_movement = maxi(passive_max_movement + status_movement_bonus, 0)
+	current_movement = maxi(max_movement - spent_movement, 0)
 
 	var health_bonus_delta := next_status_max_health_bonus - status_max_health_bonus
 	if health_bonus_delta != 0:

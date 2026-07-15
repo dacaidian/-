@@ -56,7 +56,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var attacker_card_id := user.card_id
 	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
 	var attack_damage := calculate_attack_damage(user, target)
-	var was_reflected := await resolve_bronze_head_iron_arms(user, target, attack_damage, game_manager)
+	var was_reflected := await resolve_attack_reflection(user, target, attack_damage, game_manager)
 	var splash_targets: Array[CardState] = []
 	var actual_life_damage := 0
 	if not was_reflected:
@@ -76,7 +76,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		await game_manager.resolve_after_attack_triggers(trigger_source, target)
 
 
-func resolve_bronze_head_iron_arms(
+func resolve_attack_reflection(
 	attacker: CardState,
 	defender: CardState,
 	damage: int,
@@ -86,7 +86,7 @@ func resolve_bronze_head_iron_arms(
 		return false
 	if damage <= 0:
 		return false
-	if not defender.consume_bronze_head_iron_arms():
+	if not defender.trigger_attack_reflection():
 		return false
 
 	if game_manager.has_method("play_status_apply_animation"):
@@ -94,6 +94,15 @@ func resolve_bronze_head_iron_arms(
 	attacker.take_damage(damage)
 	await game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
 	return true
+
+
+func resolve_bronze_head_iron_arms(
+	attacker: CardState,
+	defender: CardState,
+	damage: int,
+	game_manager: GameManager
+) -> bool:
+	return await resolve_attack_reflection(attacker, defender, damage, game_manager)
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:

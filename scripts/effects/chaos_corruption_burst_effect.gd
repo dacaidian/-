@@ -43,7 +43,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 	if game_manager.has_method("resolve_dead_states"):
 		var death_reason := EffectData.get_death_reason(effect_data, EffectData.DEATH_REASON_EFFECT)
-		await game_manager.resolve_dead_states(damaged_targets, death_reason, source_state)
+		await game_manager.resolve_dead_states(
+			damaged_targets,
+			death_reason,
+			source_state,
+			EffectData.get_effect_owner_id(effect_data)
+		)
 
 
 func get_total_friendly_corruption(game_manager: Node, owner_id: String) -> int:

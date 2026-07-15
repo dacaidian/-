@@ -20,7 +20,13 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		if animation_key != "" and gm.has_method("play_status_apply_animation"):
 			await gm.play_status_apply_animation(target_state, animation_key)
 
-		await gm.destroy_card_with_refill(target_state, death_reason, source_state, true)
+		await gm.destroy_card_with_refill(
+			target_state,
+			death_reason,
+			source_state,
+			true,
+			EffectData.get_effect_owner_id(effect_data)
+		)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

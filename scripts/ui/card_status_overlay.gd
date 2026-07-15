@@ -91,6 +91,9 @@ var taunt_color := Color(0.42, 0.22, 0.08, 0.08)
 var taunt_edge_color := Color(0.95, 0.60, 0.18, 0.50)
 var taunt_plate_color := Color(0.34, 0.16, 0.06, 0.26)
 var taunt_rivet_color := Color(0.98, 0.72, 0.28, 0.56)
+var kagune_release_color := Color(0.34, 0.015, 0.08, 0.11)
+var kagune_release_edge_color := Color(0.88, 0.12, 0.30, 0.62)
+var kagune_release_core_color := Color(1.0, 0.34, 0.48, 0.76)
 
 
 func _ready() -> void:
@@ -109,7 +112,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -123,6 +126,10 @@ func should_show_taunt() -> bool:
 	return state.is_face_up and state.is_minion() and state.has_keyword(CardData.KEYWORD_TAUNT)
 
 
+func should_show_kagune_release() -> bool:
+	return state != null and state.is_face_up and state.has_status(CardStatus.STATUS_KAGUNE_RELEASE)
+
+
 func should_show_divine_shield() -> bool:
 	if state == null or state.data == null:
 		return false
@@ -134,7 +141,14 @@ func should_show_bronze_head_iron_arms() -> bool:
 	if state == null or state.data == null:
 		return false
 
-	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
+	return (
+		state.is_face_up
+		and state.is_unit()
+		and (
+			state.has_status(CardStatus.STATUS_BRONZE_HEAD_IRON_ARMS)
+			or state.has_keyword(CardData.KEYWORD_REFLECT)
+		)
+	)
 
 
 func should_show_immortal_peach() -> bool:
@@ -290,6 +304,8 @@ func _draw() -> void:
 		draw_beast_path_overlay()
 	if should_show_taunt():
 		draw_taunt_overlay()
+	if should_show_kagune_release():
+		draw_kagune_release_overlay()
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_meteor_aura():
@@ -409,6 +425,27 @@ func draw_taunt_overlay() -> void:
 		var angle := TAU * float(index) / 5.0 + 0.32
 		var point := center + Vector2(cos(angle), sin(angle)) * minf(size.x, size.y) * 0.28
 		draw_circle(point, 2.6, Color(0.76, 0.42, 0.12, 0.38))
+
+
+func draw_kagune_release_overlay() -> void:
+	var card_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
+	var center := card_rect.get_center()
+	draw_rect(card_rect, kagune_release_color, true)
+	draw_rect(card_rect, kagune_release_edge_color, false, maxf(size.x * 0.018, 2.0))
+
+	for index in range(4):
+		var side := -1.0 if index < 2 else 1.0
+		var vertical := float(index % 2)
+		var start := center + Vector2(side * card_rect.size.x * 0.12, card_rect.size.y * (-0.18 + vertical * 0.36))
+		var middle := center + Vector2(side * card_rect.size.x * 0.30, card_rect.size.y * (-0.28 + vertical * 0.56))
+		var tip := center + Vector2(side * card_rect.size.x * 0.46, card_rect.size.y * (-0.40 + vertical * 0.80))
+		draw_polyline(
+			PackedVector2Array([start, middle, tip]),
+			kagune_release_edge_color,
+			maxf(size.x * 0.026, 2.5),
+			true
+		)
+		draw_circle(tip, maxf(size.x * 0.014, 1.8), kagune_release_core_color)
 
 
 func draw_arcane_aura() -> void:

@@ -18,7 +18,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		remove_link_counterparts(target_state, removed_statuses, game_manager)
 
 	if not cleansed_targets.is_empty() and game_manager != null and game_manager.has_method("resolve_dead_states"):
-		await game_manager.resolve_dead_states(cleansed_targets, EffectData.DEATH_REASON_EFFECT, source_state)
+		await game_manager.resolve_dead_states(
+			cleansed_targets,
+			EffectData.DEATH_REASON_EFFECT,
+			source_state,
+			EffectData.get_effect_owner_id(effect_data)
+		)
 
 
 func remove_link_counterparts(target_state: CardState, removed_statuses: Array[CardStatus], game_manager: Node) -> void:
