@@ -69,22 +69,18 @@ func setup(root: Control) -> void:
 	panel.hide()
 
 
-func update(players: Array[PlayerState], card_database: CardDatabase, root: Control = null) -> void:
+func update(current_player: PlayerState, card_database: CardDatabase, root: Control = null) -> void:
 	if panel == null or list == null:
 		return
 
 	for child in list.get_children():
 		child.queue_free()
 
-	var has_any_state := false
-	for player in players:
-		if player == null or not player.has_faction_runtime_state():
-			continue
+	var has_current_state := current_player != null and current_player.has_faction_runtime_state()
+	if has_current_state:
+		list.add_child(create_player_state_row(current_player, card_database))
 
-		has_any_state = true
-		list.add_child(create_player_state_row(player, card_database))
-
-	panel.visible = has_any_state
+	panel.visible = has_current_state
 	if root != null:
 		call_deferred("position_panel", root)
 

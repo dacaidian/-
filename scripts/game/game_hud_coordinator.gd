@@ -73,7 +73,7 @@ func update_faction_time(game_manager: GameManager) -> void:
 		return
 
 	game_manager.faction_time_panel_controller.update(
-		game_manager.players,
+		game_manager.get_current_player(),
 		game_manager.card_database,
 		game_manager.get_parent() as Control
 	)

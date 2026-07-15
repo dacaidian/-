@@ -207,7 +207,7 @@
 
 种族资源和种族技能属于玩家状态，不属于 UI 状态。
 
-种族运行时状态分为两类：固定循环由 `PlayerState.advance_faction_runtime_state()` 处理；依赖本回合事件的条件状态由 `FactionRuntimeStateResolver` 分派给专用策略。面板继续读取统一的 `runtime_state` 配置与状态卡图，`panel_hint` 可覆盖默认的“回合结束后推进”提示。UI 不计算状态迁移。
+种族运行时状态分为两类：固定循环由 `PlayerState.advance_faction_runtime_state()` 处理；依赖本回合事件的条件状态由 `FactionRuntimeStateResolver` 分派给专用策略。面板继续读取统一的 `runtime_state` 配置与状态卡图，`panel_hint` 可覆盖默认的“回合结束后推进”提示。运行时状态面板只接收并展示当前行动玩家；非当前玩家的状态仍保存在规则层，但不跨回合显示。UI 不计算状态迁移。
 
 种族技能面板只负责展示资源和按钮，并发出 `skill_requested`。`FactionSkillResolver` 负责把已解锁的 skill config 转成具体 `CardAction`、判断可用目标、定位授权技能的手牌来源，并启动目标选择。`GameManager` 只连接 UI 信号和刷新面板，不直接维护每个种族技能的 action 构造细节。
 
