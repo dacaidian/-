@@ -17,7 +17,7 @@ func execute_candidate(gm: GameManager, candidate: Dictionary, failed_flip_slots
 		AICandidateBuilderScript.KIND_FLIP:
 			return await _execute_flip_candidate(gm, candidate, failed_flip_slots)
 		AICandidateBuilderScript.KIND_ACTIVATE_SPELL_TURN:
-			return _execute_activate_spell_turn_candidate(gm)
+			return await _execute_activate_spell_turn_candidate(gm)
 		_:
 			return false
 
@@ -123,7 +123,7 @@ func _execute_activate_spell_turn_candidate(gm: GameManager) -> bool:
 	if player == null or player.mana < gm.spell_turn_mana_cost:
 		return false
 
-	gm.activate_spell_turn()
+	await gm.activate_spell_turn()
 	_refresh_after_step(gm)
 	return true
 

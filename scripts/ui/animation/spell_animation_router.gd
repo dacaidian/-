@@ -6,6 +6,7 @@ class_name SpellAnimationRouter
 var _targeted_handlers: Dictionary = {}
 var _rect_handlers: Dictionary = {}
 var _source_rect_handlers: Dictionary = {}
+var _board_handlers: Dictionary = {}
 
 
 func register_targeted(animation_keys: Array[String], handler: Callable) -> void:
@@ -18,6 +19,10 @@ func register_at_rect(animation_keys: Array[String], handler: Callable) -> void:
 
 func register_from_rect(animation_keys: Array[String], handler: Callable) -> void:
 	_register(_source_rect_handlers, animation_keys, handler)
+
+
+func register_board(animation_keys: Array[String], handler: Callable) -> void:
+	_register(_board_handlers, animation_keys, handler)
 
 
 func try_play_targeted(
@@ -61,6 +66,15 @@ func try_play_from_rect(
 		return false
 
 	await handler.call(owner, effect_root, source_rect, target_card, animation_key)
+	return true
+
+
+func try_play_board(animation_key: String, owner: Node, effect_root: Control) -> bool:
+	var handler := _get_handler(_board_handlers, animation_key)
+	if not handler.is_valid():
+		return false
+
+	await handler.call(owner, effect_root, animation_key)
 	return true
 
 

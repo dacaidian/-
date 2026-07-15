@@ -929,10 +929,16 @@ func activate_spell_turn() -> void:
 
 	is_spell_turn_active = true
 	refresh_hand_passives_for_player(current_player, false)
-	refresh_action_available_hints()
-	update_action_menu()
 	update_turn_status_view()
 	refresh_debug_panel()
+
+	if kagune_power_resolver.handles(current_player):
+		is_resolving_card_action = true
+		await play_board_effect_animation(KagunePowerResolver.RELEASE_ANIMATION_KEY)
+		is_resolving_card_action = false
+
+	refresh_action_available_hints()
+	update_action_menu()
 
 
 func get_current_player_name() -> String:

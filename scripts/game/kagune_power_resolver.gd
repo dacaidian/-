@@ -7,6 +7,11 @@ const STATUS_ID := "kagune_release"
 const STATUS_NAME := "赫子解放"
 const STATUS_TAG := "kagune_power"
 const FEATHER_NEEDLE_ACTION_ID := "feather_needle"
+const RELEASE_ANIMATION_KEY := "kagune_release"
+
+
+func handles(player: PlayerState) -> bool:
+	return player != null and player.faction_id == FACTION_ID
 
 
 func refresh_player(player: PlayerState, game_manager: GameManager) -> void:
@@ -14,7 +19,7 @@ func refresh_player(player: PlayerState, game_manager: GameManager) -> void:
 		return
 
 	var is_active := (
-		player.faction_id == FACTION_ID
+		handles(player)
 		and game_manager.is_spell_turn_active
 		and game_manager.get_current_player() == player
 	)

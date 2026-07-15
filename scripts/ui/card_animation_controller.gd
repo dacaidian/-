@@ -2011,6 +2011,8 @@ func play_wanmo_ritual_at_rect(owner: Node, effect_root: Control, target_rect: R
 func play_board_effect(owner: Node, effect_root: Control, animation_key: String) -> void:
 	if owner == null or effect_root == null or animation_key == "":
 		return
+	if await spell_animation_router.try_play_board(animation_key, owner, effect_root):
+		return
 
 	match animation_key:
 		"chaos_corruption_burst":

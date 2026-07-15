@@ -89,6 +89,7 @@ func test_status_numeric_modifiers() -> void:
 
 func test_kagune_payloads() -> void:
 	var resolver := KagunePowerResolverScript.new()
+	assert(resolver.RELEASE_ANIMATION_KEY == "kagune_release")
 	var normal_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], false)
 	assert(EffectData.get_keywords(normal_tail).has(CardData.KEYWORD_MOBILE_ASSAULT))
 	assert(not normal_tail.has(EffectData.KEY_MOVEMENT_BONUS))
