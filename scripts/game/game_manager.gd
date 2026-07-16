@@ -18,6 +18,7 @@ const RevealResolverScript := preload("res://scripts/game/reveal_resolver.gd")
 const HandInteractionControllerScript := preload("res://scripts/game/hand_interaction_controller.gd")
 const DeathResolverScript := preload("res://scripts/game/death_resolver.gd")
 const HandPassiveResolverScript := preload("res://scripts/game/hand_passive_resolver.gd")
+const CardReserveResolverScript := preload("res://scripts/game/card_reserve_resolver.gd")
 const VictoryResolverScript := preload("res://scripts/game/victory_resolver.gd")
 const TriggerResolverScript := preload("res://scripts/game/trigger_resolver.gd")
 const TurnTriggerResolverScript := preload("res://scripts/game/turn_trigger_resolver.gd")
@@ -156,6 +157,7 @@ var reveal_resolver := RevealResolverScript.new()
 var hand_interaction_controller := HandInteractionControllerScript.new()
 var death_resolver := DeathResolverScript.new()
 var hand_passive_resolver := HandPassiveResolverScript.new()
+var card_reserve_resolver := CardReserveResolverScript.new()
 var victory_resolver := VictoryResolverScript.new()
 var trigger_resolver := TriggerResolverScript.new()
 var turn_trigger_resolver := TurnTriggerResolverScript.new()
@@ -321,6 +323,7 @@ func initialize_players() -> void:
 	if not players.is_empty():
 		turn_event_ledger.begin_turn(players[current_player_index].id)
 		players[current_player_index].start_turn()
+		card_reserve_resolver.advance_owner_turn(players[current_player_index], self)
 
 
 func add_starting_hand_cards_for_player(player: PlayerState, player_index: int) -> void:
@@ -796,6 +799,7 @@ func end_turn() -> void:
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_BEFORE_TURN_START, current_player.id)
 		refresh_hand_passives_for_player(current_player, false)
 		current_player.start_turn()
+		card_reserve_resolver.advance_owner_turn(current_player, self)
 		restore_unit_actions_for_all_players()
 
 	is_resolving_card_action = false
@@ -1031,6 +1035,7 @@ func resolve_queued_triggers() -> void:
 
 func refresh_hand_passives_for_player(player: PlayerState, should_adjust_remaining_flips := false) -> void:
 	hand_passive_resolver.refresh_player_passives(player, should_adjust_remaining_flips, self)
+	card_reserve_resolver.refresh_player(player, self)
 	kagune_power_resolver.refresh_player(player, self)
 	update_turn_status_view()
 	update_faction_skill_panel_view()

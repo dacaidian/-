@@ -63,6 +63,7 @@ var card_controls: Dictionary = {}
 var section_scroll_offsets: Dictionary = {}
 var section_layout_policy := HandSectionLayoutPolicyScript.new()
 var section_layout_generation := 0
+var runtime_views_by_hand_index: Dictionary = {}
 
 
 func setup(root: Node, panel_path: NodePath) -> void:
@@ -134,7 +135,8 @@ func setup(root: Node, panel_path: NodePath) -> void:
 func update(
 	current_player: PlayerState,
 	new_selected_hand_index := -1,
-	new_playable_hand_indices: Array[int] = []
+	new_playable_hand_indices: Array[int] = [],
+	new_runtime_views_by_hand_index: Dictionary = {}
 ) -> void:
 	if panel == null:
 		return
@@ -142,6 +144,7 @@ func update(
 	capture_section_scroll_offsets()
 	selected_hand_index = new_selected_hand_index
 	playable_hand_indices = new_playable_hand_indices
+	runtime_views_by_hand_index = new_runtime_views_by_hand_index.duplicate(true)
 	card_controls.clear()
 	panel.visible = true
 	if owner_label != null:
@@ -279,7 +282,8 @@ func create_empty_card_groups() -> Dictionary:
 func create_hand_view_entry(card_entry: Variant, hand_index: int) -> Dictionary:
 	return {
 		"_hand_entry": card_entry,
-		"_hand_index": hand_index
+		"_hand_index": hand_index,
+		"_runtime_view": runtime_views_by_hand_index.get(hand_index, {})
 	}
 
 
@@ -444,6 +448,7 @@ func create_hand_card_view(card_entry: Variant) -> PanelContainer:
 	texture.texture = get_hand_card_texture(card_entry)
 	card.add_child(texture)
 	add_cooldown_badge(texture, card_entry)
+	add_card_reserve_badge(texture, card_entry)
 
 	return card
 
@@ -515,6 +520,55 @@ func add_cooldown_badge(card: Control, card_entry: Variant) -> void:
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
 	badge.add_child(label)
+
+
+func add_card_reserve_badge(card: Control, card_entry: Variant) -> void:
+	if not card_entry is Dictionary:
+		return
+
+	var view_data: Dictionary = card_entry.get("_runtime_view", {})
+	if view_data.is_empty():
+		return
+
+	var capacity := int(view_data.get("capacity", 0))
+	var active_count := int(view_data.get("active_count", 0))
+	var remaining_stock := int(view_data.get("remaining_stock", 0))
+	var cooldown_remaining := int(view_data.get("cooldown_remaining", -1))
+	var status_text := "供应充足"
+	if bool(view_data.get("is_exhausted", false)):
+		status_text = "库存耗尽"
+	elif cooldown_remaining >= 0 and active_count < capacity:
+		status_text = "冷却 %d" % cooldown_remaining
+	elif active_count < capacity:
+		status_text = "等待补充"
+
+	var badge := PanelContainer.new()
+	badge.name = "CardReserveBadge"
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.custom_minimum_size = Vector2(HAND_CARD_SIZE.x - 16.0, 48.0)
+	badge.size = badge.custom_minimum_size
+	badge.position = Vector2(8.0, HAND_CARD_SIZE.y - 56.0)
+	badge.add_theme_stylebox_override("panel", create_card_reserve_badge_style())
+	card.add_child(badge)
+
+	var lines := VBoxContainer.new()
+	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lines.add_theme_constant_override("separation", 0)
+	badge.add_child(lines)
+
+	var counts_label := Label.new()
+	counts_label.text = "在役 %d/%d  ·  库存 %d" % [active_count, capacity, remaining_stock]
+	counts_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	counts_label.add_theme_font_size_override("font_size", 14)
+	counts_label.add_theme_color_override("font_color", Color(0.96, 0.90, 0.76, 1.0))
+	lines.add_child(counts_label)
+
+	var status_label := Label.new()
+	status_label.text = status_text
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.add_theme_font_size_override("font_size", 13)
+	status_label.add_theme_color_override("font_color", Color(0.84, 0.67, 0.93, 1.0))
+	lines.add_child(status_label)
 
 
 func show_hand_card_preview(card_entry: Variant, source_control: Control) -> void:
@@ -792,6 +846,21 @@ func create_cooldown_badge_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(29)
 	style.shadow_color = Color(0.20, 0.72, 1.0, 0.48)
 	style.shadow_size = 14
+	return style
+
+
+func create_card_reserve_badge_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.045, 0.09, 0.92)
+	style.border_color = Color(0.56, 0.32, 0.66, 0.92)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 5
+	style.content_margin_top = 3
+	style.content_margin_right = 5
+	style.content_margin_bottom = 3
+	style.shadow_color = Color(0.18, 0.02, 0.22, 0.46)
+	style.shadow_size = 8
 	return style
 
 

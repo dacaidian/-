@@ -109,6 +109,13 @@ const KEY_CYCLE_LENGTH := "cycle_length"
 const KEY_ACTIVE_PHASES := "active_phases"
 const KEY_ADVANCE_PHASE := "advance_phase"
 const KEY_RESET_PHASE := "reset_phase"
+const KEY_RESERVE_ID := "reserve_id"
+const KEY_CAPACITY := "capacity"
+const KEY_COOLDOWN_TURNS := "cooldown_turns"
+const KEY_COUNT_ZONES := "count_zones"
+const KEY_DRAW_MODE := "draw_mode"
+const KEY_RESTOCK_MODE := "restock_mode"
+const KEY_POOL := "pool"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -162,6 +169,8 @@ const EFFECT_CHAOS_CORRUPTION_BURST := "chaos_corruption_burst"
 const EFFECT_SET_BEAST_PATH := "set_beast_path"
 const EFFECT_PERIODIC_STATUS_AURA := "periodic_status_aura"
 const EFFECT_PERIODIC_TRIGGER := "periodic_trigger"
+const EFFECT_MAINTAIN_CARD_RESERVE := "maintain_card_reserve"
+const EFFECT_MODIFY_CARD_RESERVE_CAPACITY := "modify_card_reserve_capacity"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"
@@ -172,6 +181,11 @@ const TRIGGER_WHILE_EQUIPPED := "while_equipped"
 const TRIGGER_WHILE_ON_BOARD := "while_on_board"
 const TRIGGER_PASSIVE := "passive"
 const TRIGGER_AFTER_SPELL_CAST := "after_spell_cast"
+
+const COUNT_ZONE_HAND := "hand"
+const COUNT_ZONE_BOARD := "board"
+const DRAW_MODE_WITHOUT_REPLACEMENT := "without_replacement"
+const RESTOCK_MODE_FINITE := "finite"
 
 const TARGET_SELF := "self"
 const TARGET_SELECTED := "selected"
@@ -470,6 +484,41 @@ static func get_bonus_cards(effect_data: Dictionary) -> Array[Dictionary]:
 				bonus_cards.append(bonus_card)
 
 	return bonus_cards
+
+
+static func get_reserve_id(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_RESERVE_ID, ""))
+
+
+static func get_reserve_capacity(effect_data: Dictionary) -> int:
+	return maxi(int(effect_data.get(KEY_CAPACITY, 0)), 0)
+
+
+static func get_reserve_cooldown_turns(effect_data: Dictionary) -> int:
+	return maxi(int(effect_data.get(KEY_COOLDOWN_TURNS, 0)), 0)
+
+
+static func get_reserve_count_zones(effect_data: Dictionary) -> Array[String]:
+	var zones: Array[String] = []
+	var raw_zones: Variant = effect_data.get(KEY_COUNT_ZONES, [COUNT_ZONE_HAND, COUNT_ZONE_BOARD])
+	if raw_zones is Array:
+		for raw_zone in raw_zones:
+			var zone := str(raw_zone)
+			if zone != "" and not zones.has(zone):
+				zones.append(zone)
+
+	return zones
+
+
+static func get_reserve_pool(effect_data: Dictionary) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = []
+	var raw_pool: Variant = effect_data.get(KEY_POOL, [])
+	if raw_pool is Array:
+		for raw_entry in raw_pool:
+			if raw_entry is Dictionary:
+				pool.append(raw_entry)
+
+	return pool
 
 
 static func get_replace_effects(effect_data: Dictionary) -> Array[Dictionary]:

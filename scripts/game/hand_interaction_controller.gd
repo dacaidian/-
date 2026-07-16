@@ -32,7 +32,15 @@ func update_hand_drawer_view(game_manager: GameManager) -> void:
 			if hand_play_resolver.can_play_hand_card_at(current_player, hand_index, game_manager):
 				playable_hand_indices.append(hand_index)
 
-	game_manager.hand_drawer_controller.update(current_player, selected_hand_index, playable_hand_indices)
+	var runtime_views: Dictionary = {}
+	if current_player != null:
+		runtime_views = game_manager.card_reserve_resolver.get_hand_view_data(current_player, game_manager)
+	game_manager.hand_drawer_controller.update(
+		current_player,
+		selected_hand_index,
+		playable_hand_indices,
+		runtime_views
+	)
 
 
 func update_hand_drawer_selection_state(game_manager: GameManager) -> void:

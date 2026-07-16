@@ -3967,6 +3967,51 @@
 				"effects": []
 			},
 			{
+				"id": "s_rank_ghoul_intelligence",
+				"name": "S阶喰种情报",
+				"description": "随从库牌。容量1，冷却2。入手时从壁虎、瓶兄弟、雾岛董香、月山习中不放回随机获取随从；在役数量低于容量后开始冷却，冷却结束补足缺口。",
+				"url": "res://assets/img/东京喰种/S阶喰种情报.png",
+				"type": "upgrade",
+				"upgrade_type": "minion_library",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "maintain_card_reserve",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"reserve_id": "s_rank_ghouls",
+						"capacity": 1,
+						"cooldown_turns": 2,
+						"count_zones": [
+							"hand",
+							"board"
+						],
+						"draw_mode": "without_replacement",
+						"restock_mode": "finite",
+						"pool": [
+							{
+								"card_id": "yamori",
+								"count": 1
+							},
+							{
+								"card_id": "bin_brothers",
+								"count": 1
+							},
+							{
+								"card_id": "touka_kirishima",
+								"count": 1
+							},
+							{
+								"card_id": "shu_tsukiyama",
+								"count": 1
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "tokyo_ghoul_rc_low",
 				"name": "低RC浓度",
 				"description": "回合内完成合格杀戮则升至中浓度；否则保持低浓度，并在回合结束随机分食一个友方非英雄喰种随从。",
@@ -3997,6 +4042,71 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"effects": []
+			}
+		],
+		"tokens": [
+			{
+				"id": "yamori",
+				"name": "壁虎",
+				"description": "S阶喰种。拥有鳞赫，在赫子解放时提高攻击力，高RC浓度下还会获得吸血。",
+				"url": "res://assets/img/东京喰种/壁虎.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"rinkaku"
+				],
+				"attack": 8,
+				"health": 8,
+				"effects": []
+			},
+			{
+				"id": "bin_brothers",
+				"name": "瓶兄弟",
+				"description": "配合默契的S阶喰种。拥有尾赫与2点攻速，在赫子解放时获得移动攻击。",
+				"url": "res://assets/img/东京喰种/瓶兄弟.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"bikaku"
+				],
+				"attack": 3,
+				"health": 10,
+				"attack_speed": 2,
+				"effects": []
+			},
+			{
+				"id": "touka_kirishima",
+				"name": "雾岛董香",
+				"description": "以高速羽赫发动远程攻势的S阶喰种，赫子解放时可以使用副动作羽针。",
+				"url": "res://assets/img/东京喰种/雾岛董香.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"ukaku",
+					"ranged"
+				],
+				"attack": 6,
+				"health": 6,
+				"effects": []
+			},
+			{
+				"id": "shu_tsukiyama",
+				"name": "月山习",
+				"description": "拥有坚固甲赫的S阶喰种，自带2点护甲，赫子解放时进一步强化防御。",
+				"url": "res://assets/img/东京喰种/月山习.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"koukaku"
+				],
+				"attack": 3,
+				"health": 8,
+				"armor": 2,
 				"effects": []
 			}
 		]

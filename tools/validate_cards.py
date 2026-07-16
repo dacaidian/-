@@ -116,6 +116,9 @@ class CardValidator:
         self.equipment_types = {
             value for name, value in self.card_data_constants.items() if name.startswith("EQUIPMENT_TYPE_")
         }
+        self.upgrade_types = {
+            value for name, value in self.card_data_constants.items() if name.startswith("UPGRADE_TYPE_")
+        }
         self.roles = {
             value for name, value in self.card_data_constants.items() if name.startswith("ROLE_")
         }
@@ -374,6 +377,13 @@ class CardValidator:
             elif equipment_type not in self.equipment_types:
                 self.reporter.error(f"{path}.equipment_type", f"unknown equipment type '{equipment_type}'")
 
+        upgrade_type = str(card.get("upgrade_type", ""))
+        if upgrade_type:
+            if card_type != "upgrade":
+                self.reporter.error(f"{path}.upgrade_type", "only upgrade cards may define upgrade_type")
+            elif upgrade_type not in self.upgrade_types:
+                self.reporter.error(f"{path}.upgrade_type", f"unknown upgrade type '{upgrade_type}'")
+
         target_rule = str(card.get("target_rule", ""))
         if target_rule and target_rule not in self.target_rules:
             self.reporter.error(f"{path}.target_rule", f"unknown target rule '{target_rule}'")
@@ -501,6 +511,11 @@ class CardValidator:
         self.validate_effect_list(effect.get("granted_effects", []), f"{path}.granted_effects")
         self.validate_spell_actions(effect.get("spell_actions", []), f"{path}.spell_actions")
         self.validate_bonus_cards(effect.get("bonus_cards", []), f"{path}.bonus_cards")
+        if effect_id == "maintain_card_reserve":
+            self.validate_card_reserve_effect(effect, path)
+        elif effect_id == "modify_card_reserve_capacity":
+            self.require_string(effect, "reserve_id", path)
+            self.require_int(effect, "amount", path)
 
         payload = effect.get("payload", {})
         if isinstance(payload, dict):
@@ -508,6 +523,49 @@ class CardValidator:
             self.validate_effect_list(payload.get("trigger_effects", []), f"{path}.payload.trigger_effects")
         elif "payload" in effect:
             self.reporter.error(f"{path}.payload", "must be an object")
+
+    def validate_card_reserve_effect(self, effect: dict[str, Any], path: str) -> None:
+        self.require_string(effect, "reserve_id", path)
+        self.require_int(effect, "capacity", path)
+        self.require_int(effect, "cooldown_turns", path)
+
+        if isinstance(effect.get("capacity"), int) and effect["capacity"] <= 0:
+            self.reporter.error(f"{path}.capacity", "must be greater than zero")
+        if isinstance(effect.get("cooldown_turns"), int) and effect["cooldown_turns"] < 0:
+            self.reporter.error(f"{path}.cooldown_turns", "must be non-negative")
+
+        zones = effect.get("count_zones", [])
+        if not isinstance(zones, list) or not zones:
+            self.reporter.error(f"{path}.count_zones", "must be a non-empty array")
+        else:
+            for index, zone_raw in enumerate(zones):
+                zone = str(zone_raw)
+                if zone not in {"hand", "board"}:
+                    self.reporter.error(
+                        f"{path}.count_zones[{index}]",
+                        "must be one of hand, board",
+                    )
+
+        if str(effect.get("draw_mode", "")) != "without_replacement":
+            self.reporter.error(f"{path}.draw_mode", "currently must be without_replacement")
+        if str(effect.get("restock_mode", "")) != "finite":
+            self.reporter.error(f"{path}.restock_mode", "currently must be finite")
+
+        pool = effect.get("pool", [])
+        if not isinstance(pool, list) or not pool:
+            self.reporter.error(f"{path}.pool", "must be a non-empty array")
+            return
+        for index, entry in enumerate(pool):
+            entry_path = f"{path}.pool[{index}]"
+            if not isinstance(entry, dict):
+                self.reporter.error(entry_path, "pool entry must be an object")
+                continue
+            self.validate_card_id_reference(str(entry.get("card_id", "")), f"{entry_path}.card_id")
+            count = entry.get("count", None)
+            if not isinstance(count, int):
+                self.reporter.error(f"{entry_path}.count", "must be an integer")
+            elif count <= 0:
+                self.reporter.error(f"{entry_path}.count", "must be greater than zero")
 
     def validate_status_fields(self, effect: dict[str, Any], path: str) -> None:
         status_id = str(effect.get("status_id", ""))
