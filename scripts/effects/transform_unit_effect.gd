@@ -12,7 +12,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	for target_state in get_target_states(source_state, effect_data, game_manager):
-		if target_state == null or not target_state.is_unit():
+		if not can_transform_target(target_state):
 			continue
 
 		apply_transform(target_state, target_data, effect_data)
@@ -27,7 +27,19 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 	if target_data == null:
 		return false
 
-	return not get_target_states(source_state, effect_data, game_manager).is_empty()
+	for target_state in get_target_states(source_state, effect_data, game_manager):
+		if can_transform_target(target_state):
+			return true
+
+	return false
+
+
+func can_transform_target(target_state: CardState) -> bool:
+	return (
+		target_state != null
+		and target_state.is_unit()
+		and target_state.get_transform_status() == null
+	)
 
 
 func get_transform_target_data(effect_data: Dictionary, game_manager: Node) -> CardData:
@@ -61,7 +73,8 @@ func apply_transform(target_state: CardState, target_data: CardData, effect_data
 	status_effect_data[EffectData.KEY_STATUS_STACK_POLICY] = CardStatus.STACK_POLICY_REPLACE
 	status_effect_data[EffectData.KEY_STATUS_PAYLOAD] = {
 		"original_snapshot": original_snapshot,
-		EffectData.KEY_TRANSFORM_MODE: EffectData.get_transform_mode(effect_data)
+		EffectData.KEY_TRANSFORM_MODE: EffectData.get_transform_mode(effect_data),
+		EffectData.KEY_PRESERVE_ORIGINAL_IDENTITY: EffectData.should_preserve_original_identity(effect_data)
 	}
 
 	var status := CardStatus.from_effect_data(status_effect_data, target_state, null)

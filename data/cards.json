@@ -3871,7 +3871,9 @@
 		"heroes": [
 			{
 				"card_id": "kaneki_ken",
-				"attached_cards": []
+				"attached_cards": [
+					"centipede_form"
+				]
 			}
 		],
 		"cards": [
@@ -3890,6 +3892,31 @@
 				"attack": 3,
 				"health": 16,
 				"effects": []
+			},
+			{
+				"id": "centipede_form",
+				"name": "蜈蚣形态",
+				"description": "金木研覆盖变身为蜈蚣形态。变身为3/6，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"url": "res://assets/img/东京喰种/蜈蚣形态.png",
+				"type": "spell",
+				"count": 1,
+				"level": 2,
+				"animation": "centipede_form",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "transform_unit",
+						"target": "owner_card_by_id",
+						"target_card_id": "kaneki_ken",
+						"card_id": "kaneki_centipede_form",
+						"transform_mode": "cover",
+						"preserve_original_identity": false,
+						"status_name": "蜈蚣形态",
+						"status_description": "覆盖变身为蜈蚣形态；被击败时结束变身并恢复原形。",
+						"permanent": true
+					}
+				]
 			},
 			{
 				"id": "black_goat_agent",
@@ -4046,6 +4073,24 @@
 			}
 		],
 		"tokens": [
+			{
+				"id": "kaneki_centipede_form",
+				"name": "金木研蜈蚣形态",
+				"description": "金木研失控暴走的蜈蚣形态。拥有极高的行动频率与机动能力；被击败时结束覆盖变身并恢复金木研原形。",
+				"url": "res://assets/img/东京喰种/金木研蜈蚣形态.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 3,
+				"health": 6,
+				"attack_speed": 2,
+				"movement": 3,
+				"effects": []
+			},
 			{
 				"id": "yamori",
 				"name": "壁虎",

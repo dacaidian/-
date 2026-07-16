@@ -4,6 +4,7 @@ class_name TokyoGhoulAnimationProvider
 # 东京喰种表现只消费 animation key 与卡牌矩形，不读取或修改规则状态。
 
 const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding"]
+const RECT_KEYS: Array[String] = ["centipede_form"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
 
 var spell_animation_duration := 0.32
@@ -16,7 +17,78 @@ func setup(duration: float) -> void:
 func register_routes(router: SpellAnimationRouter) -> void:
 	if router != null:
 		router.register_targeted(TARGETED_KEYS, play_targeted)
+		router.register_at_rect(RECT_KEYS, play_at_rect)
 		router.register_board(BOARD_KEYS, play_board)
+
+
+func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+	if animation_key == "centipede_form":
+		await play_centipede_form(owner, effect_root, target_rect)
+
+
+func play_centipede_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var shell := create_centered_panel(target_rect, "CentipedeFormShell", 1.42, create_centipede_shell_style())
+	var core := create_centered_panel(target_rect, "CentipedeFormCore", 0.54, create_centipede_core_style())
+	var limbs: Array[Panel] = []
+	for index in range(6):
+		var limb := create_centipede_limb(target_rect, index)
+		effect_root.add_child(limb)
+		limbs.append(limb)
+	effect_root.add_child(shell)
+	effect_root.add_child(core)
+
+	var emerge := owner.create_tween()
+	emerge.set_parallel(true)
+	emerge.set_trans(Tween.TRANS_BACK)
+	emerge.set_ease(Tween.EASE_OUT)
+	emerge.tween_property(shell, "scale", Vector2.ONE, spell_animation_duration * 0.62)
+	emerge.tween_property(shell, "modulate:a", 0.94, spell_animation_duration * 0.42)
+	emerge.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.54)
+	emerge.tween_property(core, "modulate:a", 0.92, spell_animation_duration * 0.38)
+	for limb in limbs:
+		emerge.tween_property(limb, "scale:x", 1.0, spell_animation_duration * 0.72)
+		emerge.tween_property(limb, "modulate:a", 0.92, spell_animation_duration * 0.34)
+	await emerge.finished
+
+	var rupture := owner.create_tween()
+	rupture.set_parallel(true)
+	rupture.set_trans(Tween.TRANS_QUINT)
+	rupture.set_ease(Tween.EASE_OUT)
+	rupture.tween_property(shell, "scale", Vector2(1.36, 1.36), spell_animation_duration * 0.62)
+	rupture.tween_property(shell, "rotation", 0.42, spell_animation_duration * 0.62)
+	rupture.tween_property(shell, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	rupture.tween_property(core, "scale", Vector2(0.18, 0.18), spell_animation_duration * 0.58)
+	rupture.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.54)
+	for limb in limbs:
+		var release_offset: Vector2 = limb.get_meta("centipede_release_offset", Vector2.ZERO)
+		rupture.tween_property(limb, "global_position", limb.global_position + release_offset, spell_animation_duration * 0.66)
+		rupture.tween_property(limb, "modulate:a", 0.0, spell_animation_duration * 0.58)
+	await rupture.finished
+
+	shell.queue_free()
+	core.queue_free()
+	for limb in limbs:
+		limb.queue_free()
+
+
+func create_centipede_limb(target_rect: Rect2, index: int) -> Panel:
+	var limb := Panel.new()
+	limb.name = "CentipedeLimb_%d" % index
+	limb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	limb.size = Vector2(target_rect.size.x * 0.82, maxf(target_rect.size.y * 0.075, 7.0))
+	limb.pivot_offset = Vector2(0.0, limb.size.y * 0.5)
+	var side := -1.0 if index % 2 == 0 else 1.0
+	var row := floorf(float(index) / 2.0) - 1.0
+	limb.global_position = target_rect.get_center() + Vector2(side * target_rect.size.x * 0.08, row * target_rect.size.y * 0.19) - limb.pivot_offset
+	limb.rotation = (PI if side < 0.0 else 0.0) + row * side * 0.18
+	limb.scale = Vector2(0.08, 1.0)
+	limb.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	limb.z_index = 2320 + index
+	limb.set_meta("centipede_release_offset", Vector2(side * target_rect.size.x * 0.42, row * target_rect.size.y * 0.16))
+	limb.add_theme_stylebox_override("panel", create_centipede_limb_style())
+	return limb
 
 
 func play_board(owner: Node, effect_root: Control, animation_key: String) -> void:
@@ -445,6 +517,39 @@ func create_feeding_core_style() -> StyleBoxFlat:
 		999,
 		Color(0.86, 0.02, 0.16, 0.52),
 		20
+	)
+
+
+func create_centipede_shell_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.12, 0.0, 0.025, 0.54),
+		Color(0.82, 0.025, 0.11, 0.94),
+		6,
+		999,
+		Color(0.48, 0.0, 0.08, 0.72),
+		34
+	)
+
+
+func create_centipede_core_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.82, 0.02, 0.09, 0.82),
+		Color(1.0, 0.72, 0.76, 0.98),
+		3,
+		999,
+		Color(0.92, 0.01, 0.12, 0.68),
+		22
+	)
+
+
+func create_centipede_limb_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.52, 0.0, 0.08, 0.86),
+		Color(0.98, 0.22, 0.30, 0.96),
+		2,
+		999,
+		Color(0.62, 0.0, 0.09, 0.62),
+		16
 	)
 
 

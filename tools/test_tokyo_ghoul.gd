@@ -3,6 +3,8 @@ extends SceneTree
 const TurnEventLedgerScript := preload("res://scripts/game/turn_event_ledger.gd")
 const RcConcentrationResolverScript := preload("res://scripts/game/rc_concentration_resolver.gd")
 const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
+const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit_effect.gd")
+const DeathResolverScript := preload("res://scripts/game/death_resolver.gd")
 
 
 func _init() -> void:
@@ -12,6 +14,7 @@ func _init() -> void:
 	test_status_numeric_modifiers()
 	test_base_armor()
 	test_kagune_payloads()
+	test_centipede_cover_transform()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
 
@@ -87,6 +90,17 @@ func test_card_definitions() -> void:
 	assert(clown_worker.level == 3 and clown_worker.count == 4)
 	assert(clown_worker.attack == 5 and clown_worker.health == 12)
 	assert(clown_worker.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
+
+	var centipede_spell := database.get_card("centipede_form")
+	assert(centipede_spell != null)
+	assert(centipede_spell.level == 2 and centipede_spell.count == 1)
+	assert(centipede_spell.owner_hero_card_id == "kaneki_ken")
+
+	var centipede_form := database.get_card("kaneki_centipede_form")
+	assert(centipede_form != null and centipede_form.is_hero())
+	assert(centipede_form.attack == 3 and centipede_form.health == 6)
+	assert(centipede_form.attack_speed == 2 and centipede_form.movement == 3)
+	assert(centipede_form.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 
 
 func test_status_numeric_modifiers() -> void:
@@ -165,3 +179,43 @@ func test_kagune_payloads() -> void:
 	var actions := EffectData.get_actions(high_ukaku)
 	assert(actions.size() == 1)
 	assert(int(actions[0]["effects"][0][EffectData.KEY_AMOUNT]) == 3)
+
+
+func test_centipede_cover_transform() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+	var kaneki := database.get_card("kaneki_ken")
+	var centipede := database.get_card("kaneki_centipede_form")
+	assert(kaneki != null and centipede != null)
+
+	var state := CardState.new()
+	state.set_card_data(kaneki)
+	state.set_owner("player_1")
+	var original_status := CardStatus.new()
+	original_status.status_id = "transform_snapshot_test"
+	state.add_status(original_status)
+
+	var effect_data := {
+		EffectData.KEY_TRANSFORM_MODE: "cover",
+		EffectData.KEY_PRESERVE_ORIGINAL_IDENTITY: false,
+		EffectData.KEY_STATUS_NAME: "蜈蚣形态",
+		"permanent": true
+	}
+	var transform_effect := TransformUnitEffectScript.new()
+	transform_effect.apply_transform(state, centipede, effect_data)
+
+	assert(state.card_id == "kaneki_centipede_form")
+	assert(state.is_hero())
+	assert(not state.represents_card_id("kaneki_ken"))
+	assert(state.get_effective_hero_card_id() == "kaneki_centipede_form")
+	assert(state.is_cover_transformed())
+	assert(not transform_effect.can_transform_target(state))
+	assert(state.get_status("transform_snapshot_test") == null)
+
+	state.damage_taken = state.max_health
+	var death_resolver := DeathResolverScript.new()
+	assert(death_resolver.try_restore_cover_transform_death(null, state))
+	assert(state.card_id == "kaneki_ken")
+	assert(state.represents_card_id("kaneki_ken"))
+	assert(state.get_status("transform_snapshot_test") != null)
+	assert(state.get_transform_status() == null)

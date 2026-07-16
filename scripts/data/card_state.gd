@@ -278,7 +278,7 @@ func get_effective_hero_card_id() -> String:
 		return card_id
 
 	var transform_status := get_transform_status()
-	if transform_status == null:
+	if transform_status == null or not transform_preserves_original_identity(transform_status):
 		return ""
 
 	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
@@ -297,7 +297,7 @@ func get_effective_hero_card_data() -> CardData:
 		return data
 
 	var transform_status := get_transform_status()
-	if transform_status == null:
+	if transform_status == null or not transform_preserves_original_identity(transform_status):
 		return null
 
 	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
@@ -315,7 +315,7 @@ func represents_card_id(target_card_id: String) -> bool:
 		return true
 
 	var transform_status := get_transform_status()
-	if transform_status == null:
+	if transform_status == null or not transform_preserves_original_identity(transform_status):
 		return false
 
 	var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
@@ -328,7 +328,7 @@ func get_represented_card_ids() -> Array[String]:
 		card_ids.append(card_id)
 
 	var transform_status := get_transform_status()
-	if transform_status != null:
+	if transform_status != null and transform_preserves_original_identity(transform_status):
 		var original_snapshot: Dictionary = transform_status.payload.get("original_snapshot", {})
 		var original_card_id := str(original_snapshot.get("card_id", ""))
 		if original_card_id != "" and not card_ids.has(original_card_id):
@@ -614,6 +614,14 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 
 func get_transform_status() -> CardStatus:
 	return get_status(CardStatus.STATUS_TRANSFORM)
+
+
+func transform_preserves_original_identity(status: CardStatus = null) -> bool:
+	var transform_status := status if status != null else get_transform_status()
+	if transform_status == null:
+		return false
+
+	return bool(transform_status.payload.get(EffectData.KEY_PRESERVE_ORIGINAL_IDENTITY, true))
 
 
 func is_cover_transformed() -> bool:

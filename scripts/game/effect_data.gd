@@ -63,6 +63,7 @@ const KEY_AMOUNT_SOURCE := "amount_source"
 const KEY_CARD_ID := "card_id"
 const KEY_TARGET_CARD_ID := "target_card_id"
 const KEY_TRANSFORM_MODE := "transform_mode"
+const KEY_PRESERVE_ORIGINAL_IDENTITY := "preserve_original_identity"
 const KEY_TRIGGER_PLAYER := "trigger_player"
 const KEY_BONUS_CARDS := "bonus_cards"
 const KEY_SELECTION_TITLE := "selection_title"
@@ -469,6 +470,10 @@ static func get_target_card_id(effect_data: Dictionary) -> String:
 
 static func get_transform_mode(effect_data: Dictionary) -> String:
 	return str(effect_data.get(KEY_TRANSFORM_MODE, "cover"))
+
+
+static func should_preserve_original_identity(effect_data: Dictionary) -> bool:
+	return bool(effect_data.get(KEY_PRESERVE_ORIGINAL_IDENTITY, true))
 
 
 static func get_selection_title(effect_data: Dictionary, default_title := "选择一张卡牌") -> String:

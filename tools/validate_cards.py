@@ -516,6 +516,20 @@ class CardValidator:
         elif effect_id == "modify_card_reserve_capacity":
             self.require_string(effect, "reserve_id", path)
             self.require_int(effect, "amount", path)
+        elif effect_id == "transform_unit":
+            transform_mode = str(effect.get("transform_mode", "cover"))
+            if transform_mode not in {"cover", "evolution"}:
+                self.reporter.error(
+                    f"{path}.transform_mode",
+                    "must be one of cover, evolution",
+                )
+            if "preserve_original_identity" in effect and not isinstance(
+                effect["preserve_original_identity"], bool
+            ):
+                self.reporter.error(
+                    f"{path}.preserve_original_identity",
+                    "must be a boolean",
+                )
 
         payload = effect.get("payload", {})
         if isinstance(payload, dict):
