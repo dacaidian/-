@@ -4,7 +4,7 @@ class_name TokyoGhoulAnimationProvider
 # 东京喰种表现只消费 animation key 与卡牌矩形，不读取或修改规则状态。
 
 const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding"]
-const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form"]
+const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form", "saint_sword_form"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
 
 var spell_animation_duration := 0.32
@@ -29,6 +29,8 @@ func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animati
 			await play_centipede_form(owner, effect_root, target_rect)
 		"dragon_form":
 			await play_dragon_form(owner, effect_root, target_rect)
+		"saint_sword_form":
+			await play_saint_sword_form(owner, effect_root, target_rect)
 
 
 func play_centipede_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -154,6 +156,67 @@ func create_dragon_wing(target_rect: Rect2, index: int) -> Panel:
 	wing.set_meta("dragon_release_offset", Vector2(side * target_rect.size.x * 0.56, vertical * target_rect.size.y * 0.38))
 	wing.add_theme_stylebox_override("panel", create_dragon_wing_style())
 	return wing
+
+
+func play_saint_sword_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var halo := create_centered_panel(target_rect, "SaintSwordHalo", 1.58, create_saint_sword_halo_style())
+	var core := create_centered_panel(target_rect, "SaintSwordCore", 0.34, create_saint_sword_core_style())
+	var blades: Array[Panel] = []
+	for index in range(4):
+		var blade := create_saint_sword_blade(target_rect, index)
+		effect_root.add_child(blade)
+		blades.append(blade)
+	effect_root.add_child(halo)
+	effect_root.add_child(core)
+
+	var forge := owner.create_tween()
+	forge.set_parallel(true)
+	forge.set_trans(Tween.TRANS_BACK)
+	forge.set_ease(Tween.EASE_OUT)
+	forge.tween_property(halo, "scale", Vector2.ONE, spell_animation_duration * 0.58)
+	forge.tween_property(halo, "modulate:a", 0.88, spell_animation_duration * 0.36)
+	forge.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.48)
+	forge.tween_property(core, "modulate:a", 1.0, spell_animation_duration * 0.30)
+	for blade in blades:
+		forge.tween_property(blade, "scale:x", 1.0, spell_animation_duration * 0.66)
+		forge.tween_property(blade, "modulate:a", 0.98, spell_animation_duration * 0.30)
+	await forge.finished
+
+	var release := owner.create_tween()
+	release.set_parallel(true)
+	release.set_trans(Tween.TRANS_QUINT)
+	release.set_ease(Tween.EASE_OUT)
+	release.tween_property(halo, "scale", Vector2(1.44, 1.44), spell_animation_duration * 0.68)
+	release.tween_property(halo, "rotation", 0.56, spell_animation_duration * 0.68)
+	release.tween_property(halo, "modulate:a", 0.0, spell_animation_duration * 0.68)
+	release.tween_property(core, "scale", Vector2(2.10, 2.10), spell_animation_duration * 0.56)
+	release.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.56)
+	for blade in blades:
+		var offset: Vector2 = blade.get_meta("saint_sword_release_offset", Vector2.ZERO)
+		release.tween_property(blade, "global_position", blade.global_position + offset, spell_animation_duration * 0.66)
+		release.tween_property(blade, "modulate:a", 0.0, spell_animation_duration * 0.56)
+	await release.finished
+
+	halo.queue_free()
+	core.queue_free()
+	for blade in blades:
+		blade.queue_free()
+
+
+func create_saint_sword_blade(target_rect: Rect2, index: int) -> Panel:
+	var blade := Panel.new()
+	blade.name = "SaintSwordBlade_%d" % index
+	blade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	blade.size = Vector2(target_rect.size.x * 1.36, maxf(target_rect.size.y * 0.065, 6.0))
+	blade.pivot_offset = Vector2(0.0, blade.size.y * 0.5)
+	blade.global_position = target_rect.get_center() - blade.pivot_offset
+	blade.rotation = PI * 0.25 + float(index) * PI * 0.5
+	blade.scale = Vector2(0.04, 1.0)
+	blade.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	blade.z_index = 2330 + index
+	blade.set_meta("saint_sword_release_offset", Vector2.RIGHT.rotated(blade.rotation) * target_rect.size.length() * 0.36)
+	blade.add_theme_stylebox_override("panel", create_saint_sword_blade_style())
+	return blade
 
 
 func play_board(owner: Node, effect_root: Control, animation_key: String) -> void:
@@ -648,6 +711,39 @@ func create_dragon_wing_style() -> StyleBoxFlat:
 		999,
 		Color(0.50, 0.0, 0.07, 0.68),
 		20
+	)
+
+
+func create_saint_sword_halo_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.07, 0.0, 0.018, 0.58),
+		Color(0.94, 0.24, 0.34, 0.94),
+		5,
+		999,
+		Color(0.72, 0.01, 0.10, 0.76),
+		36
+	)
+
+
+func create_saint_sword_core_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(1.0, 0.76, 0.78, 0.96),
+		Color(1.0, 0.96, 0.96, 1.0),
+		3,
+		999,
+		Color(0.96, 0.06, 0.16, 0.82),
+		24
+	)
+
+
+func create_saint_sword_blade_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.96, 0.18, 0.28, 0.94),
+		Color(1.0, 0.88, 0.90, 1.0),
+		2,
+		999,
+		Color(0.86, 0.02, 0.14, 0.74),
+		18
 	)
 
 

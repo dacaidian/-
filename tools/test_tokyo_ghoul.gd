@@ -14,7 +14,8 @@ func _init() -> void:
 	test_status_numeric_modifiers()
 	test_base_armor()
 	test_kagune_payloads()
-	test_centipede_cover_transform()
+	test_cover_transforms()
+	test_saint_sword_splash_crosses_board_layers()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
 
@@ -112,6 +113,17 @@ func test_card_definitions() -> void:
 	assert(dragon_form.attack == 5 and dragon_form.health == 8)
 	assert(dragon_form.has_keyword(CardData.KEYWORD_GIANT))
 
+	var saint_sword_spell := database.get_card("saint_sword_form")
+	assert(saint_sword_spell != null)
+	assert(saint_sword_spell.level == 3 and saint_sword_spell.count == 1)
+	assert(saint_sword_spell.owner_hero_card_id == "kaneki_ken")
+
+	var saint_sword_form := database.get_card("kaneki_saint_sword_form")
+	assert(saint_sword_form != null and saint_sword_form.is_hero())
+	assert(saint_sword_form.attack == 8 and saint_sword_form.health == 8)
+	assert(saint_sword_form.has_keyword(CardData.KEYWORD_RANGED))
+	assert(saint_sword_form.get_splash_damage() == 4)
+
 
 func test_status_numeric_modifiers() -> void:
 	var data := CardData.new()
@@ -191,13 +203,14 @@ func test_kagune_payloads() -> void:
 	assert(int(actions[0]["effects"][0][EffectData.KEY_AMOUNT]) == 3)
 
 
-func test_centipede_cover_transform() -> void:
+func test_cover_transforms() -> void:
 	var database := CardDatabase.new()
 	assert(database.load_from_json("res://data/cards.json"))
 	var kaneki := database.get_card("kaneki_ken")
 	var centipede := database.get_card("kaneki_centipede_form")
 	var dragon := database.get_card("kaneki_dragon_form")
-	assert(kaneki != null and centipede != null and dragon != null)
+	var saint_sword := database.get_card("kaneki_saint_sword_form")
+	assert(kaneki != null and centipede != null and dragon != null and saint_sword != null)
 
 	var state := CardState.new()
 	state.set_card_data(kaneki)
@@ -243,3 +256,81 @@ func test_centipede_cover_transform() -> void:
 	assert(state.card_id == "kaneki_ken")
 	assert(state.represents_card_id("kaneki_ken"))
 	assert(state.get_status("transform_snapshot_test") != null)
+	assert(state.get_transform_status() == null)
+
+	effect_data[EffectData.KEY_STATUS_NAME] = "圣剑形态"
+	transform_effect.apply_transform(state, saint_sword, effect_data)
+	assert(state.card_id == "kaneki_saint_sword_form")
+	assert(state.is_hero() and state.has_keyword(CardData.KEYWORD_RANGED))
+	assert(state.get_splash_damage() == 4)
+	assert(not state.represents_card_id("kaneki_ken"))
+	assert(not transform_effect.can_transform_target(state))
+
+	state.damage_taken = state.max_health
+	assert(death_resolver.try_restore_cover_transform_death(null, state))
+	assert(state.card_id == "kaneki_ken")
+	assert(state.represents_card_id("kaneki_ken"))
+	assert(state.get_status("transform_snapshot_test") != null)
+	assert(state.get_transform_status() == null)
+
+
+func test_saint_sword_splash_crosses_board_layers() -> void:
+	var game_manager := GameManager.new()
+	game_manager.board_columns = 7
+	game_manager.board_rows = 7
+	game_manager.board_states.resize(49)
+	game_manager.aerial_board_states.resize(49)
+
+	var attacker := create_test_board_unit("attacker", "player_1", 23, 10, 0, ["splash_4"])
+	var main_target := create_test_board_unit("main_target", "player_2", 24)
+	var friendly_ground := create_test_board_unit("friendly_ground", "player_1", 16)
+	var enemy_ground := create_test_board_unit("enemy_ground", "player_2", 17)
+	var enemy_aerial := create_test_board_unit("enemy_aerial", "player_2", 17, 10, 1)
+	var neutral_ground := create_test_board_unit("neutral_ground", "", 18)
+	var neutral_aerial := create_test_board_unit("neutral_aerial", "", 25)
+	var same_slot_aerial := create_test_board_unit("same_slot_aerial", "player_2", 24)
+	var distant_enemy := create_test_board_unit("distant_enemy", "player_2", 0)
+
+	game_manager.board_states[23] = attacker
+	game_manager.board_states[24] = main_target
+	game_manager.board_states[16] = friendly_ground
+	game_manager.board_states[17] = enemy_ground
+	game_manager.aerial_board_states[17] = enemy_aerial
+	game_manager.board_states[18] = neutral_ground
+	game_manager.aerial_board_states[25] = neutral_aerial
+	game_manager.aerial_board_states[24] = same_slot_aerial
+	game_manager.board_states[0] = distant_enemy
+
+	var damaged_targets := AttackAction.new().apply_fixed_splash_damage(attacker, main_target, game_manager)
+	assert(damaged_targets.size() == 4)
+	assert(enemy_ground.current_health == 6)
+	assert(enemy_aerial.current_health == 7)
+	assert(neutral_ground.current_health == 6)
+	assert(neutral_aerial.current_health == 6)
+	assert(friendly_ground.current_health == 10)
+	assert(main_target.current_health == 10)
+	assert(same_slot_aerial.current_health == 10)
+	assert(distant_enemy.current_health == 10)
+
+
+func create_test_board_unit(
+	card_id: String,
+	owner_id: String,
+	slot_index: int,
+	health := 10,
+	armor := 0,
+	keywords: Array[String] = []
+) -> CardState:
+	var data := CardData.new()
+	data.id = card_id
+	data.type = CardData.TYPE_MINION
+	data.attack = 8
+	data.health = health
+	data.armor = armor
+	data.keywords = keywords.duplicate()
+	var state := CardState.new()
+	state.slot_index = slot_index
+	state.set_card_data(data)
+	state.set_owner(owner_id)
+	state.is_face_up = true
+	return state

@@ -57,21 +57,27 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
 	var attack_damage := calculate_attack_damage(user, target)
 	var was_reflected := await resolve_attack_reflection(user, target, attack_damage, game_manager)
-	var splash_targets: Array[CardState] = []
+	var secondary_damage_targets: Array[CardState] = []
 	var actual_life_damage := 0
 	if not was_reflected:
 		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
 		await resolve_lifesteal(user, actual_life_damage, game_manager)
-		splash_targets = apply_giant_splash_damage(user, target, game_manager)
+		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
-	if not splash_targets.is_empty():
-		await game_manager.resolve_dead_states(splash_targets, EffectData.DEATH_REASON_ATTACK, user)
+	var resolved_attacker := user
+	if resolved_attacker.is_empty() or resolved_attacker.card_id != attacker_card_id:
+		resolved_attacker = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
+	if not secondary_damage_targets.is_empty():
+		await game_manager.resolve_dead_states(
+			secondary_damage_targets,
+			EffectData.DEATH_REASON_ATTACK,
+			resolved_attacker,
+			attacker_owner_id
+		)
 
-	break_attack_or_spell_stealth(user)
-	var trigger_source := user
-	if trigger_source.is_empty() or trigger_source.card_id != attacker_card_id:
-		trigger_source = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
+	break_attack_or_spell_stealth(resolved_attacker)
+	var trigger_source := resolved_attacker
 	if trigger_source != null:
 		await game_manager.resolve_after_attack_triggers(trigger_source, target)
 
@@ -122,6 +128,19 @@ func calculate_attack_damage(user: CardState, target: CardState) -> int:
 	return maxi(damage, 0)
 
 
+func apply_secondary_attack_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+	var damaged_targets: Array[CardState] = []
+	append_unique_states(damaged_targets, apply_giant_splash_damage(user, target, game_manager))
+	append_unique_states(damaged_targets, apply_fixed_splash_damage(user, target, game_manager))
+	return damaged_targets
+
+
+func append_unique_states(targets: Array[CardState], additions: Array[CardState]) -> void:
+	for state in additions:
+		if state != null and not targets.has(state):
+			targets.append(state)
+
+
 func apply_giant_splash_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
 	var damaged_targets: Array[CardState] = []
 	if user == null or target == null or game_manager == null:
@@ -133,11 +152,37 @@ func apply_giant_splash_damage(user: CardState, target: CardState, game_manager:
 		for splash_target in game_manager.get_board_states_at_slot(slot_index):
 			if splash_target == target:
 				continue
-			if not can_giant_splash_target(user, splash_target):
+			if not can_secondary_attack_damage_target(user, splash_target):
 				continue
 
 			var splash_damage := apply_armor_to_attack_damage(splash_target, calculate_attack_damage(user, splash_target))
 			splash_target.take_damage(splash_damage)
+			damaged_targets.append(splash_target)
+
+	return damaged_targets
+
+
+func apply_fixed_splash_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+	var damaged_targets: Array[CardState] = []
+	if user == null or target == null or game_manager == null:
+		return damaged_targets
+
+	var splash_damage := user.get_splash_damage()
+	if splash_damage <= 0:
+		return damaged_targets
+
+	var adjacent_slots := BoardQuery.get_adjacent_slots(
+		target.slot_index,
+		game_manager.board_columns,
+		game_manager.board_states.size()
+	)
+	for slot_index in adjacent_slots:
+		# 格子邻接与单位层无关：每个相邻格的地面层和飞行层都会被检查。
+		for splash_target in game_manager.get_board_states_at_slot(slot_index):
+			if not can_secondary_attack_damage_target(user, splash_target):
+				continue
+
+			splash_target.take_damage(apply_armor_to_attack_damage(splash_target, splash_damage))
 			damaged_targets.append(splash_target)
 
 	return damaged_targets
@@ -223,7 +268,7 @@ func get_slot_by_offset(row: int, col: int, offset: Vector2i, board_columns: int
 	return slot if slot >= 0 and slot < board_size else -1
 
 
-func can_giant_splash_target(user: CardState, target: CardState) -> bool:
+func can_secondary_attack_damage_target(user: CardState, target: CardState) -> bool:
 	if user == null or target == null or target == user:
 		return false
 	if not BoardQuery.is_face_up_unit(target):

@@ -35,6 +35,7 @@ const KEYWORD_TRIGGER := "trigger"
 const KEYWORD_REBORN := "reborn"
 const KEYWORD_REBORN_PREFIX := "reborn_"
 const KEYWORD_SIEGE_PREFIX := "siege_"
+const KEYWORD_SPLASH_PREFIX := "splash_"
 const KEYWORD_SIEGE_3 := "siege_3"
 
 # CardData 是静态卡牌数据，来自 data/cards.json。
@@ -130,17 +131,26 @@ func has_keyword(keyword: String) -> bool:
 
 
 func get_siege_bonus() -> int:
+	return get_numeric_keyword_value(KEYWORD_SIEGE_PREFIX)
+
+
+func get_splash_damage() -> int:
+	return get_numeric_keyword_value(KEYWORD_SPLASH_PREFIX)
+
+
+func get_numeric_keyword_value(prefix: String) -> int:
+	var value := 0
 	for keyword in keywords:
-		if not keyword.begins_with(KEYWORD_SIEGE_PREFIX):
+		if not keyword.begins_with(prefix):
 			continue
 
-		var amount_text := keyword.substr(KEYWORD_SIEGE_PREFIX.length())
+		var amount_text := keyword.substr(prefix.length())
 		if not amount_text.is_valid_int():
 			continue
 
-		return maxi(int(amount_text), 0)
+		value = maxi(value, int(amount_text))
 
-	return 0
+	return maxi(value, 0)
 
 static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dictionary) -> CardData:
 	# 把 JSON 里的 Dictionary 转成代码里更好用的 CardData 对象。

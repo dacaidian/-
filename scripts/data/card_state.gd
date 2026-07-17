@@ -364,18 +364,37 @@ func has_status_keyword(keyword: String) -> bool:
 
 
 func get_siege_bonus() -> int:
-	var bonus := data.get_siege_bonus() if data != null else 0
+	return get_numeric_keyword_value(CardData.KEYWORD_SIEGE_PREFIX)
+
+
+func get_splash_damage() -> int:
+	return get_numeric_keyword_value(CardData.KEYWORD_SPLASH_PREFIX)
+
+
+func get_numeric_keyword_value(prefix: String) -> int:
+	var value := data.get_numeric_keyword_value(prefix) if data != null else 0
 	for keyword in passive_keywords:
-		if not keyword.begins_with(CardData.KEYWORD_SIEGE_PREFIX):
+		if not keyword.begins_with(prefix):
 			continue
 
-		var amount_text := keyword.substr(CardData.KEYWORD_SIEGE_PREFIX.length())
+		var amount_text := keyword.substr(prefix.length())
 		if not amount_text.is_valid_int():
 			continue
 
-		bonus = maxi(bonus, int(amount_text))
+		value = maxi(value, int(amount_text))
 
-	return bonus
+	for status in statuses:
+		if status == null:
+			continue
+		for keyword in EffectData.get_keywords(status.payload):
+			if not keyword.begins_with(prefix):
+				continue
+
+			var amount_text := keyword.substr(prefix.length())
+			if amount_text.is_valid_int():
+				value = maxi(value, int(amount_text))
+
+	return maxi(value, 0)
 
 
 func apply_keyword_passives() -> void:

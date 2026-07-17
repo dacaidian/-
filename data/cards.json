@@ -3873,7 +3873,8 @@
 				"card_id": "kaneki_ken",
 				"attached_cards": [
 					"centipede_form",
-					"dragon_form"
+					"dragon_form",
+					"saint_sword_form"
 				]
 			}
 		],
@@ -3940,6 +3941,31 @@
 						"preserve_original_identity": false,
 						"status_name": "龙形态",
 						"status_description": "覆盖变身为龙形态；被击败时结束变身并恢复原形。",
+						"permanent": true
+					}
+				]
+			},
+			{
+				"id": "saint_sword_form",
+				"name": "圣剑形态",
+				"description": "金木研覆盖变身为圣剑形态。变身为8/8并获得远程与溅射4：普通攻击还会对主要目标周围八格内的敌方和中立单位造成4点伤害，地面与飞行层都会受到影响。此形态永久持续；被击败时恢复原形。",
+				"url": "res://assets/img/东京喰种/圣剑形态.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "saint_sword_form",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "transform_unit",
+						"target": "owner_card_by_id",
+						"target_card_id": "kaneki_ken",
+						"card_id": "kaneki_saint_sword_form",
+						"transform_mode": "cover",
+						"preserve_original_identity": false,
+						"status_name": "圣剑形态",
+						"status_description": "覆盖变身为圣剑形态；被击败时结束变身并恢复原形。",
 						"permanent": true
 					}
 				]
@@ -4130,6 +4156,23 @@
 					"giant"
 				],
 				"attack": 5,
+				"health": 8,
+				"effects": []
+			},
+			{
+				"id": "kaneki_saint_sword_form",
+				"name": "金木研圣剑形态",
+				"description": "金木研将赫子凝聚为远程巨刃的战斗形态。拥有远程与溅射4，普通攻击会波及主要目标周围八格中的敌方和中立单位，并同时覆盖地面与飞行层。",
+				"url": "res://assets/img/东京喰种/金木研圣剑形态.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"ranged",
+					"splash_4"
+				],
+				"attack": 8,
 				"health": 8,
 				"effects": []
 			},

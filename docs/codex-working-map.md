@@ -126,7 +126,7 @@
 
 - 普通攻击使用护甲减伤。
 - 法术、毒、固定伤害、反弹伤害不默认受护甲影响。
-- 巨兽溅射集中在 `AttackAction`。
+- 巨兽范围伤害与数值关键字 `splash_N` 的固定溅射集中在 `AttackAction`。固定溅射扫描主目标周围八个相邻格，并同时读取每格地面层和飞行层；同格另一层不算相邻目标。新增类似普通攻击次级伤害时复用二次伤害和死亡归属链，不要在卡牌脚本中自行扣血。
 - 同格地面/空中单位在近战相关逻辑中视为可近战接触。
 - 嘲讽规则集中在 `AttackAction`；常态标识在 `CardStatusOverlay`，普通攻击选目标时的动态嘲讽光晕由 `InteractionManager.is_taunt_target_hint` + `Card` 绘制。
 
@@ -194,7 +194,7 @@
 - 任何补牌入口都应调用 `GameManager.refill_board_slot_from_pool()` / `draw_card_to_slot()`，不要直接从 `card_pool.draw_random()` 后写入棋盘。
 - 所有死亡入口都必须 `await`。范围伤害、巨兽溅射、月刃、毒爆、反弹、陷阱、献祭、吞噬、链接死亡等都应走 `GameManager.resolve_dead_states()` / `destroy_card_with_refill()`，不要直接清空卡牌。
 - 需要给矿脉等 `on_destroyed` 奖励归属时，调用死亡入口必须传入造成击杀的 `source_state`。`DeathResolver` 会保存 `source_snapshot`，防止嵌套亡语或排队死亡在 source 被清空后丢失 destroyer。
-- 普通攻击中心目标死亡可进入占领流程；巨兽溅射和其他范围死亡不占领，但必须正常触发亡语、资源分、复生和补牌。
+- 普通攻击中心目标死亡可进入占领流程；巨兽范围伤害、`splash_N` 固定溅射和其他范围死亡不占领，但必须保留原攻击者来源并正常触发亡语、资源分、复生和补牌。
 - 顺序献祭使用 `sacrifice_friendly_minions`，保证前一个死亡能影响后一个死亡。
 
 ## 装备

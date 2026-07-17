@@ -416,6 +416,10 @@ class CardValidator:
             amount_text = keyword.removeprefix("reborn_")
             return amount_text.isdigit() and int(amount_text) >= 0
 
+        if keyword.startswith("splash_"):
+            amount_text = keyword.removeprefix("splash_")
+            return amount_text.isdigit() and int(amount_text) >= 0
+
         return False
 
     def validate_spell_actions(self, raw_actions: Any, path: str) -> None:
