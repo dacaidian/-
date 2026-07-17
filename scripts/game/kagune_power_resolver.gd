@@ -5,7 +5,7 @@ const FACTION_ID := "tokyo_ghoul"
 const HIGH_RC_STATE_ID := "rc_high"
 const STATUS_ID := "kagune_release"
 const STATUS_NAME := "赫子解放"
-const STATUS_TAG := "kagune_power"
+const STATUS_TAG := CardStatus.TAG_KAGUNE_POWER
 const FEATHER_NEEDLE_ACTION_ID := "feather_needle"
 const RELEASE_ANIMATION_KEY := "kagune_release"
 

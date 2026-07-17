@@ -14,6 +14,7 @@ const DestroyUnitsEffectScript := preload("res://scripts/effects/destroy_units_e
 const LifeDrainEffectScript := preload("res://scripts/effects/life_drain_effect.gd")
 const PeriodicStatusAuraEffectScript := preload("res://scripts/effects/periodic_status_aura_effect.gd")
 const PeriodicTriggerEffectScript := preload("res://scripts/effects/periodic_trigger_effect.gd")
+const ApplyKagunePowerEffectScript := preload("res://scripts/effects/apply_kagune_power_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -31,6 +32,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_GAIN_ATTACK, GainAttackEffect.new())
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())
+	register_effect(EffectData.EFFECT_APPLY_KAGUNE_POWER, ApplyKagunePowerEffectScript.new())
 	register_effect(EffectData.EFFECT_DESTROY_UNITS, DestroyUnitsEffectScript.new())
 	register_effect(EffectData.EFFECT_LIFE_DRAIN, LifeDrainEffectScript.new())
 	register_effect(EffectData.EFFECT_RESURRECT, ResurrectEffect.new())

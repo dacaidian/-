@@ -5,6 +5,7 @@ const RcConcentrationResolverScript := preload("res://scripts/game/rc_concentrat
 const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
 const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit_effect.gd")
 const DeathResolverScript := preload("res://scripts/game/death_resolver.gd")
+const HandPlayResolverScript := preload("res://scripts/game/hand_play_resolver.gd")
 
 
 func _init() -> void:
@@ -15,6 +16,7 @@ func _init() -> void:
 	test_base_armor()
 	test_kagune_payloads()
 	test_cover_transforms()
+	test_bikaku_volley_hero_gate()
 	test_saint_sword_splash_crosses_board_layers()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
@@ -91,6 +93,21 @@ func test_card_definitions() -> void:
 	assert(clown_worker.level == 3 and clown_worker.count == 4)
 	assert(clown_worker.attack == 5 and clown_worker.health == 12)
 	assert(clown_worker.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
+
+	var bikaku_volley := database.get_card("bikaku_volley")
+	assert(bikaku_volley != null)
+	assert(bikaku_volley.level == 1 and bikaku_volley.count == 3)
+	assert(bikaku_volley.owner_hero_card_id == "kaneki_ken")
+	assert(bikaku_volley.effects.size() == 2)
+	assert(EffectData.get_id(bikaku_volley.effects[0]) == EffectData.EFFECT_APPLY_STATUS)
+	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[0]) == CardStatus.STACK_POLICY_STACK)
+	assert(
+		int(EffectData.get_status_payload(bikaku_volley.effects[0]).get(EffectData.KEY_ATTACK_BONUS, 0))
+		== 1
+	)
+	assert(EffectData.get_id(bikaku_volley.effects[1]) == EffectData.EFFECT_APPLY_KAGUNE_POWER)
+	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[1]) == CardStatus.STACK_POLICY_REPLACE)
+	assert(EffectData.get_keywords(bikaku_volley.effects[1]) == [CardData.KEYWORD_KAGUNE_BIKAKU])
 
 	var centipede_spell := database.get_card("centipede_form")
 	assert(centipede_spell != null)
@@ -311,6 +328,43 @@ func test_saint_sword_splash_crosses_board_layers() -> void:
 	assert(main_target.current_health == 10)
 	assert(same_slot_aerial.current_health == 10)
 	assert(distant_enemy.current_health == 10)
+
+
+func test_bikaku_volley_hero_gate() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+	var game_manager := GameManager.new()
+	game_manager.card_database = database
+	game_manager.board_states.resize(49)
+	game_manager.aerial_board_states.resize(49)
+	var player := PlayerState.new()
+	player.setup("player_1", "测试玩家")
+	player.set_faction("tokyo_ghoul", "东京喰种")
+	game_manager.players = [player]
+	var spell := database.get_card("bikaku_volley")
+	player.add_to_hand(spell)
+	var resolver := HandPlayResolverScript.new()
+
+	var kaneki := create_test_board_unit_from_data(database.get_card("kaneki_ken"), player.id, 24)
+	game_manager.board_states[24] = kaneki
+	assert(resolver.can_play_hand_card(player, spell, game_manager))
+
+	for form_id in ["kaneki_centipede_form", "kaneki_dragon_form", "kaneki_saint_sword_form"]:
+		game_manager.board_states[24] = create_test_board_unit_from_data(database.get_card(form_id), player.id, 24)
+		assert(not resolver.can_play_hand_card(player, spell, game_manager))
+
+	if game_manager.audio_manager != null:
+		game_manager.audio_manager.free()
+	game_manager.free()
+
+
+func create_test_board_unit_from_data(data: CardData, owner_id: String, slot_index: int) -> CardState:
+	var state := CardState.new()
+	state.slot_index = slot_index
+	state.set_card_data(data)
+	state.set_owner(owner_id)
+	state.is_face_up = true
+	return state
 
 
 func create_test_board_unit(

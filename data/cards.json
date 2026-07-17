@@ -3872,6 +3872,7 @@
 			{
 				"card_id": "kaneki_ken",
 				"attached_cards": [
+					"bikaku_volley",
 					"centipede_form",
 					"dragon_form",
 					"saint_sword_form"
@@ -3894,6 +3895,57 @@
 				"attack": 3,
 				"health": 16,
 				"effects": []
+			},
+			{
+				"id": "bikaku_volley",
+				"name": "尾赫齐发",
+				"description": "本回合金木研攻击力+1，并触发其尾赫效果。高RC浓度时，尾赫还会使其移动力+2。",
+				"url": "res://assets/img/东京喰种/尾赫齐发.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"animation": "bikaku_volley",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "kaneki_ken",
+						"status_id": "bikaku_volley_attack",
+						"status_name": "尾赫齐发",
+						"status_description": "本回合攻击力+1。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"stack_policy": "stack",
+						"status_valence": "positive",
+						"payload": {
+							"attack_bonus": 1
+						}
+					},
+					{
+						"id": "apply_kagune_power",
+						"target": "owner_card_by_id",
+						"target_card_id": "kaneki_ken",
+						"keywords": [
+							"bikaku"
+						],
+						"status_id": "bikaku_volley_kagune",
+						"status_name": "尾赫齐发",
+						"status_description": "本回合触发尾赫效果，获得移动攻击；高RC浓度时移动力额外+2。",
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"stack_policy": "replace",
+						"status_valence": "positive",
+						"source_card_id": "bikaku_volley",
+						"apply_animation": "bikaku_volley"
+					}
+				]
 			},
 			{
 				"id": "centipede_form",

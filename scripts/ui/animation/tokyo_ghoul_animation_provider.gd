@@ -3,8 +3,8 @@ class_name TokyoGhoulAnimationProvider
 
 # 东京喰种表现只消费 animation key 与卡牌矩形，不读取或修改规则状态。
 
-const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding"]
-const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form", "saint_sword_form"]
+const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding", "bikaku_volley"]
+const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form", "saint_sword_form", "bikaku_volley"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
 
 var spell_animation_duration := 0.32
@@ -31,6 +31,8 @@ func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animati
 			await play_dragon_form(owner, effect_root, target_rect)
 		"saint_sword_form":
 			await play_saint_sword_form(owner, effect_root, target_rect)
+		"bikaku_volley":
+			await play_bikaku_volley(owner, effect_root, target_rect)
 
 
 func play_centipede_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -219,6 +221,61 @@ func create_saint_sword_blade(target_rect: Rect2, index: int) -> Panel:
 	return blade
 
 
+func play_bikaku_volley(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var core := create_centered_panel(target_rect, "BikakuVolleyCore", 0.40, create_bikaku_core_style())
+	var tails: Array[Panel] = []
+	for index in range(5):
+		var tail := create_bikaku_tail(target_rect, index)
+		effect_root.add_child(tail)
+		tails.append(tail)
+	effect_root.add_child(core)
+
+	var unfurl := owner.create_tween()
+	unfurl.set_parallel(true)
+	unfurl.set_trans(Tween.TRANS_BACK)
+	unfurl.set_ease(Tween.EASE_OUT)
+	unfurl.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.42)
+	unfurl.tween_property(core, "modulate:a", 0.96, spell_animation_duration * 0.30)
+	for tail in tails:
+		unfurl.tween_property(tail, "scale:x", 1.0, spell_animation_duration * 0.68)
+		unfurl.tween_property(tail, "modulate:a", 0.92, spell_animation_duration * 0.28)
+	await unfurl.finished
+
+	var lash := owner.create_tween()
+	lash.set_parallel(true)
+	lash.set_trans(Tween.TRANS_QUINT)
+	lash.set_ease(Tween.EASE_OUT)
+	lash.tween_property(core, "scale", Vector2(1.70, 1.70), spell_animation_duration * 0.52)
+	lash.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.52)
+	for tail in tails:
+		var release_offset: Vector2 = tail.get_meta("bikaku_release_offset", Vector2.ZERO)
+		lash.tween_property(tail, "global_position", tail.global_position + release_offset, spell_animation_duration * 0.58)
+		lash.tween_property(tail, "modulate:a", 0.0, spell_animation_duration * 0.50)
+	await lash.finished
+
+	core.queue_free()
+	for tail in tails:
+		tail.queue_free()
+
+
+func create_bikaku_tail(target_rect: Rect2, index: int) -> Panel:
+	var tail := Panel.new()
+	tail.name = "BikakuTail_%d" % index
+	tail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tail.size = Vector2(target_rect.size.x * 1.08, maxf(target_rect.size.y * 0.085, 7.0))
+	tail.pivot_offset = Vector2(0.0, tail.size.y * 0.5)
+	var spread := float(index - 2) * 0.30
+	var origin := target_rect.get_center() + Vector2(0.0, target_rect.size.y * 0.24)
+	tail.global_position = origin - tail.pivot_offset
+	tail.rotation = -PI * 0.5 + spread
+	tail.scale = Vector2(0.06, 1.0)
+	tail.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	tail.z_index = 2340 + index
+	tail.set_meta("bikaku_release_offset", Vector2.RIGHT.rotated(tail.rotation) * target_rect.size.length() * 0.30)
+	tail.add_theme_stylebox_override("panel", create_bikaku_tail_style(index))
+	return tail
+
+
 func play_board(owner: Node, effect_root: Control, animation_key: String) -> void:
 	if owner == null or effect_root == null:
 		return
@@ -312,6 +369,8 @@ func play_targeted(
 				)
 		"rc_forced_feeding":
 			await play_forced_feeding(owner, effect_root, target_card.get_global_rect())
+		"bikaku_volley":
+			await play_bikaku_volley(owner, effect_root, target_card.get_global_rect())
 
 
 func play_feather_needle(owner: Node, effect_root: Control, source_rect: Rect2, target_rect: Rect2) -> void:
@@ -743,6 +802,29 @@ func create_saint_sword_blade_style() -> StyleBoxFlat:
 		2,
 		999,
 		Color(0.86, 0.02, 0.14, 0.74),
+		18
+	)
+
+
+func create_bikaku_core_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.88, 0.06, 0.18, 0.90),
+		Color(1.0, 0.68, 0.74, 1.0),
+		3,
+		999,
+		Color(0.70, 0.0, 0.10, 0.78),
+		26
+	)
+
+
+func create_bikaku_tail_style(index: int) -> StyleBoxFlat:
+	var mix_amount := float(index) / 8.0
+	return create_glow_style(
+		Color(0.48, 0.015, 0.10, 0.94).lerp(Color(0.78, 0.04, 0.20, 0.96), mix_amount),
+		Color(1.0, 0.20, 0.36, 0.98),
+		2,
+		999,
+		Color(0.60, 0.0, 0.08, 0.72),
 		18
 	)
 

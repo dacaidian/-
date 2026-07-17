@@ -127,7 +127,7 @@ func should_show_taunt() -> bool:
 
 
 func should_show_kagune_release() -> bool:
-	return state != null and state.is_face_up and state.has_status(CardStatus.STATUS_KAGUNE_RELEASE)
+	return state != null and state.is_face_up and state.has_status_with_tag(KagunePowerResolver.STATUS_TAG)
 
 
 func should_show_divine_shield() -> bool:
