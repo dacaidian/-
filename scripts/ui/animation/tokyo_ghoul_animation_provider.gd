@@ -4,7 +4,7 @@ class_name TokyoGhoulAnimationProvider
 # 东京喰种表现只消费 animation key 与卡牌矩形，不读取或修改规则状态。
 
 const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding"]
-const RECT_KEYS: Array[String] = ["centipede_form"]
+const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
 
 var spell_animation_duration := 0.32
@@ -24,8 +24,11 @@ func register_routes(router: SpellAnimationRouter) -> void:
 func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
 	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
 		return
-	if animation_key == "centipede_form":
-		await play_centipede_form(owner, effect_root, target_rect)
+	match animation_key:
+		"centipede_form":
+			await play_centipede_form(owner, effect_root, target_rect)
+		"dragon_form":
+			await play_dragon_form(owner, effect_root, target_rect)
 
 
 func play_centipede_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -89,6 +92,68 @@ func create_centipede_limb(target_rect: Rect2, index: int) -> Panel:
 	limb.set_meta("centipede_release_offset", Vector2(side * target_rect.size.x * 0.42, row * target_rect.size.y * 0.16))
 	limb.add_theme_stylebox_override("panel", create_centipede_limb_style())
 	return limb
+
+
+func play_dragon_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var body := create_centered_panel(target_rect, "DragonFormBody", 1.76, create_dragon_body_style())
+	var core := create_centered_panel(target_rect, "DragonFormCore", 0.62, create_dragon_core_style())
+	var wings: Array[Panel] = []
+	for index in range(4):
+		var wing := create_dragon_wing(target_rect, index)
+		effect_root.add_child(wing)
+		wings.append(wing)
+	effect_root.add_child(body)
+	effect_root.add_child(core)
+
+	var awaken := owner.create_tween()
+	awaken.set_parallel(true)
+	awaken.set_trans(Tween.TRANS_BACK)
+	awaken.set_ease(Tween.EASE_OUT)
+	awaken.tween_property(body, "scale", Vector2.ONE, spell_animation_duration * 0.66)
+	awaken.tween_property(body, "modulate:a", 0.90, spell_animation_duration * 0.42)
+	awaken.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.54)
+	awaken.tween_property(core, "modulate:a", 0.96, spell_animation_duration * 0.38)
+	for wing in wings:
+		awaken.tween_property(wing, "scale:x", 1.0, spell_animation_duration * 0.78)
+		awaken.tween_property(wing, "modulate:a", 0.88, spell_animation_duration * 0.36)
+	await awaken.finished
+
+	var surge := owner.create_tween()
+	surge.set_parallel(true)
+	surge.set_trans(Tween.TRANS_QUINT)
+	surge.set_ease(Tween.EASE_OUT)
+	surge.tween_property(body, "scale", Vector2(1.42, 1.42), spell_animation_duration * 0.72)
+	surge.tween_property(body, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	surge.tween_property(core, "scale", Vector2(1.90, 1.90), spell_animation_duration * 0.62)
+	surge.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.62)
+	for wing in wings:
+		var release_offset: Vector2 = wing.get_meta("dragon_release_offset", Vector2.ZERO)
+		surge.tween_property(wing, "global_position", wing.global_position + release_offset, spell_animation_duration * 0.70)
+		surge.tween_property(wing, "modulate:a", 0.0, spell_animation_duration * 0.62)
+	await surge.finished
+
+	body.queue_free()
+	core.queue_free()
+	for wing in wings:
+		wing.queue_free()
+
+
+func create_dragon_wing(target_rect: Rect2, index: int) -> Panel:
+	var wing := Panel.new()
+	wing.name = "DragonFormWing_%d" % index
+	wing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wing.size = Vector2(target_rect.size.x * 1.08, maxf(target_rect.size.y * 0.13, 10.0))
+	wing.pivot_offset = Vector2(0.0, wing.size.y * 0.5)
+	var side := -1.0 if index % 2 == 0 else 1.0
+	var vertical := -1.0 if index < 2 else 1.0
+	wing.global_position = target_rect.get_center() + Vector2(side * target_rect.size.x * 0.04, vertical * target_rect.size.y * 0.20) - wing.pivot_offset
+	wing.rotation = (PI if side < 0.0 else 0.0) + vertical * side * 0.34
+	wing.scale = Vector2(0.06, 1.0)
+	wing.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	wing.z_index = 2326 + index
+	wing.set_meta("dragon_release_offset", Vector2(side * target_rect.size.x * 0.56, vertical * target_rect.size.y * 0.38))
+	wing.add_theme_stylebox_override("panel", create_dragon_wing_style())
+	return wing
 
 
 func play_board(owner: Node, effect_root: Control, animation_key: String) -> void:
@@ -550,6 +615,39 @@ func create_centipede_limb_style() -> StyleBoxFlat:
 		999,
 		Color(0.62, 0.0, 0.09, 0.62),
 		16
+	)
+
+
+func create_dragon_body_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.055, 0.0, 0.018, 0.66),
+		Color(0.66, 0.015, 0.08, 0.92),
+		8,
+		999,
+		Color(0.36, 0.0, 0.055, 0.78),
+		42
+	)
+
+
+func create_dragon_core_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.92, 0.035, 0.11, 0.88),
+		Color(1.0, 0.82, 0.84, 0.98),
+		4,
+		999,
+		Color(0.92, 0.01, 0.12, 0.76),
+		28
+	)
+
+
+func create_dragon_wing_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.34, 0.0, 0.055, 0.90),
+		Color(0.88, 0.08, 0.18, 0.96),
+		3,
+		999,
+		Color(0.50, 0.0, 0.07, 0.68),
+		20
 	)
 
 

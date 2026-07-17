@@ -102,6 +102,16 @@ func test_card_definitions() -> void:
 	assert(centipede_form.attack_speed == 2 and centipede_form.movement == 3)
 	assert(centipede_form.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 
+	var dragon_spell := database.get_card("dragon_form")
+	assert(dragon_spell != null)
+	assert(dragon_spell.level == 2 and dragon_spell.count == 1)
+	assert(dragon_spell.owner_hero_card_id == "kaneki_ken")
+
+	var dragon_form := database.get_card("kaneki_dragon_form")
+	assert(dragon_form != null and dragon_form.is_hero())
+	assert(dragon_form.attack == 5 and dragon_form.health == 8)
+	assert(dragon_form.has_keyword(CardData.KEYWORD_GIANT))
+
 
 func test_status_numeric_modifiers() -> void:
 	var data := CardData.new()
@@ -186,7 +196,8 @@ func test_centipede_cover_transform() -> void:
 	assert(database.load_from_json("res://data/cards.json"))
 	var kaneki := database.get_card("kaneki_ken")
 	var centipede := database.get_card("kaneki_centipede_form")
-	assert(kaneki != null and centipede != null)
+	var dragon := database.get_card("kaneki_dragon_form")
+	assert(kaneki != null and centipede != null and dragon != null)
 
 	var state := CardState.new()
 	state.set_card_data(kaneki)
@@ -219,3 +230,16 @@ func test_centipede_cover_transform() -> void:
 	assert(state.represents_card_id("kaneki_ken"))
 	assert(state.get_status("transform_snapshot_test") != null)
 	assert(state.get_transform_status() == null)
+
+	effect_data[EffectData.KEY_STATUS_NAME] = "龙形态"
+	transform_effect.apply_transform(state, dragon, effect_data)
+	assert(state.card_id == "kaneki_dragon_form")
+	assert(state.is_hero() and state.has_keyword(CardData.KEYWORD_GIANT))
+	assert(not state.represents_card_id("kaneki_ken"))
+	assert(not transform_effect.can_transform_target(state))
+
+	state.damage_taken = state.max_health
+	assert(death_resolver.try_restore_cover_transform_death(null, state))
+	assert(state.card_id == "kaneki_ken")
+	assert(state.represents_card_id("kaneki_ken"))
+	assert(state.get_status("transform_snapshot_test") != null)

@@ -3872,7 +3872,8 @@
 			{
 				"card_id": "kaneki_ken",
 				"attached_cards": [
-					"centipede_form"
+					"centipede_form",
+					"dragon_form"
 				]
 			}
 		],
@@ -3914,6 +3915,31 @@
 						"preserve_original_identity": false,
 						"status_name": "蜈蚣形态",
 						"status_description": "覆盖变身为蜈蚣形态；被击败时结束变身并恢复原形。",
+						"permanent": true
+					}
+				]
+			},
+			{
+				"id": "dragon_form",
+				"name": "龙形态",
+				"description": "金木研覆盖变身为龙形态。变身为5/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"url": "res://assets/img/东京喰种/龙形态.png",
+				"type": "spell",
+				"count": 1,
+				"level": 2,
+				"animation": "dragon_form",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "transform_unit",
+						"target": "owner_card_by_id",
+						"target_card_id": "kaneki_ken",
+						"card_id": "kaneki_dragon_form",
+						"transform_mode": "cover",
+						"preserve_original_identity": false,
+						"status_name": "龙形态",
+						"status_description": "覆盖变身为龙形态；被击败时结束变身并恢复原形。",
 						"permanent": true
 					}
 				]
@@ -4089,6 +4115,22 @@
 				"health": 6,
 				"attack_speed": 2,
 				"movement": 3,
+				"effects": []
+			},
+			{
+				"id": "kaneki_dragon_form",
+				"name": "金木研龙形态",
+				"description": "金木研赫子失控扩张形成的巨龙形态。巨大的躯体会让普通攻击波及目标方向两侧的单位；被击败时结束覆盖变身并恢复金木研原形。",
+				"url": "res://assets/img/东京喰种/金木研龙形态.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 0,
+				"level": 2,
+				"keywords": [
+					"giant"
+				],
+				"attack": 5,
+				"health": 8,
 				"effects": []
 			},
 			{
