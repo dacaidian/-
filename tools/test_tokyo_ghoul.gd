@@ -378,6 +378,32 @@ func test_sss_ghoul_definitions() -> void:
 	assert(furuta.has_keyword(CardData.KEYWORD_RANGED_ATTACK_IMMUNE))
 	assert(furuta.get_frontal_attack_width() == 5)
 
+	var shikorae := database.get_card("shikorae")
+	assert(shikorae != null and shikorae.attack == 6 and shikorae.health == 14)
+	assert(shikorae.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
+	assert(shikorae.has_keyword(CardData.KEYWORD_KAGUNE_RINKAKU))
+	assert(shikorae.has_keyword(CardData.KEYWORD_KAGUNE_KOUKAKU))
+	assert(shikorae.has_keyword(CardData.KEYWORD_KAGUNE_UKAKU))
+
+	var kagune_resolver := KagunePowerResolverScript.new()
+	var normal_payload := kagune_resolver.create_kagune_payload(shikorae.keywords, false)
+	assert(int(normal_payload.get(EffectData.KEY_ATTACK_BONUS, 0)) == 1)
+	assert(int(normal_payload.get(EffectData.KEY_ARMOR_BONUS, 0)) == 1)
+	assert((normal_payload.get(EffectData.KEY_KEYWORDS, []) as Array).has(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert((normal_payload.get(EffectData.KEY_ACTIONS, []) as Array).size() == 1)
+
+	var high_payload := kagune_resolver.create_kagune_payload(shikorae.keywords, true)
+	assert(int(high_payload.get(EffectData.KEY_ATTACK_BONUS, 0)) == 2)
+	assert(int(high_payload.get(EffectData.KEY_ARMOR_BONUS, 0)) == 2)
+	assert(int(high_payload.get(EffectData.KEY_MOVEMENT_BONUS, 0)) == 2)
+	var high_keywords := high_payload.get(EffectData.KEY_KEYWORDS, []) as Array
+	assert(high_keywords.has(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert(high_keywords.has(CardData.KEYWORD_LIFESTEAL))
+	assert(high_keywords.has(CardData.KEYWORD_REFLECT))
+	var high_actions := high_payload.get(EffectData.KEY_ACTIONS, []) as Array
+	assert(high_actions.size() == 1)
+	assert(int((high_actions[0] as Dictionary)["effects"][0][EffectData.KEY_AMOUNT]) == 3)
+
 
 func test_frontal_width_and_ranged_immunity() -> void:
 	var game_manager := GameManager.new()

@@ -4485,14 +4485,19 @@
 			{
 				"id": "shikorae",
 				"name": "死堪",
-				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"description": "同时拥有尾赫、鳞赫、甲赫与羽赫。赫子解放时，四种赫子之力同时生效。",
 				"url": "res://assets/img/东京喰种/死堪.png",
 				"type": "minion",
 				"count": 0,
 				"level": 3,
-				"keywords": [],
-				"attack": 1,
-				"health": 1,
+				"keywords": [
+					"bikaku",
+					"rinkaku",
+					"koukaku",
+					"ukaku"
+				],
+				"attack": 6,
+				"health": 14,
 				"effects": []
 			}
 		]

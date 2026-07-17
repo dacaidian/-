@@ -74,8 +74,8 @@ func test_card_definitions() -> void:
 	assert(database.get_card("eto_yoshimura").health == 10)
 	assert(database.get_card("nimura_furuta").attack == 8)
 	assert(database.get_card("nimura_furuta").health == 8)
-	assert(database.get_card("shikorae").attack == 1)
-	assert(database.get_card("shikorae").health == 1)
+	assert(database.get_card("shikorae").attack == 6)
+	assert(database.get_card("shikorae").health == 14)
 
 
 func test_finite_reserve_and_cooldown() -> void:
