@@ -4091,6 +4091,51 @@
 				]
 			},
 			{
+				"id": "sss_rank_ghoul_intelligence",
+				"name": "SSS阶喰种情报",
+				"description": "随从库牌。容量1，冷却2。入手时从芳村功善、高槻泉、旧多二福、死堪中不放回随机获取随从；在役数量低于容量后开始冷却，冷却结束补足缺口。",
+				"url": "res://assets/img/东京喰种/SSS阶喰种情报.png",
+				"type": "upgrade",
+				"upgrade_type": "minion_library",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"effects": [
+					{
+						"id": "maintain_card_reserve",
+						"trigger": "while_in_hand",
+						"active_zone": "hand",
+						"reserve_id": "sss_rank_ghouls",
+						"capacity": 1,
+						"cooldown_turns": 2,
+						"count_zones": [
+							"hand",
+							"board"
+						],
+						"draw_mode": "without_replacement",
+						"restock_mode": "finite",
+						"pool": [
+							{
+								"card_id": "kuzen_yoshimura",
+								"count": 1
+							},
+							{
+								"card_id": "eto_yoshimura",
+								"count": 1
+							},
+							{
+								"card_id": "nimura_furuta",
+								"count": 1
+							},
+							{
+								"card_id": "shikorae",
+								"count": 1
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "tokyo_ghoul_rc_low",
 				"name": "低RC浓度",
 				"description": "回合内完成合格杀戮则升至中浓度；否则保持低浓度，并在回合结束随机分食一个友方非英雄喰种随从。",
@@ -4237,6 +4282,58 @@
 				"attack": 3,
 				"health": 8,
 				"armor": 2,
+				"effects": []
+			},
+			{
+				"id": "kuzen_yoshimura",
+				"name": "芳村功善",
+				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"url": "res://assets/img/东京喰种/芳村功善.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 1,
+				"health": 1,
+				"effects": []
+			},
+			{
+				"id": "eto_yoshimura",
+				"name": "高槻泉",
+				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"url": "res://assets/img/东京喰种/高槻泉.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 1,
+				"health": 1,
+				"effects": []
+			},
+			{
+				"id": "nimura_furuta",
+				"name": "旧多二福",
+				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"url": "res://assets/img/东京喰种/旧多二福.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 1,
+				"health": 1,
+				"effects": []
+			},
+			{
+				"id": "shikorae",
+				"name": "死堪",
+				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"url": "res://assets/img/东京喰种/死堪.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 1,
+				"health": 1,
 				"effects": []
 			}
 		]

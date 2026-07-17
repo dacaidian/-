@@ -204,7 +204,7 @@
 
 装备被动使用 `trigger: "while_equipped"`。属性型装备被动由 `HandPassiveResolver` 刷新；施法能力改写型装备也使用 `modify_spell_ability` / `modify_hand_spell_effects`，由 `HandSpellModifierResolver` 从已装备区读取。`HandPassiveResolver` 的刷新流程分成两步：先从手牌与装备区收集一次 active passive effect snapshot，再把同一批配置应用到翻牌上限、种族技能、单位移动力、关键字、攻击、护甲、攻速、骑乘攻击和周期光环。场上应用范围统一走 owner 的 face-up minion 集合，覆盖地面层和飞行层，避免每个刷新器重复判断。不要把装备属性逻辑写进 UI 或 `PlayerState.equip_card()`，除非只是区域 bookkeeping。
 
-随从库牌是 `upgrade` 的语义子类，使用 `upgrade_type: "minion_library"` 标识，不新增第五种手牌区域。`CardReserveResolver` 解释 `maintain_card_reserve`：配置用 `reserve_id`、`capacity`、`cooldown_turns`、`count_zones`、`draw_mode`、`restock_mode` 和 `pool` 描述一份玩家独立的有限库存；运行时只把剩余库存、上次有效容量和冷却保存在 `PlayerState.effect_runtime_values["card_reserve:<reserve_id>"]`。来源升级牌入手时立即按缺口补到容量，库存采用不放回抽取；在役数量只统计己方手牌和己方正面战场随从，战场单位使用 `CardState.represents_card_id()` 兼容临时变身，坟场、牌库和被敌方控制的单位不计。低于容量时开始冷却，冷却只在来源拥有者自己的回合开始推进；冷却期间继续损失单位不会重置计时，完成时一次补足当前缺口。重新达到容量会取消计时；来源离开手牌时暂停但保留库存与冷却，再次入手继续。容量增加通过通用 `modify_card_reserve_capacity` 即时提供新增容量对应的牌，既有冷却不重置；容量降低不移除现有随从。有限库存耗尽后不再启动空冷却。
+随从库牌是 `upgrade` 的语义子类，使用 `upgrade_type: "minion_library"` 标识，不新增第五种手牌区域。`CardReserveResolver` 解释 `maintain_card_reserve`：配置用 `reserve_id`、`capacity`、`cooldown_turns`、`count_zones`、`draw_mode`、`restock_mode` 和 `pool` 描述一份玩家独立的有限库存；运行时只把剩余库存、上次有效容量和冷却保存在 `PlayerState.effect_runtime_values["card_reserve:<reserve_id>"]`。同一玩家可以同时持有多张随从库牌，每张牌必须使用稳定且不同的 `reserve_id`，库存和冷却互不覆盖。来源升级牌入手时立即按缺口补到容量，库存采用不放回抽取；在役数量只统计己方手牌和己方正面战场随从，战场单位使用 `CardState.represents_card_id()` 兼容临时变身，坟场、牌库和被敌方控制的单位不计。低于容量时开始冷却，冷却只在来源拥有者自己的回合开始推进；冷却期间继续损失单位不会重置计时，完成时一次补足当前缺口。重新达到容量会取消计时；来源离开手牌时暂停但保留库存与冷却，再次入手继续。容量增加通过通用 `modify_card_reserve_capacity` 即时提供新增容量对应的牌，既有冷却不重置；容量降低不移除现有随从。有限库存耗尽后不再启动空冷却。
 
 随从库不是固定相位效果，不能塞入 `PeriodicCycleResolver`：固定周期关心“第几个自己的回合”，随从库关心“当前是否存在容量缺口”。`GameManager` 只在持续被动刷新和玩家回合开始调用随从库门面；死亡、控制、放置等系统不直接修改库存。`HandDrawerController` 只消费 `CardReserveResolver.get_hand_view_data()` 返回的只读视图，在来源升级牌上显示在役、库存和冷却，不参与规则计算。
 
@@ -365,7 +365,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 - 霍格沃兹：没有施法回合，法术直接消耗法力。哈利可以用法力学习不可饶恕咒、防御咒、攻击咒、基础咒等。伙伴和神奇动物是重要支援。
 - 黄金学院：黄金是种族资源，来自斩杀、法术和建筑。黄金可购买随从和装备。金属法术、炼金术和黄金溶流提供破坏力。
 - 影月氏族：古尔丹用邪能强化兽人和恶魔，黑暗之门提供持续兵源。
-- 东京喰种：RC 浓度、四类赫子解放、首批四类赫子随从与 S 阶有限随从库已接入；后续让金木研多形态、SSS 级角色形成中后期高峰。
+- 东京喰种：RC 浓度、四类赫子解放、金木研三种覆盖变身、S 阶与 SSS 阶有限随从库已接入；SSS 阶库存当前使用芳村功善、高槻泉、旧多二福、死堪的占位单位，后续逐张补充正式数值与能力，形成中后期高峰。
 - 共生体：毒液剥离组织，组织在子代池中进化，附着到人类随从后入场。纳尔是后期全局强化点。
 - 破坏者联盟：微光提供本回合攻击爆发。金克斯/爆爆人格切换形成不同模式，武器、偷窃、罪犯和通缉令构成玩法。
 - 光荣进化：机械随从通过升级后可消耗法力复活、交换意识，并解锁维克托的多条时间线。

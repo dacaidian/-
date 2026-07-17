@@ -9,12 +9,20 @@ const POOL_CARD_IDS: Array[String] = [
 	"touka_kirishima",
 	"shu_tsukiyama",
 ]
+const SSS_RESERVE_ID := "sss_rank_ghouls"
+const SSS_POOL_CARD_IDS: Array[String] = [
+	"kuzen_yoshimura",
+	"eto_yoshimura",
+	"nimura_furuta",
+	"shikorae",
+]
 
 
 func _init() -> void:
 	test_card_definitions()
 	test_finite_reserve_and_cooldown()
 	test_capacity_increase_during_cooldown()
+	test_independent_reserve_runtimes()
 	print("CARD_RESERVE_TESTS_OK")
 	quit()
 
@@ -44,6 +52,23 @@ func test_card_definitions() -> void:
 	var tsukiyama := database.get_card("shu_tsukiyama")
 	assert(tsukiyama.attack == 3 and tsukiyama.health == 8 and tsukiyama.armor == 2)
 	assert(tsukiyama.has_keyword(CardData.KEYWORD_KAGUNE_KOUKAKU))
+
+	var sss_library := database.get_card("sss_rank_ghoul_intelligence")
+	assert(sss_library != null)
+	assert(sss_library.is_upgrade())
+	assert(sss_library.upgrade_type == CardData.UPGRADE_TYPE_MINION_LIBRARY)
+	assert(sss_library.level == 3 and sss_library.count == 1)
+	var sss_pool_ids: Array[String] = [
+		"kuzen_yoshimura",
+		"eto_yoshimura",
+		"nimura_furuta",
+		"shikorae",
+	]
+	for card_id in sss_pool_ids:
+		var placeholder := database.get_card(card_id)
+		assert(placeholder != null and placeholder.is_minion())
+		assert(placeholder.level == 3 and placeholder.count == 0)
+		assert(placeholder.attack == 1 and placeholder.health == 1)
 
 
 func test_finite_reserve_and_cooldown() -> void:
@@ -153,6 +178,22 @@ func test_capacity_increase_during_cooldown() -> void:
 	free_game_manager(game_manager)
 
 
+func test_independent_reserve_runtimes() -> void:
+	var context := create_context()
+	var game_manager := context.game_manager as GameManager
+	var player := context.player as PlayerState
+	var resolver := context.resolver as CardReserveResolver
+	player.add_to_hand(game_manager.get_card_data_by_id("s_rank_ghoul_intelligence"))
+	player.add_to_hand(game_manager.get_card_data_by_id("sss_rank_ghoul_intelligence"))
+
+	resolver.refresh_player(player, game_manager)
+	assert(count_card_ids_in_hand(player, POOL_CARD_IDS) == 1)
+	assert(count_card_ids_in_hand(player, SSS_POOL_CARD_IDS) == 1)
+	assert(get_reserve_runtime(player, resolver, RESERVE_ID).get("remaining_pool", []).size() == 3)
+	assert(get_reserve_runtime(player, resolver, SSS_RESERVE_ID).get("remaining_pool", []).size() == 3)
+	free_game_manager(game_manager)
+
+
 func create_context() -> Dictionary:
 	var game_manager := GameManager.new()
 	game_manager.card_database = load_database()
@@ -180,11 +221,24 @@ func load_database() -> CardDatabase:
 
 
 func get_runtime(player: PlayerState, resolver: CardReserveResolver) -> Dictionary:
-	return player.get_effect_runtime_value(resolver.get_runtime_key(RESERVE_ID), {})
+	return get_reserve_runtime(player, resolver, RESERVE_ID)
+
+
+func get_reserve_runtime(player: PlayerState, resolver: CardReserveResolver, reserve_id: String) -> Dictionary:
+	return player.get_effect_runtime_value(resolver.get_runtime_key(reserve_id), {})
 
 
 func count_pool_minions_in_hand(player: PlayerState) -> int:
 	return get_pool_minion_ids_in_hand(player).size()
+
+
+func count_card_ids_in_hand(player: PlayerState, card_ids: Array[String]) -> int:
+	var count := 0
+	for card_entry in player.hand:
+		var card_data := HandCardState.get_card_data(card_entry)
+		if card_data != null and card_ids.has(card_data.id):
+			count += 1
+	return count
 
 
 func get_pool_minion_ids_in_hand(player: PlayerState) -> Array[String]:
