@@ -16,6 +16,9 @@ func _init() -> void:
 	test_base_armor()
 	test_kagune_payloads()
 	test_cover_transforms()
+	test_sss_ghoul_definitions()
+	test_once_per_lifetime_action_resource()
+	test_friendly_faction_target_filter()
 	test_bikaku_volley_hero_gate()
 	test_saint_sword_splash_crosses_board_layers()
 	print("TOKYO_GHOUL_TESTS_OK")
@@ -328,6 +331,116 @@ func test_saint_sword_splash_crosses_board_layers() -> void:
 	assert(main_target.current_health == 10)
 	assert(same_slot_aerial.current_health == 10)
 	assert(distant_enemy.current_health == 10)
+
+
+func test_sss_ghoul_definitions() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+
+	var kuzen := database.get_card("kuzen_yoshimura")
+	assert(kuzen != null and kuzen.attack == 4 and kuzen.health == 12)
+	assert(kuzen.actions.size() == 2)
+	var free_meal: Dictionary = kuzen.actions[0]
+	assert(EffectData.get_action_id(free_meal) == "free_meal")
+	assert(int(free_meal.get("main_action_cost", 0)) == 1)
+	var free_meal_effects: Array = free_meal.get("effects", [])
+	assert(free_meal_effects.size() == 2)
+	assert(str(free_meal_effects[0].get(EffectData.KEY_TARGET, "")) == EffectData.TARGET_FRIENDLY_MINIONS_BY_FACTION)
+	assert(str(free_meal_effects[0].get(EffectData.KEY_TARGET_FACTION_ID, "")) == "tokyo_ghoul")
+	assert(EffectData.get_id(free_meal_effects[1]) == EffectData.EFFECT_SET_FACTION_RUNTIME_STATE)
+	assert(str(free_meal_effects[1].get(EffectData.KEY_RUNTIME_STATE_ID, "")) == "rc_high")
+	var kuzen_transform: Dictionary = kuzen.actions[1]
+	assert(bool(kuzen_transform.get(EffectData.KEY_ONCE_PER_LIFETIME, false)))
+	assert(str((kuzen_transform.get("effects", []) as Array)[0].get(EffectData.KEY_CARD_ID, "")) == "non_killing_owl")
+
+	var non_killing_owl := database.get_card("non_killing_owl")
+	assert(non_killing_owl != null and non_killing_owl.attack == 4 and non_killing_owl.health == 10)
+	assert(non_killing_owl.has_keyword(CardData.KEYWORD_GIANT))
+	assert(non_killing_owl.get_siege_bonus() == 4)
+
+	var eto := database.get_card("eto_yoshimura")
+	assert(eto != null and eto.attack == 5 and eto.health == 10)
+	assert(eto.has_keyword(CardData.KEYWORD_TELEPORT))
+	assert(eto.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert(eto.actions.size() == 1)
+	var eto_transform: Dictionary = eto.actions[0]
+	assert(bool(eto_transform.get(EffectData.KEY_ONCE_PER_LIFETIME, false)))
+	assert(str((eto_transform.get("effects", []) as Array)[0].get(EffectData.KEY_CARD_ID, "")) == "one_eyed_owl")
+
+	var one_eyed_owl := database.get_card("one_eyed_owl")
+	assert(one_eyed_owl != null and one_eyed_owl.attack == 8 and one_eyed_owl.health == 8)
+	assert(one_eyed_owl.has_keyword(CardData.KEYWORD_GIANT))
+
+
+func test_once_per_lifetime_action_resource() -> void:
+	var state := create_minion("once_per_lifetime_user", "player_1")
+	var action := EffectAction.new().setup({
+		EffectData.KEY_ACTION_ID: "test_once_per_lifetime",
+		"main_action_cost": 0,
+		EffectData.KEY_ONCE_PER_LIFETIME: true,
+		"effects": [{EffectData.KEY_ID: "heal", EffectData.KEY_TARGET: EffectData.TARGET_SELF, EffectData.KEY_AMOUNT: 1}]
+	})
+	assert(action.can_pay_action_cost(state))
+	assert(action.pay_action_cost(state))
+	assert(state.has_consumed_action_id(action.id))
+	state.restore_main_actions()
+	assert(not action.can_pay_action_cost(state))
+
+	var action_snapshot := state.create_action_economy_snapshot()
+	var transformed_data := CardData.new()
+	transformed_data.id = "temporary_form"
+	transformed_data.type = CardData.TYPE_MINION
+	transformed_data.attack = 2
+	transformed_data.health = 2
+	state.set_card_data(transformed_data)
+	state.apply_action_economy_after_form_change(action_snapshot)
+	assert(state.has_consumed_action_id(action.id))
+	assert(not action.can_pay_action_cost(state))
+
+
+func test_friendly_faction_target_filter() -> void:
+	var game_manager := GameManager.new()
+	game_manager.board_states.resize(49)
+	game_manager.aerial_board_states.resize(49)
+
+	var kuzen := create_test_faction_unit("kuzen_yoshimura", "player_1", "tokyo_ghoul", 0)
+	var ghoul_ally := create_test_faction_unit("ghoul_ally", "player_1", "tokyo_ghoul", 1)
+	var other_ally := create_test_faction_unit("other_ally", "player_1", "neutral", 2)
+	var enemy_ghoul := create_test_faction_unit("enemy_ghoul", "player_2", "tokyo_ghoul", 3)
+	game_manager.board_states[0] = kuzen
+	game_manager.board_states[1] = ghoul_ally
+	game_manager.board_states[2] = other_ally
+	game_manager.board_states[3] = enemy_ghoul
+
+	var effect_data := {
+		EffectData.KEY_TARGET: EffectData.TARGET_FRIENDLY_MINIONS_BY_FACTION,
+		EffectData.KEY_TARGET_FACTION_ID: "tokyo_ghoul"
+	}
+	var targets := HealEffect.new().get_target_states(kuzen, effect_data, game_manager)
+	assert(targets.size() == 2)
+	assert(targets.has(kuzen))
+	assert(targets.has(ghoul_ally))
+	assert(not targets.has(other_ally))
+	assert(not targets.has(enemy_ghoul))
+
+	if game_manager.audio_manager != null:
+		game_manager.audio_manager.free()
+	game_manager.free()
+
+
+func create_test_faction_unit(
+	card_id: String,
+	owner_id: String,
+	faction_id: String,
+	slot_index: int
+) -> CardState:
+	var data := CardData.new()
+	data.id = card_id
+	data.type = CardData.TYPE_MINION
+	data.attack = 1
+	data.health = 5
+	data.faction_id = faction_id
+	return create_test_board_unit_from_data(data, owner_id, slot_index)
 
 
 func test_bikaku_volley_hero_gate() -> void:

@@ -391,6 +391,7 @@ class CardValidator:
         self.validate_animation(card, path)
 
         self.validate_effect_list(card.get("effects", []), f"{path}.effects")
+        self.validate_actions(card.get("actions", []), f"{path}.actions")
         self.validate_spell_actions(card.get("spell_actions", []), f"{path}.spell_actions")
         self.validate_mounted_attacks(card.get("mounted_attacks", []), f"{path}.mounted_attacks")
 
@@ -438,6 +439,32 @@ class CardValidator:
             target_rule = str(action.get("target_rule", ""))
             if target_rule and target_rule not in self.target_rules:
                 self.reporter.error(f"{action_path}.target_rule", f"unknown target rule '{target_rule}'")
+            self.validate_animation(action, action_path)
+            self.validate_effect_list(action.get("effects", []), f"{action_path}.effects")
+
+    def validate_actions(self, raw_actions: Any, path: str) -> None:
+        if raw_actions in (None, []):
+            return
+        if not isinstance(raw_actions, list):
+            self.reporter.error(path, "must be an array")
+            return
+        for index, action in enumerate(raw_actions):
+            action_path = f"{path}[{index}]"
+            if not isinstance(action, dict):
+                self.reporter.error(action_path, "action must be an object")
+                continue
+
+            action_id = str(action.get("action_id", action.get("id", "")))
+            if not action_id:
+                self.reporter.error(f"{action_path}.action_id", "must define action_id or id")
+            self.require_string(action, "name", action_path)
+            target_rule = str(action.get("target_rule", ""))
+            if target_rule and target_rule not in self.target_rules:
+                self.reporter.error(f"{action_path}.target_rule", f"unknown target rule '{target_rule}'")
+            if "once_per_turn" in action and not isinstance(action["once_per_turn"], bool):
+                self.reporter.error(f"{action_path}.once_per_turn", "must be a boolean")
+            if "once_per_lifetime" in action and not isinstance(action["once_per_lifetime"], bool):
+                self.reporter.error(f"{action_path}.once_per_lifetime", "must be a boolean")
             self.validate_animation(action, action_path)
             self.validate_effect_list(action.get("effects", []), f"{action_path}.effects")
 
@@ -503,6 +530,8 @@ class CardValidator:
             self.reporter.error(f"{path}.filter_type", "must be one of minion, building, all")
         if "filter_owner" in effect and str(effect["filter_owner"]) not in {"self", "any"}:
             self.reporter.error(f"{path}.filter_owner", "must be one of self, any")
+        if "target_faction_id" in effect and not isinstance(effect["target_faction_id"], str):
+            self.reporter.error(f"{path}.target_faction_id", "must be a string")
 
         self.validate_status_fields(effect, path)
         self.validate_card_references(effect, path)
@@ -539,6 +568,7 @@ class CardValidator:
         if isinstance(payload, dict):
             self.validate_effect_list(payload.get("turn_effects", []), f"{path}.payload.turn_effects")
             self.validate_effect_list(payload.get("trigger_effects", []), f"{path}.payload.trigger_effects")
+            self.validate_actions(payload.get("actions", []), f"{path}.payload.actions")
         elif "payload" in effect:
             self.reporter.error(f"{path}.payload", "must be an object")
 

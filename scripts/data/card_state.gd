@@ -105,6 +105,7 @@ var max_main_actions := 0
 var current_main_actions := 0
 var used_action_groups: Array[String] = []
 var used_action_ids: Array[String] = []
+var consumed_action_ids: Array[String] = []
 var allowed_action_group_pairs: Array[String] = []
 
 # 当前附着在这张棋盘牌上的状态，例如中毒、圣盾、冻结、临时增益等。
@@ -151,6 +152,7 @@ func set_card_data(value: CardData) -> void:
 		current_main_actions = 0
 		used_action_groups.clear()
 		used_action_ids.clear()
+		consumed_action_ids.clear()
 		allowed_action_group_pairs.clear()
 		statuses.clear()
 		is_face_up = false
@@ -196,6 +198,7 @@ func set_card_data(value: CardData) -> void:
 			current_main_actions = max_main_actions
 			used_action_groups.clear()
 			used_action_ids.clear()
+			consumed_action_ids.clear()
 			allowed_action_group_pairs.clear()
 			apply_keyword_passives()
 			passive_max_movement = max_movement
@@ -210,6 +213,7 @@ func set_card_data(value: CardData) -> void:
 			current_main_actions = max_main_actions
 			used_action_groups.clear()
 			used_action_ids.clear()
+			consumed_action_ids.clear()
 			allowed_action_group_pairs.clear()
 		else:
 			max_movement = 0
@@ -222,6 +226,7 @@ func set_card_data(value: CardData) -> void:
 			current_main_actions = 0
 			used_action_groups.clear()
 			used_action_ids.clear()
+			consumed_action_ids.clear()
 			allowed_action_group_pairs.clear()
 		statuses.clear()
 		origin = create_origin_snapshot()
@@ -517,6 +522,7 @@ func create_card_snapshot() -> Dictionary:
 		"current_main_actions": current_main_actions,
 		"used_action_groups": used_action_groups.duplicate(),
 		"used_action_ids": used_action_ids.duplicate(),
+		"consumed_action_ids": consumed_action_ids.duplicate(),
 		"allowed_action_group_pairs": allowed_action_group_pairs.duplicate(),
 		"statuses": create_status_snapshots(),
 		"is_action_available_hint": is_action_available_hint
@@ -569,6 +575,7 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	current_main_actions = int(snapshot.get("current_main_actions", 0))
 	used_action_groups = normalize_string_array(snapshot.get("used_action_groups", []))
 	used_action_ids = normalize_string_array(snapshot.get("used_action_ids", []))
+	consumed_action_ids = normalize_string_array(snapshot.get("consumed_action_ids", []))
 	allowed_action_group_pairs = normalize_string_array(snapshot.get("allowed_action_group_pairs", []))
 	apply_status_snapshots(snapshot.get("statuses", []))
 	if not snapshot.has("status_attack_bonus"):
@@ -624,6 +631,7 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	current_main_actions = max_main_actions
 	used_action_groups.clear()
 	used_action_ids.clear()
+	consumed_action_ids.clear()
 	allowed_action_group_pairs = normalize_string_array(origin.get("allowed_action_group_pairs", []))
 	statuses.clear()
 	is_pending_death = false
@@ -686,7 +694,8 @@ func create_action_economy_snapshot() -> Dictionary:
 		"spent_attacks": maxi(max_attack_speed - current_attacks, 0),
 		"spent_mounted_attack_uses": spent_mounted_uses,
 		"used_action_groups": used_action_groups.duplicate(),
-		"used_action_ids": used_action_ids.duplicate()
+		"used_action_ids": used_action_ids.duplicate(),
+		"consumed_action_ids": consumed_action_ids.duplicate()
 	}
 
 
@@ -706,6 +715,7 @@ func apply_action_economy_after_form_change(action_economy_snapshot: Dictionary)
 
 	used_action_groups = normalize_string_array(action_economy_snapshot.get("used_action_groups", []))
 	used_action_ids = normalize_string_array(action_economy_snapshot.get("used_action_ids", []))
+	consumed_action_ids = normalize_string_array(action_economy_snapshot.get("consumed_action_ids", []))
 	refresh_current_main_actions()
 	state_changed.emit(self)
 
@@ -771,6 +781,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"current_main_actions": current_main_actions,
 		"used_action_groups": used_action_groups.duplicate(),
 		"used_action_ids": used_action_ids.duplicate(),
+		"consumed_action_ids": consumed_action_ids.duplicate(),
 		"allowed_action_group_pairs": allowed_action_group_pairs.duplicate(),
 		"statuses": create_status_snapshots()
 	}
@@ -969,6 +980,21 @@ func register_action_id(action_id: String) -> bool:
 		return false
 
 	used_action_ids.append(action_id)
+	state_changed.emit(self)
+	return true
+
+
+func has_consumed_action_id(action_id: String) -> bool:
+	return action_id != "" and consumed_action_ids.has(action_id)
+
+
+func consume_action_id(action_id: String) -> bool:
+	if action_id == "":
+		return true
+	if has_consumed_action_id(action_id):
+		return false
+
+	consumed_action_ids.append(action_id)
 	state_changed.emit(self)
 	return true
 

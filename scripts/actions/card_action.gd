@@ -10,6 +10,7 @@ var main_action_cost := 1
 var action_group := ""
 var can_reuse_action_group := true
 var once_per_turn := false
+var once_per_lifetime := false
 
 
 func can_start(_user: CardState, _game_manager: GameManager) -> bool:
@@ -44,6 +45,8 @@ func can_pay_action_cost(user: CardState) -> bool:
 
 	if once_per_turn and user.has_used_action_id(id):
 		return false
+	if once_per_lifetime and user.has_consumed_action_id(id):
+		return false
 
 	return true
 
@@ -56,6 +59,8 @@ func pay_action_cost(user: CardState) -> bool:
 		return false
 
 	if once_per_turn and not user.register_action_id(id):
+		return false
+	if once_per_lifetime and not user.consume_action_id(id):
 		return false
 
 	return true

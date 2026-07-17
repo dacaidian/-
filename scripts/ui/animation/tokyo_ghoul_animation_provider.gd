@@ -3,7 +3,13 @@ class_name TokyoGhoulAnimationProvider
 
 # 东京喰种表现只消费 animation key 与卡牌矩形，不读取或修改规则状态。
 
-const TARGETED_KEYS: Array[String] = ["feather_needle", "rc_forced_feeding", "bikaku_volley"]
+const TARGETED_KEYS: Array[String] = [
+	"feather_needle",
+	"rc_forced_feeding",
+	"bikaku_volley",
+	"free_meal",
+	"kakuja_form"
+]
 const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form", "saint_sword_form", "bikaku_volley"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
 
@@ -371,6 +377,101 @@ func play_targeted(
 			await play_forced_feeding(owner, effect_root, target_card.get_global_rect())
 		"bikaku_volley":
 			await play_bikaku_volley(owner, effect_root, target_card.get_global_rect())
+		"free_meal":
+			await play_free_meal(owner, effect_root, target_card.get_global_rect())
+		"kakuja_form":
+			await play_kakuja_form(owner, effect_root, target_card.get_global_rect())
+
+
+func play_free_meal(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var shelter := create_centered_panel(target_rect, "FreeMealShelter", 1.46, create_free_meal_shelter_style())
+	var warmth := create_centered_panel(target_rect, "FreeMealWarmth", 0.58, create_free_meal_warmth_style())
+	effect_root.add_child(shelter)
+	effect_root.add_child(warmth)
+
+	var welcome := owner.create_tween()
+	welcome.set_parallel(true)
+	welcome.set_trans(Tween.TRANS_BACK)
+	welcome.set_ease(Tween.EASE_OUT)
+	welcome.tween_property(shelter, "scale", Vector2.ONE, spell_animation_duration * 0.62)
+	welcome.tween_property(shelter, "modulate:a", 0.86, spell_animation_duration * 0.38)
+	welcome.tween_property(warmth, "scale", Vector2.ONE, spell_animation_duration * 0.48)
+	welcome.tween_property(warmth, "modulate:a", 0.94, spell_animation_duration * 0.34)
+	await welcome.finished
+
+	var restore := owner.create_tween()
+	restore.set_parallel(true)
+	restore.set_trans(Tween.TRANS_QUINT)
+	restore.set_ease(Tween.EASE_OUT)
+	restore.tween_property(shelter, "scale", Vector2(2.35, 2.35), spell_animation_duration * 0.82)
+	restore.tween_property(shelter, "modulate:a", 0.0, spell_animation_duration * 0.82)
+	restore.tween_property(warmth, "scale", Vector2(1.55, 1.55), spell_animation_duration * 0.66)
+	restore.tween_property(warmth, "modulate:a", 0.0, spell_animation_duration * 0.66)
+	await restore.finished
+
+	shelter.queue_free()
+	warmth.queue_free()
+
+
+func play_kakuja_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var shell := create_centered_panel(target_rect, "KakujaShell", 1.72, create_kakuja_shell_style())
+	var core := create_centered_panel(target_rect, "KakujaCore", 0.48, create_kakuja_core_style())
+	var feathers: Array[Panel] = []
+	for index in range(8):
+		var feather := create_kakuja_feather(target_rect, index)
+		effect_root.add_child(feather)
+		feathers.append(feather)
+	effect_root.add_child(shell)
+	effect_root.add_child(core)
+
+	var emerge := owner.create_tween()
+	emerge.set_parallel(true)
+	emerge.set_trans(Tween.TRANS_BACK)
+	emerge.set_ease(Tween.EASE_OUT)
+	emerge.tween_property(shell, "scale", Vector2.ONE, spell_animation_duration * 0.68)
+	emerge.tween_property(shell, "modulate:a", 0.90, spell_animation_duration * 0.42)
+	emerge.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.52)
+	emerge.tween_property(core, "modulate:a", 0.98, spell_animation_duration * 0.36)
+	for feather in feathers:
+		emerge.tween_property(feather, "scale:x", 1.0, spell_animation_duration * 0.72)
+		emerge.tween_property(feather, "modulate:a", 0.94, spell_animation_duration * 0.32)
+	await emerge.finished
+
+	var mantle := owner.create_tween()
+	mantle.set_parallel(true)
+	mantle.set_trans(Tween.TRANS_QUINT)
+	mantle.set_ease(Tween.EASE_OUT)
+	mantle.tween_property(shell, "scale", Vector2(1.40, 1.40), spell_animation_duration * 0.66)
+	mantle.tween_property(shell, "modulate:a", 0.0, spell_animation_duration * 0.66)
+	mantle.tween_property(core, "scale", Vector2(0.18, 0.18), spell_animation_duration * 0.58)
+	mantle.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.54)
+	for feather in feathers:
+		var release_offset: Vector2 = feather.get_meta("kakuja_release_offset", Vector2.ZERO)
+		mantle.tween_property(feather, "global_position", feather.global_position + release_offset, spell_animation_duration * 0.62)
+		mantle.tween_property(feather, "modulate:a", 0.0, spell_animation_duration * 0.58)
+	await mantle.finished
+
+	shell.queue_free()
+	core.queue_free()
+	for feather in feathers:
+		feather.queue_free()
+
+
+func create_kakuja_feather(target_rect: Rect2, index: int) -> Panel:
+	var feather := Panel.new()
+	feather.name = "KakujaFeather_%d" % index
+	feather.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	feather.size = Vector2(target_rect.size.x * 0.92, maxf(target_rect.size.y * 0.095, 8.0))
+	feather.pivot_offset = Vector2(0.0, feather.size.y * 0.5)
+	var angle := TAU * float(index) / 8.0
+	feather.global_position = target_rect.get_center() - feather.pivot_offset
+	feather.rotation = angle
+	feather.scale = Vector2(0.06, 1.0)
+	feather.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	feather.z_index = 2360 + index
+	feather.set_meta("kakuja_release_offset", Vector2.RIGHT.rotated(angle) * target_rect.size.length() * 0.38)
+	feather.add_theme_stylebox_override("panel", create_kakuja_feather_style(index))
+	return feather
 
 
 func play_feather_needle(owner: Node, effect_root: Control, source_rect: Rect2, target_rect: Rect2) -> void:
@@ -825,6 +926,62 @@ func create_bikaku_tail_style(index: int) -> StyleBoxFlat:
 		2,
 		999,
 		Color(0.60, 0.0, 0.08, 0.72),
+		18
+	)
+
+
+func create_free_meal_shelter_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.18, 0.09, 0.055, 0.72),
+		Color(0.96, 0.72, 0.38, 0.96),
+		3,
+		999,
+		Color(0.32, 0.12, 0.04, 0.62),
+		24
+	)
+
+
+func create_free_meal_warmth_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(1.0, 0.72, 0.34, 0.88),
+		Color(1.0, 0.94, 0.72, 1.0),
+		2,
+		999,
+		Color(0.84, 0.34, 0.08, 0.72),
+		22
+	)
+
+
+func create_kakuja_shell_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.16, 0.01, 0.025, 0.84),
+		Color(0.82, 0.04, 0.12, 0.98),
+		4,
+		999,
+		Color(0.24, 0.0, 0.02, 0.82),
+		32
+	)
+
+
+func create_kakuja_core_style() -> StyleBoxFlat:
+	return create_glow_style(
+		Color(0.96, 0.82, 0.74, 0.96),
+		Color(1.0, 0.18, 0.24, 1.0),
+		3,
+		999,
+		Color(0.74, 0.0, 0.06, 0.84),
+		24
+	)
+
+
+func create_kakuja_feather_style(index: int) -> StyleBoxFlat:
+	var intensity := 0.08 * float(index % 4)
+	return create_glow_style(
+		Color(0.30 + intensity, 0.008, 0.035, 0.96),
+		Color(0.96, 0.08 + intensity, 0.16, 0.98),
+		2,
+		999,
+		Color(0.34, 0.0, 0.025, 0.74),
 		18
 	)
 

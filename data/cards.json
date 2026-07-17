@@ -4274,6 +4274,37 @@
 				"effects": []
 			},
 			{
+				"id": "non_killing_owl",
+				"name": "不杀之枭",
+				"description": "芳村功善释放赫者力量后的覆盖形态。拥有巨兽与攻城4；被击败时结束覆盖变身并恢复芳村功善。",
+				"url": "res://assets/img/东京喰种/不杀之枭.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"giant",
+					"siege_4"
+				],
+				"attack": 4,
+				"health": 10,
+				"effects": []
+			},
+			{
+				"id": "one_eyed_owl",
+				"name": "独眼之枭",
+				"description": "高槻泉释放赫者力量后的覆盖形态。拥有巨兽；被击败时结束覆盖变身并恢复高槻泉。",
+				"url": "res://assets/img/东京喰种/独眼之枭.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [
+					"giant"
+				],
+				"attack": 8,
+				"health": 8,
+				"effects": []
+			},
+			{
 				"id": "yamori",
 				"name": "壁虎",
 				"description": "S阶喰种。拥有鳞赫，在赫子解放时提高攻击力，高RC浓度下还会获得吸血。",
@@ -4339,28 +4370,100 @@
 			{
 				"id": "kuzen_yoshimura",
 				"name": "芳村功善",
-				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"description": "安定区的店长。主动作免单会恢复所有友方喰种的全部生命，并将RC细胞浓度提升至高；副动作赫者化每个单位实例仅可使用一次，覆盖变身为不杀之枭。",
 				"url": "res://assets/img/东京喰种/芳村功善.png",
 				"type": "minion",
 				"count": 0,
 				"level": 3,
 				"keywords": [],
-				"attack": 1,
-				"health": 1,
-				"effects": []
+				"attack": 4,
+				"health": 12,
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "free_meal",
+						"name": "免单",
+						"animation": "free_meal",
+						"target_rule": "none",
+						"main_action_cost": 1,
+						"action_group": "special",
+						"can_reuse_action_group": false,
+						"effects": [
+							{
+								"id": "heal",
+								"target": "friendly_minions_by_faction",
+								"target_faction_id": "tokyo_ghoul",
+								"amount_source": "missing_health"
+							},
+							{
+								"id": "set_faction_runtime_state",
+								"runtime_state_id": "rc_high"
+							}
+						]
+					},
+					{
+						"action_id": "kakuja_form",
+						"name": "赫者化",
+						"animation": "kakuja_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"once_per_lifetime": true,
+						"effects": [
+							{
+								"id": "transform_unit",
+								"target": "self",
+								"card_id": "non_killing_owl",
+								"transform_mode": "cover",
+								"preserve_original_identity": true,
+								"permanent": true,
+								"status_name": "赫者化",
+								"status_description": "覆盖变身为不杀之枭；被击败时结束变身并恢复芳村功善。"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "eto_yoshimura",
 				"name": "高槻泉",
-				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"description": "独眼喰种。拥有瞬移与移动攻击；副动作赫者化每个单位实例仅可使用一次，覆盖变身为独眼之枭。",
 				"url": "res://assets/img/东京喰种/高槻泉.png",
 				"type": "minion",
 				"count": 0,
 				"level": 3,
-				"keywords": [],
-				"attack": 1,
-				"health": 1,
-				"effects": []
+				"keywords": [
+					"teleport",
+					"mobile_assault"
+				],
+				"attack": 5,
+				"health": 10,
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "eto_kakuja_form",
+						"name": "赫者化",
+						"animation": "kakuja_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"once_per_lifetime": true,
+						"effects": [
+							{
+								"id": "transform_unit",
+								"target": "self",
+								"card_id": "one_eyed_owl",
+								"transform_mode": "cover",
+								"preserve_original_identity": true,
+								"permanent": true,
+								"status_name": "赫者化",
+								"status_description": "覆盖变身为独眼之枭；被击败时结束变身并恢复高槻泉。"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "nimura_furuta",

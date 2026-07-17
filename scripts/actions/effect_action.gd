@@ -24,6 +24,7 @@ func setup(new_action_data: Dictionary) -> EffectAction:
 	action_group = str(action_data.get("action_group", CardState.ACTION_GROUP_SPECIAL))
 	can_reuse_action_group = bool(action_data.get("can_reuse_action_group", false))
 	once_per_turn = bool(action_data.get("once_per_turn", false))
+	once_per_lifetime = bool(action_data.get(EffectData.KEY_ONCE_PER_LIFETIME, false))
 	required_runtime_state_ids = get_required_runtime_state_ids(action_data)
 	effects.clear()
 
@@ -42,6 +43,8 @@ func can_start(user: CardState, game_manager: GameManager) -> bool:
 	if id == "" or effects.is_empty():
 		return false
 	if not is_runtime_state_allowed(user, game_manager):
+		return false
+	if not requires_target() and not can_effects_execute_with_target(user, null, game_manager):
 		return false
 
 	return can_pay_action_cost(user)
