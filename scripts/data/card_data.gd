@@ -14,6 +14,7 @@ const ROLE_HERO := "hero"
 const KEYWORD_CAVALRY := "cavalry"
 const KEYWORD_RANGED := "ranged"
 const KEYWORD_MAGIC_IMMUNE := "magic_immune"
+const KEYWORD_RANGED_ATTACK_IMMUNE := "ranged_attack_immune"
 const KEYWORD_CAN_ATTACK_WITH_ZERO_ATTACK := "can_attack_with_zero_attack"
 const KEYWORD_MECHANICAL := "mechanical"
 const KEYWORD_MOBILE_ASSAULT := "mobile_assault"
@@ -36,6 +37,7 @@ const KEYWORD_REBORN := "reborn"
 const KEYWORD_REBORN_PREFIX := "reborn_"
 const KEYWORD_SIEGE_PREFIX := "siege_"
 const KEYWORD_SPLASH_PREFIX := "splash_"
+const KEYWORD_FRONTAL_WIDTH_PREFIX := "frontal_width_"
 const KEYWORD_SIEGE_3 := "siege_3"
 
 # CardData 是静态卡牌数据，来自 data/cards.json。
@@ -136,6 +138,13 @@ func get_siege_bonus() -> int:
 
 func get_splash_damage() -> int:
 	return get_numeric_keyword_value(KEYWORD_SPLASH_PREFIX)
+
+
+func get_frontal_attack_width() -> int:
+	var width := get_numeric_keyword_value(KEYWORD_FRONTAL_WIDTH_PREFIX)
+	if has_keyword(KEYWORD_GIANT):
+		width = maxi(width, 3)
+	return width if width > 0 and width % 2 == 1 else 0
 
 
 func get_numeric_keyword_value(prefix: String) -> int:

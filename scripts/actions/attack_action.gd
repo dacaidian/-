@@ -54,15 +54,18 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	var attacker_owner_id := user.owner_id
 	var attacker_card_id := user.card_id
-	await game_manager.play_card_attack_animation(user, target, attack_profile[PROFILE_IS_MELEE])
+	var is_melee_attack := bool(attack_profile[PROFILE_IS_MELEE])
+	await game_manager.play_card_attack_animation(user, target, is_melee_attack)
 	var attack_damage := calculate_attack_damage(user, target)
+	if is_ranged_attack_immune(target, is_melee_attack):
+		attack_damage = 0
 	var was_reflected := await resolve_attack_reflection(user, target, attack_damage, game_manager)
 	var secondary_damage_targets: Array[CardState] = []
 	var actual_life_damage := 0
 	if not was_reflected:
 		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
 		await resolve_lifesteal(user, actual_life_damage, game_manager)
-		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager)
+		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager, is_melee_attack)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 	var resolved_attacker := user
@@ -128,10 +131,15 @@ func calculate_attack_damage(user: CardState, target: CardState) -> int:
 	return maxi(damage, 0)
 
 
-func apply_secondary_attack_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+func apply_secondary_attack_damage(
+	user: CardState,
+	target: CardState,
+	game_manager: GameManager,
+	is_melee_attack := true
+) -> Array[CardState]:
 	var damaged_targets: Array[CardState] = []
-	append_unique_states(damaged_targets, apply_giant_splash_damage(user, target, game_manager))
-	append_unique_states(damaged_targets, apply_fixed_splash_damage(user, target, game_manager))
+	append_unique_states(damaged_targets, apply_frontal_attack_damage(user, target, game_manager, is_melee_attack))
+	append_unique_states(damaged_targets, apply_fixed_splash_damage(user, target, game_manager, is_melee_attack))
 	return damaged_targets
 
 
@@ -142,17 +150,39 @@ func append_unique_states(targets: Array[CardState], additions: Array[CardState]
 
 
 func apply_giant_splash_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+	if user == null or not user.has_keyword(CardData.KEYWORD_GIANT):
+		var empty_targets: Array[CardState] = []
+		return empty_targets
+	return apply_frontal_attack_damage(user, target, game_manager, true, 3)
+
+
+func apply_frontal_attack_damage(
+	user: CardState,
+	target: CardState,
+	game_manager: GameManager,
+	is_melee_attack := true,
+	width_override := 0
+) -> Array[CardState]:
 	var damaged_targets: Array[CardState] = []
 	if user == null or target == null or game_manager == null:
 		return damaged_targets
-	if not user.has_keyword(CardData.KEYWORD_GIANT):
+	var width := width_override if width_override > 0 else user.get_frontal_attack_width()
+	if width <= 0:
 		return damaged_targets
 
-	for slot_index in get_giant_splash_slots(user.slot_index, target.slot_index, game_manager.board_columns, game_manager.board_states.size()):
+	for slot_index in get_frontal_attack_slots(
+		user.slot_index,
+		target.slot_index,
+		width,
+		game_manager.board_columns,
+		game_manager.board_states.size()
+	):
 		for splash_target in game_manager.get_board_states_at_slot(slot_index):
 			if splash_target == target:
 				continue
 			if not can_secondary_attack_damage_target(user, splash_target):
+				continue
+			if is_ranged_attack_immune(splash_target, is_melee_attack):
 				continue
 
 			var splash_damage := apply_armor_to_attack_damage(splash_target, calculate_attack_damage(user, splash_target))
@@ -162,7 +192,12 @@ func apply_giant_splash_damage(user: CardState, target: CardState, game_manager:
 	return damaged_targets
 
 
-func apply_fixed_splash_damage(user: CardState, target: CardState, game_manager: GameManager) -> Array[CardState]:
+func apply_fixed_splash_damage(
+	user: CardState,
+	target: CardState,
+	game_manager: GameManager,
+	is_melee_attack := true
+) -> Array[CardState]:
 	var damaged_targets: Array[CardState] = []
 	if user == null or target == null or game_manager == null:
 		return damaged_targets
@@ -180,6 +215,8 @@ func apply_fixed_splash_damage(user: CardState, target: CardState, game_manager:
 		# 格子邻接与单位层无关：每个相邻格的地面层和飞行层都会被检查。
 		for splash_target in game_manager.get_board_states_at_slot(slot_index):
 			if not can_secondary_attack_damage_target(user, splash_target):
+				continue
+			if is_ranged_attack_immune(splash_target, is_melee_attack):
 				continue
 
 			splash_target.take_damage(apply_armor_to_attack_damage(splash_target, splash_damage))
@@ -222,11 +259,23 @@ func resolve_lifesteal(user: CardState, actual_life_damage: int, game_manager: G
 
 
 func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns: int, board_size: int) -> Array[int]:
+	return get_frontal_attack_slots(attacker_slot, target_slot, 3, board_columns, board_size)
+
+
+func get_frontal_attack_slots(
+	attacker_slot: int,
+	target_slot: int,
+	width: int,
+	board_columns: int,
+	board_size: int
+) -> Array[int]:
 	var slots: Array[int] = []
-	if attacker_slot == target_slot or board_columns <= 0 or board_size <= 0:
+	if attacker_slot == target_slot or board_columns <= 0 or board_size <= 0 or width <= 0:
+		return slots
+	var normalized_width := width if width % 2 == 1 else width - 1
+	if normalized_width <= 0:
 		return slots
 
-	slots.append(target_slot)
 	var attacker_row: int = floori(float(attacker_slot) / float(board_columns))
 	var attacker_col: int = attacker_slot % board_columns
 	var target_row: int = floori(float(target_slot) / float(board_columns))
@@ -236,16 +285,20 @@ func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns:
 	if row_delta == 0 and col_delta == 0:
 		return slots
 
-	var offsets: Array[Vector2i] = []
+	var offsets: Array[Vector2i] = [Vector2i(row_delta, col_delta)]
+	var radius := floori(float(normalized_width) / 2.0)
 	if row_delta != 0 and col_delta != 0:
-		offsets.append(Vector2i(row_delta, 0))
-		offsets.append(Vector2i(0, col_delta))
+		for step in range(1, radius + 1):
+			offsets.append(Vector2i(row_delta * step, 0))
+			offsets.append(Vector2i(0, col_delta * step))
 	elif row_delta != 0:
-		offsets.append(Vector2i(row_delta, -1))
-		offsets.append(Vector2i(row_delta, 1))
+		for step in range(1, radius + 1):
+			offsets.append(Vector2i(row_delta, -step))
+			offsets.append(Vector2i(row_delta, step))
 	elif col_delta != 0:
-		offsets.append(Vector2i(-1, col_delta))
-		offsets.append(Vector2i(1, col_delta))
+		for step in range(1, radius + 1):
+			offsets.append(Vector2i(-step, col_delta))
+			offsets.append(Vector2i(step, col_delta))
 
 	for offset in offsets:
 		var slot := get_slot_by_offset(attacker_row, attacker_col, offset, board_columns, board_size)
@@ -279,6 +332,14 @@ func can_secondary_attack_damage_target(user: CardState, target: CardState) -> b
 	return true
 
 
+func is_ranged_attack_immune(target: CardState, is_melee_attack: bool) -> bool:
+	return (
+		target != null
+		and not is_melee_attack
+		and target.has_keyword(CardData.KEYWORD_RANGED_ATTACK_IMMUNE)
+	)
+
+
 func apply_armor_to_attack_damage(target: CardState, damage: int) -> int:
 	if target == null or damage <= 0:
 		return maxi(damage, 0)
@@ -306,6 +367,9 @@ func get_attack_profile(user: CardState, target: CardState, game_manager: GameMa
 		profile[PROFILE_CAN_ATTACK] = true
 		profile[PROFILE_IS_MELEE] = true
 		profile[PROFILE_CAN_OCCUPY] = target.is_unit() and not user.is_flying()
+		return profile
+
+	if target.has_keyword(CardData.KEYWORD_RANGED_ATTACK_IMMUNE):
 		return profile
 
 	if is_ranged_attack_target(user, target, game_manager):

@@ -21,6 +21,7 @@ func _init() -> void:
 	test_friendly_faction_target_filter()
 	test_bikaku_volley_hero_gate()
 	test_saint_sword_splash_crosses_board_layers()
+	test_frontal_width_and_ranged_immunity()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
 
@@ -370,6 +371,88 @@ func test_sss_ghoul_definitions() -> void:
 	var one_eyed_owl := database.get_card("one_eyed_owl")
 	assert(one_eyed_owl != null and one_eyed_owl.attack == 8 and one_eyed_owl.health == 8)
 	assert(one_eyed_owl.has_keyword(CardData.KEYWORD_GIANT))
+
+	var furuta := database.get_card("nimura_furuta")
+	assert(furuta != null and furuta.attack == 8 and furuta.health == 8)
+	assert(furuta.has_keyword(CardData.KEYWORD_MAGIC_IMMUNE))
+	assert(furuta.has_keyword(CardData.KEYWORD_RANGED_ATTACK_IMMUNE))
+	assert(furuta.get_frontal_attack_width() == 5)
+
+
+func test_frontal_width_and_ranged_immunity() -> void:
+	var game_manager := GameManager.new()
+	game_manager.board_columns = 7
+	game_manager.board_rows = 7
+	game_manager.board_states.resize(49)
+	game_manager.aerial_board_states.resize(49)
+
+	var attacker := create_test_board_unit("furuta", "player_1", 24, 10, 0, ["frontal_width_5"])
+	var main_target := create_test_board_unit("main_target", "player_2", 17)
+	var left_edge := create_test_board_unit("left_edge", "player_2", 15)
+	var left_inner_aerial := create_test_board_unit("left_inner_aerial", "player_2", 16)
+	var friendly := create_test_board_unit("friendly", "player_1", 18)
+	var ranged_immune := create_test_board_unit(
+		"ranged_immune",
+		"player_2",
+		19,
+		10,
+		0,
+		[CardData.KEYWORD_RANGED_ATTACK_IMMUNE]
+	)
+	var outside := create_test_board_unit("outside", "player_2", 14)
+	game_manager.board_states[24] = attacker
+	game_manager.board_states[17] = main_target
+	game_manager.board_states[15] = left_edge
+	game_manager.aerial_board_states[16] = left_inner_aerial
+	game_manager.board_states[18] = friendly
+	game_manager.board_states[19] = ranged_immune
+	game_manager.board_states[14] = outside
+
+	var action := AttackAction.new()
+	assert(attacker.get_frontal_attack_width() == 5)
+	assert(action.get_frontal_attack_slots(24, 17, 5, 7, 49) == [17, 16, 18, 15, 19])
+	var damaged_targets := action.apply_frontal_attack_damage(attacker, main_target, game_manager, false)
+	assert(damaged_targets.size() == 2)
+	assert(left_edge.current_health == 2)
+	assert(left_inner_aerial.current_health == 2)
+	assert(main_target.current_health == 10)
+	assert(friendly.current_health == 10)
+	assert(ranged_immune.current_health == 10)
+	assert(outside.current_health == 10)
+	assert(action.is_ranged_attack_immune(ranged_immune, false))
+	assert(not action.is_ranged_attack_immune(ranged_immune, true))
+
+	game_manager.board_states.fill(null)
+	game_manager.aerial_board_states.fill(null)
+	var ranged_attacker := create_test_board_unit(
+		"ranged_attacker",
+		"player_1",
+		24,
+		10,
+		0,
+		[CardData.KEYWORD_RANGED]
+	)
+	var friendly_anchor := create_test_board_unit("friendly_anchor", "player_1", 17)
+	var distant_immune := create_test_board_unit(
+		"distant_immune",
+		"player_2",
+		10,
+		10,
+		0,
+		[CardData.KEYWORD_RANGED_ATTACK_IMMUNE]
+	)
+	game_manager.board_states[24] = ranged_attacker
+	game_manager.board_states[17] = friendly_anchor
+	game_manager.board_states[10] = distant_immune
+	assert(not action.can_target(ranged_attacker, distant_immune, game_manager))
+	assert(action.can_target(friendly_anchor, distant_immune, game_manager))
+
+	var giant := create_test_board_unit("giant", "player_1", 24, 10, 0, [CardData.KEYWORD_GIANT])
+	assert(giant.get_frontal_attack_width() == 3)
+
+	if game_manager.audio_manager != null:
+		game_manager.audio_manager.free()
+	game_manager.free()
 
 
 func test_once_per_lifetime_action_resource() -> void:

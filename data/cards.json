@@ -4468,14 +4468,18 @@
 			{
 				"id": "nimura_furuta",
 				"name": "旧多二福",
-				"description": "SSS阶喰种占位随从，具体数值与能力将在后续实现。",
+				"description": "正面攻击会同时命中面前五格。魔法免疫，远程攻击免疫。",
 				"url": "res://assets/img/东京喰种/旧多二福.png",
 				"type": "minion",
 				"count": 0,
 				"level": 3,
-				"keywords": [],
-				"attack": 1,
-				"health": 1,
+				"keywords": [
+					"frontal_width_5",
+					"magic_immune",
+					"ranged_attack_immune"
+				],
+				"attack": 8,
+				"health": 8,
 				"effects": []
 			},
 			{

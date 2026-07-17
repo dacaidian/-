@@ -65,10 +65,17 @@ func test_card_definitions() -> void:
 		"shikorae",
 	]
 	for card_id in sss_pool_ids:
-		var placeholder := database.get_card(card_id)
-		assert(placeholder != null and placeholder.is_minion())
-		assert(placeholder.level == 3 and placeholder.count == 0)
-		assert(placeholder.attack == 1 and placeholder.health == 1)
+		var reserve_minion := database.get_card(card_id)
+		assert(reserve_minion != null and reserve_minion.is_minion())
+		assert(reserve_minion.level == 3 and reserve_minion.count == 0)
+	assert(database.get_card("kuzen_yoshimura").attack == 4)
+	assert(database.get_card("kuzen_yoshimura").health == 12)
+	assert(database.get_card("eto_yoshimura").attack == 5)
+	assert(database.get_card("eto_yoshimura").health == 10)
+	assert(database.get_card("nimura_furuta").attack == 8)
+	assert(database.get_card("nimura_furuta").health == 8)
+	assert(database.get_card("shikorae").attack == 1)
+	assert(database.get_card("shikorae").health == 1)
 
 
 func test_finite_reserve_and_cooldown() -> void:

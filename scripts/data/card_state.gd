@@ -376,6 +376,13 @@ func get_splash_damage() -> int:
 	return get_numeric_keyword_value(CardData.KEYWORD_SPLASH_PREFIX)
 
 
+func get_frontal_attack_width() -> int:
+	var width := get_numeric_keyword_value(CardData.KEYWORD_FRONTAL_WIDTH_PREFIX)
+	if has_keyword(CardData.KEYWORD_GIANT):
+		width = maxi(width, 3)
+	return width if width > 0 and width % 2 == 1 else 0
+
+
 func get_numeric_keyword_value(prefix: String) -> int:
 	var value := data.get_numeric_keyword_value(prefix) if data != null else 0
 	for keyword in passive_keywords:

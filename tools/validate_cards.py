@@ -421,6 +421,10 @@ class CardValidator:
             amount_text = keyword.removeprefix("splash_")
             return amount_text.isdigit() and int(amount_text) >= 0
 
+        if keyword.startswith("frontal_width_"):
+            width_text = keyword.removeprefix("frontal_width_")
+            return width_text.isdigit() and int(width_text) > 0 and int(width_text) % 2 == 1
+
         return False
 
     def validate_spell_actions(self, raw_actions: Any, path: str) -> None:
