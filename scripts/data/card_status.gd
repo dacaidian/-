@@ -44,7 +44,6 @@ const STATUS_FEL_MADNESS_WARLOCK := "fel_madness_warlock"
 const STATUS_DAMAGE_AMPLIFY := "damage_amplify"
 const STATUS_KILJAEDEN_WHISPER := "kiljaeden_whisper"
 const STATUS_KAGUNE_RELEASE := "kagune_release"
-const STATUS_BIKAKU_VOLLEY_ATTACK := "bikaku_volley_attack"
 const STATUS_BIKAKU_VOLLEY_KAGUNE := "bikaku_volley_kagune"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
@@ -349,11 +348,12 @@ func get_cleanse_valence() -> String:
 		return EffectData.STATUS_VALENCE_NEGATIVE
 
 	var attack_bonus := int(payload.get(EffectData.KEY_ATTACK_BONUS, 0))
+	var attack_speed_bonus := int(payload.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0))
 	var max_health_bonus := int(payload.get(EffectData.KEY_MAX_HEALTH_BONUS, 0))
 	if tags.has(TAG_ATTACK_MODIFIER) or tags.has(TAG_HEALTH_MODIFIER):
-		if attack_bonus > 0 or max_health_bonus > 0:
+		if attack_bonus > 0 or attack_speed_bonus > 0 or max_health_bonus > 0:
 			return EffectData.STATUS_VALENCE_POSITIVE
-		if attack_bonus < 0 or max_health_bonus < 0:
+		if attack_bonus < 0 or attack_speed_bonus < 0 or max_health_bonus < 0:
 			return EffectData.STATUS_VALENCE_NEGATIVE
 
 	if tags.has(TAG_ACTION_PREVENTION) or tags.has(TAG_DAMAGE_OVER_TIME) or tags.has(TAG_DEATH_LINK) or tags.has(TAG_CONTROL):

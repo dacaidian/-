@@ -101,13 +101,14 @@ func create_kagune_payload(kagune_types: Array[String], is_high_concentration: b
 	var keywords: Array[String] = []
 	var actions: Array[Dictionary] = []
 	var attack_bonus := 0
+	var attack_speed_bonus := 0
 	var armor_bonus := 0
 	var movement_bonus := 0
 
 	for kagune_type in kagune_types:
 		match kagune_type:
 			CardData.KEYWORD_KAGUNE_BIKAKU:
-				append_unique_keyword(keywords, CardData.KEYWORD_MOBILE_ASSAULT)
+				attack_speed_bonus += 1
 				if is_high_concentration:
 					movement_bonus += 2
 			CardData.KEYWORD_KAGUNE_RINKAKU:
@@ -128,6 +129,8 @@ func create_kagune_payload(kagune_types: Array[String], is_high_concentration: b
 		payload[EffectData.KEY_ACTIONS] = actions
 	if attack_bonus != 0:
 		payload[EffectData.KEY_ATTACK_BONUS] = attack_bonus
+	if attack_speed_bonus != 0:
+		payload[EffectData.KEY_ATTACK_SPEED_BONUS] = attack_speed_bonus
 	if armor_bonus != 0:
 		payload[EffectData.KEY_ARMOR_BONUS] = armor_bonus
 	if movement_bonus != 0:

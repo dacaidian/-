@@ -106,20 +106,14 @@ func test_card_definitions() -> void:
 	assert(bikaku_volley != null)
 	assert(bikaku_volley.level == 1 and bikaku_volley.count == 3)
 	assert(bikaku_volley.owner_hero_card_id == "kaneki_ken")
-	assert(bikaku_volley.effects.size() == 2)
-	assert(EffectData.get_id(bikaku_volley.effects[0]) == EffectData.EFFECT_APPLY_STATUS)
-	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[0]) == CardStatus.STACK_POLICY_STACK)
+	assert(bikaku_volley.effects.size() == 1)
+	assert(EffectData.get_id(bikaku_volley.effects[0]) == EffectData.EFFECT_APPLY_KAGUNE_POWER)
+	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[0]) == CardStatus.STACK_POLICY_REPLACE)
 	assert(
-		int(EffectData.get_status_payload(bikaku_volley.effects[0]).get(EffectData.KEY_ATTACK_BONUS, 0))
-		== 1
-	)
-	assert(EffectData.get_id(bikaku_volley.effects[1]) == EffectData.EFFECT_APPLY_KAGUNE_POWER)
-	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[1]) == CardStatus.STACK_POLICY_REPLACE)
-	assert(
-		EffectData.get_status_expires_on_trigger(bikaku_volley.effects[1])
+		EffectData.get_status_expires_on_trigger(bikaku_volley.effects[0])
 		== EventContext.TRIGGER_BEFORE_TURN_START
 	)
-	assert(EffectData.get_keywords(bikaku_volley.effects[1]) == [CardData.KEYWORD_KAGUNE_BIKAKU])
+	assert(EffectData.get_keywords(bikaku_volley.effects[0]) == [CardData.KEYWORD_KAGUNE_BIKAKU])
 
 	var centipede_spell := database.get_card("centipede_form")
 	assert(centipede_spell != null)
@@ -128,7 +122,7 @@ func test_card_definitions() -> void:
 
 	var centipede_form := database.get_card("kaneki_centipede_form")
 	assert(centipede_form != null and centipede_form.is_hero())
-	assert(centipede_form.attack == 3 and centipede_form.health == 8)
+	assert(centipede_form.attack == 4 and centipede_form.health == 8)
 	assert(centipede_form.attack_speed == 2 and centipede_form.movement == 3)
 	assert(centipede_form.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 
@@ -139,7 +133,7 @@ func test_card_definitions() -> void:
 
 	var dragon_form := database.get_card("kaneki_dragon_form")
 	assert(dragon_form != null and dragon_form.is_hero())
-	assert(dragon_form.attack == 6 and dragon_form.health == 8)
+	assert(dragon_form.attack == 8 and dragon_form.health == 8)
 	assert(dragon_form.has_keyword(CardData.KEYWORD_GIANT))
 
 	var saint_sword_spell := database.get_card("saint_sword_form")
@@ -161,6 +155,7 @@ func test_status_numeric_modifiers() -> void:
 	data.attack = 2
 	data.health = 4
 	data.movement = 1
+	data.attack_speed = 1
 	var state := CardState.new()
 	state.set_card_data(data)
 
@@ -169,6 +164,7 @@ func test_status_numeric_modifiers() -> void:
 	status.tags = [CardStatus.TAG_ATTACK_MODIFIER]
 	status.payload = {
 		EffectData.KEY_ATTACK_BONUS: 2,
+		EffectData.KEY_ATTACK_SPEED_BONUS: 1,
 		EffectData.KEY_ARMOR_BONUS: 2,
 		EffectData.KEY_MOVEMENT_BONUS: 2,
 		EffectData.KEY_KEYWORDS: [CardData.KEYWORD_REFLECT]
@@ -177,11 +173,16 @@ func test_status_numeric_modifiers() -> void:
 	assert(state.current_attack == 4)
 	assert(state.armor == 2)
 	assert(state.max_movement == 3)
+	assert(state.max_attack_speed == 2)
+	assert(state.current_attacks == 2)
 	assert(state.has_keyword(CardData.KEYWORD_REFLECT))
+	assert(state.spend_attack())
 	state.remove_status("numeric_modifier_test")
 	assert(state.current_attack == 2)
 	assert(state.armor == 0)
 	assert(state.max_movement == 1)
+	assert(state.max_attack_speed == 1)
+	assert(state.current_attacks == 0)
 
 
 func test_base_armor() -> void:
@@ -213,9 +214,11 @@ func test_kagune_payloads() -> void:
 	var resolver := KagunePowerResolverScript.new()
 	assert(resolver.RELEASE_ANIMATION_KEY == "kagune_release")
 	var normal_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], false)
-	assert(EffectData.get_keywords(normal_tail).has(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert(int(normal_tail.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0)) == 1)
+	assert(not EffectData.get_keywords(normal_tail).has(CardData.KEYWORD_MOBILE_ASSAULT))
 	assert(not normal_tail.has(EffectData.KEY_MOVEMENT_BONUS))
 	var high_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], true)
+	assert(int(high_tail.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0)) == 1)
 	assert(int(high_tail.get(EffectData.KEY_MOVEMENT_BONUS, 0)) == 2)
 
 	var high_rinkaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_RINKAKU], true)

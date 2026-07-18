@@ -97,6 +97,8 @@ var current_movement := 0
 # 当前攻击次数。攻速决定每回合最多可以攻击几次，第一版随从默认 1。
 var max_attack_speed := 0
 var current_attacks := 0
+var passive_max_attack_speed := 0
+var status_attack_speed_bonus := 0
 var mounted_attack_max_uses: Dictionary = {}
 var mounted_attack_uses: Dictionary = {}
 
@@ -146,6 +148,8 @@ func set_card_data(value: CardData) -> void:
 		current_movement = 0
 		max_attack_speed = 0
 		current_attacks = 0
+		passive_max_attack_speed = 0
+		status_attack_speed_bonus = 0
 		mounted_attack_max_uses.clear()
 		mounted_attack_uses.clear()
 		max_main_actions = 0
@@ -190,7 +194,9 @@ func set_card_data(value: CardData) -> void:
 			max_movement = maxi(data.movement, 0)
 			passive_max_movement = max_movement
 			current_movement = max_movement
-			max_attack_speed = maxi(data.attack_speed, 0)
+			passive_max_attack_speed = maxi(data.attack_speed, 0)
+			status_attack_speed_bonus = 0
+			max_attack_speed = passive_max_attack_speed
 			current_attacks = max_attack_speed
 			mounted_attack_max_uses = create_initial_mounted_attack_uses()
 			mounted_attack_uses = mounted_attack_max_uses.duplicate(true)
@@ -207,6 +213,8 @@ func set_card_data(value: CardData) -> void:
 			current_movement = 0
 			max_attack_speed = 0
 			current_attacks = 0
+			passive_max_attack_speed = 0
+			status_attack_speed_bonus = 0
 			mounted_attack_max_uses.clear()
 			mounted_attack_uses.clear()
 			max_main_actions = 1
@@ -220,6 +228,8 @@ func set_card_data(value: CardData) -> void:
 			current_movement = 0
 			max_attack_speed = 0
 			current_attacks = 0
+			passive_max_attack_speed = 0
+			status_attack_speed_bonus = 0
 			mounted_attack_max_uses.clear()
 			mounted_attack_uses.clear()
 			max_main_actions = 0
@@ -523,6 +533,8 @@ func create_card_snapshot() -> Dictionary:
 		"current_movement": current_movement,
 		"max_attack_speed": max_attack_speed,
 		"current_attacks": current_attacks,
+		"passive_max_attack_speed": passive_max_attack_speed,
+		"status_attack_speed_bonus": status_attack_speed_bonus,
 		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
 		"mounted_attack_uses": mounted_attack_uses.duplicate(true),
 		"max_main_actions": max_main_actions,
@@ -576,6 +588,10 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	current_movement = int(snapshot.get("current_movement", 0))
 	max_attack_speed = int(snapshot.get("max_attack_speed", 0))
 	current_attacks = int(snapshot.get("current_attacks", 0))
+	status_attack_speed_bonus = int(snapshot.get("status_attack_speed_bonus", 0))
+	passive_max_attack_speed = int(
+		snapshot.get("passive_max_attack_speed", maxi(max_attack_speed - status_attack_speed_bonus, 0))
+	)
 	mounted_attack_max_uses = normalize_int_dictionary(snapshot.get("mounted_attack_max_uses", {}))
 	mounted_attack_uses = normalize_int_dictionary(snapshot.get("mounted_attack_uses", {}))
 	max_main_actions = int(snapshot.get("max_main_actions", 0))
@@ -597,6 +613,9 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	if not snapshot.has("status_movement_bonus"):
 		status_movement_bonus = calculate_status_movement_bonus()
 		passive_max_movement = maxi(max_movement - status_movement_bonus, 0)
+	if not snapshot.has("status_attack_speed_bonus"):
+		status_attack_speed_bonus = calculate_status_attack_speed_bonus()
+		passive_max_attack_speed = maxi(max_attack_speed - status_attack_speed_bonus, 0)
 	if not snapshot.has("status_control_base_owner_id"):
 		status_control_base_owner_id = ""
 	is_action_available_hint = bool(snapshot.get("is_action_available_hint", false))
@@ -630,7 +649,9 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	max_movement = int(origin.get("movement", max_movement))
 	passive_max_movement = max_movement
 	current_movement = max_movement
-	max_attack_speed = int(origin.get("attack_speed", max_attack_speed))
+	passive_max_attack_speed = int(origin.get("attack_speed", max_attack_speed))
+	status_attack_speed_bonus = 0
+	max_attack_speed = passive_max_attack_speed
 	current_attacks = max_attack_speed
 	mounted_attack_max_uses = normalize_int_dictionary(origin.get("mounted_attack_max_uses", {}))
 	mounted_attack_uses.clear()
@@ -861,7 +882,9 @@ func revive_from_reborn(health_value: int) -> void:
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
 	passive_max_movement = max_movement
 	current_movement = max_movement
-	max_attack_speed = int(origin.get("attack_speed", data.attack_speed if data.is_minion() else 0))
+	passive_max_attack_speed = int(origin.get("attack_speed", data.attack_speed if data.is_minion() else 0))
+	status_attack_speed_bonus = 0
+	max_attack_speed = passive_max_attack_speed
 	current_attacks = max_attack_speed
 	mounted_attack_max_uses = normalize_int_dictionary(origin.get("mounted_attack_max_uses", {}))
 	mounted_attack_uses = mounted_attack_max_uses.duplicate(true)
@@ -1368,11 +1391,12 @@ func set_max_movement(value: int, should_preserve_spent_movement := true) -> voi
 
 func set_max_attack_speed(value: int, should_preserve_spent_attacks := true) -> void:
 	var normalized_value: int = maxi(value, 0)
-	if max_attack_speed == normalized_value:
+	if passive_max_attack_speed == normalized_value:
 		return
 
 	var spent_attacks: int = maxi(max_attack_speed - current_attacks, 0)
-	max_attack_speed = normalized_value
+	passive_max_attack_speed = normalized_value
+	max_attack_speed = maxi(passive_max_attack_speed + status_attack_speed_bonus, 0)
 	if should_preserve_spent_attacks:
 		current_attacks = maxi(max_attack_speed - spent_attacks, 0)
 	else:
@@ -1650,6 +1674,14 @@ func calculate_status_movement_bonus() -> int:
 	return bonus
 
 
+func calculate_status_attack_speed_bonus() -> int:
+	var bonus := 0
+	for status in statuses:
+		if status != null:
+			bonus += calculate_status_numeric_modifier(status, EffectData.KEY_ATTACK_SPEED_BONUS)
+	return bonus
+
+
 func get_status_control_owner_id() -> String:
 	var control_owner_id := ""
 	for status in statuses:
@@ -1682,6 +1714,7 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	var next_status_max_health_bonus := calculate_status_max_health_bonus()
 	var next_status_armor_bonus := calculate_status_armor_bonus()
 	var next_status_movement_bonus := calculate_status_movement_bonus()
+	var next_status_attack_speed_bonus := calculate_status_attack_speed_bonus()
 	var next_control_owner_id := get_status_control_owner_id()
 	var next_owner_id := owner_id
 	if next_control_owner_id != "":
@@ -1697,6 +1730,7 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 		and status_max_health_bonus == next_status_max_health_bonus
 		and status_armor_bonus == next_status_armor_bonus
 		and status_movement_bonus == next_status_movement_bonus
+		and status_attack_speed_bonus == next_status_attack_speed_bonus
 		and owner_id == next_owner_id
 	):
 		return
@@ -1714,6 +1748,11 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	status_movement_bonus = next_status_movement_bonus
 	max_movement = maxi(passive_max_movement + status_movement_bonus, 0)
 	current_movement = maxi(max_movement - spent_movement, 0)
+
+	var spent_attacks := maxi(max_attack_speed - current_attacks, 0)
+	status_attack_speed_bonus = next_status_attack_speed_bonus
+	max_attack_speed = maxi(passive_max_attack_speed + status_attack_speed_bonus, 0)
+	current_attacks = maxi(max_attack_speed - spent_attacks, 0)
 
 	var health_bonus_delta := next_status_max_health_bonus - status_max_health_bonus
 	if health_bonus_delta != 0:

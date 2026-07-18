@@ -3883,7 +3883,7 @@
 			{
 				"id": "kaneki_ken",
 				"name": "金木研",
-				"description": "东京喰种英雄。曾在普通人与喰种之间痛苦徘徊的独眼喰种，拥有惊人的恢复力与不断进化的赫子潜能。尾赫令他在赫子解放时获得灵活的移动攻击能力。",
+				"description": "东京喰种英雄。曾在普通人与喰种之间痛苦徘徊的独眼喰种，拥有惊人的恢复力与不断进化的赫子潜能。尾赫令他在赫子解放时获得额外攻击次数。",
 				"url": "res://assets/img/东京喰种/金木研.png",
 				"type": "minion",
 				"role": "hero",
@@ -3899,7 +3899,7 @@
 			{
 				"id": "bikaku_volley",
 				"name": "尾赫齐发",
-				"description": "本回合金木研攻击力+1，并触发其尾赫效果。尾赫效果持续至下个己方回合开始；高RC浓度时还会使其移动力+2。",
+				"description": "触发金木研的尾赫效果，使其攻速+1；高RC浓度时还会使其移动力+2。效果持续至下个己方回合开始。",
 				"url": "res://assets/img/东京喰种/尾赫齐发.png",
 				"type": "spell",
 				"count": 3,
@@ -3909,25 +3909,6 @@
 				"keywords": [],
 				"effects": [
 					{
-						"id": "apply_status",
-						"target": "owner_card_by_id",
-						"target_card_id": "kaneki_ken",
-						"status_id": "bikaku_volley_attack",
-						"status_name": "尾赫齐发",
-						"status_description": "本回合攻击力+1。",
-						"status_tags": [
-							"attack_modifier"
-						],
-						"duration_turns": 1,
-						"duration_scope": "source_owner",
-						"expires_on_trigger": "after_turn_end",
-						"stack_policy": "stack",
-						"status_valence": "positive",
-						"payload": {
-							"attack_bonus": 1
-						}
-					},
-					{
 						"id": "apply_kagune_power",
 						"target": "owner_card_by_id",
 						"target_card_id": "kaneki_ken",
@@ -3936,7 +3917,7 @@
 						],
 						"status_id": "bikaku_volley_kagune",
 						"status_name": "尾赫齐发",
-						"status_description": "触发尾赫效果，获得移动攻击；高RC浓度时移动力额外+2。持续至下个己方回合开始。",
+						"status_description": "触发尾赫效果，攻速+1；高RC浓度时移动力额外+2。持续至下个己方回合开始。",
 						"duration_turns": 1,
 						"duration_scope": "source_owner",
 						"expires_on_trigger": "before_turn_start",
@@ -3950,7 +3931,7 @@
 			{
 				"id": "centipede_form",
 				"name": "蜈蚣形态",
-				"description": "金木研覆盖变身为蜈蚣形态。变身为3/8，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为蜈蚣形态。变身为4/8，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/蜈蚣形态.png",
 				"type": "spell",
 				"count": 1,
@@ -3975,7 +3956,7 @@
 			{
 				"id": "dragon_form",
 				"name": "龙形态",
-				"description": "金木研覆盖变身为龙形态。变身为6/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为龙形态。变身为8/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/龙形态.png",
 				"type": "spell",
 				"count": 1,
@@ -4073,7 +4054,7 @@
 			{
 				"id": "clown_temp_worker",
 				"name": "小丑临时工",
-				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时获得移动攻击，高RC浓度下移动力进一步提升。",
+				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时攻速+1，高RC浓度下移动力进一步提升。",
 				"url": "res://assets/img/东京喰种/小丑临时工.png",
 				"type": "minion",
 				"count": 4,
@@ -4088,7 +4069,7 @@
 			{
 				"id": "kagune_power_guide",
 				"name": "赫子之力",
-				"description": "东京喰种种族规则。开启施法回合时进入赫子解放，能力持续至下个己方回合开始：尾赫获得移动攻击，高浓度额外获得移动力+2；鳞赫获得移动攻击且攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
+				"description": "东京喰种种族规则。开启施法回合时进入赫子解放，能力持续至下个己方回合开始：尾赫攻速+1，高浓度额外获得移动力+2；鳞赫获得移动攻击且攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
 				"url": "res://assets/img/东京喰种/赫子之力.png",
 				"type": "upgrade",
 				"count": 0,
@@ -4234,7 +4215,7 @@
 				"keywords": [
 					"mobile_assault"
 				],
-				"attack": 3,
+				"attack": 4,
 				"health": 8,
 				"attack_speed": 2,
 				"movement": 3,
@@ -4269,7 +4250,7 @@
 				"keywords": [
 					"giant"
 				],
-				"attack": 6,
+				"attack": 8,
 				"health": 8,
 				"effects": [],
 				"actions": [
@@ -4407,7 +4388,7 @@
 			{
 				"id": "bin_brothers",
 				"name": "瓶兄弟",
-				"description": "配合默契的S阶喰种。拥有尾赫与2点攻速，在赫子解放时获得移动攻击。",
+				"description": "配合默契的S阶喰种。拥有尾赫与2点攻速，在赫子解放时攻速额外+1。",
 				"url": "res://assets/img/东京喰种/瓶兄弟.png",
 				"type": "minion",
 				"count": 0,
