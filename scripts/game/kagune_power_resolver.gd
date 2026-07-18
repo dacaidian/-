@@ -8,6 +8,7 @@ const STATUS_NAME := "赫子解放"
 const STATUS_TAG := CardStatus.TAG_KAGUNE_POWER
 const FEATHER_NEEDLE_ACTION_ID := "feather_needle"
 const RELEASE_ANIMATION_KEY := "kagune_release"
+const RELEASE_DURATION_TURNS := 1
 
 
 func handles(player: PlayerState) -> bool:
@@ -30,12 +31,16 @@ func refresh_player(player: PlayerState, game_manager: GameManager) -> void:
 			continue
 
 		var existing_status := state.get_status(STATUS_ID)
+		if not is_active or state.owner_id != player.id:
+			continue
+		# A release snapshots its RC tier. Passive refreshes must not rewrite that
+		# snapshot when RC changes at turn end, and must not remove it before the
+		# opponent has had a turn to interact with defensive kagune powers.
 		if existing_status != null and existing_status.source_owner_id == player.id:
+			if not existing_status.is_permanent:
+				continue
+			# Migrate a status created by the old runtime lifecycle.
 			state.remove_status(STATUS_ID)
-		if state.owner_id != player.id:
-			continue
-		if not is_active:
-			continue
 
 		var kagune_types := get_kagune_types(state)
 		if kagune_types.is_empty():
@@ -68,18 +73,27 @@ func create_kagune_status(
 	var status := CardStatus.new()
 	status.status_id = STATUS_ID
 	status.display_name = STATUS_NAME
-	status.description = "施法回合中，赫子能力已经解放。"
+	status.description = "赫子能力已经解放，将在下个己方回合开始时消失。"
 	status.tags = [CardStatus.TAG_UNCLEANSEABLE, STATUS_TAG]
 	status.stack_policy = CardStatus.STACK_POLICY_REPLACE
-	status.is_permanent = true
 	status.source_card_id = "kagune_power_guide"
 	status.source_owner_id = player.id
-	status.duration_owner_id = player.id
+	configure_status_lifecycle(status, player.id)
 	status.valence = EffectData.STATUS_VALENCE_POSITIVE
 	status.payload = create_kagune_payload(kagune_types, is_high_concentration)
 	if int(status.payload.get(EffectData.KEY_ATTACK_BONUS, 0)) != 0:
 		status.tags.append(CardStatus.TAG_ATTACK_MODIFIER)
 	return status
+
+
+func configure_status_lifecycle(status: CardStatus, owner_id: String) -> void:
+	if status == null:
+		return
+	status.is_permanent = false
+	status.remaining_turns = RELEASE_DURATION_TURNS
+	status.duration_scope = CardStatus.DURATION_SCOPE_SOURCE_OWNER
+	status.expires_on_trigger = EventContext.TRIGGER_BEFORE_TURN_START
+	status.duration_owner_id = owner_id
 
 
 func create_kagune_payload(kagune_types: Array[String], is_high_concentration: bool) -> Dictionary:

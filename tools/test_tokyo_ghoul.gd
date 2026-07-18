@@ -15,6 +15,7 @@ func _init() -> void:
 	test_status_numeric_modifiers()
 	test_base_armor()
 	test_kagune_payloads()
+	test_kagune_release_lifecycle()
 	test_cover_transforms()
 	test_sss_ghoul_definitions()
 	test_once_per_lifetime_action_resource()
@@ -83,12 +84,13 @@ func test_card_definitions() -> void:
 	var wanderer := database.get_card("anteiku_wanderer")
 	assert(wanderer != null)
 	assert(wanderer.level == 2 and wanderer.count == 4)
-	assert(wanderer.attack == 3 and wanderer.health == 5)
+	assert(wanderer.attack == 4 and wanderer.health == 5)
 	assert(wanderer.has_keyword(CardData.KEYWORD_KAGUNE_RINKAKU))
 
 	var aogiri_member := database.get_card("aogiri_tree_member")
 	assert(aogiri_member != null)
 	assert(aogiri_member.level == 2 and aogiri_member.count == 4)
+	assert(aogiri_member.attack == 3 and aogiri_member.health == 5)
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_RANGED))
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_FLYING))
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_KAGUNE_UKAKU))
@@ -96,7 +98,7 @@ func test_card_definitions() -> void:
 	var clown_worker := database.get_card("clown_temp_worker")
 	assert(clown_worker != null)
 	assert(clown_worker.level == 3 and clown_worker.count == 4)
-	assert(clown_worker.attack == 5 and clown_worker.health == 12)
+	assert(clown_worker.attack == 6 and clown_worker.health == 12)
 	assert(clown_worker.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
 
 	var bikaku_volley := database.get_card("bikaku_volley")
@@ -112,6 +114,10 @@ func test_card_definitions() -> void:
 	)
 	assert(EffectData.get_id(bikaku_volley.effects[1]) == EffectData.EFFECT_APPLY_KAGUNE_POWER)
 	assert(EffectData.get_status_stack_policy(bikaku_volley.effects[1]) == CardStatus.STACK_POLICY_REPLACE)
+	assert(
+		EffectData.get_status_expires_on_trigger(bikaku_volley.effects[1])
+		== EventContext.TRIGGER_BEFORE_TURN_START
+	)
 	assert(EffectData.get_keywords(bikaku_volley.effects[1]) == [CardData.KEYWORD_KAGUNE_BIKAKU])
 
 	var centipede_spell := database.get_card("centipede_form")
@@ -121,7 +127,7 @@ func test_card_definitions() -> void:
 
 	var centipede_form := database.get_card("kaneki_centipede_form")
 	assert(centipede_form != null and centipede_form.is_hero())
-	assert(centipede_form.attack == 3 and centipede_form.health == 6)
+	assert(centipede_form.attack == 3 and centipede_form.health == 8)
 	assert(centipede_form.attack_speed == 2 and centipede_form.movement == 3)
 	assert(centipede_form.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 
@@ -132,7 +138,7 @@ func test_card_definitions() -> void:
 
 	var dragon_form := database.get_card("kaneki_dragon_form")
 	assert(dragon_form != null and dragon_form.is_hero())
-	assert(dragon_form.attack == 5 and dragon_form.health == 8)
+	assert(dragon_form.attack == 6 and dragon_form.health == 8)
 	assert(dragon_form.has_keyword(CardData.KEYWORD_GIANT))
 
 	var saint_sword_spell := database.get_card("saint_sword_form")
@@ -142,7 +148,7 @@ func test_card_definitions() -> void:
 
 	var saint_sword_form := database.get_card("kaneki_saint_sword_form")
 	assert(saint_sword_form != null and saint_sword_form.is_hero())
-	assert(saint_sword_form.attack == 8 and saint_sword_form.health == 8)
+	assert(saint_sword_form.attack == 8 and saint_sword_form.health == 14)
 	assert(saint_sword_form.has_keyword(CardData.KEYWORD_RANGED))
 	assert(saint_sword_form.get_splash_damage() == 4)
 
@@ -223,6 +229,58 @@ func test_kagune_payloads() -> void:
 	var actions := EffectData.get_actions(high_ukaku)
 	assert(actions.size() == 1)
 	assert(int(actions[0]["effects"][0][EffectData.KEY_AMOUNT]) == 3)
+
+
+func test_kagune_release_lifecycle() -> void:
+	var resolver := KagunePowerResolverScript.new()
+	var player := PlayerState.new()
+	player.setup("player_1", "Player 1")
+	player.set_faction("tokyo_ghoul")
+	player.faction_runtime_state_id = "rc_high"
+
+	var unit_data := CardData.new()
+	unit_data.id = "kagune_lifecycle_unit"
+	unit_data.type = CardData.TYPE_MINION
+	unit_data.attack = 2
+	unit_data.health = 4
+	unit_data.keywords = [CardData.KEYWORD_KAGUNE_KOUKAKU]
+	var unit := CardState.new()
+	unit.set_card_data(unit_data)
+	unit.set_owner(player.id)
+	unit.is_face_up = true
+
+	var game_manager := GameManager.new()
+	game_manager.players = [player]
+	game_manager.board_states = [unit]
+	game_manager.is_spell_turn_active = true
+	resolver.refresh_player(player, game_manager)
+
+	var status := unit.get_status(resolver.STATUS_ID)
+	assert(status != null)
+	assert(not status.is_permanent)
+	assert(status.remaining_turns == resolver.RELEASE_DURATION_TURNS)
+	assert(status.duration_scope == CardStatus.DURATION_SCOPE_SOURCE_OWNER)
+	assert(status.expires_on_trigger == EventContext.TRIGGER_BEFORE_TURN_START)
+	assert(unit.armor == 2)
+	assert(unit.has_keyword(CardData.KEYWORD_REFLECT))
+
+	game_manager.is_spell_turn_active = false
+	resolver.refresh_player(player, game_manager)
+	assert(unit.get_status(resolver.STATUS_ID) == status)
+	assert(unit.expire_statuses_for_turn_timing(
+		EventContext.TRIGGER_BEFORE_TURN_START,
+		"player_2"
+	).is_empty())
+	assert(unit.get_status(resolver.STATUS_ID) == status)
+	var expired_statuses := unit.expire_statuses_for_turn_timing(
+		EventContext.TRIGGER_BEFORE_TURN_START,
+		player.id
+	)
+	assert(expired_statuses.size() == 1 and expired_statuses[0] == status)
+	assert(unit.get_status(resolver.STATUS_ID) == null)
+	assert(unit.armor == 0)
+	assert(not unit.has_keyword(CardData.KEYWORD_REFLECT))
+	game_manager.free()
 
 
 func test_cover_transforms() -> void:
@@ -370,7 +428,7 @@ func test_sss_ghoul_definitions() -> void:
 	assert(str((eto_transform.get("effects", []) as Array)[0].get(EffectData.KEY_CARD_ID, "")) == "one_eyed_owl")
 
 	var one_eyed_owl := database.get_card("one_eyed_owl")
-	assert(one_eyed_owl != null and one_eyed_owl.attack == 8 and one_eyed_owl.health == 8)
+	assert(one_eyed_owl != null and one_eyed_owl.attack == 12 and one_eyed_owl.health == 12)
 	assert(one_eyed_owl.has_keyword(CardData.KEYWORD_GIANT))
 
 	var furuta := database.get_card("nimura_furuta")

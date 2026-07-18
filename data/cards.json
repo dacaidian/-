@@ -3899,7 +3899,7 @@
 			{
 				"id": "bikaku_volley",
 				"name": "尾赫齐发",
-				"description": "本回合金木研攻击力+1，并触发其尾赫效果。高RC浓度时，尾赫还会使其移动力+2。",
+				"description": "本回合金木研攻击力+1，并触发其尾赫效果。尾赫效果持续至下个己方回合开始；高RC浓度时还会使其移动力+2。",
 				"url": "res://assets/img/东京喰种/尾赫齐发.png",
 				"type": "spell",
 				"count": 3,
@@ -3936,10 +3936,10 @@
 						],
 						"status_id": "bikaku_volley_kagune",
 						"status_name": "尾赫齐发",
-						"status_description": "本回合触发尾赫效果，获得移动攻击；高RC浓度时移动力额外+2。",
+						"status_description": "触发尾赫效果，获得移动攻击；高RC浓度时移动力额外+2。持续至下个己方回合开始。",
 						"duration_turns": 1,
 						"duration_scope": "source_owner",
-						"expires_on_trigger": "after_turn_end",
+						"expires_on_trigger": "before_turn_start",
 						"stack_policy": "replace",
 						"status_valence": "positive",
 						"source_card_id": "bikaku_volley",
@@ -3950,7 +3950,7 @@
 			{
 				"id": "centipede_form",
 				"name": "蜈蚣形态",
-				"description": "金木研覆盖变身为蜈蚣形态。变身为3/6，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为蜈蚣形态。变身为3/8，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/蜈蚣形态.png",
 				"type": "spell",
 				"count": 1,
@@ -3975,7 +3975,7 @@
 			{
 				"id": "dragon_form",
 				"name": "龙形态",
-				"description": "金木研覆盖变身为龙形态。变身为5/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为龙形态。变身为6/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/龙形态.png",
 				"type": "spell",
 				"count": 1,
@@ -4000,7 +4000,7 @@
 			{
 				"id": "saint_sword_form",
 				"name": "圣剑形态",
-				"description": "金木研覆盖变身为圣剑形态。变身为8/8并获得远程与溅射4：普通攻击还会对主要目标周围八格内的敌方和中立单位造成4点伤害，地面与飞行层都会受到影响。此形态永久持续；被击败时恢复原形。",
+				"description": "金木研覆盖变身为圣剑形态。变身为8/14并获得远程与溅射4：普通攻击还会对主要目标周围八格内的敌方和中立单位造成4点伤害，地面与飞行层都会受到影响。此形态永久持续；被击败时恢复原形。",
 				"url": "res://assets/img/东京喰种/圣剑形态.png",
 				"type": "spell",
 				"count": 1,
@@ -4049,7 +4049,7 @@
 				"keywords": [
 					"rinkaku"
 				],
-				"attack": 3,
+				"attack": 4,
 				"health": 5,
 				"effects": []
 			},
@@ -4067,7 +4067,7 @@
 					"ukaku"
 				],
 				"attack": 3,
-				"health": 3,
+				"health": 5,
 				"effects": []
 			},
 			{
@@ -4081,14 +4081,14 @@
 				"keywords": [
 					"bikaku"
 				],
-				"attack": 5,
+				"attack": 6,
 				"health": 12,
 				"effects": []
 			},
 			{
 				"id": "kagune_power_guide",
 				"name": "赫子之力",
-				"description": "东京喰种种族规则。开启施法回合时进入赫子解放：尾赫获得移动攻击，高浓度额外获得移动力+2；鳞赫攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
+				"description": "东京喰种种族规则。开启施法回合时进入赫子解放，能力持续至下个己方回合开始：尾赫获得移动攻击，高浓度额外获得移动力+2；鳞赫攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
 				"url": "res://assets/img/东京喰种/赫子之力.png",
 				"type": "upgrade",
 				"count": 0,
@@ -4235,7 +4235,7 @@
 					"mobile_assault"
 				],
 				"attack": 3,
-				"health": 6,
+				"health": 8,
 				"attack_speed": 2,
 				"movement": 3,
 				"effects": []
@@ -4252,7 +4252,7 @@
 				"keywords": [
 					"giant"
 				],
-				"attack": 5,
+				"attack": 6,
 				"health": 8,
 				"effects": []
 			},
@@ -4270,7 +4270,7 @@
 					"splash_4"
 				],
 				"attack": 8,
-				"health": 8,
+				"health": 14,
 				"effects": []
 			},
 			{
@@ -4300,8 +4300,8 @@
 				"keywords": [
 					"giant"
 				],
-				"attack": 8,
-				"health": 8,
+				"attack": 12,
+				"health": 12,
 				"effects": []
 			},
 			{

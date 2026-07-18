@@ -32,6 +32,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 
 		var status := CardStatus.from_effect_data(runtime_effect_data, target_state, source_state)
 		status.source_card_id = str(runtime_effect_data.get(EffectData.KEY_SOURCE_CARD_ID, status.status_id))
+		kagune_power_resolver.configure_status_lifecycle(status, owner.id)
 		target_state.add_status(status)
 
 		var apply_animation := str(runtime_effect_data.get("apply_animation", ""))
