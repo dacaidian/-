@@ -112,6 +112,7 @@ func create_kagune_payload(kagune_types: Array[String], is_high_concentration: b
 					movement_bonus += 2
 			CardData.KEYWORD_KAGUNE_RINKAKU:
 				attack_bonus += 2 if is_high_concentration else 1
+				append_unique_keyword(keywords, CardData.KEYWORD_MOBILE_ASSAULT)
 				if is_high_concentration:
 					append_unique_keyword(keywords, CardData.KEYWORD_LIFESTEAL)
 			CardData.KEYWORD_KAGUNE_KOUKAKU:

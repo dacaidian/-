@@ -221,6 +221,11 @@ func test_kagune_payloads() -> void:
 	var high_rinkaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_RINKAKU], true)
 	assert(int(high_rinkaku.get(EffectData.KEY_ATTACK_BONUS, 0)) == 2)
 	assert(EffectData.get_keywords(high_rinkaku).has(CardData.KEYWORD_LIFESTEAL))
+	assert(EffectData.get_keywords(high_rinkaku).has(CardData.KEYWORD_MOBILE_ASSAULT))
+	var normal_rinkaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_RINKAKU], false)
+	assert(int(normal_rinkaku.get(EffectData.KEY_ATTACK_BONUS, 0)) == 1)
+	assert(EffectData.get_keywords(normal_rinkaku).has(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert(not EffectData.get_keywords(normal_rinkaku).has(CardData.KEYWORD_LIFESTEAL))
 
 	var high_koukaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_KOUKAKU], true)
 	assert(int(high_koukaku.get(EffectData.KEY_ARMOR_BONUS, 0)) == 2)

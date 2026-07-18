@@ -50,6 +50,7 @@ func test_card_definitions() -> void:
 	assert(touka.has_keyword(CardData.KEYWORD_RANGED))
 
 	var tsukiyama := database.get_card("shu_tsukiyama")
+	assert(tsukiyama != null and tsukiyama.has_keyword(CardData.KEYWORD_TAUNT))
 	assert(tsukiyama.attack == 3 and tsukiyama.health == 8 and tsukiyama.armor == 2)
 	assert(tsukiyama.has_keyword(CardData.KEYWORD_KAGUNE_KOUKAKU))
 
