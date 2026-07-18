@@ -333,7 +333,8 @@ func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dict
 		var hero_card_data := state.get_effective_hero_card_data()
 		if hero_card_data == null:
 			hero_card_data = state.data
-		var revive_cooldown := maxi(HERO_REVIVE_COOLDOWN_TURNS + owner.get_hero_revive_cooldown_modifier(hero_card_id), 0)
+		var revive_modifier := get_active_hero_revive_cooldown_modifier(game_manager, owner, hero_card_id)
+		var revive_cooldown := maxi(HERO_REVIVE_COOLDOWN_TURNS + revive_modifier, 0)
 		owner.add_to_hand_with_cooldown(
 			hero_card_data,
 			revive_cooldown,
@@ -344,6 +345,44 @@ func move_death_event_to_owner_zone(game_manager: GameManager, death_event: Dict
 		return
 
 	owner.add_to_graveyard(death_event.get("graveyard_snapshot", {}))
+
+
+func get_active_hero_revive_cooldown_modifier(
+	game_manager: GameManager,
+	owner: PlayerState,
+	hero_card_id: String
+) -> int:
+	if owner == null:
+		return 0
+
+	var modifier := owner.get_hero_revive_cooldown_modifier(hero_card_id)
+	if game_manager == null:
+		return modifier
+
+	for source_state in game_manager.get_all_board_states():
+		if (
+			source_state == null
+			or source_state.is_empty()
+			or not source_state.is_face_up
+			or not source_state.is_owned_by(owner.id)
+			or source_state.current_health <= 0
+			or source_state.is_pending_death
+		):
+			continue
+
+		for effect_data in source_state.data.effects:
+			if EffectData.get_trigger(effect_data) != EffectData.TRIGGER_WHILE_ON_BOARD:
+				continue
+			if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_HERO_REVIVE_COOLDOWN:
+				continue
+
+			var target_card_ids := EffectData.get_card_ids(effect_data)
+			if hero_card_id != "" and not target_card_ids.is_empty() and not target_card_ids.has(hero_card_id):
+				continue
+
+			modifier += EffectData.get_amount(effect_data)
+
+	return modifier
 
 
 func is_interaction_related_to_state(game_manager: GameManager, state: CardState) -> bool:

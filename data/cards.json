@@ -3899,7 +3899,7 @@
 			{
 				"id": "bikaku_volley",
 				"name": "尾赫齐发",
-				"description": "触发金木研的尾赫效果，使其攻速+1；高RC浓度时还会使其移动力+2。效果持续至下个己方回合开始。",
+				"description": "触发金木研的尾赫效果，使其攻速+1。效果持续至下个己方回合开始。",
 				"url": "res://assets/img/东京喰种/尾赫齐发.png",
 				"type": "spell",
 				"count": 3,
@@ -3917,7 +3917,7 @@
 						],
 						"status_id": "bikaku_volley_kagune",
 						"status_name": "尾赫齐发",
-						"status_description": "触发尾赫效果，攻速+1；高RC浓度时移动力额外+2。持续至下个己方回合开始。",
+						"status_description": "触发尾赫效果，攻速+1。持续至下个己方回合开始。",
 						"duration_turns": 1,
 						"duration_scope": "source_owner",
 						"expires_on_trigger": "before_turn_start",
@@ -4054,7 +4054,7 @@
 			{
 				"id": "clown_temp_worker",
 				"name": "小丑临时工",
-				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时攻速+1，高RC浓度下移动力进一步提升。",
+				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时攻速+1。",
 				"url": "res://assets/img/东京喰种/小丑临时工.png",
 				"type": "minion",
 				"count": 4,
@@ -4067,9 +4067,48 @@
 				"effects": []
 			},
 			{
+				"id": "thirteenth_district_cafe",
+				"name": "13区咖啡店",
+				"description": "东京喰种二阶建筑。主动作特调会获取一张方糖咖啡；咖啡店在场时，金木研的复活冷却减少1回合。",
+				"url": "res://assets/img/东京喰种/13区咖啡店.png",
+				"type": "building",
+				"count": 1,
+				"level": 2,
+				"keywords": [],
+				"attack": 0,
+				"health": 12,
+				"effects": [
+					{
+						"id": "modify_hero_revive_cooldown",
+						"trigger": "while_on_board",
+						"card_ids": [
+							"kaneki_ken"
+						],
+						"amount": -1
+					}
+				],
+				"actions": [
+					{
+						"action_id": "special_blend",
+						"name": "特调",
+						"animation": "free_meal",
+						"target_rule": "none",
+						"main_action_cost": 1,
+						"action_group": "special",
+						"can_reuse_action_group": false,
+						"effects": [
+							{
+								"id": "add_card_to_hand",
+								"card_id": "sugar_cube_coffee"
+							}
+						]
+					}
+				]
+			},
+			{
 				"id": "kagune_power_guide",
 				"name": "赫子之力",
-				"description": "东京喰种种族规则。开启施法回合时进入赫子解放，能力持续至下个己方回合开始：尾赫攻速+1，高浓度额外获得移动力+2；鳞赫获得移动攻击且攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
+				"description": "东京喰种种族规则。开启施法回合时进入赫子解放，能力持续至下个己方回合开始：尾赫攻速+1；鳞赫获得移动攻击且攻击力+1，高浓度改为+2并获得吸血；甲赫护甲+1，高浓度改为+2并获得反伤；羽赫获得每回合一次的副动作羽针，造成1点伤害，高浓度改为3点。",
 				"url": "res://assets/img/东京喰种/赫子之力.png",
 				"type": "upgrade",
 				"count": 0,
@@ -4203,6 +4242,24 @@
 			}
 		],
 		"tokens": [
+			{
+				"id": "sugar_cube_coffee",
+				"name": "方糖咖啡",
+				"description": "恢复一个随从3点生命值。",
+				"url": "res://assets/img/东京喰种/方糖咖啡.png",
+				"type": "spell",
+				"count": 0,
+				"level": 2,
+				"animation": "heal",
+				"target_rule": "all_minions",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "heal",
+						"amount": 3
+					}
+				]
+			},
 			{
 				"id": "kaneki_centipede_form",
 				"name": "金木研蜈蚣形态",

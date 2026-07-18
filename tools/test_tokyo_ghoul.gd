@@ -17,6 +17,7 @@ func _init() -> void:
 	test_base_armor()
 	test_kagune_payloads()
 	test_kagune_release_lifecycle()
+	test_cafe_revive_cooldown_passive()
 	test_cover_transforms()
 	test_sss_ghoul_definitions()
 	test_once_per_lifetime_action_resource()
@@ -147,6 +148,30 @@ func test_card_definitions() -> void:
 	assert(saint_sword_form.has_keyword(CardData.KEYWORD_RANGED))
 	assert(saint_sword_form.get_splash_damage() == 4)
 
+	var cafe := database.get_card("thirteenth_district_cafe")
+	assert(cafe != null and cafe.is_building())
+	assert(cafe.level == 2 and cafe.count == 1 and cafe.attack == 0 and cafe.health == 12)
+	assert(cafe.actions.size() == 1)
+	var blend_action: Dictionary = cafe.actions[0]
+	assert(EffectData.get_action_id(blend_action) == "special_blend")
+	assert(int(blend_action.get("main_action_cost", 0)) == 1)
+	var blend_effects: Array = blend_action.get("effects", [])
+	assert(blend_effects.size() == 1)
+	assert(EffectData.get_id(blend_effects[0]) == EffectData.EFFECT_ADD_CARD_TO_HAND)
+	assert(EffectData.get_card_id(blend_effects[0]) == "sugar_cube_coffee")
+	assert(cafe.effects.size() == 1)
+	assert(EffectData.get_id(cafe.effects[0]) == EffectData.EFFECT_MODIFY_HERO_REVIVE_COOLDOWN)
+	assert(EffectData.get_trigger(cafe.effects[0]) == EffectData.TRIGGER_WHILE_ON_BOARD)
+	assert(EffectData.get_card_ids(cafe.effects[0]) == ["kaneki_ken"])
+	assert(EffectData.get_amount(cafe.effects[0]) == -1)
+
+	var coffee := database.get_card("sugar_cube_coffee")
+	assert(coffee != null and coffee.is_spell() and coffee.count == 0 and coffee.level == 2)
+	assert(coffee.target_rule == SpellTargetResolver.TARGET_RULE_ALL_MINIONS)
+	assert(coffee.effects.size() == 1)
+	assert(EffectData.get_id(coffee.effects[0]) == "heal")
+	assert(EffectData.get_amount(coffee.effects[0]) == 3)
+
 
 func test_status_numeric_modifiers() -> void:
 	var data := CardData.new()
@@ -219,7 +244,7 @@ func test_kagune_payloads() -> void:
 	assert(not normal_tail.has(EffectData.KEY_MOVEMENT_BONUS))
 	var high_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], true)
 	assert(int(high_tail.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0)) == 1)
-	assert(int(high_tail.get(EffectData.KEY_MOVEMENT_BONUS, 0)) == 2)
+	assert(not high_tail.has(EffectData.KEY_MOVEMENT_BONUS))
 
 	var high_rinkaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_RINKAKU], true)
 	assert(int(high_rinkaku.get(EffectData.KEY_ATTACK_BONUS, 0)) == 2)
@@ -289,6 +314,31 @@ func test_kagune_release_lifecycle() -> void:
 	assert(unit.get_status(resolver.STATUS_ID) == null)
 	assert(unit.armor == 0)
 	assert(not unit.has_keyword(CardData.KEYWORD_REFLECT))
+	game_manager.free()
+
+
+func test_cafe_revive_cooldown_passive() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+	var player := PlayerState.new()
+	player.setup("player_1", "Player 1")
+	var cafe := create_test_board_unit_from_data(
+		database.get_card("thirteenth_district_cafe"),
+		player.id,
+		24
+	)
+	var game_manager := GameManager.new()
+	game_manager.players = [player]
+	game_manager.board_states = [cafe]
+	var resolver := DeathResolverScript.new()
+
+	assert(resolver.get_active_hero_revive_cooldown_modifier(game_manager, player, "kaneki_ken") == -1)
+	assert(resolver.get_active_hero_revive_cooldown_modifier(game_manager, player, "other_hero") == 0)
+	cafe.is_face_up = false
+	assert(resolver.get_active_hero_revive_cooldown_modifier(game_manager, player, "kaneki_ken") == 0)
+	cafe.is_face_up = true
+	cafe.damage_taken = cafe.max_health
+	assert(resolver.get_active_hero_revive_cooldown_modifier(game_manager, player, "kaneki_ken") == 0)
 	game_manager.free()
 
 
@@ -493,7 +543,7 @@ func test_sss_ghoul_definitions() -> void:
 	var high_payload := kagune_resolver.create_kagune_payload(shikorae.keywords, true)
 	assert(int(high_payload.get(EffectData.KEY_ATTACK_BONUS, 0)) == 2)
 	assert(int(high_payload.get(EffectData.KEY_ARMOR_BONUS, 0)) == 2)
-	assert(int(high_payload.get(EffectData.KEY_MOVEMENT_BONUS, 0)) == 2)
+	assert(not high_payload.has(EffectData.KEY_MOVEMENT_BONUS))
 	var high_keywords := high_payload.get(EffectData.KEY_KEYWORDS, []) as Array
 	assert(high_keywords.has(CardData.KEYWORD_MOBILE_ASSAULT))
 	assert(high_keywords.has(CardData.KEYWORD_LIFESTEAL))
