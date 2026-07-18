@@ -3931,7 +3931,7 @@
 			{
 				"id": "centipede_form",
 				"name": "蜈蚣形态",
-				"description": "金木研覆盖变身为蜈蚣形态。变身为4/8，攻速2、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为蜈蚣形态。变身为3/6，攻速3、移动力3并获得移动攻击。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/蜈蚣形态.png",
 				"type": "spell",
 				"count": 1,
@@ -3956,7 +3956,7 @@
 			{
 				"id": "dragon_form",
 				"name": "龙形态",
-				"description": "金木研覆盖变身为龙形态。变身为8/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
+				"description": "金木研覆盖变身为龙形态。变身为6/8并获得巨兽。此形态永久持续；被击败时结束变身并恢复原形。变身期间不视为金木研在场。",
 				"url": "res://assets/img/东京喰种/龙形态.png",
 				"type": "spell",
 				"count": 1,
@@ -4048,7 +4048,7 @@
 					"ukaku"
 				],
 				"attack": 3,
-				"health": 5,
+				"health": 4,
 				"effects": []
 			},
 			{
@@ -4272,9 +4272,9 @@
 				"keywords": [
 					"mobile_assault"
 				],
-				"attack": 4,
-				"health": 8,
-				"attack_speed": 2,
+				"attack": 3,
+				"health": 6,
+				"attack_speed": 3,
 				"movement": 3,
 				"effects": [],
 				"actions": [
@@ -4307,7 +4307,7 @@
 				"keywords": [
 					"giant"
 				],
-				"attack": 8,
+				"attack": 6,
 				"health": 8,
 				"effects": [],
 				"actions": [

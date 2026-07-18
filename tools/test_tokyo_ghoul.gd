@@ -92,7 +92,7 @@ func test_card_definitions() -> void:
 	var aogiri_member := database.get_card("aogiri_tree_member")
 	assert(aogiri_member != null)
 	assert(aogiri_member.level == 2 and aogiri_member.count == 4)
-	assert(aogiri_member.attack == 3 and aogiri_member.health == 5)
+	assert(aogiri_member.attack == 3 and aogiri_member.health == 4)
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_RANGED))
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_FLYING))
 	assert(aogiri_member.has_keyword(CardData.KEYWORD_KAGUNE_UKAKU))
@@ -123,8 +123,8 @@ func test_card_definitions() -> void:
 
 	var centipede_form := database.get_card("kaneki_centipede_form")
 	assert(centipede_form != null and centipede_form.is_hero())
-	assert(centipede_form.attack == 4 and centipede_form.health == 8)
-	assert(centipede_form.attack_speed == 2 and centipede_form.movement == 3)
+	assert(centipede_form.attack == 3 and centipede_form.health == 6)
+	assert(centipede_form.attack_speed == 3 and centipede_form.movement == 3)
 	assert(centipede_form.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 
 	var dragon_spell := database.get_card("dragon_form")
@@ -134,7 +134,7 @@ func test_card_definitions() -> void:
 
 	var dragon_form := database.get_card("kaneki_dragon_form")
 	assert(dragon_form != null and dragon_form.is_hero())
-	assert(dragon_form.attack == 8 and dragon_form.health == 8)
+	assert(dragon_form.attack == 6 and dragon_form.health == 8)
 	assert(dragon_form.has_keyword(CardData.KEYWORD_GIANT))
 
 	var saint_sword_spell := database.get_card("saint_sword_form")
