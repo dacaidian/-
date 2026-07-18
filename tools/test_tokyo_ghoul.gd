@@ -487,7 +487,7 @@ func test_sss_ghoul_definitions() -> void:
 	assert(database.load_from_json("res://data/cards.json"))
 
 	var kuzen := database.get_card("kuzen_yoshimura")
-	assert(kuzen != null and kuzen.attack == 4 and kuzen.health == 12)
+	assert(kuzen != null and kuzen.attack == 6 and kuzen.health == 12)
 	assert(kuzen.actions.size() == 2)
 	var free_meal: Dictionary = kuzen.actions[0]
 	assert(EffectData.get_action_id(free_meal) == "free_meal")
@@ -508,7 +508,7 @@ func test_sss_ghoul_definitions() -> void:
 	assert(non_killing_owl.get_siege_bonus() == 4)
 
 	var eto := database.get_card("eto_yoshimura")
-	assert(eto != null and eto.attack == 5 and eto.health == 10)
+	assert(eto != null and eto.attack == 8 and eto.health == 8)
 	assert(eto.has_keyword(CardData.KEYWORD_TELEPORT))
 	assert(eto.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT))
 	assert(eto.actions.size() == 1)

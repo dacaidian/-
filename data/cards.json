@@ -4500,7 +4500,7 @@
 				"count": 0,
 				"level": 3,
 				"keywords": [],
-				"attack": 4,
+				"attack": 6,
 				"health": 12,
 				"effects": [],
 				"actions": [
@@ -4561,8 +4561,8 @@
 					"teleport",
 					"mobile_assault"
 				],
-				"attack": 5,
-				"health": 10,
+				"attack": 8,
+				"health": 8,
 				"effects": [],
 				"actions": [
 					{
