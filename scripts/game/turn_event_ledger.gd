@@ -13,18 +13,20 @@ func begin_turn(player_id: String) -> void:
 	death_records.clear()
 
 
-func record_death(victim: CardState, source_owner_id: String, reason: String) -> void:
+func record_death(victim: CardState, source_owner_id: String, reason: String) -> Dictionary:
 	if victim == null or victim.is_empty():
-		return
+		return {}
 
-	death_records.append({
+	var record := {
 		"source_owner_id": source_owner_id,
 		"victim_owner_id": victim.owner_id,
 		"victim_card_id": victim.card_id,
 		"is_minion": victim.is_minion(),
 		"is_hero": victim.is_hero(),
 		"reason": reason
-	})
+	}
+	death_records.append(record)
+	return record
 
 
 func get_qualified_minion_kill_count(player_id: String) -> int:
@@ -37,11 +39,16 @@ func get_qualified_minion_kill_count(player_id: String) -> int:
 
 func has_enemy_minion_kill(player_id: String) -> bool:
 	for record in death_records:
-		if not is_qualified_minion_kill(record, player_id):
-			continue
-		if str(record.get("victim_owner_id", "")) != player_id:
+		if is_enemy_minion_kill(record, player_id):
 			return true
 	return false
+
+
+func is_enemy_minion_kill(record: Dictionary, player_id: String) -> bool:
+	return (
+		is_qualified_minion_kill(record, player_id)
+		and str(record.get("victim_owner_id", "")) != player_id
+	)
 
 
 func is_qualified_minion_kill(record: Dictionary, player_id: String) -> bool:

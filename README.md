@@ -22,7 +22,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
 - **猴妖仙**：孙悟空神通、瞬移、透视、隐身、护甲、分身协攻、变身和猴族副动作。
 - **野兽人**：同类斩杀进化、混沌腐蚀、兽径地形、兽王杀戮成长、鹰身女妖咆哮增益、萨满野性呼唤和万魔岩仪式。
-- **东京喰种**：RC 细胞浓度会按本回合杀戮结果在低/中/高之间变化；施法回合在该种族中表现为“赫子解放”，四类赫子通过动态状态提供移动攻击、攻击/吸血、护甲/反伤或羽针副动作。金木研拥有尾赫法术和三种覆盖形态；SSS 阶喰种情报可提供芳村功善、高槻泉、旧多二福与死堪，包含赫者化、全体恢复、RC 提升、正面五格攻击、双重免疫以及四赫子同时解放等能力。S 阶与 SSS 阶喰种情报作为两套独立的有限随从库持续提供稀有单位。
+- **东京喰种**：初始为高 RC 浓度；每次击杀敌方非英雄随从立即提升一级，无杀戮回合结束时降低一级，低浓度无杀戮会随机分食友方非英雄喰种。施法回合在该种族中表现为“赫子解放”，四类赫子通过动态状态提供移动攻击、攻击/吸血、护甲/反伤或羽针副动作。金木研拥有尾赫法术和三种覆盖形态；SSS 阶喰种情报可提供芳村功善、高槻泉、旧多二福与死堪，包含赫者化、全体恢复、RC 提升、正面五格攻击、双重免疫以及四赫子同时解放等能力。S 阶与 SSS 阶喰种情报作为两套独立的有限随从库持续提供稀有单位。
 - **影月议会**：古尔丹、灵魂虹吸、邪能灌注、邪能狂乱、混乱兽人、地狱犬、术士、基尔加丹的低语、混乱狼骑兵、末日守卫、地狱火、黑暗之门、魅魔与古尔丹之杖；以邪能标签触发本回合疯狂状态，装备可升级施法动作并引发邪能过载，术士诅咒引入可复用的伤害加深状态，地狱火引入火焰伤害持续状态，黑暗之门使用通用周期触发持续提供恶魔兵源。
 
 ## 项目结构
@@ -58,6 +58,7 @@ war-card/
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
+- **HUD 卡图统一预览**：种族状态牌与装备牌通过 `CardTexturePreviewController` 共享悬浮大图、视口内定位和显示生命周期。
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立滚动，空区自动收缩，非空区按卡牌行数共享可用高度，焦点切换不会改变布局或重置滚动位置。
 - **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径和范围区域六种表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
@@ -80,6 +81,8 @@ python tools/validate_cards.py
 godot --headless --path . --check-only
 godot --headless --path . --quit-after 1
 godot --headless --path . --script res://tools/test_tokyo_ghoul.gd
+godot --headless --path . --script res://tools/test_rc_concentration.gd
+godot --headless --path . --script res://tools/test_card_texture_preview.gd
 godot --headless --path . --script res://tools/test_card_reserve.gd
 ```
 

@@ -3847,8 +3847,8 @@
 		"runtime_state": {
 			"id": "rc_concentration",
 			"name": "RC细胞浓度",
-			"panel_hint": "根据本回合杀戮结果结算",
-			"default_state_id": "rc_medium",
+			"panel_hint": "击杀敌方随从立即提升；无杀戮时降低，低浓度触发分食",
+			"default_state_id": "rc_high",
 			"transition_policy": "rc_concentration",
 			"cycle": [
 				{
@@ -4190,7 +4190,7 @@
 			{
 				"id": "tokyo_ghoul_rc_low",
 				"name": "低RC浓度",
-				"description": "回合内完成合格杀戮则升至中浓度；否则保持低浓度，并在回合结束随机分食一个友方非英雄喰种随从。",
+				"description": "击杀敌方非英雄随从时立即提升至中浓度；本回合未杀死任何有归属的非英雄随从则保持低浓度，并随机分食一个友方非英雄喰种随从。",
 				"url": "res://assets/img/东京喰种/低RC浓度.png",
 				"type": "time",
 				"count": 0,
@@ -4201,7 +4201,7 @@
 			{
 				"id": "tokyo_ghoul_rc_medium",
 				"name": "中RC浓度",
-				"description": "没有合格杀戮则降至低浓度；发生杀戮则保持中浓度；若本回合杀死过敌方随从且回合结束时敌方已无随从，则升至高浓度。",
+				"description": "击杀敌方非英雄随从时立即提升至高浓度；本回合未杀死任何有归属的非英雄随从则在回合结束降至低浓度。",
 				"url": "res://assets/img/东京喰种/中RC浓度.png",
 				"type": "time",
 				"count": 0,
@@ -4212,7 +4212,7 @@
 			{
 				"id": "tokyo_ghoul_rc_high",
 				"name": "高RC浓度",
-				"description": "赫子解放会获得强化能力。回合内有合格杀戮则保持高浓度，否则在回合结束时降至中浓度。",
+				"description": "赫子解放会获得强化能力。本回合未杀死任何有归属的非英雄随从，则在回合结束降至中浓度。",
 				"url": "res://assets/img/东京喰种/高RC浓度.png",
 				"type": "time",
 				"count": 0,

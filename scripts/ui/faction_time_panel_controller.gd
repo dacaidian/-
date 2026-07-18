@@ -1,6 +1,7 @@
 extends RefCounted
 class_name FactionTimePanelController
 
+const CardTexturePreviewControllerScript := preload("res://scripts/ui/card_texture_preview_controller.gd")
 const PANEL_WIDTH := 248.0
 const PANEL_MARGIN := 12.0
 const PANEL_TOP_LIMIT := 112.0
@@ -11,6 +12,7 @@ const MAX_SCROLL_HEIGHT := 230.0
 var panel: PanelContainer
 var list_scroll: ScrollContainer
 var list: VBoxContainer
+var card_preview_controller := CardTexturePreviewControllerScript.new()
 
 
 func setup(root: Control) -> void:
@@ -20,10 +22,11 @@ func setup(root: Control) -> void:
 	panel = PanelContainer.new()
 	panel.name = "FactionTimePanel"
 	panel.custom_minimum_size = Vector2(PANEL_WIDTH, 0)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	panel.z_index = 2100
 	panel.add_theme_stylebox_override("panel", create_panel_style())
 	root.add_child.call_deferred(panel)
+	card_preview_controller.setup(root)
 
 	var margin := MarginContainer.new()
 	margin.name = "MarginContainer"
@@ -31,13 +34,13 @@ func setup(root: Control) -> void:
 	margin.add_theme_constant_override("margin_top", 10)
 	margin.add_theme_constant_override("margin_right", 10)
 	margin.add_theme_constant_override("margin_bottom", 10)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.mouse_filter = Control.MOUSE_FILTER_PASS
 	panel.add_child(margin)
 
 	var box := VBoxContainer.new()
 	box.name = "VBoxContainer"
 	box.add_theme_constant_override("separation", 8)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
 	margin.add_child(box)
 
 	var title := Label.new()
@@ -56,13 +59,13 @@ func setup(root: Control) -> void:
 	list_scroll.name = "StateScroll"
 	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	list_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	list_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	list_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	box.add_child(list_scroll)
 
 	list = VBoxContainer.new()
 	list.name = "StateList"
 	list.add_theme_constant_override("separation", 7)
-	list.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	list.mouse_filter = Control.MOUSE_FILTER_PASS
 	list_scroll.add_child(list)
 
 	position_panel(root)
@@ -73,6 +76,7 @@ func update(current_player: PlayerState, card_database: CardDatabase, root: Cont
 	if panel == null or list == null:
 		return
 
+	card_preview_controller.hide_preview()
 	for child in list.get_children():
 		child.queue_free()
 
@@ -113,12 +117,12 @@ func create_player_state_row(player: PlayerState, card_database: CardDatabase) -
 	var row := HBoxContainer.new()
 	row.name = "%sRuntimeStateRow" % player.id
 	row.add_theme_constant_override("separation", 8)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var frame := PanelContainer.new()
 	frame.name = "CardFrame"
 	frame.custom_minimum_size = CARD_PREVIEW_SIZE
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.mouse_filter = Control.MOUSE_FILTER_STOP
 	frame.add_theme_stylebox_override("panel", create_card_frame_style())
 	row.add_child(frame)
 
@@ -133,6 +137,7 @@ func create_player_state_row(player: PlayerState, card_database: CardDatabase) -
 	var card_data := card_database.get_card(player.faction_runtime_state_card_id)
 	if card_data != null and card_data.front_texture != null:
 		texture.texture = card_data.front_texture
+		card_preview_controller.bind_card(frame, card_data)
 
 	var info := VBoxContainer.new()
 	info.name = "InfoBox"

@@ -784,6 +784,7 @@ func end_turn() -> void:
 	if current_player != null:
 		current_player.end_turn()
 		get_tree().call_group("card_hover_previews", "hide_preview")
+		get_tree().call_group("hud_card_texture_previews", "hide")
 		await resolve_turn_timing_triggers(EventContext.TRIGGER_AFTER_TURN_END, current_player.id)
 		await advance_faction_runtime_state_for_player(current_player)
 
@@ -828,11 +829,18 @@ func record_turn_death_event(death_event: Dictionary) -> void:
 		return
 
 	var death_metadata: Dictionary = death_event.get("death_metadata", {})
-	turn_event_ledger.record_death(
+	var death_record := turn_event_ledger.record_death(
 		state,
 		str(death_metadata.get("source_owner_id", "")),
 		str(death_event.get("reason", ""))
 	)
+	if faction_runtime_state_resolver.resolve_after_death_event(
+		current_player,
+		turn_event_ledger,
+		death_record
+	):
+		refresh_hand_passives_for_player(current_player, false)
+		update_faction_time_panel_view()
 
 
 func schedule_ai_turn_if_needed() -> void:

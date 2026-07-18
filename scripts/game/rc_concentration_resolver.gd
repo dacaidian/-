@@ -17,59 +17,66 @@ func handles(player: PlayerState) -> bool:
 	)
 
 
-func resolve_after_turn_end(game_manager: GameManager, player: PlayerState, ledger: TurnEventLedger) -> bool:
-	if game_manager == null or player == null or ledger == null or not handles(player):
+func resolve_after_death_event(
+	player: PlayerState,
+	ledger: TurnEventLedger,
+	death_record: Dictionary
+) -> bool:
+	if player == null or ledger == null or not handles(player):
+		return false
+	if not ledger.is_enemy_minion_kill(death_record, player.id):
 		return false
 
-	var has_kill := ledger.get_qualified_minion_kill_count(player.id) > 0
-	var killed_enemy_minion := ledger.has_enemy_minion_kill(player.id)
-	var enemy_board_is_clear := not has_enemy_non_hero_minions(game_manager, player.id)
-	var current_state_id := player.faction_runtime_state_id
-	var next_state_id := get_next_state_id(
-		current_state_id,
-		has_kill,
-		killed_enemy_minion,
-		enemy_board_is_clear
-	)
+	var next_state_id := get_increased_state_id(player.faction_runtime_state_id)
+	if next_state_id == player.faction_runtime_state_id:
+		return false
+	return player.set_faction_runtime_state_by_id(next_state_id)
 
+
+func resolve_after_turn_end(
+	game_manager: GameManager,
+	player: PlayerState,
+	ledger: TurnEventLedger
+) -> bool:
+	if game_manager == null or player == null or ledger == null or not handles(player):
+		return false
+	if ledger.get_qualified_minion_kill_count(player.id) > 0:
+		return false
+
+	var current_state_id := player.faction_runtime_state_id
+	var next_state_id := get_decreased_state_id(player.faction_runtime_state_id)
 	var did_change := false
-	if next_state_id != "" and next_state_id != player.faction_runtime_state_id:
+	if next_state_id != player.faction_runtime_state_id:
 		did_change = player.set_faction_runtime_state_by_id(next_state_id)
 
-	if current_state_id == STATE_LOW and not has_kill:
+	if current_state_id == STATE_LOW:
 		await resolve_forced_feeding(game_manager, player)
 
 	return did_change
 
 
-func get_next_state_id(
-	current_state_id: String,
-	has_kill: bool,
-	killed_enemy_minion: bool,
-	enemy_board_is_clear: bool
-) -> String:
+func get_increased_state_id(current_state_id: String) -> String:
 	match current_state_id:
 		STATE_LOW:
-			return STATE_MEDIUM if has_kill else STATE_LOW
-		STATE_HIGH:
-			return STATE_HIGH if has_kill else STATE_MEDIUM
-		_:
-			if not has_kill:
-				return STATE_LOW
-			if killed_enemy_minion and enemy_board_is_clear:
-				return STATE_HIGH
 			return STATE_MEDIUM
+		STATE_MEDIUM:
+			return STATE_HIGH
+		STATE_HIGH:
+			return STATE_HIGH
+		_:
+			return current_state_id
 
 
-func has_enemy_non_hero_minions(game_manager: GameManager, player_id: String) -> bool:
-	for state in game_manager.get_all_board_states():
-		if not BoardQuery.is_face_up_minion(state):
-			continue
-		if state.is_hero():
-			continue
-		if state.owner_id != "" and state.owner_id != player_id:
-			return true
-	return false
+func get_decreased_state_id(current_state_id: String) -> String:
+	match current_state_id:
+		STATE_HIGH:
+			return STATE_MEDIUM
+		STATE_MEDIUM:
+			return STATE_LOW
+		STATE_LOW:
+			return STATE_LOW
+		_:
+			return current_state_id
 
 
 func resolve_forced_feeding(game_manager: GameManager, player: PlayerState) -> void:
@@ -95,7 +102,5 @@ func get_feeding_candidates(game_manager: GameManager, player: PlayerState) -> A
 			continue
 		if state.data.faction_id != FACTION_ID:
 			continue
-
 		candidates.append(state)
-
 	return candidates

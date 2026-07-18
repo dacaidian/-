@@ -28,24 +28,25 @@ func _init() -> void:
 
 func test_rc_transitions() -> void:
 	var resolver := RcConcentrationResolverScript.new()
-	assert(resolver.get_next_state_id("rc_low", true, false, false) == "rc_medium")
-	assert(resolver.get_next_state_id("rc_low", false, false, false) == "rc_low")
-	assert(resolver.get_next_state_id("rc_medium", false, false, false) == "rc_low")
-	assert(resolver.get_next_state_id("rc_medium", true, false, false) == "rc_medium")
-	assert(resolver.get_next_state_id("rc_medium", true, true, true) == "rc_high")
-	assert(resolver.get_next_state_id("rc_high", true, true, true) == "rc_high")
-	assert(resolver.get_next_state_id("rc_high", false, false, true) == "rc_medium")
+	assert(resolver.get_increased_state_id("rc_low") == "rc_medium")
+	assert(resolver.get_increased_state_id("rc_medium") == "rc_high")
+	assert(resolver.get_increased_state_id("rc_high") == "rc_high")
+	assert(resolver.get_decreased_state_id("rc_high") == "rc_medium")
+	assert(resolver.get_decreased_state_id("rc_medium") == "rc_low")
+	assert(resolver.get_decreased_state_id("rc_low") == "rc_low")
 
 
 func test_turn_event_ledger() -> void:
 	var ledger := TurnEventLedgerScript.new()
 	ledger.begin_turn("player_1")
-	ledger.record_death(create_minion("enemy", "player_2"), "player_1", "attack")
+	var enemy_record := ledger.record_death(create_minion("enemy", "player_2"), "player_1", "attack")
 	assert(ledger.get_qualified_minion_kill_count("player_1") == 1)
 	assert(ledger.has_enemy_minion_kill("player_1"))
+	assert(ledger.is_enemy_minion_kill(enemy_record, "player_1"))
 
-	ledger.record_death(create_minion("friendly", "player_1"), "player_1", "attack")
+	var friendly_record := ledger.record_death(create_minion("friendly", "player_1"), "player_1", "attack")
 	assert(ledger.get_qualified_minion_kill_count("player_1") == 2)
+	assert(not ledger.is_enemy_minion_kill(friendly_record, "player_1"))
 
 	ledger.record_death(create_minion("neutral", ""), "player_1", "attack")
 	ledger.record_death(create_minion("enemy_hero", "player_2", true), "player_1", "attack")

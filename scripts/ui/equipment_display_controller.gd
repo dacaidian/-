@@ -3,6 +3,8 @@ class_name EquipmentDisplayController
 
 # 右侧装备展示区。只展示当前回合玩家的已装备卡牌，不参与装备规则。
 
+const CardTexturePreviewControllerScript := preload("res://scripts/ui/card_texture_preview_controller.gd")
+
 const PANEL_SIZE := Vector2(220, 320)
 const CARD_SIZE := Vector2(96, 134)
 const RIGHT_MARGIN := 24.0
@@ -11,7 +13,7 @@ const TOP_MARGIN := 236.0
 var panel: PanelContainer
 var owner_label: Label
 var card_box: VBoxContainer
-var preview_rect: TextureRect
+var card_preview_controller := CardTexturePreviewControllerScript.new()
 
 
 func setup(root: Control) -> void:
@@ -25,6 +27,7 @@ func setup(root: Control) -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", create_panel_style())
 	root.add_child.call_deferred(panel)
+	card_preview_controller.setup(root)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -100,6 +103,7 @@ func clear_cards() -> void:
 	if card_box == null:
 		return
 
+	card_preview_controller.hide_preview()
 	for child in card_box.get_children():
 		child.queue_free()
 
@@ -120,8 +124,7 @@ func create_equipment_view(card_data: CardData) -> Control:
 	card.custom_minimum_size = CARD_SIZE
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", create_card_style())
-	card.mouse_entered.connect(func(): show_preview(card_data, card))
-	card.mouse_exited.connect(hide_preview)
+	card_preview_controller.bind_card(card, card_data)
 	row.add_child(card)
 
 	var texture := TextureRect.new()
@@ -151,40 +154,6 @@ func create_equipment_view(card_data: CardData) -> Control:
 	info.add_child(name_label)
 
 	return row
-
-
-func show_preview(card_data: CardData, source_control: Control) -> void:
-	if card_data == null or card_data.front_texture == null or source_control == null:
-		return
-
-	var scene := source_control.get_tree().current_scene
-	if scene == null:
-		return
-
-	if preview_rect == null:
-		preview_rect = TextureRect.new()
-		preview_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		preview_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		preview_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		preview_rect.z_index = 3400
-		scene.add_child(preview_rect)
-
-	var display_size := Vector2(240, 336)
-	var source_rect := source_control.get_global_rect()
-	preview_rect.texture = card_data.front_texture
-	preview_rect.custom_minimum_size = display_size
-	preview_rect.size = display_size
-	preview_rect.global_position = source_rect.position - Vector2(display_size.x + 16.0, 0.0)
-	preview_rect.show()
-
-
-func hide_preview() -> void:
-	if preview_rect == null:
-		return
-
-	preview_rect.queue_free()
-	preview_rect = null
-
 
 func create_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
