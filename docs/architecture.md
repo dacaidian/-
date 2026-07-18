@@ -244,15 +244,15 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 `RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
 
-一次性特效放在 `CardAnimationController`。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
+一次性特效统一从 `CardAnimationController` 进入；通用移动、攻击和少量跨种族表现留在控制器，种族主题节点、Tween 与样式由独立 animation provider 持有。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
 
-`CardAnimationController` 是通用动画入口，通用法术和种族主题特效通过 `SpellAnimationRouter` 注册 provider。路由按“卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场”四种表现上下文分别保存 animation key，不创建节点也不读取规则状态；provider 只接收表现上下文并拥有该主题的节点、Tween 和 StyleBox 实现。普通种族成功开启施法回合后使用 `spell_turn_activation`，由 `GenericSpellAnimationProvider` 播放蓝金法阵、法力脉冲和粒子演出；东京喰种改走专属 `kagune_release`，不会重复播放通用效果。影月议会和东京喰种主题特效已经迁移到独立 provider，原有 key、默认回退和 `GameAnimationResolver` 门面保持兼容。后续按种族渐进迁移，不再把新主题实现追加回中央 `match`。
+`CardAnimationController` 是稳定动画门面，通用法术和种族主题特效通过 `SpellAnimationRouter` 注册 provider。路由按“卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域”六种表现上下文分别保存 animation key，不创建节点也不读取规则状态；provider 只接收表现上下文并拥有该主题的节点、Tween 和 StyleBox 实现。普通种族成功开启施法回合后使用 `spell_turn_activation`，由 `GenericSpellAnimationProvider` 播放蓝金法阵、法力脉冲和粒子演出；东京喰种改走专属 `kagune_release`，不会重复播放通用效果。猴妖仙、野兽人、苗疆族、狐妖仙、影月议会和东京喰种主题均已迁移到独立 provider；兽径使用 path 路由，狐火使用 area 路由。原有 key、默认回退和 `GameAnimationResolver` 门面保持兼容，新主题不得再追加回中央 `match`。
 
 手牌抽屉仍按法术、随从、升级、装备四个语义分区，并保留各自独立滚动，但不再固定四等分。生产节点树位于独立场景 `scenes/ui/hand_drawer_panel.tscn`，主场景和 UI 集成测试共用同一组件。`HandSectionLayoutPolicy` 是不依赖节点的纯布局策略：空分区收缩为仅标题的窄条；非空分区先取得一致的可操作最低高度，再按实际卡牌行数的平方根分配剩余空间，使拥挤区明确获得更多高度，同时避免卡牌数量极端悬殊时独占抽屉；某分区达到完整内容高度后停止增长，空间继续分给仍需滚动的分区。`HandDrawerController` 只统计卡牌数、计算每行容量并应用高度；焦点变化不参与高度计算，因此点击卡牌不会引发布局跳动。完整重建前捕获四区滚动偏移；旧滚动节点会先脱离父节点再延迟释放，避免与新节点同名；随后在新高度应用并完成容器重排后统一恢复偏移。窗口尺寸变化只重新运行布局策略，不重新构造卡牌节点。
 
-当前结构优化优先级：新增 HUD 接入 `GameHudCoordinator`；新增种族主题特效直接实现 provider，旧主题按改动频率逐族迁移；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。
+当前结构优化优先级：新增 HUD 接入 `GameHudCoordinator`；新增种族主题特效直接实现 provider 并声明所需路由上下文；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。
 
-野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 `CardAnimationController.play_board_effect()`；多格路径特效通过 `play_path_effect_animation()` 进入，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉由 `CardAnimationController` 统一生成。
+野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 board 路由；多格路径特效通过 `play_path_effect_animation()` 进入 path 路由，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉统一由 `BeastmenAnimationProvider` 生成。
 
 影月议会的表现使用 `fel_infusion`、`fel_overload`、`fel_burst`、`fel_madness`、`mana_burn`、`fel_bite`、`life_drain`、`curse`、`kiljaeden_whisper`、`dark_portal` 和 `immolation` 等 animation key。`fel_infusion` 用于古尔丹释放基础邪能灌注以及其持续状态覆盖；`life_drain` 用于灵魂虹吸，从目标身上抽取绿色邪能束流；`fel_overload` 用于古尔丹之杖升级后的邪能过载释放和持续裂纹状态；`fel_burst` 用于过载目标回合结束爆裂；`fel_madness` 用于邪能触发后混乱兽人、地狱犬、混乱狼骑兵、末日守卫等随从进入疯狂状态，视觉应以暗紫、黑绿和血红爪痕为主体，绿色只作为邪能边缘和少量火花，避免整张卡被纯绿覆盖；`mana_burn` 用于地狱犬从目标抽取邪能并造成伤害；`fel_bite` 用于狼骑兵座狼撕咬时的邪能汲取表现；`curse` 用于术士诅咒和 `damage_amplify` 持续覆盖；`kiljaeden_whisper` 用于基尔加丹的低语周期光环；`dark_portal` 用于黑暗之门翻出和周期召唤触发；`immolation` 用于地狱火献祭和火焰状态施加。持续状态视觉放在 `CardStatusOverlay` 或 `Card` 的数值图标堆叠区，释放瞬间表现放在 `CardAnimationController`，不要让规则层直接创建视觉节点。
 
@@ -260,7 +260,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 ### 特效资源与未来 VFX 管线
 
-当前代码型特效集中在 `CardAnimationController`，适合快速实现和小型表现。未来若要制作更复杂的粒子、shader、序列帧、投射物、持续状态和手牌释放特效，应逐步引入独立 VFX 管线：
+当前代码型特效由 `CardAnimationController` 门面、`SpellAnimationRouter` 和主题 provider 协作，适合快速实现和中小型表现。未来若要制作更复杂的粒子、shader、序列帧、投射物、持续状态和手牌释放特效，应逐步引入独立 VFX 管线：
 
 - `VfxManager`：表现层入口，负责播放一次性、投射物、区域、持续状态和 UI 锚点特效。
 - `VfxRegistry` / `data/vfx.json`：把规则侧的 `animation` 或未来 `vfx` key 映射到具体 PackedScene、贴图、音效、持续时间和挂载层。

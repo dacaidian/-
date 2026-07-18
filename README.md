@@ -43,7 +43,7 @@ war-card/
 │   ├── data/                   # CardData/CardState/PlayerState 等模型
 │   ├── effects/                # JSON 驱动的通用效果
 │   ├── game/                   # 对局编排、目标、死亡、触发、棋盘 resolver
-│   └── ui/                     # 动画、面板、手牌、状态覆盖
+│   └── ui/                     # 动画门面、主题 provider、面板、手牌、状态覆盖
 ├── assets/
 │   ├── img/                    # 卡面、图标、UI 图片
 │   └── music/                  # 背景音乐
@@ -59,7 +59,7 @@ war-card/
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立滚动，空区自动收缩，非空区按卡牌行数共享可用高度，焦点切换不会改变布局或重置滚动位置。
-- **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源路径和全战场等表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，种族 provider 可维护独立主题视觉，例如东京喰种的赫子解放全战场演出。
+- **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径和范围区域六种表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
 - **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
 - **状态可驱散**：可被净化/驱散的属性变化应实现为状态，不直接永久改数值。
@@ -83,7 +83,7 @@ godot --headless --path . --script res://tools/test_tokyo_ghoul.gd
 godot --headless --path . --script res://tools/test_card_reserve.gd
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 ## 文档
 

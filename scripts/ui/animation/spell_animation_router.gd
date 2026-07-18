@@ -7,6 +7,8 @@ var _targeted_handlers: Dictionary = {}
 var _rect_handlers: Dictionary = {}
 var _source_rect_handlers: Dictionary = {}
 var _board_handlers: Dictionary = {}
+var _path_handlers: Dictionary = {}
+var _area_handlers: Dictionary = {}
 
 
 func register_targeted(animation_keys: Array[String], handler: Callable) -> void:
@@ -23,6 +25,14 @@ func register_from_rect(animation_keys: Array[String], handler: Callable) -> voi
 
 func register_board(animation_keys: Array[String], handler: Callable) -> void:
 	_register(_board_handlers, animation_keys, handler)
+
+
+func register_path(animation_keys: Array[String], handler: Callable) -> void:
+	_register(_path_handlers, animation_keys, handler)
+
+
+func register_area(animation_keys: Array[String], handler: Callable) -> void:
+	_register(_area_handlers, animation_keys, handler)
 
 
 func try_play_targeted(
@@ -76,6 +86,60 @@ func try_play_board(animation_key: String, owner: Node, effect_root: Control) ->
 
 	await handler.call(owner, effect_root, animation_key)
 	return true
+
+
+func try_play_path(
+	animation_key: String,
+	owner: Node,
+	effect_root: Control,
+	target_rects: Array[Rect2]
+) -> bool:
+	var handler := _get_handler(_path_handlers, animation_key)
+	if not handler.is_valid():
+		return false
+
+	await handler.call(owner, effect_root, target_rects, animation_key)
+	return true
+
+
+func try_play_area(
+	animation_key: String,
+	owner: Node,
+	effect_root: Control,
+	caster_card: Card,
+	center_card: Card,
+	spell_data: Dictionary
+) -> bool:
+	var handler := _get_handler(_area_handlers, animation_key)
+	if not handler.is_valid():
+		return false
+
+	await handler.call(owner, effect_root, caster_card, center_card, spell_data, animation_key)
+	return true
+
+
+func has_targeted_route(animation_key: String) -> bool:
+	return _get_handler(_targeted_handlers, animation_key).is_valid()
+
+
+func has_rect_route(animation_key: String) -> bool:
+	return _get_handler(_rect_handlers, animation_key).is_valid()
+
+
+func has_source_rect_route(animation_key: String) -> bool:
+	return _get_handler(_source_rect_handlers, animation_key).is_valid()
+
+
+func has_board_route(animation_key: String) -> bool:
+	return _get_handler(_board_handlers, animation_key).is_valid()
+
+
+func has_path_route(animation_key: String) -> bool:
+	return _get_handler(_path_handlers, animation_key).is_valid()
+
+
+func has_area_route(animation_key: String) -> bool:
+	return _get_handler(_area_handlers, animation_key).is_valid()
 
 
 func _register(routes: Dictionary, animation_keys: Array[String], handler: Callable) -> void:
