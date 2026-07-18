@@ -74,6 +74,8 @@ var passive_attack_bonus := 0
 var passive_keywords: Array[String] = []
 var status_attack_bonus := 0
 var status_attack_floor_debt := 0
+var status_attack_override := -1
+var attack_before_status_override_raw := 0
 var status_max_health_bonus := 0
 var passive_armor_bonus := 0
 var status_armor_bonus := 0
@@ -132,6 +134,8 @@ func set_card_data(value: CardData) -> void:
 		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_attack_floor_debt = 0
+		status_attack_override = -1
+		attack_before_status_override_raw = 0
 		status_max_health_bonus = 0
 		passive_armor_bonus = 0
 		status_armor_bonus = 0
@@ -176,6 +180,8 @@ func set_card_data(value: CardData) -> void:
 		passive_keywords.clear()
 		status_attack_bonus = 0
 		status_attack_floor_debt = 0
+		status_attack_override = -1
+		attack_before_status_override_raw = 0
 		status_max_health_bonus = 0
 		passive_armor_bonus = data.armor
 		status_armor_bonus = 0
@@ -517,6 +523,8 @@ func create_card_snapshot() -> Dictionary:
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_attack_floor_debt": status_attack_floor_debt,
+		"status_attack_override": status_attack_override,
+		"attack_before_status_override_raw": attack_before_status_override_raw,
 		"status_max_health_bonus": status_max_health_bonus,
 		"passive_armor_bonus": passive_armor_bonus,
 		"status_armor_bonus": status_armor_bonus,
@@ -572,6 +580,8 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 	passive_keywords = normalize_string_array(snapshot.get("passive_keywords", []))
 	status_attack_bonus = int(snapshot.get("status_attack_bonus", 0))
 	status_attack_floor_debt = int(snapshot.get("status_attack_floor_debt", 0))
+	status_attack_override = int(snapshot.get("status_attack_override", -1))
+	attack_before_status_override_raw = int(snapshot.get("attack_before_status_override_raw", 0))
 	status_max_health_bonus = int(snapshot.get("status_max_health_bonus", 0))
 	passive_armor_bonus = int(snapshot.get("passive_armor_bonus", snapshot.get("armor", 0)))
 	status_armor_bonus = int(snapshot.get("status_armor_bonus", 0))
@@ -605,6 +615,12 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		status_attack_bonus = calculate_status_attack_bonus()
 	if not snapshot.has("status_attack_floor_debt"):
 		status_attack_floor_debt = 0
+	if not snapshot.has("status_attack_override"):
+		status_attack_override = calculate_status_attack_override()
+	if not snapshot.has("attack_before_status_override_raw"):
+		attack_before_status_override_raw = (
+			current_attack - status_attack_bonus + status_attack_floor_debt
+		)
 	if not snapshot.has("status_max_health_bonus"):
 		status_max_health_bonus = calculate_status_max_health_bonus()
 	if not snapshot.has("status_armor_bonus"):
@@ -635,6 +651,8 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	passive_attack_bonus = 0
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
+	status_attack_override = -1
+	attack_before_status_override_raw = 0
 	status_max_health_bonus = 0
 	passive_armor_bonus = maxi(int(permanent_stat_overrides.get("armor", origin.get("armor", data.armor))), 0)
 	status_armor_bonus = 0
@@ -791,6 +809,8 @@ func create_last_state_snapshot() -> Dictionary:
 		"passive_keywords": passive_keywords.duplicate(),
 		"status_attack_bonus": status_attack_bonus,
 		"status_attack_floor_debt": status_attack_floor_debt,
+		"status_attack_override": status_attack_override,
+		"attack_before_status_override_raw": attack_before_status_override_raw,
 		"status_max_health_bonus": status_max_health_bonus,
 		"status_control_base_owner_id": status_control_base_owner_id,
 		"max_health": max_health,
@@ -866,6 +886,8 @@ func revive_from_reborn(health_value: int) -> void:
 	passive_keywords.clear()
 	status_attack_bonus = 0
 	status_attack_floor_debt = 0
+	status_attack_override = -1
+	attack_before_status_override_raw = 0
 	status_max_health_bonus = 0
 	passive_armor_bonus = maxi(int(permanent_stat_overrides.get("armor", origin.get("armor", data.armor))), 0)
 	status_armor_bonus = 0
@@ -1602,7 +1624,12 @@ func set_armor(value: int) -> void:
 
 
 func set_current_attack(value: int) -> void:
-	current_attack = maxi(value, 0)
+	var normalized_value := maxi(value, 0)
+	if status_attack_override >= 0:
+		attack_before_status_override_raw += normalized_value - current_attack
+		current_attack = status_attack_override
+	else:
+		current_attack = normalized_value
 	state_changed.emit(self)
 
 
@@ -1611,10 +1638,14 @@ func set_passive_attack_bonus(value: int) -> void:
 	if passive_attack_bonus == normalized_value:
 		return
 
-	var base_attack := current_attack - passive_attack_bonus - status_attack_bonus + status_attack_floor_debt
-	var raw_attack := base_attack + normalized_value + status_attack_bonus
-	current_attack = maxi(raw_attack, 0)
-	status_attack_floor_debt = mini(raw_attack - current_attack, 0)
+	var passive_delta := normalized_value - passive_attack_bonus
+	if status_attack_override >= 0:
+		attack_before_status_override_raw += passive_delta
+	else:
+		var base_attack := current_attack - passive_attack_bonus - status_attack_bonus + status_attack_floor_debt
+		var raw_attack := base_attack + normalized_value + status_attack_bonus
+		current_attack = maxi(raw_attack, 0)
+		status_attack_floor_debt = mini(raw_attack - current_attack, 0)
 	passive_attack_bonus = normalized_value
 	state_changed.emit(self)
 
@@ -1645,6 +1676,18 @@ func calculate_status_attack_bonus() -> int:
 		bonus += calculate_status_numeric_modifier(status, EffectData.KEY_ATTACK_BONUS)
 
 	return bonus
+
+
+func calculate_status_attack_override() -> int:
+	var attack_override := -1
+	for status in statuses:
+		if status == null or not status.payload.has(EffectData.KEY_ATTACK_OVERRIDE):
+			continue
+
+		# Multiple fixed-attack statuses resolve by application order; the newest wins.
+		attack_override = maxi(int(status.payload.get(EffectData.KEY_ATTACK_OVERRIDE, -1)), 0)
+
+	return attack_override
 
 
 func calculate_status_max_health_bonus() -> int:
@@ -1711,6 +1754,7 @@ func calculate_status_numeric_modifier(status: CardStatus, payload_key: String) 
 
 func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	var next_status_attack_bonus := calculate_status_attack_bonus()
+	var next_status_attack_override := calculate_status_attack_override()
 	var next_status_max_health_bonus := calculate_status_max_health_bonus()
 	var next_status_armor_bonus := calculate_status_armor_bonus()
 	var next_status_movement_bonus := calculate_status_movement_bonus()
@@ -1727,6 +1771,7 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 
 	if (
 		status_attack_bonus == next_status_attack_bonus
+		and status_attack_override == next_status_attack_override
 		and status_max_health_bonus == next_status_max_health_bonus
 		and status_armor_bonus == next_status_armor_bonus
 		and status_movement_bonus == next_status_movement_bonus
@@ -1735,11 +1780,18 @@ func recalculate_status_modifiers(should_emit_changed := true) -> void:
 	):
 		return
 
-	var base_attack := current_attack - status_attack_bonus + status_attack_floor_debt
-	var raw_attack := base_attack + next_status_attack_bonus
-	current_attack = maxi(raw_attack, 0)
-	status_attack_floor_debt = mini(raw_attack - current_attack, 0)
+	var raw_attack := attack_before_status_override_raw if status_attack_override >= 0 else (
+		current_attack + status_attack_floor_debt
+	)
+	raw_attack += next_status_attack_bonus - status_attack_bonus
+	attack_before_status_override_raw = raw_attack
+	if next_status_attack_override >= 0:
+		current_attack = next_status_attack_override
+	else:
+		current_attack = maxi(raw_attack, 0)
+	status_attack_floor_debt = mini(raw_attack - maxi(raw_attack, 0), 0)
 	status_attack_bonus = next_status_attack_bonus
+	status_attack_override = next_status_attack_override
 	owner_id = next_owner_id
 	status_armor_bonus = next_status_armor_bonus
 	armor = maxi(passive_armor_bonus + status_armor_bonus, 0)

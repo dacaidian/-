@@ -1500,7 +1500,7 @@
 			{
 				"id": "precision_shot",
 				"name": "精准射击",
-				"description": "泰兰德的下一次普通攻击额外造成4点伤害。多张精准射击会在同一次普通攻击中一起触发。",
+				"description": "本回合泰兰德的攻击力固定为4。",
 				"url": "res://assets/img/暗夜精灵哨兵/精准射击.png",
 				"type": "spell",
 				"count": 3,
@@ -1515,21 +1515,17 @@
 						"target_card_id": "tyrande",
 						"status_id": "precision_shot",
 						"status_name": "精准射击",
-						"status_description": "下一次普通攻击额外造成4点伤害。",
-						"stacks": 1,
-						"permanent": true,
+						"status_description": "本回合攻击力固定为4。",
+						"status_tags": [
+							"attack_modifier"
+						],
+						"stack_policy": "replace",
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"status_valence": "positive",
 						"payload": {
-							"consume_on_trigger": true,
-							"trigger_effects": [
-								{
-									"id": "damage",
-									"trigger": "after_attack",
-									"target": "attack_target_unit",
-									"amount": 4,
-									"scale_amount_by_status_stacks": true,
-									"death_reason": "effect"
-								}
-							]
+							"attack_override": 4
 						}
 					}
 				]

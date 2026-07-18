@@ -149,6 +149,7 @@
 
 - 可驱散属性变化应使用状态 payload/modifier。
 - 状态失效时不要写死恢复固定数值，除非状态自己保存了精确修正量。
+- 固定最终攻击力使用状态 payload `attack_override`，不要在法术或攻击动作中直接覆盖后再手写恢复。`CardState` 会在覆盖期间维护底层攻击变化，状态结束后恢复；多个攻击覆盖由最新施加者生效。修改后运行 `tools/test_status_attack_override.gd`。
 - `action_prevention` 通用阻止行动。
 - 净化走 `CleanseEffect`。默认 `cleanse_mode: "all"`，可配置 `positive` 只驱散正面状态，或 `negative` 只解除负面状态。全场阵营目标优先用 `friendly_units` / `enemy_units`；只影响随从时用 `friendly_minions`，避免误作用到建筑。
 - `breaks_on_attack_or_spell` 会在攻击或施法后移除，除非法术配置 `breaks_stealth: false`。
