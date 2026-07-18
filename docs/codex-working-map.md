@@ -8,9 +8,8 @@
 
 - `git status --short --branch`：仓库可能已有本地提交或用户修改。
 - `python tools/validate_cards.py`：修改 `data/cards.json` 后运行。
-- `godot --headless --path . --check-only`：修改脚本或场景后运行。
-- `godot --headless --path . --quit-after 1`：修改玩法或 UI 后运行。
-- 多个 Godot 校验命令必须串行运行；不要并行启动 editor、check-only 和主场景，它们会争用 `user://logs` 与导入缓存。
+- `powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1`：修改脚本、场景、玩法或 UI 后运行。该入口会等待 Godot 真正退出并在超时时清理本次进程。
+- 多个 Godot 校验命令必须串行运行；不要直接或并行启动 editor、check-only 和主场景，它们会争用 `user://logs` 与导入缓存，并可能留下隐藏进程。
 - 每波完成后提交并推送。若 GitHub 无法连接，报告本地 commit hash 和 ahead 数量。
 - 新机制先确定唯一 owner：数据模型、action/effect、resolver、对局协调器或 UI controller。若两个层都在判断同一合法性，先收拢边界再加功能。
 
@@ -356,8 +355,7 @@
 ## 验证与提交清单
 
 1. 修改卡牌后运行 `python tools/validate_cards.py`。
-2. 修改脚本或场景后运行 `godot --headless --path . --check-only`。
-3. 修改玩法或 UI 后运行 `godot --headless --path . --quit-after 1`。
-4. 检查 `git diff --stat`。
-5. 使用清晰的中文提交信息提交。
-6. 推送。若推送失败，报告本地 commit hash 和 ahead 数量。
+2. 修改脚本、场景、玩法或 UI 后运行 `powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1`。Windows 下禁止直接使用项目模式 `--check-only`，它可能留下隐藏的常驻 Godot 进程并持续占用内存。
+3. 检查 `git diff --stat`。
+4. 使用清晰的中文提交信息提交。
+5. 推送。若推送失败，报告本地 commit hash 和 ahead 数量。

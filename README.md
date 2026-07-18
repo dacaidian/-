@@ -80,16 +80,17 @@ war-card/
 
 ```powershell
 python tools/validate_cards.py
-godot --headless --path . --check-only
-godot --headless --path . --script res://tools/test_card_data_lazy_textures.gd
-godot --headless --path . --quit-after 1
-godot --headless --path . --script res://tools/test_tokyo_ghoul.gd
-godot --headless --path . --script res://tools/test_rc_concentration.gd
-godot --headless --path . --script res://tools/test_card_texture_preview.gd
-godot --headless --path . --script res://tools/test_card_reserve.gd
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_data_lazy_textures.gd -SuccessMarker CARD_DATA_LAZY_TEXTURES_TEST_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_tokyo_ghoul.gd -SuccessMarker TOKYO_GHOUL_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_rc_concentration.gd -SuccessMarker RC_CONCENTRATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_texture_preview.gd -SuccessMarker CARD_TEXTURE_PREVIEW_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_reserve.gd -SuccessMarker CARD_RESERVE_TESTS_OK
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+
+Windows 下不要直接运行 `godot --headless --path . --check-only`：Godot 4.6 在项目模式下不会可靠退出，而 PowerShell 会提前返回，长期使用会累积隐藏的 `godot.exe` 并耗尽内存。统一使用 `tools/run_godot_validation.ps1`，它会等待真实退出、限制执行时间，并只清理本次启动的进程。
 
 ## 文档
 
