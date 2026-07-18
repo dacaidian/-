@@ -34,7 +34,7 @@
 
 ## 核心数据模型
 
-`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则 `CardData` 会自动加载为 `table_texture`，用于棋盘正面展示和种族选择界面的英雄预览。
+`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则记录为 `table_texture_path`，用于棋盘正面展示和种族选择界面的英雄预览。`CardDatabase` 初始化只解析纹理路径；`front_texture`、`table_texture` 和 `back_texture` 是带缓存的惰性属性，首次被具体 UI 使用时才通过 `ResourceLoader` 加载，禁止在 `from_dictionary()` 中重新全量解码卡图。
 
 `CardState` 是棋盘上的卡牌实例，保存拥有者、位置、层级、翻开状态、当前攻击、当前生命、生命上限、护盾、护甲、状态、行动次数、原始快照和棋盘展示图。
 

@@ -82,10 +82,33 @@ var front_texture_path := ""
 var table_texture_path := ""
 var back_texture_path := ""
 
-# 运行时根据 front_texture_path 加载出的图片资源。
-var front_texture: Texture2D
-var table_texture: Texture2D
-var back_texture: Texture2D
+# 卡图按需加载。CardDatabase 初始化时只解析路径，避免一次性解码整套卡面。
+var _front_texture: Texture2D
+var front_texture: Texture2D:
+	get:
+		if _front_texture == null:
+			_front_texture = load_texture(front_texture_path)
+		return _front_texture
+	set(value):
+		_front_texture = value
+
+var _table_texture: Texture2D
+var table_texture: Texture2D:
+	get:
+		if _table_texture == null:
+			_table_texture = load_texture(table_texture_path)
+		return _table_texture
+	set(value):
+		_table_texture = value
+
+var _back_texture: Texture2D
+var back_texture: Texture2D:
+	get:
+		if _back_texture == null:
+			_back_texture = load_texture(back_texture_path)
+		return _back_texture
+	set(value):
+		_back_texture = value
 
 
 func is_minion() -> bool:
@@ -230,15 +253,13 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 			if mounted_attack is Dictionary:
 				data.mounted_attacks.append(mounted_attack)
 
-	# JSON 只保存资源路径；真正的 Texture2D 在这里加载。
-	if data.front_texture_path != "":
-		data.front_texture = load(data.front_texture_path) as Texture2D
-	if data.table_texture_path != "":
-		data.table_texture = load(data.table_texture_path) as Texture2D
-	if ResourceLoader.exists(data.back_texture_path):
-		data.back_texture = load(data.back_texture_path) as Texture2D
-
 	return data
+
+
+static func load_texture(texture_path: String) -> Texture2D:
+	if texture_path == "" or not ResourceLoader.exists(texture_path):
+		return null
+	return ResourceLoader.load(texture_path) as Texture2D
 
 
 static func get_table_texture_path(front_path: String) -> String:

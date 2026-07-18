@@ -65,6 +65,7 @@ war-card/
 - **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
 - **状态可驱散**：可被净化/驱散的属性变化应实现为状态，不直接永久改数值。
 - **衍生牌可查不可入池**：衍生牌定义在种族 `tokens[]`，注册到全局卡牌表，但不进入常规牌池。
+- **卡图按需加载**：数据库初始化只解析图片路径，卡面、战场图和卡背在具体 UI 首次使用时加载并缓存，避免启动时解码全部美术资源。
 - **文档 UTF-8**：所有文档保持 UTF-8；若出现乱码，先修复编码再继续编辑。
 
 ## 快速开始
@@ -79,6 +80,7 @@ war-card/
 ```powershell
 python tools/validate_cards.py
 godot --headless --path . --check-only
+godot --headless --path . --script res://tools/test_card_data_lazy_textures.gd
 godot --headless --path . --quit-after 1
 godot --headless --path . --script res://tools/test_tokyo_ghoul.gd
 godot --headless --path . --script res://tools/test_rc_concentration.gd

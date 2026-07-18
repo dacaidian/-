@@ -34,6 +34,7 @@
 - 新增可选种族时，先在 `cards.json` 中加入种族块、`heroes[]` 和至少一张英雄牌；中立牌库必须继续保持最后一个 faction。
 - 英雄附属牌必须加入 `heroes[].attached_cards`。
 - 棋盘展示图和种族选择英雄预览使用同目录同名 `-table.png` 自动覆盖，例如 `牧师.png` -> `牧师-table.png`；没有 table 图时回退原 `url` 卡图。手牌、悬浮预览和装备预览仍使用原图。战场翻开的随从和建筑左上角会自动读取卡图同目录 `logo.png` 作为种族标识。
+- `CardData` 的正面、战场和卡背纹理使用惰性属性。数据库加载阶段只保存路径，禁止在 `from_dictionary()` 中批量 `load()` 全部卡图，否则随着 `-table.png` 增长会造成启动内存峰值。
 - 指定拥有者英雄/卡牌时，优先使用 `target: "owner_card_by_id"` 加 `target_card_id` 或 `card_ids`。
 - 修改后运行 `python tools/validate_cards.py`。
 
