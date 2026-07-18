@@ -8,7 +8,8 @@ const TARGETED_KEYS: Array[String] = [
 	"rc_forced_feeding",
 	"bikaku_volley",
 	"free_meal",
-	"kakuja_form"
+	"kakuja_form",
+	"restore_form"
 ]
 const RECT_KEYS: Array[String] = ["centipede_form", "dragon_form", "saint_sword_form", "bikaku_volley"]
 const BOARD_KEYS: Array[String] = ["kagune_release"]
@@ -381,6 +382,8 @@ func play_targeted(
 			await play_free_meal(owner, effect_root, target_card.get_global_rect())
 		"kakuja_form":
 			await play_kakuja_form(owner, effect_root, target_card.get_global_rect())
+		"restore_form":
+			await play_restore_form(owner, effect_root, target_card.get_global_rect())
 
 
 func play_free_meal(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -455,6 +458,40 @@ func play_kakuja_form(owner: Node, effect_root: Control, target_rect: Rect2) -> 
 	core.queue_free()
 	for feather in feathers:
 		feather.queue_free()
+
+
+func play_restore_form(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var shell := create_centered_panel(target_rect, "RestoreFormShell", 1.55, create_kakuja_shell_style())
+	var core := create_centered_panel(target_rect, "RestoreFormCore", 0.58, create_kakuja_core_style())
+	shell.scale = Vector2(1.45, 1.45)
+	shell.modulate.a = 0.0
+	core.scale = Vector2(1.7, 1.7)
+	core.modulate.a = 0.0
+	effect_root.add_child(shell)
+	effect_root.add_child(core)
+
+	var gather := owner.create_tween()
+	gather.set_parallel(true)
+	gather.set_trans(Tween.TRANS_QUINT)
+	gather.set_ease(Tween.EASE_OUT)
+	gather.tween_property(shell, "scale", Vector2.ONE, spell_animation_duration * 0.62)
+	gather.tween_property(shell, "modulate:a", 0.82, spell_animation_duration * 0.34)
+	gather.tween_property(core, "scale", Vector2.ONE, spell_animation_duration * 0.48)
+	gather.tween_property(core, "modulate:a", 0.92, spell_animation_duration * 0.30)
+	await gather.finished
+
+	var release := owner.create_tween()
+	release.set_parallel(true)
+	release.set_trans(Tween.TRANS_EXPO)
+	release.set_ease(Tween.EASE_IN)
+	release.tween_property(shell, "scale", Vector2(0.18, 0.18), spell_animation_duration * 0.58)
+	release.tween_property(shell, "modulate:a", 0.0, spell_animation_duration * 0.54)
+	release.tween_property(core, "scale", Vector2(0.08, 0.08), spell_animation_duration * 0.50)
+	release.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.46)
+	await release.finished
+
+	shell.queue_free()
+	core.queue_free()
 
 
 func create_kakuja_feather(target_rect: Rect2, index: int) -> Panel:

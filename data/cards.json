@@ -4238,7 +4238,24 @@
 				"health": 8,
 				"attack_speed": 2,
 				"movement": 3,
-				"effects": []
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "restore_original_form",
+						"name": "恢复原形",
+						"animation": "restore_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"effects": [
+							{
+								"id": "restore_transform",
+								"target": "self"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "kaneki_dragon_form",
@@ -4254,7 +4271,24 @@
 				],
 				"attack": 6,
 				"health": 8,
-				"effects": []
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "restore_original_form",
+						"name": "恢复原形",
+						"animation": "restore_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"effects": [
+							{
+								"id": "restore_transform",
+								"target": "self"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "kaneki_saint_sword_form",
@@ -4271,7 +4305,24 @@
 				],
 				"attack": 8,
 				"health": 14,
-				"effects": []
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "restore_original_form",
+						"name": "恢复原形",
+						"animation": "restore_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"effects": [
+							{
+								"id": "restore_transform",
+								"target": "self"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "non_killing_owl",
@@ -4287,7 +4338,24 @@
 				],
 				"attack": 4,
 				"health": 10,
-				"effects": []
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "restore_original_form",
+						"name": "恢复原形",
+						"animation": "restore_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"effects": [
+							{
+								"id": "restore_transform",
+								"target": "self"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "one_eyed_owl",
@@ -4302,7 +4370,24 @@
 				],
 				"attack": 12,
 				"health": 12,
-				"effects": []
+				"effects": [],
+				"actions": [
+					{
+						"action_id": "restore_original_form",
+						"name": "恢复原形",
+						"animation": "restore_form",
+						"target_rule": "none",
+						"main_action_cost": 0,
+						"action_group": "special",
+						"can_reuse_action_group": true,
+						"effects": [
+							{
+								"id": "restore_transform",
+								"target": "self"
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "yamori",

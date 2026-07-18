@@ -4,6 +4,7 @@ const TurnEventLedgerScript := preload("res://scripts/game/turn_event_ledger.gd"
 const RcConcentrationResolverScript := preload("res://scripts/game/rc_concentration_resolver.gd")
 const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
 const TransformUnitEffectScript := preload("res://scripts/effects/transform_unit_effect.gd")
+const RestoreTransformEffectScript := preload("res://scripts/effects/restore_transform_effect.gd")
 const DeathResolverScript := preload("res://scripts/game/death_resolver.gd")
 const HandPlayResolverScript := preload("res://scripts/game/hand_play_resolver.gd")
 
@@ -291,6 +292,14 @@ func test_cover_transforms() -> void:
 	var dragon := database.get_card("kaneki_dragon_form")
 	var saint_sword := database.get_card("kaneki_saint_sword_form")
 	assert(kaneki != null and centipede != null and dragon != null and saint_sword != null)
+	for form_id in [
+		"kaneki_centipede_form",
+		"kaneki_dragon_form",
+		"kaneki_saint_sword_form",
+		"non_killing_owl",
+		"one_eyed_owl"
+	]:
+		assert_has_restore_form_action(database.get_card(form_id))
 
 	var state := CardState.new()
 	state.set_card_data(kaneki)
@@ -316,13 +325,21 @@ func test_cover_transforms() -> void:
 	assert(not transform_effect.can_transform_target(state))
 	assert(state.get_status("transform_snapshot_test") == null)
 
-	state.damage_taken = state.max_health
-	var death_resolver := DeathResolverScript.new()
-	assert(death_resolver.try_restore_cover_transform_death(null, state))
+	state.current_movement = state.max_movement - 1
+	state.current_attacks = state.max_attack_speed - 1
+	var restore_effect := RestoreTransformEffectScript.new()
+	var restore_effect_data := {EffectData.KEY_TARGET: EffectData.TARGET_SELF}
+	assert(restore_effect.can_execute(state, restore_effect_data, null))
+	restore_effect.execute(state, restore_effect_data, null)
 	assert(state.card_id == "kaneki_ken")
 	assert(state.represents_card_id("kaneki_ken"))
 	assert(state.get_status("transform_snapshot_test") != null)
 	assert(state.get_transform_status() == null)
+	assert(state.current_movement == 0)
+	assert(state.current_attacks == 0)
+	assert(not restore_effect.can_execute(state, restore_effect_data, null))
+
+	var death_resolver := DeathResolverScript.new()
 
 	effect_data[EffectData.KEY_STATUS_NAME] = "龙形态"
 	transform_effect.apply_transform(state, dragon, effect_data)
@@ -352,6 +369,20 @@ func test_cover_transforms() -> void:
 	assert(state.represents_card_id("kaneki_ken"))
 	assert(state.get_status("transform_snapshot_test") != null)
 	assert(state.get_transform_status() == null)
+
+
+func assert_has_restore_form_action(card_data: CardData) -> void:
+	assert(card_data != null)
+	assert(card_data.actions.size() == 1)
+	var action_data: Dictionary = card_data.actions[0]
+	assert(EffectData.get_action_id(action_data) == "restore_original_form")
+	assert(int(action_data.get("main_action_cost", 1)) == 0)
+	assert(bool(action_data.get("can_reuse_action_group", false)))
+	assert(str(action_data.get("animation", "")) == "restore_form")
+	var effects: Array = action_data.get("effects", [])
+	assert(effects.size() == 1)
+	assert(EffectData.get_id(effects[0]) == EffectData.EFFECT_RESTORE_TRANSFORM)
+	assert(EffectData.get_target(effects[0]) == EffectData.TARGET_SELF)
 
 
 func test_saint_sword_splash_crosses_board_layers() -> void:
