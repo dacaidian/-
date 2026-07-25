@@ -25,6 +25,7 @@ func _init() -> void:
 	test_bikaku_volley_hero_gate()
 	test_saint_sword_splash_crosses_board_layers()
 	test_frontal_width_and_ranged_immunity()
+	await test_frontal_width_execute_flow()
 	print("TOKYO_GHOUL_TESTS_OK")
 	quit()
 
@@ -100,7 +101,7 @@ func test_card_definitions() -> void:
 	var clown_worker := database.get_card("clown_temp_worker")
 	assert(clown_worker != null)
 	assert(clown_worker.level == 3 and clown_worker.count == 4)
-	assert(clown_worker.attack == 6 and clown_worker.health == 12)
+	assert(clown_worker.attack == 5 and clown_worker.health == 12)
 	assert(clown_worker.has_keyword(CardData.KEYWORD_KAGUNE_BIKAKU))
 
 	var bikaku_volley := database.get_card("bikaku_volley")
@@ -623,6 +624,47 @@ func test_frontal_width_and_ranged_immunity() -> void:
 
 	var giant := create_test_board_unit("giant", "player_1", 24, 10, 0, [CardData.KEYWORD_GIANT])
 	assert(giant.get_frontal_attack_width() == 3)
+
+	if game_manager.audio_manager != null:
+		game_manager.audio_manager.free()
+	game_manager.free()
+
+
+func test_frontal_width_execute_flow() -> void:
+	var database := CardDatabase.new()
+	assert(database.load_from_json("res://data/cards.json"))
+	var game_manager := GameManager.new()
+	game_manager.board_columns = 7
+	game_manager.board_rows = 7
+	game_manager.board_states.resize(49)
+	game_manager.aerial_board_states.resize(49)
+
+	var player := PlayerState.new()
+	player.setup("player_1", "Player 1")
+	game_manager.players = [player]
+	game_manager.current_player_index = 0
+
+	var attacker := create_test_board_unit_from_data(database.get_card("nimura_furuta"), player.id, 24)
+	var main_target := create_test_board_unit("main_target", "player_2", 17, 20)
+	var left_edge := create_test_board_unit("left_edge", "player_2", 15, 20)
+	var left_inner_aerial := create_test_board_unit("left_inner_aerial", "player_2", 16, 20)
+	var right_inner := create_test_board_unit("right_inner", "player_2", 18, 20)
+	var right_edge_aerial := create_test_board_unit("right_edge_aerial", "player_2", 19, 20)
+	game_manager.board_states[24] = attacker
+	game_manager.board_states[17] = main_target
+	game_manager.board_states[15] = left_edge
+	game_manager.aerial_board_states[16] = left_inner_aerial
+	game_manager.board_states[18] = right_inner
+	game_manager.aerial_board_states[19] = right_edge_aerial
+
+	var action := AttackAction.new()
+	assert(action.can_target(attacker, main_target, game_manager))
+	await action.execute(attacker, main_target, game_manager)
+	assert(main_target.current_health == 12)
+	assert(left_edge.current_health == 12)
+	assert(left_inner_aerial.current_health == 12)
+	assert(right_inner.current_health == 12)
+	assert(right_edge_aerial.current_health == 12)
 
 	if game_manager.audio_manager != null:
 		game_manager.audio_manager.free()

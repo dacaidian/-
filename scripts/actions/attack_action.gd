@@ -72,6 +72,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if resolved_attacker.is_empty() or resolved_attacker.card_id != attacker_card_id:
 		resolved_attacker = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
 	if not secondary_damage_targets.is_empty():
+		await game_manager.play_secondary_attack_impact_animation(secondary_damage_targets)
 		await game_manager.resolve_dead_states(
 			secondary_damage_targets,
 			EffectData.DEATH_REASON_ATTACK,

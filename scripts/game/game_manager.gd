@@ -1415,6 +1415,10 @@ func play_card_attack_animation(attacker_state: CardState, target_state: CardSta
 	await game_animation_resolver.play_card_attack_animation(self, attacker_state, target_state, is_melee_attack)
 
 
+func play_secondary_attack_impact_animation(target_states: Array[CardState]) -> void:
+	await game_animation_resolver.play_secondary_attack_impact_animation(self, target_states)
+
+
 func play_spell_cast_animation(caster_state: CardState, target_state: CardState, spell_data: Dictionary) -> void:
 	await game_animation_resolver.play_spell_cast_animation(self, caster_state, target_state, spell_data)
 

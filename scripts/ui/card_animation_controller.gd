@@ -130,6 +130,71 @@ func play_card_attack(owner: Node, root: Node, attacker_card: Card, target_card:
 		await play_ranged_attack(owner, root, attacker_card, target_card)
 
 
+func play_secondary_attack_impacts(owner: Node, target_cards: Array[Card]) -> void:
+	if owner == null or target_cards.is_empty():
+		return
+
+	var valid_cards: Array[Card] = []
+	var start_positions: Array[Vector2] = []
+	var start_scales: Array[Vector2] = []
+	var start_modulates: Array[Color] = []
+	for target_card in target_cards:
+		if target_card == null or not is_instance_valid(target_card):
+			continue
+		valid_cards.append(target_card)
+		start_positions.append(target_card.position)
+		start_scales.append(target_card.scale)
+		start_modulates.append(target_card.self_modulate)
+		target_card.is_animating = true
+
+	if valid_cards.is_empty():
+		return
+
+	var impact_duration := attack_animation_duration * 0.42
+	var recover_duration := attack_animation_duration * 0.46
+	var impact_tween := owner.create_tween()
+	impact_tween.set_parallel(true)
+	impact_tween.set_trans(Tween.TRANS_QUAD)
+	impact_tween.set_ease(Tween.EASE_OUT)
+	for index in range(valid_cards.size()):
+		var target_card := valid_cards[index]
+		var shake_direction := Vector2(-1.0 if index % 2 == 0 else 1.0, -0.24).normalized()
+		impact_tween.tween_property(
+			target_card,
+			"position",
+			start_positions[index] + shake_direction * attack_target_shake_distance,
+			impact_duration
+		)
+		impact_tween.tween_property(target_card, "scale", start_scales[index] * 0.94, impact_duration)
+		impact_tween.tween_property(
+			target_card,
+			"self_modulate",
+			Color(1.35, 0.72, 0.44, start_modulates[index].a),
+			impact_duration
+		)
+	await impact_tween.finished
+
+	var recover_tween := owner.create_tween()
+	recover_tween.set_parallel(true)
+	recover_tween.set_trans(Tween.TRANS_BACK)
+	recover_tween.set_ease(Tween.EASE_OUT)
+	for index in range(valid_cards.size()):
+		var target_card := valid_cards[index]
+		recover_tween.tween_property(target_card, "position", start_positions[index], recover_duration)
+		recover_tween.tween_property(target_card, "scale", start_scales[index], recover_duration)
+		recover_tween.tween_property(target_card, "self_modulate", start_modulates[index], recover_duration)
+	await recover_tween.finished
+
+	for index in range(valid_cards.size()):
+		var target_card := valid_cards[index]
+		if target_card == null or not is_instance_valid(target_card):
+			continue
+		target_card.position = start_positions[index]
+		target_card.scale = start_scales[index]
+		target_card.self_modulate = start_modulates[index]
+		target_card.is_animating = false
+
+
 func play_card_to_empty_slot(owner: Node, from_card: Card, to_card: Card) -> void:
 	if owner == null or from_card == null or to_card == null:
 		return

@@ -53,6 +53,31 @@ func play_card_attack_animation(
 	game_manager.is_resolving_card_action = false
 
 
+func play_secondary_attack_impact_animation(
+	game_manager: GameManager,
+	target_states: Array[CardState]
+) -> void:
+	if game_manager == null or target_states.is_empty():
+		return
+
+	var target_cards: Array[Card] = []
+	for target_state in target_states:
+		if target_state == null:
+			continue
+		var target_card: Card = game_manager.get_card_for_state(target_state)
+		if target_card != null and not target_cards.has(target_card):
+			target_cards.append(target_card)
+	if target_cards.is_empty():
+		return
+
+	game_manager.is_resolving_card_action = true
+	await game_manager.card_animation_controller.play_secondary_attack_impacts(
+		game_manager,
+		target_cards
+	)
+	game_manager.is_resolving_card_action = false
+
+
 func play_spell_cast_animation(
 	game_manager: GameManager,
 	caster_state: CardState,
