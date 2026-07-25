@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 	_assert_routes(router, "targeted", [
 		"fiery_eyes_golden_gaze", "beastmen_evolution", "gu_infusion",
-		"sacrifice", "fel_infusion", "feather_needle"
+		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",

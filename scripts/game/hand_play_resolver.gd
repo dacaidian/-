@@ -5,12 +5,16 @@ class_name HandPlayResolver
 # 当前只实现手牌法术；它复用 InteractionManager 的目标选择模式和 EffectRegistry。
 
 const HandSpellModifierResolverScript := preload("res://scripts/game/hand_spell_modifier_resolver.gd")
+const BoardSelectionControllerScript := preload("res://scripts/game/board_selection_controller.gd")
+const DirectionRayTargetResolverScript := preload("res://scripts/game/direction_ray_target_resolver.gd")
 
 const HAND_CAST_ACTION_ID := "hand:cast"
 const HAND_PLACE_ACTION_ID := "hand:place"
 const HAND_EQUIP_ACTION_ID := "hand:equip"
 
 var hand_spell_modifier_resolver := HandSpellModifierResolverScript.new()
+var board_selection_controller := BoardSelectionControllerScript.new()
+var direction_ray_target_resolver := DirectionRayTargetResolverScript.new()
 
 
 func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: GameManager = null) -> bool:
@@ -79,6 +83,17 @@ func start_cast_target_selection(game_manager: GameManager, player: PlayerState,
 
 	if not requires_target(card_data, player):
 		await execute_hand_card(game_manager, player, card_data, hand_index, null)
+		return true
+
+	if is_direction_selection(card_data):
+		var request := build_direction_request(card_data, player, game_manager)
+		if request == null:
+			return false
+		var result := await board_selection_controller.select(game_manager, request)
+		if result.cancelled or result.hit_state == null:
+			return false
+		game_manager.interaction_manager.cancel(game_manager.get_all_board_states())
+		await execute_hand_card(game_manager, player, card_data, hand_index, result.hit_state)
 		return true
 
 	var targets := get_valid_targets(card_data, game_manager, player)
@@ -154,7 +169,13 @@ func execute_hand_card(
 		return
 
 	var resolved_animation := str(resolved_spell.get("animation", card_data.animation))
-	await game_manager.play_hand_spell_card_animation(card_data, target_state, resolved_animation)
+	if is_direction_selection(card_data):
+		var direction_source := get_direction_origin_state(card_data, player, game_manager)
+		var directional_spell := resolved_spell.duplicate(true)
+		directional_spell["animation"] = resolved_animation
+		await game_manager.play_spell_cast_animation(direction_source, target_state, directional_spell)
+	else:
+		await game_manager.play_hand_spell_card_animation(card_data, target_state, resolved_animation)
 
 	for effect_data in get_resolved_effects(resolved_spell):
 		var runtime_effect_data := effect_data.duplicate(true)
@@ -195,6 +216,13 @@ func get_resolved_spell_effects(player: PlayerState, card_data: CardData, target
 func get_valid_targets(card_data: CardData, game_manager: GameManager, player: PlayerState = null) -> Array[CardState]:
 	if card_data == null or game_manager == null:
 		return []
+
+	if is_direction_selection(card_data):
+		var targets: Array[CardState] = []
+		for result in get_direction_results(card_data, player, game_manager):
+			if result.hit_state != null and not targets.has(result.hit_state):
+				targets.append(result.hit_state)
+		return targets
 
 	var owner_id := player.id if player != null else ""
 	return SpellTargetResolver.get_valid_targets(get_target_rule(card_data, player), game_manager, [], null, owner_id)
@@ -343,8 +371,81 @@ func can_target(card_data: CardData, target: CardState, game_manager: GameManage
 	if card_data == null:
 		return false
 
+	if is_direction_selection(card_data):
+		for result in get_direction_results(card_data, player, game_manager):
+			if result.hit_state == target:
+				return true
+		return false
+
 	var owner_id := player.id if player != null else ""
 	return SpellTargetResolver.can_target(get_target_rule(card_data, player), target, [], null, owner_id, game_manager)
+
+
+func is_direction_selection(card_data: CardData) -> bool:
+	return (
+		card_data != null
+		and str(card_data.selection.get("kind", "")) == SelectionRequest.KIND_DIRECTION_RAY
+	)
+
+
+func get_direction_results(
+	card_data: CardData,
+	player: PlayerState,
+	game_manager: GameManager
+) -> Array[SelectionResult]:
+	var request := build_direction_request(card_data, player, game_manager)
+	if request == null:
+		return []
+	return direction_ray_target_resolver.get_valid_results(game_manager, request)
+
+
+func build_direction_request(
+	card_data: CardData,
+	player: PlayerState,
+	game_manager: GameManager
+) -> SelectionRequest:
+	if card_data == null or player == null or game_manager == null or not is_direction_selection(card_data):
+		return null
+
+	var source_state := get_direction_origin_state(card_data, player, game_manager)
+	if source_state == null:
+		return null
+
+	var selection := card_data.selection
+	return SelectionRequest.direction_ray(
+		source_state.slot_index,
+		str(selection.get("title", "选择施法方向")),
+		str(selection.get("directions", SelectionRequest.DIRECTIONS_8_WAY)),
+		int(selection.get("max_distance", -1)),
+		str(selection.get("hit_target_rule", SpellTargetResolver.TARGET_RULE_ENEMY_UNITS)),
+		player.id,
+		source_state,
+		str(selection.get("stop_rule", SelectionRequest.STOP_FIRST_MATCHING)),
+		bool(selection.get("require_hit", true))
+	)
+
+
+func get_direction_origin_state(
+	card_data: CardData,
+	player: PlayerState,
+	game_manager: GameManager
+) -> CardState:
+	if card_data == null or player == null or game_manager == null:
+		return null
+
+	var origin_card_id := str(card_data.selection.get("origin_card_id", card_data.owner_hero_card_id))
+	if origin_card_id == "":
+		return null
+
+	for state in game_manager.get_all_board_states():
+		if (
+			BoardQuery.is_face_up_unit(state)
+			and state.owner_id == player.id
+			and state.represents_card_id(origin_card_id)
+		):
+			return state
+
+	return null
 
 
 func get_target_rule(card_data: CardData, player: PlayerState = null) -> String:

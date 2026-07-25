@@ -18,11 +18,25 @@ func _init() -> void:
 		hero_ids.append(hero.id)
 	assert(hero_ids == ["antonidas", "jaina"])
 
-	assert(database.get_attached_card_ids("dalaran_council", "jaina").is_empty())
+	assert(database.get_attached_card_ids("dalaran_council", "jaina") == ["cone_of_cold"])
 	var jaina_pool := database.build_weighted_pool_for_selection("dalaran_council", "jaina")
 	assert(pool_contains_card(jaina_pool, "jaina"))
 	assert(not pool_contains_card(jaina_pool, "antonidas"))
 	assert(not pool_contains_card(jaina_pool, "summon_water_elemental"))
+	assert(pool_card_count(jaina_pool, "cone_of_cold") == 3)
+	var antonidas_pool := database.build_weighted_pool_for_selection("dalaran_council", "antonidas")
+	assert(not pool_contains_card(antonidas_pool, "cone_of_cold"))
+
+	var cone_of_cold := database.get_card("cone_of_cold")
+	assert(cone_of_cold != null and cone_of_cold.is_spell())
+	assert(cone_of_cold.level == 1 and cone_of_cold.count == 3)
+	assert(cone_of_cold.target_rule == SpellTargetResolver.TARGET_RULE_DIRECTION_RAY)
+	assert(str(cone_of_cold.selection.get("kind", "")) == SelectionRequest.KIND_DIRECTION_RAY)
+	assert(str(cone_of_cold.selection.get("hit_target_rule", "")) == SpellTargetResolver.TARGET_RULE_ENEMY_MINIONS)
+	assert(cone_of_cold.effects.size() == 2)
+	assert(str(cone_of_cold.effects[0].get("status_id", "")) == CardStatus.STATUS_FREEZE)
+	assert(str(cone_of_cold.effects[1].get("id", "")) == "damage")
+	assert(int(cone_of_cold.effects[1].get("amount", 0)) == 2)
 
 	for upgrade_id in [
 		"basic_spell_power",
@@ -45,3 +59,11 @@ func pool_contains_card(pool: Array[CardData], card_id: String) -> bool:
 		if card_data != null and card_data.id == card_id:
 			return true
 	return false
+
+
+func pool_card_count(pool: Array[CardData], card_id: String) -> int:
+	var count := 0
+	for card_data in pool:
+		if card_data != null and card_data.id == card_id:
+			count += 1
+	return count

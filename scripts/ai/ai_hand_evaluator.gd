@@ -142,6 +142,8 @@ func _score_no_target_spell(effects: Array[Dictionary], _player: PlayerState, _g
 func _score_spell_on_target(effects: Array[Dictionary], target: CardState, player: PlayerState, _gm: GameManager) -> float:
 	if target == null:
 		return 0.0
+	if not SpellTargetResolver.can_spell_affect(target):
+		return 0.0
 
 	var score := 0.0
 	for effect_data in effects:

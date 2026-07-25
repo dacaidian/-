@@ -168,16 +168,17 @@
 - `scripts/game/selection_request.gd`
 - `scripts/game/selection_result.gd`
 - `scripts/game/board_selection_controller.gd`
+- `scripts/game/direction_ray_target_resolver.gd`
 - `scripts/game/board_query.gd`
 
 常见规则：
 
 - 新目标规则加到 `SpellTargetResolver`，不要在单张卡里手写过滤。
-- 魔法免疫和隐身过滤应集中处理。
+- 直接点选时的魔法免疫和隐身过滤集中在 `SpellTargetResolver`；间接命中不能直接套用点选限制。方向射线可以碰撞隐身和魔免单位，但后续法术效果仍由 `CardEffect` 过滤魔免。
 - 多目标/多阶段法术应复用通用选择控制器。
 - `SpellTargetResolver` 只管目标合法性；`BoardQuery` 管棋盘几何；`BoardSelectionController` 管多阶段交互；效果/行动消费 `SelectionResult` 后再修改规则数据。
 - 固定长度直线/矢量选择使用 `SelectionRequest.KIND_LINE_VECTOR`，当前兽径已走这条入口。
-- 方向射线选择使用 `SelectionRequest.KIND_DIRECTION_RAY`，适合以英雄或某单位为中心选择上下左右/斜向，并沿方向寻找第一个命中单位。
+- 方向射线选择使用 `SelectionRequest.KIND_DIRECTION_RAY`，适合以英雄或某单位为中心选择上下左右/斜向。卡牌静态参数放在 `CardData.selection`；命中与停止规则集中在 `DirectionRayTargetResolver`，玩家面板和 AI 都消费其 `SelectionResult`。修改后运行 `tools/test_direction_ray_selection.gd`。
 
 ## 死亡、坟场与补牌
 

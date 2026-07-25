@@ -388,12 +388,52 @@ class CardValidator:
         if target_rule and target_rule not in self.target_rules:
             self.reporter.error(f"{path}.target_rule", f"unknown target rule '{target_rule}'")
 
+        self.validate_selection(card.get("selection", None), target_rule, path)
         self.validate_animation(card, path)
 
         self.validate_effect_list(card.get("effects", []), f"{path}.effects")
         self.validate_actions(card.get("actions", []), f"{path}.actions")
         self.validate_spell_actions(card.get("spell_actions", []), f"{path}.spell_actions")
         self.validate_mounted_attacks(card.get("mounted_attacks", []), f"{path}.mounted_attacks")
+
+    def validate_selection(self, raw_selection: Any, target_rule: str, path: str) -> None:
+        if raw_selection is None:
+            if target_rule == "direction_ray":
+                self.reporter.error(f"{path}.selection", "direction_ray cards require selection config")
+            return
+        if not isinstance(raw_selection, dict):
+            self.reporter.error(f"{path}.selection", "must be an object")
+            return
+
+        selection_path = f"{path}.selection"
+        kind = str(raw_selection.get("kind", ""))
+        if kind not in {"line_vector", "direction_ray"}:
+            self.reporter.error(f"{selection_path}.kind", "must be one of line_vector, direction_ray")
+            return
+        if target_rule == "direction_ray" and kind != "direction_ray":
+            self.reporter.error(f"{selection_path}.kind", "direction_ray target rule requires direction_ray selection")
+
+        directions = str(raw_selection.get("directions", "8_way"))
+        if directions not in {"4_way", "8_way"}:
+            self.reporter.error(f"{selection_path}.directions", "must be one of 4_way, 8_way")
+
+        if "max_distance" in raw_selection:
+            max_distance = raw_selection["max_distance"]
+            if not isinstance(max_distance, int) or max_distance == 0 or max_distance < -1:
+                self.reporter.error(f"{selection_path}.max_distance", "must be -1 or a positive integer")
+
+        stop_rule = str(raw_selection.get("stop_rule", "first_unit"))
+        if stop_rule not in {"first_unit", "first_matching"}:
+            self.reporter.error(f"{selection_path}.stop_rule", "must be one of first_unit, first_matching")
+
+        hit_target_rule = str(raw_selection.get("hit_target_rule", ""))
+        if hit_target_rule and hit_target_rule not in self.target_rules:
+            self.reporter.error(
+                f"{selection_path}.hit_target_rule",
+                f"unknown target rule '{hit_target_rule}'",
+            )
+        if "require_hit" in raw_selection and not isinstance(raw_selection["require_hit"], bool):
+            self.reporter.error(f"{selection_path}.require_hit", "must be a boolean")
 
     def validate_keywords(self, card: dict[str, Any], path: str) -> None:
         raw_keywords = card.get("keywords", [])

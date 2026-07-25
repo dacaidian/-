@@ -334,7 +334,9 @@
 			},
 			{
 				"card_id": "jaina",
-				"attached_cards": []
+				"attached_cards": [
+					"cone_of_cold"
+				]
 			}
 		],
 		"cards": [
@@ -369,6 +371,47 @@
 				"attack": 1,
 				"health": 14,
 				"effects": []
+			},
+			{
+				"id": "cone_of_cold",
+				"name": "冰锥术",
+				"description": "英雄法术。选择一个方向，命中该方向上第一个敌方随从，造成2点伤害并冻结一回合。",
+				"url": "res://assets/img/达拉然议会/冰锥术.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"animation": "cone_of_cold",
+				"target_rule": "direction_ray",
+				"selection": {
+					"kind": "direction_ray",
+					"title": "选择冰锥术的释放方向",
+					"directions": "8_way",
+					"max_distance": -1,
+					"stop_rule": "first_matching",
+					"hit_target_rule": "enemy_minions",
+					"require_hit": true
+				},
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"status_id": "freeze",
+						"status_name": "冻结",
+						"status_description": "被冻结，无法行动",
+						"duration_turns": 1,
+						"duration_scope": "target_owner",
+						"expires_on_trigger": "after_turn_end",
+						"status_tags": [
+							"action_prevention"
+						],
+						"target": "selected"
+					},
+					{
+						"id": "damage",
+						"amount": 2,
+						"target": "selected"
+					}
+				]
 			},
 			{
 				"id": "mage_apprentice",

@@ -7,6 +7,7 @@ class_name SpellTargetResolver
 const TARGET_RULE_ALL_MINIONS := "all_minions"
 const TARGET_RULE_NON_HERO_MINIONS := "non_hero_minions"
 const TARGET_RULE_FRIENDLY_NON_HERO_MINIONS := "friendly_non_hero_minions"
+const TARGET_RULE_ENEMY_MINIONS := "enemy_minions"
 const TARGET_RULE_ENEMY_UNITS := "enemy_units"
 const TARGET_RULE_LOW_STAT_NON_HERO_MINIONS := "low_stat_non_hero_minions"
 const TARGET_RULE_ALL_UNITS := "all_units"
@@ -17,6 +18,7 @@ const TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS := "empty_or_hidden_slots"
 const TARGET_RULE_MINIONS_BY_CARD_IDS := "minions_by_card_ids"
 const TARGET_RULE_SPELLCASTER_MINIONS_OR_HEROES := "spellcaster_minions_or_heroes"
 const TARGET_RULE_ADJACENT_MINIONS := "adjacent_minions"
+const TARGET_RULE_DIRECTION_RAY := "direction_ray"
 
 
 static func get_rule_from_spell_data(spell_data: Dictionary) -> String:
@@ -70,7 +72,8 @@ static func can_target(
 	card_ids: Array[String] = [],
 	source_state: CardState = null,
 	source_owner_id: String = "",
-	game_manager: GameManager = null
+	game_manager: GameManager = null,
+	require_direct_selection := true
 ) -> bool:
 	if target == null:
 		return false
@@ -85,13 +88,13 @@ static func can_target(
 	if not BoardQuery.is_face_up_board_card(target):
 		return false
 
-	if target.is_stealthed_from_player(resolved_source_owner_id):
+	if require_direct_selection and target.is_stealthed_from_player(resolved_source_owner_id):
 		return false
 
 	if target_rule == TARGET_RULE_ADJACENT_MINIONS:
 		return is_adjacent_minion_target(source_state, target, game_manager)
 
-	if is_magic_immune(target):
+	if require_direct_selection and is_magic_immune(target):
 		return false
 
 	match target_rule:
@@ -105,6 +108,13 @@ static func can_target(
 				and not target.is_hero()
 				and resolved_source_owner_id != ""
 				and target.owner_id == resolved_source_owner_id
+			)
+		TARGET_RULE_ENEMY_MINIONS:
+			return (
+				target.is_minion()
+				and resolved_source_owner_id != ""
+				and target.owner_id != ""
+				and target.owner_id != resolved_source_owner_id
 			)
 		TARGET_RULE_ENEMY_UNITS:
 			return (
@@ -126,6 +136,8 @@ static func can_target(
 		TARGET_RULE_EMPTY_OR_HIDDEN_SLOTS:
 			return target.is_empty() or not target.is_face_up
 		TARGET_RULE_NONE:
+			return false
+		TARGET_RULE_DIRECTION_RAY:
 			return false
 		_:
 			push_warning("暂不支持的法术目标规则: %s" % target_rule)

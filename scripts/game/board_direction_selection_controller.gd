@@ -3,11 +3,15 @@ class_name BoardDirectionSelectionController
 
 signal direction_selected(result: SelectionResult)
 
-# Direction/ray selector. The player chooses one of the valid directions from an
-# origin slot; the result contains the ray slots and the first face-up unit hit.
+const DirectionRayTargetResolverScript := preload("res://scripts/game/direction_ray_target_resolver.gd")
+
+# Direction/ray selection is presentation only. DirectionRayTargetResolver owns
+# hit legality and stopping behavior so player input and AI evaluate the same ray.
 
 var _game_manager: GameManager
 var _request: SelectionRequest
+var _target_resolver := DirectionRayTargetResolverScript.new()
+var _results_by_direction: Dictionary = {}
 var _buttons: Array[Button] = []
 var _layer: CanvasLayer
 var _panel: PanelContainer
@@ -18,6 +22,12 @@ func select_direction_result(game_manager: GameManager, request: SelectionReques
 	_game_manager = game_manager
 	_request = request
 	if _game_manager == null or _request == null or _request.origin_slot < 0:
+		return SelectionResult.cancelled_result(SelectionRequest.KIND_DIRECTION_RAY)
+
+	for result in _target_resolver.get_valid_results(_game_manager, _request):
+		_results_by_direction[result.direction] = result
+	if _results_by_direction.is_empty():
+		cleanup()
 		return SelectionResult.cancelled_result(SelectionRequest.KIND_DIRECTION_RAY)
 
 	setup_ui()
@@ -40,11 +50,19 @@ func setup_ui() -> void:
 	_layer.layer = 170
 	root.add_child(_layer)
 
+	var input_blocker := ColorRect.new()
+	input_blocker.name = "DirectionSelectionInputBlocker"
+	input_blocker.color = Color(0.0, 0.02, 0.05, 0.18)
+	input_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	input_blocker.position = Vector2.ZERO
+	input_blocker.size = root.get_viewport_rect().size
+	_layer.add_child(input_blocker)
+
 	_panel = PanelContainer.new()
 	_panel.name = "BoardDirectionSelectionPanel"
-	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.position = Vector2(20, 20)
-	_panel.custom_minimum_size = Vector2(360, 56)
+	_panel.custom_minimum_size = Vector2(420, 56)
 	_panel.add_theme_stylebox_override("panel", create_panel_style())
 	_layer.add_child(_panel)
 
@@ -55,13 +73,24 @@ func setup_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", 8)
 	_panel.add_child(margin)
 
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+
 	_title_label = Label.new()
 	_title_label.text = _request.title if _request.title != "" else "选择方向"
+	_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_label.add_theme_font_size_override("font_size", 16)
 	_title_label.add_theme_color_override("font_color", Color(0.76, 0.92, 1.0, 1.0))
-	margin.add_child(_title_label)
+	row.add_child(_title_label)
 
-	for direction in _request.get_direction_vectors():
+	var cancel_button := Button.new()
+	cancel_button.text = "取消"
+	cancel_button.focus_mode = Control.FOCUS_NONE
+	cancel_button.pressed.connect(handle_cancel_pressed)
+	row.add_child(cancel_button)
+
+	for direction in _results_by_direction:
 		var target_slot := BoardQuery.get_slot_at_offset(
 			_request.origin_slot,
 			direction,
@@ -92,20 +121,21 @@ func setup_ui() -> void:
 
 
 func handle_direction_pressed(direction: Vector2i) -> void:
-	var ray_slots := BoardQuery.get_ray_slots(
-		_request.origin_slot,
-		direction,
-		_game_manager.board_columns,
-		_game_manager.board_states.size(),
-		_request.max_distance
-	)
-	var hit_state := find_first_unit_on_ray(ray_slots)
-	var hit_slot := hit_state.slot_index if hit_state != null else -1
-	var result := SelectionResult.direction_ray_result(_request.origin_slot, direction, ray_slots, hit_slot, hit_state)
-	direction_selected.emit(result)
+	var result := _results_by_direction.get(direction) as SelectionResult
+	if result != null:
+		direction_selected.emit(result)
+
+
+func handle_cancel_pressed() -> void:
+	direction_selected.emit(SelectionResult.cancelled_result(SelectionRequest.KIND_DIRECTION_RAY))
 
 
 func mark_origin() -> void:
+	if _request.source_state != null:
+		_request.source_state.set_selected(true)
+		_request.source_state.set_area_preview(true)
+		return
+
 	var state := _game_manager.get_board_state(_request.origin_slot)
 	if state != null:
 		state.set_selected(true)
@@ -113,65 +143,58 @@ func mark_origin() -> void:
 
 
 func mark_direction_candidates() -> void:
-	for direction in _request.get_direction_vectors():
+	for direction in _results_by_direction:
 		var slot := BoardQuery.get_slot_at_offset(
 			_request.origin_slot,
 			direction,
 			_game_manager.board_columns,
 			_game_manager.board_states.size()
 		)
-		if slot < 0:
-			continue
-		var state := _game_manager.get_board_state(slot)
-		if state != null:
-			state.set_valid_target(true)
+		if slot >= 0:
+			var state := _game_manager.get_board_state(slot)
+			if state != null:
+				state.set_valid_target(true)
+
+		var result := _results_by_direction.get(direction) as SelectionResult
+		if result != null and result.hit_state != null:
+			result.hit_state.set_valid_target(true)
 
 
 func mark_ray_preview(direction: Vector2i) -> void:
 	clear_ray_preview()
-	var ray_slots := BoardQuery.get_ray_slots(
-		_request.origin_slot,
-		direction,
-		_game_manager.board_columns,
-		_game_manager.board_states.size(),
-		_request.max_distance
-	)
-	for slot in ray_slots:
+	var result := _results_by_direction.get(direction) as SelectionResult
+	if result == null:
+		return
+
+	for slot in result.ray_slots:
 		var state := _game_manager.get_board_state(slot)
 		if state != null:
 			state.set_area_preview(true)
+	if result.hit_state != null:
+		result.hit_state.set_selected(true)
 
 
 func clear_ray_preview() -> void:
 	if _game_manager == null:
 		return
-	for state in _game_manager.board_states:
-		if state != null and state.slot_index != _request.origin_slot:
+	for state in _game_manager.get_all_board_states():
+		if state == null:
+			continue
+		if state != _request.source_state:
+			state.set_selected(false)
+		if state.slot_index != _request.origin_slot:
 			state.set_area_preview(false)
 
 
 func clear_marks() -> void:
 	if _game_manager == null:
 		return
-	for state in _game_manager.board_states:
+	for state in _game_manager.get_all_board_states():
 		if state == null:
 			continue
 		state.set_selected(false)
 		state.set_valid_target(false)
 		state.set_area_preview(false)
-
-
-func find_first_unit_on_ray(ray_slots: Array[int]) -> CardState:
-	var candidates: Array[CardState] = _game_manager.board_states
-	if _game_manager.has_method("get_all_board_states"):
-		candidates = _game_manager.get_all_board_states()
-
-	for slot in ray_slots:
-		for state in candidates:
-			if state != null and state.slot_index == slot and BoardQuery.is_face_up_unit(state):
-				return state
-
-	return null
 
 
 func cleanup() -> void:
@@ -180,6 +203,7 @@ func cleanup() -> void:
 		if button != null:
 			button.queue_free()
 	_buttons.clear()
+	_results_by_direction.clear()
 	if _layer != null:
 		_layer.queue_free()
 	_layer = null

@@ -62,6 +62,7 @@ var spell_actions: Array[Dictionary] = []
 var spell_tags: Array[String] = []
 var actions: Array[Dictionary] = []
 var mounted_attacks: Array[Dictionary] = []
+var selection: Dictionary = {}
 var target_rule := ""
 var animation := ""
 var audio := ""
@@ -201,6 +202,9 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.count = int(card_dictionary.get("count", 1))
 	data.level = maxi(int(card_dictionary.get("level", 1)), 1)
 	data.target_rule = str(card_dictionary.get("target_rule", ""))
+	var raw_selection: Variant = card_dictionary.get("selection", {})
+	if raw_selection is Dictionary:
+		data.selection = raw_selection.duplicate(true)
 	data.animation = str(card_dictionary.get("animation", ""))
 	data.audio = str(card_dictionary.get("audio", ""))
 	data.equipment_type = str(card_dictionary.get("equipment_type", ""))
