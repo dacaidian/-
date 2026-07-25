@@ -331,6 +331,10 @@
 					"academy_summon",
 					"staff_of_antonidas"
 				]
+			},
+			{
+				"card_id": "jaina",
+				"attached_cards": []
 			}
 		],
 		"cards": [
@@ -339,6 +343,22 @@
 				"name": "安东尼达斯",
 				"description": "大法师安东尼达斯是达拉然议会的最高领袖，精通冰火奥术三门学派。他能召唤水元素协战，以辉煌光环为友军注入源源不断的法力。",
 				"url": "res://assets/img/达拉然议会/安东尼达斯.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 1,
+				"health": 14,
+				"effects": []
+			},
+			{
+				"id": "jaina",
+				"name": "吉安娜",
+				"description": "吉安娜是达拉然议会杰出的法师，凭借敏锐的战场判断和深厚的奥术造诣引导盟友，在瞬息万变的战局中掌握主动。",
+				"url": "res://assets/img/达拉然议会/吉安娜.png",
 				"type": "minion",
 				"role": "hero",
 				"count": 1,
@@ -368,7 +388,7 @@
 			{
 				"id": "basic_spell_power",
 				"name": "初级法术能量",
-				"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+				"description": "生效范围：安东尼达斯、吉安娜、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
 				"url": "res://assets/img/达拉然议会/初级法术能量.png",
 				"type": "upgrade",
 				"count": 1,
@@ -381,6 +401,7 @@
 						"active_zone": "hand",
 						"card_ids": [
 							"antonidas",
+							"jaina",
 							"mage_apprentice",
 							"arcane_mage",
 							"frost_witch",
@@ -393,7 +414,7 @@
 			{
 				"id": "intermediate_spell_power",
 				"name": "中级法术能量",
-				"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+				"description": "生效范围：安东尼达斯、吉安娜、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
 				"url": "res://assets/img/达拉然议会/中级法术能量.png",
 				"type": "upgrade",
 				"count": 1,
@@ -406,6 +427,7 @@
 						"active_zone": "hand",
 						"card_ids": [
 							"antonidas",
+							"jaina",
 							"mage_apprentice",
 							"arcane_mage",
 							"frost_witch",
@@ -442,7 +464,7 @@
 			{
 				"id": "ultimate_spell_power",
 				"name": "终极法术能量",
-				"description": "生效范围：安东尼达斯、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
+				"description": "生效范围：安东尼达斯、吉安娜、法师学徒、奥术法师、冰霜女巫、火焰女巫。效果：这些单位攻击力+1。",
 				"url": "res://assets/img/达拉然议会/终级法术能量.png",
 				"type": "upgrade",
 				"count": 1,
@@ -455,6 +477,7 @@
 						"active_zone": "hand",
 						"card_ids": [
 							"antonidas",
+							"jaina",
 							"mage_apprentice",
 							"arcane_mage",
 							"frost_witch",
