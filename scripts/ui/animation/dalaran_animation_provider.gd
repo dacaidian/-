@@ -1,7 +1,13 @@
 extends RefCounted
 class_name DalaranAnimationProvider
 
-const TARGETED_KEYS: Array[String] = ["cone_of_cold"]
+const TARGETED_KEYS: Array[String] = [
+	"cone_of_cold",
+	"extreme_cold_storm",
+	"extreme_cold_storm_pulse",
+	"extreme_cold_storm_summon"
+]
+const RECT_KEYS: Array[String] = ["extreme_cold_storm_cast"]
 
 const ICE_BODY_COLOR := Color(0.26, 0.76, 1.0, 0.96)
 const ICE_CORE_COLOR := Color(0.82, 0.98, 1.0, 1.0)
@@ -18,6 +24,7 @@ func setup(duration: float) -> void:
 func register_routes(router: SpellAnimationRouter) -> void:
 	if router != null:
 		router.register_targeted(TARGETED_KEYS, play_targeted)
+		router.register_at_rect(RECT_KEYS, play_at_rect)
 
 
 func play_targeted(
@@ -29,6 +36,204 @@ func play_targeted(
 ) -> void:
 	if animation_key == "cone_of_cold":
 		await play_cone_of_cold(owner, effect_root, caster_card, target_card)
+	elif target_card != null:
+		await play_extreme_cold_storm_at_rect(
+			owner,
+			effect_root,
+			target_card.get_global_rect(),
+			animation_key
+		)
+
+
+func play_at_rect(
+	owner: Node,
+	effect_root: Control,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	await play_extreme_cold_storm_at_rect(owner, effect_root, target_rect, animation_key)
+
+
+func play_extreme_cold_storm_at_rect(
+	owner: Node,
+	effect_root: Control,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+
+	if animation_key == "extreme_cold_storm_summon":
+		await play_frozen_summon(owner, effect_root, target_rect)
+		return
+
+	var is_pulse := animation_key == "extreme_cold_storm_pulse"
+	var scale_factor := 3.25 if is_pulse else 1.45
+	var storm_rect := Rect2(
+		target_rect.get_center() - target_rect.size * scale_factor * 0.5,
+		target_rect.size * scale_factor
+	)
+	var veil := create_storm_disc(storm_rect, is_pulse)
+	var outer_ring := create_storm_ring(storm_rect, 1.0, 8.0 if is_pulse else 5.0)
+	var inner_ring := create_storm_ring(storm_rect, 0.68, 4.0)
+	var snow_shards := create_storm_shards(storm_rect, 18 if is_pulse else 10)
+
+	effect_root.add_child(veil)
+	effect_root.add_child(outer_ring)
+	effect_root.add_child(inner_ring)
+	for shard in snow_shards:
+		effect_root.add_child(shard)
+
+	var gather := owner.create_tween()
+	gather.set_parallel(true)
+	gather.set_trans(Tween.TRANS_QUART)
+	gather.set_ease(Tween.EASE_OUT)
+	gather.tween_property(veil, "modulate:a", 0.72 if is_pulse else 0.48, spell_animation_duration * 0.62)
+	gather.tween_property(outer_ring, "scale", Vector2.ONE, spell_animation_duration * 0.72)
+	gather.tween_property(outer_ring, "modulate:a", 0.96, spell_animation_duration * 0.52)
+	gather.tween_property(inner_ring, "scale", Vector2.ONE, spell_animation_duration * 0.58)
+	gather.tween_property(inner_ring, "modulate:a", 0.88, spell_animation_duration * 0.48)
+	for shard in snow_shards:
+		gather.tween_property(shard, "modulate:a", 0.92, spell_animation_duration * 0.56)
+	await gather.finished
+
+	var release := owner.create_tween()
+	release.set_parallel(true)
+	release.set_trans(Tween.TRANS_SINE)
+	release.set_ease(Tween.EASE_IN_OUT)
+	release.tween_property(veil, "scale", Vector2(1.12, 1.12), spell_animation_duration * 1.15)
+	release.tween_property(veil, "modulate:a", 0.0, spell_animation_duration * 1.15)
+	release.tween_property(outer_ring, "rotation", 0.72, spell_animation_duration * 1.15)
+	release.tween_property(outer_ring, "scale", Vector2(1.24, 1.24), spell_animation_duration * 1.15)
+	release.tween_property(outer_ring, "modulate:a", 0.0, spell_animation_duration * 1.15)
+	release.tween_property(inner_ring, "rotation", -0.96, spell_animation_duration)
+	release.tween_property(inner_ring, "scale", Vector2(1.38, 1.38), spell_animation_duration)
+	release.tween_property(inner_ring, "modulate:a", 0.0, spell_animation_duration)
+	for shard in snow_shards:
+		var drift: Vector2 = shard.get_meta("storm_drift", Vector2.ZERO)
+		release.tween_property(shard, "position", shard.position + drift, spell_animation_duration)
+		release.tween_property(shard, "rotation", shard.rotation + 1.3, spell_animation_duration)
+		release.tween_property(shard, "modulate:a", 0.0, spell_animation_duration)
+	await release.finished
+
+	veil.queue_free()
+	outer_ring.queue_free()
+	inner_ring.queue_free()
+	for shard in snow_shards:
+		shard.queue_free()
+
+
+func create_storm_disc(target_rect: Rect2, is_pulse: bool) -> Panel:
+	var disc := Panel.new()
+	disc.name = "ExtremeColdStormDisc"
+	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	disc.position = target_rect.position
+	disc.size = target_rect.size
+	disc.pivot_offset = disc.size * 0.5
+	disc.modulate.a = 0.0
+	disc.z_index = 2240
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.32, 0.62, 0.30 if is_pulse else 0.20)
+	style.border_color = Color(0.58, 0.92, 1.0, 0.72)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(int(minf(disc.size.x, disc.size.y) * 0.5))
+	style.shadow_color = Color(0.12, 0.55, 1.0, 0.45)
+	style.shadow_size = 18 if is_pulse else 10
+	disc.add_theme_stylebox_override("panel", style)
+	return disc
+
+
+func create_storm_ring(target_rect: Rect2, size_ratio: float, width: float) -> Panel:
+	var ring_size := target_rect.size * size_ratio
+	var ring := Panel.new()
+	ring.name = "ExtremeColdStormRing"
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.size = ring_size
+	ring.position = target_rect.get_center() - ring_size * 0.5
+	ring.pivot_offset = ring_size * 0.5
+	ring.scale = Vector2(0.28, 0.28)
+	ring.modulate.a = 0.0
+	ring.z_index = 2250
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	style.border_color = Color(0.78, 0.97, 1.0, 0.92)
+	style.set_border_width_all(int(width))
+	style.set_corner_radius_all(int(minf(ring_size.x, ring_size.y) * 0.5))
+	style.shadow_color = Color(0.28, 0.76, 1.0, 0.62)
+	style.shadow_size = int(width * 1.8)
+	ring.add_theme_stylebox_override("panel", style)
+	return ring
+
+
+func create_storm_shards(target_rect: Rect2, count: int) -> Array[Panel]:
+	var shards: Array[Panel] = []
+	var center := target_rect.get_center()
+	var radius := minf(target_rect.size.x, target_rect.size.y) * 0.45
+	for index in range(count):
+		var angle := TAU * float(index) / float(count) + float(index % 3) * 0.17
+		var shard := Panel.new()
+		shard.name = "ExtremeColdShard_%d" % index
+		shard.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shard.size = Vector2(4.0, 13.0 if index % 2 == 0 else 8.0)
+		shard.pivot_offset = shard.size * 0.5
+		shard.position = center + Vector2(cos(angle), sin(angle)) * radius - shard.pivot_offset
+		shard.rotation = angle + PI * 0.5
+		shard.modulate.a = 0.0
+		shard.z_index = 2260
+		shard.set_meta(
+			"storm_drift",
+			Vector2(cos(angle + 0.72), sin(angle + 0.72)) * radius * 0.72
+		)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.88, 0.99, 1.0, 0.96)
+		style.shadow_color = Color(0.28, 0.78, 1.0, 0.72)
+		style.shadow_size = 6
+		style.set_corner_radius_all(2)
+		shard.add_theme_stylebox_override("panel", style)
+		shards.append(shard)
+	return shards
+
+
+func play_frozen_summon(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
+	var pillar_rect := Rect2(
+		target_rect.position + Vector2(target_rect.size.x * 0.28, target_rect.size.y * 0.10),
+		Vector2(target_rect.size.x * 0.44, target_rect.size.y * 0.84)
+	)
+	var pillar := Panel.new()
+	pillar.name = "ExtremeColdSummonPillar"
+	pillar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pillar.position = pillar_rect.position
+	pillar.size = pillar_rect.size
+	pillar.pivot_offset = Vector2(pillar.size.x * 0.5, pillar.size.y)
+	pillar.scale = Vector2(0.25, 0.08)
+	pillar.modulate.a = 0.0
+	pillar.z_index = 2270
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.56, 0.90, 1.0, 0.78)
+	style.border_color = Color(0.92, 1.0, 1.0, 0.96)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(int(pillar.size.x * 0.42))
+	style.shadow_color = Color(0.18, 0.64, 1.0, 0.72)
+	style.shadow_size = 14
+	pillar.add_theme_stylebox_override("panel", style)
+	effect_root.add_child(pillar)
+
+	var rise := owner.create_tween()
+	rise.set_parallel(true)
+	rise.set_trans(Tween.TRANS_BACK)
+	rise.set_ease(Tween.EASE_OUT)
+	rise.tween_property(pillar, "scale", Vector2.ONE, spell_animation_duration * 0.78)
+	rise.tween_property(pillar, "modulate:a", 0.96, spell_animation_duration * 0.50)
+	await rise.finished
+
+	var fade := owner.create_tween()
+	fade.set_parallel(true)
+	fade.set_trans(Tween.TRANS_SINE)
+	fade.set_ease(Tween.EASE_IN)
+	fade.tween_property(pillar, "scale", Vector2(1.18, 1.08), spell_animation_duration * 0.72)
+	fade.tween_property(pillar, "modulate:a", 0.0, spell_animation_duration * 0.72)
+	await fade.finished
+	pillar.queue_free()
 
 
 func play_cone_of_cold(

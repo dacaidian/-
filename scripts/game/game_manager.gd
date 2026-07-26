@@ -1121,7 +1121,8 @@ func resolve_dead_states(
 	states_to_check: Array,
 	reason: String = "damage",
 	source_state: CardState = null,
-	source_owner_id := ""
+	source_owner_id := "",
+	death_slot_claim: Dictionary = {}
 ) -> bool:
 	return await death_resolver.resolve_dead_states(
 		self,
@@ -1130,8 +1131,13 @@ func resolve_dead_states(
 		source_state,
 		true,
 		false,
-		source_owner_id
+		source_owner_id,
+		death_slot_claim
 	)
+
+
+func claim_death_slot(dead_state: CardState, claim: Dictionary) -> bool:
+	return death_resolver.claim_death_slot(self, dead_state, claim)
 
 
 func destroy_card(state: CardState, reason: String = "destroy", source_state: CardState = null) -> void:

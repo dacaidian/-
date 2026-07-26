@@ -16,6 +16,7 @@ const LifeDrainEffectScript := preload("res://scripts/effects/life_drain_effect.
 const PeriodicStatusAuraEffectScript := preload("res://scripts/effects/periodic_status_aura_effect.gd")
 const PeriodicTriggerEffectScript := preload("res://scripts/effects/periodic_trigger_effect.gd")
 const ApplyKagunePowerEffectScript := preload("res://scripts/effects/apply_kagune_power_effect.gd")
+const ClaimDeathSlotEffectScript := preload("res://scripts/effects/claim_death_slot_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -59,6 +60,7 @@ func _init() -> void:
 	register_effect(EffectData.EFFECT_SET_BEAST_PATH, SetBeastPathEffectScript.new())
 	register_effect(EffectData.EFFECT_PERIODIC_STATUS_AURA, PeriodicStatusAuraEffectScript.new())
 	register_effect(EffectData.EFFECT_PERIODIC_TRIGGER, PeriodicTriggerEffectScript.new())
+	register_effect(EffectData.EFFECT_CLAIM_DEATH_SLOT, ClaimDeathSlotEffectScript.new())
 
 
 func register_effect(effect_id: String, effect: CardEffect) -> void:

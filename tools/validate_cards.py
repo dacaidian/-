@@ -618,6 +618,11 @@ class CardValidator:
         self.validate_animation(effect, path, key_name="animation")
         self.validate_animation(effect, path, key_name="apply_animation")
         self.validate_animation(effect, path, key_name="trigger_animation")
+        self.validate_animation(effect, path, key_name="source_animation")
+        self.validate_death_slot_replacement(
+            effect.get("death_slot_replacement", None),
+            f"{path}.death_slot_replacement",
+        )
 
         self.validate_effect_list(effect.get("replace_effects", []), f"{path}.replace_effects")
         self.validate_effect_list(effect.get("append_effects", []), f"{path}.append_effects")
@@ -643,6 +648,8 @@ class CardValidator:
                     f"{path}.preserve_original_identity",
                     "must be a boolean",
                 )
+        elif effect_id == "claim_death_slot":
+            self.validate_death_slot_replacement(effect, path)
 
         payload = effect.get("payload", {})
         if isinstance(payload, dict):
@@ -651,6 +658,31 @@ class CardValidator:
             self.validate_actions(payload.get("actions", []), f"{path}.payload.actions")
         elif "payload" in effect:
             self.reporter.error(f"{path}.payload", "must be an object")
+
+    def validate_death_slot_replacement(self, raw_claim: Any, path: str) -> None:
+        if raw_claim is None:
+            return
+        if not isinstance(raw_claim, dict):
+            self.reporter.error(path, "must be an object")
+            return
+
+        self.validate_card_id_reference(str(raw_claim.get("card_id", "")), f"{path}.card_id")
+        slot_owner = str(raw_claim.get("slot_owner", "defeated_owner"))
+        if slot_owner not in {"source_owner", "defeated_owner"}:
+            self.reporter.error(
+                f"{path}.slot_owner",
+                "must be one of source_owner, defeated_owner",
+            )
+
+        for key in ("victim_layer", "destination_layer"):
+            layer = str(raw_claim.get(key, "ground"))
+            if layer not in {"ground", "aerial"}:
+                self.reporter.error(f"{path}.{key}", "must be one of ground, aerial")
+
+        priority = raw_claim.get("priority", 100)
+        if not isinstance(priority, int) or isinstance(priority, bool):
+            self.reporter.error(f"{path}.priority", "must be an integer")
+        self.validate_animation(raw_claim, path, key_name="animation")
 
     def validate_card_reserve_effect(self, effect: dict[str, Any], path: str) -> None:
         self.require_string(effect, "reserve_id", path)

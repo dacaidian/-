@@ -336,7 +336,8 @@
 				"card_id": "jaina",
 				"attached_cards": [
 					"cone_of_cold",
-					"summon_giant_water_elemental"
+					"summon_giant_water_elemental",
+					"extreme_cold_storm"
 				]
 			}
 		],
@@ -429,6 +430,99 @@
 					{
 						"id": "add_card_to_hand",
 						"card_id": "giant_water_elemental"
+					}
+				]
+			},
+			{
+				"id": "extreme_cold_storm",
+				"name": "极寒风暴",
+				"description": "英雄法术。吉安娜获得极寒风暴光环。每个自己的回合结束时，对吉安娜所在及相邻单元格内的所有敌方随从造成2点伤害；首次结算还会冻结其一回合。被风暴击败的地面随从会在空出的原格召来一个巨水元素。",
+				"url": "res://assets/img/达拉然议会/极寒领域.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"animation": "extreme_cold_storm_cast",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "jaina",
+						"status_id": "extreme_cold_storm_first_wave",
+						"status_name": "极寒风暴·初临",
+						"status_description": "极寒风暴首次结算时，还会冻结受到影响的敌方随从一回合。",
+						"status_tags": [
+							"aura"
+						],
+						"stack_policy": "replace",
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"persists_after_death": false,
+						"payload": {
+							"turn_effects": [
+								{
+									"id": "apply_status",
+									"trigger": "after_turn_end",
+									"trigger_player": "source_owner",
+									"target": "source_area_enemy_minions",
+									"area_rows": 3,
+									"area_cols": 3,
+									"death_reason": "spell",
+									"status_id": "freeze",
+									"status_name": "冻结",
+									"status_description": "被冻结，无法行动。",
+									"status_tags": [
+										"action_prevention"
+									],
+									"stack_policy": "refresh",
+									"duration_turns": 1,
+									"duration_scope": "target_owner",
+									"expires_on_trigger": "after_turn_end",
+									"status_valence": "negative"
+								}
+							]
+						}
+					},
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "jaina",
+						"status_id": "extreme_cold_storm",
+						"apply_animation": "extreme_cold_storm",
+						"status_name": "极寒风暴",
+						"status_description": "每个自己的回合结束时，对所在及相邻单元格内的所有敌方随从造成2点伤害。",
+						"status_tags": [
+							"aura"
+						],
+						"stack_policy": "replace",
+						"permanent": true,
+						"persists_after_death": false,
+						"payload": {
+							"turn_effects": [
+								{
+									"id": "damage",
+									"trigger": "after_turn_end",
+									"trigger_player": "source_owner",
+									"target": "source_area_enemy_minions",
+									"area_rows": 3,
+									"area_cols": 3,
+									"amount": 2,
+									"spell_power_scaling": false,
+									"death_reason": "spell",
+									"source_animation": "extreme_cold_storm_pulse",
+									"death_slot_replacement": {
+										"card_id": "giant_water_elemental",
+										"slot_owner": "source_owner",
+										"victim_layer": "ground",
+										"destination_layer": "ground",
+										"priority": 100,
+										"animation": "extreme_cold_storm_summon"
+									}
+								}
+							]
+						}
 					}
 				]
 			},

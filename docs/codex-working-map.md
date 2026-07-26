@@ -121,6 +121,7 @@
 - `scripts/actions/mounted_attack_action.gd`
 - `scripts/data/card_state.gd`
 - `scripts/game/death_resolver.gd`
+- `scripts/game/death_slot_claim_resolver.gd`
 - `scripts/game/poison_attack_resolver.gd`
 
 常见规则：
@@ -186,6 +187,7 @@
 优先读：
 
 - `scripts/game/death_resolver.gd`
+- `scripts/game/death_slot_claim_resolver.gd`
 - `scripts/game/reveal_resolver.gd`
 - `scripts/game/trigger_resolver.gd`
 - `scripts/game/turn_trigger_resolver.gd`
@@ -201,6 +203,8 @@
 - 所有死亡入口都必须 `await`。范围伤害、巨兽溅射、月刃、毒爆、反弹、陷阱、献祭、吞噬、链接死亡等都应走 `GameManager.resolve_dead_states()` / `destroy_card_with_refill()`，不要直接清空卡牌。
 - 需要给矿脉等 `on_destroyed` 奖励归属时，调用死亡入口必须传入造成击杀的 `source_state`。`DeathResolver` 会保存 `source_snapshot`，防止嵌套亡语或排队死亡在 source 被清空后丢失 destroyer。
 - 普通攻击中心目标死亡可进入占领流程；巨兽范围伤害、`splash_N` 固定溅射和其他范围死亡不占领，但必须保留原攻击者来源并正常触发亡语、资源分、复生和补牌。
+- 原格召唤统一提交死亡格占位请求。优先级为复生 > `claim_death_slot` 亡语（默认 200）> `death_slot_replacement` 击杀效果（默认 100）> 公共牌池补牌；高优先级请求不合法时继续尝试低优先级请求。
+- `damage.death_slot_replacement` 适合“被此伤害击败后在其原格召唤”；`claim_death_slot` 适合死亡单位自身的 `on_destroyed` 原地召唤。两者都不得直接清空或写入棋盘。
 - 顺序献祭使用 `sacrifice_friendly_minions`，保证前一个死亡能影响后一个死亡。
 
 ## 装备
@@ -335,7 +339,7 @@
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
 - 通用法术与种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域六种上下文声明 key。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。不要让规则层直接调用某个 provider；`GameManager` 只负责选择稳定 animation key，不创建表现节点。
-- 达拉然方向投射物由 `DalaranAnimationProvider` 读取施法者与命中目标的 UI 位置。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，不能用覆盖整条射线的静态三角遮罩；魔免只保留碰撞碎裂，不显示冻结结晶。
+- 达拉然方向投射物由 `DalaranAnimationProvider` 读取施法者与命中目标的 UI 位置。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，不能用覆盖整条射线的静态三角遮罩；魔免只保留碰撞碎裂，不显示冻结结晶。极寒风暴的施放、持续光环脉冲和原格召唤也由该 provider 分别消费 `extreme_cold_storm_cast`、`extreme_cold_storm_pulse`、`extreme_cold_storm_summon`。
 - 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器与 provider 的 `*_KEYS` 常量，后者验证 provider 的上下文路由契约。
 - UI 控制器不拥有玩法规则。
 

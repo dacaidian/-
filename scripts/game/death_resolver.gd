@@ -8,8 +8,10 @@ var is_resolving_death_batches := false
 var queued_death_scan_requests: Array[Dictionary] = []
 const HERO_REVIVE_COOLDOWN_TURNS := 3
 const BeastmenEvolutionResolverScript := preload("res://scripts/game/beastmen_evolution_resolver.gd")
+const DeathSlotClaimResolverScript := preload("res://scripts/game/death_slot_claim_resolver.gd")
 
 var beastmen_evolution_resolver := BeastmenEvolutionResolverScript.new()
+var death_slot_claim_resolver := DeathSlotClaimResolverScript.new()
 
 
 func check_and_destroy_if_dead(game_manager: GameManager, state: CardState, reason: String = "damage", source_state: CardState = null) -> bool:
@@ -39,7 +41,8 @@ func resolve_dead_states(
 	source_state: CardState = null,
 	should_refill_slots := true,
 	force_destroy := false,
-	source_owner_id := ""
+	source_owner_id := "",
+	death_slot_claim: Dictionary = {}
 ) -> bool:
 	if game_manager == null:
 		return false
@@ -54,7 +57,8 @@ func resolve_dead_states(
 		"source_snapshot": create_source_snapshot(source_state),
 		"source_owner_id": source_owner_id,
 		"should_refill_slots": should_refill_slots,
-		"force_destroy": force_destroy
+		"force_destroy": force_destroy,
+		"death_slot_claim": death_slot_claim.duplicate(true)
 	}
 
 	if is_resolving_death_batches:
@@ -74,7 +78,8 @@ func resolve_dead_states(
 			active_request.get("source_snapshot", {}) as Dictionary,
 			bool(active_request.get("should_refill_slots", true)),
 			bool(active_request.get("force_destroy", false)),
-			str(active_request.get("source_owner_id", ""))
+			str(active_request.get("source_owner_id", "")),
+			active_request.get("death_slot_claim", {}) as Dictionary
 		)
 
 		if not death_events.is_empty():
@@ -119,7 +124,8 @@ func collect_death_events(
 	source_snapshot: Dictionary = {},
 	should_refill_slots := true,
 	force_destroy := false,
-	source_owner_id := ""
+	source_owner_id := "",
+	death_slot_claim: Dictionary = {}
 ) -> Array[Dictionary]:
 	var death_events: Array[Dictionary] = []
 
@@ -141,7 +147,8 @@ func collect_death_events(
 			source_state,
 			source_snapshot,
 			should_refill_slots,
-			source_owner_id
+			source_owner_id,
+			death_slot_claim
 		))
 
 	sort_death_events(game_manager, death_events)
@@ -183,7 +190,8 @@ func create_death_event(
 	source_state: CardState = null,
 	source_snapshot: Dictionary = {},
 	should_refill_slot := true,
-	source_owner_id := ""
+	source_owner_id := "",
+	death_slot_claim: Dictionary = {}
 ) -> Dictionary:
 	var death_metadata := create_death_metadata(
 		game_manager,
@@ -194,19 +202,28 @@ func create_death_event(
 		source_owner_id
 	)
 	var destroy_context := create_destroy_context(state, source_state, death_metadata, source_snapshot)
-	return {
+	var death_event := {
 		"state": state,
 		"slot_index": state.slot_index,
 		"owner_id": state.owner_id,
 		"reason": reason,
 		"source_state": source_state,
 		"source_snapshot": source_snapshot.duplicate(true),
+		"source_owner_id": str(death_metadata.get("source_owner_id", source_owner_id)),
 		"should_refill_slot": should_refill_slot,
 		"has_reborn": state.has_reborn(),
 		"death_metadata": death_metadata,
 		"graveyard_snapshot": state.create_graveyard_snapshot(death_metadata),
-		"destroy_context": destroy_context
+		"destroy_context": destroy_context,
+		"slot_claims": []
 	}
+	death_slot_claim_resolver.append_claim(
+		game_manager,
+		death_event,
+		death_slot_claim,
+		DeathSlotClaimResolverScript.PRIORITY_KILL_EFFECT
+	)
+	return death_event
 
 
 func sort_death_events(game_manager: GameManager, death_events: Array[Dictionary]) -> void:
@@ -234,6 +251,7 @@ func get_death_event_priority(game_manager: GameManager, death_event: Dictionary
 
 func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictionary]) -> void:
 	var should_cancel_interaction := false
+	death_slot_claim_resolver.register_events(death_events)
 
 	for death_event in death_events:
 		var state := death_event.get("state") as CardState
@@ -265,8 +283,11 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 		var removed_slot_index := int(death_event.get("slot_index", state.slot_index))
 		state.clear_card()
-		if bool(death_event.get("should_refill_slot", true)):
+		var did_replace_slot := await death_slot_claim_resolver.resolve_claims(game_manager, death_event)
+		if not did_replace_slot and bool(death_event.get("should_refill_slot", true)):
 			game_manager.refill_board_slot_from_pool(removed_slot_index)
+
+	death_slot_claim_resolver.unregister_events(death_events)
 
 	if should_cancel_interaction and not game_manager.is_resolving_card_action and not game_manager.is_executing_action:
 		game_manager.hide_action_menu()
@@ -274,6 +295,10 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 	game_manager.refresh_action_available_hints()
 	game_manager.refresh_debug_panel()
+
+
+func claim_death_slot(game_manager: GameManager, dead_state: CardState, claim: Dictionary) -> bool:
+	return death_slot_claim_resolver.claim_for_active_death(game_manager, dead_state, claim)
 
 
 func resolve_destroyed_trigger(game_manager: GameManager, state: CardState, context: Dictionary) -> void:

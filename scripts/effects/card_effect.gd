@@ -94,6 +94,8 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			targets = get_adjacent_enemy_minions(source_state, game_manager, true)
 		EffectData.TARGET_ADJACENT_ENEMY_NON_HERO_MINIONS:
 			targets = get_adjacent_enemy_minions(source_state, game_manager, false)
+		EffectData.TARGET_SOURCE_AREA_ENEMY_MINIONS:
+			targets = get_source_area_enemy_minions(source_state, effect_data, game_manager)
 		EffectData.TARGET_TURN_PLAYER_MINIONS_BY_CARD_IDS:
 			targets = get_turn_player_minions_by_card_ids(effect_data, game_manager)
 		EffectData.TARGET_SELECTED_ADJACENT_ENEMY_MINIONS:
@@ -240,6 +242,38 @@ func get_adjacent_enemy_minions(source_state: CardState, game_manager: Node, inc
 			if target_state.owner_id == "" or target_state.owner_id == source_state.owner_id:
 				continue
 
+			targets.append(target_state)
+
+	return targets
+
+
+func get_source_area_enemy_minions(
+	source_state: CardState,
+	effect_data: Dictionary,
+	game_manager: Node
+) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if source_state == null or game_manager == null or source_state.owner_id == "":
+		return targets
+
+	var area_rows := maxi(int(effect_data.get(EffectData.KEY_AREA_ROWS, 3)), 1)
+	var area_cols := maxi(int(effect_data.get(EffectData.KEY_AREA_COLS, 3)), 1)
+	var board_columns: int = int(game_manager.board_columns)
+	var board_size: int = int(game_manager.board_states.size())
+	var area_slots := BoardQuery.get_area_slots(
+		source_state.slot_index,
+		area_rows,
+		area_cols,
+		board_columns,
+		board_size
+	)
+
+	for slot_index in area_slots:
+		for target_state in game_manager.get_board_states_at_slot(slot_index):
+			if not BoardQuery.is_face_up_minion(target_state):
+				continue
+			if target_state.owner_id == "" or target_state.owner_id == source_state.owner_id:
+				continue
 			targets.append(target_state)
 
 	return targets
