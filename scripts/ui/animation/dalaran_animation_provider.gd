@@ -3,6 +3,11 @@ class_name DalaranAnimationProvider
 
 const TARGETED_KEYS: Array[String] = ["cone_of_cold"]
 
+const ICE_BODY_COLOR := Color(0.26, 0.76, 1.0, 0.96)
+const ICE_CORE_COLOR := Color(0.82, 0.98, 1.0, 1.0)
+const ICE_EDGE_COLOR := Color(0.66, 0.94, 1.0, 0.92)
+const FROST_TRAIL_COLOR := Color(0.48, 0.84, 1.0, 0.58)
+
 var spell_animation_duration := 0.32
 
 
@@ -35,8 +40,9 @@ func play_cone_of_cold(
 	if owner == null or effect_root == null or caster_card == null or target_card == null:
 		return
 
-	var source_center := caster_card.get_global_rect().get_center()
+	var source_rect := caster_card.get_global_rect()
 	var target_rect := target_card.get_global_rect()
+	var source_center := source_rect.get_center()
 	var target_center := target_rect.get_center()
 	var cast_vector := target_center - source_center
 	if cast_vector.length_squared() <= 0.001:
@@ -44,161 +50,423 @@ func play_cone_of_cold(
 
 	var direction := cast_vector.normalized()
 	var perpendicular := Vector2(-direction.y, direction.x)
-	var cone_width := maxf(target_rect.size.x, target_rect.size.y) * 0.72
-	var cone := create_cone(source_center, target_center, perpendicular, cone_width)
-	var outline := create_cone_outline(source_center, target_center, perpendicular, cone_width)
-	var impact := create_impact_ring(target_rect)
-	var shards := create_ice_shards(source_center, target_center, perpendicular, cone_width)
+	var source_radius := minf(source_rect.size.x, source_rect.size.y) * 0.22
+	var target_radius := minf(target_rect.size.x, target_rect.size.y) * 0.16
+	var launch_position := source_center + direction * source_radius
+	var impact_position := target_center - direction * target_radius
+	var projectile_length := clampf(minf(source_rect.size.x, source_rect.size.y) * 0.55, 34.0, 74.0)
+	var projectile_width := projectile_length * 0.44
+	var is_magic_immune := (
+		target_card.state != null
+		and target_card.state.has_keyword(CardData.KEYWORD_MAGIC_IMMUNE)
+	)
 
-	effect_root.add_child(cone)
-	effect_root.add_child(outline)
-	for shard in shards:
-		effect_root.add_child(shard)
-	effect_root.add_child(impact)
+	var charge_ring := create_charge_ring(source_rect)
+	var projectile := create_ice_cone(projectile_length, projectile_width, false)
+	var projectile_core := create_ice_cone(projectile_length * 0.72, projectile_width * 0.42, true)
+	var frost_trail := create_frost_trail(launch_position, direction, projectile_length)
+	var trail_crystals := create_trail_crystals(
+		launch_position,
+		impact_position,
+		perpendicular,
+		projectile_width
+	)
+
+	projectile.position = launch_position
+	projectile.rotation = direction.angle()
+	projectile_core.position = launch_position
+	projectile_core.rotation = direction.angle()
+
+	effect_root.add_child(charge_ring)
+	effect_root.add_child(frost_trail)
+	for crystal in trail_crystals:
+		effect_root.add_child(crystal)
+	effect_root.add_child(projectile)
+	effect_root.add_child(projectile_core)
 
 	caster_card.is_animating = true
 	target_card.is_animating = true
 	var caster_scale := caster_card.scale
+	var target_position := target_card.position
+	var target_scale := target_card.scale
 	var target_modulate := target_card.self_modulate
 
-	var release_duration := maxf(spell_animation_duration * 0.72, 0.22)
-	var release := owner.create_tween()
-	release.set_parallel(true)
-	release.set_trans(Tween.TRANS_QUART)
-	release.set_ease(Tween.EASE_OUT)
-	release.tween_property(caster_card, "scale", caster_scale * 1.06, release_duration * 0.38)
-	release.tween_property(cone, "modulate:a", 0.82, release_duration * 0.52)
-	release.tween_property(outline, "modulate:a", 0.94, release_duration * 0.48)
-	release.tween_property(impact, "scale", Vector2.ONE, release_duration * 0.66)
-	release.tween_property(impact, "modulate:a", 0.92, release_duration * 0.56)
-	release.tween_property(
-		target_card,
-		"self_modulate",
-		Color(0.68, 0.92, 1.18, target_modulate.a),
-		release_duration * 0.56
+	await play_cone_charge(
+		owner,
+		caster_card,
+		caster_scale,
+		charge_ring,
+		projectile,
+		projectile_core
 	)
-	for shard in shards:
-		var drift: Vector2 = shard.get_meta("ice_drift", Vector2.ZERO)
-		release.tween_property(shard, "position", shard.position + drift, release_duration)
-		release.tween_property(shard, "scale", Vector2.ONE, release_duration * 0.72)
-		release.tween_property(shard, "modulate:a", 0.96, release_duration * 0.42)
-	await release.finished
+	await play_cone_flight(
+		owner,
+		projectile,
+		projectile_core,
+		frost_trail,
+		trail_crystals,
+		impact_position,
+		cast_vector.length()
+	)
 
-	var fade_duration := maxf(spell_animation_duration * 0.56, 0.18)
-	var fade := owner.create_tween()
-	fade.set_parallel(true)
-	fade.set_trans(Tween.TRANS_SINE)
-	fade.set_ease(Tween.EASE_IN_OUT)
-	fade.tween_property(caster_card, "scale", caster_scale, fade_duration)
-	fade.tween_property(target_card, "self_modulate", target_modulate, fade_duration)
-	fade.tween_property(cone, "modulate:a", 0.0, fade_duration)
-	fade.tween_property(outline, "modulate:a", 0.0, fade_duration)
-	fade.tween_property(impact, "scale", Vector2(1.42, 1.42), fade_duration)
-	fade.tween_property(impact, "modulate:a", 0.0, fade_duration)
-	for shard in shards:
-		fade.tween_property(shard, "scale", Vector2(0.24, 0.24), fade_duration)
-		fade.tween_property(shard, "modulate:a", 0.0, fade_duration)
-	await fade.finished
+	projectile.modulate.a = 0.0
+	projectile_core.modulate.a = 0.0
+	var impact_ring := create_impact_ring(target_rect, is_magic_immune)
+	var impact_flash := create_impact_flash(target_rect, is_magic_immune)
+	var shards := create_impact_shards(target_center, direction, perpendicular, target_rect.size)
+	var freeze_shell: Panel = null
+	if not is_magic_immune:
+		freeze_shell = create_freeze_shell(target_rect)
 
-	cone.queue_free()
-	outline.queue_free()
-	impact.queue_free()
+	effect_root.add_child(impact_ring)
+	effect_root.add_child(impact_flash)
+	if freeze_shell != null:
+		effect_root.add_child(freeze_shell)
+	for shard in shards:
+		effect_root.add_child(shard)
+
+	await play_cone_impact(
+		owner,
+		target_card,
+		target_position,
+		target_scale,
+		target_modulate,
+		impact_ring,
+		impact_flash,
+		freeze_shell,
+		shards,
+		is_magic_immune
+	)
+
+	charge_ring.queue_free()
+	frost_trail.queue_free()
+	projectile.queue_free()
+	projectile_core.queue_free()
+	impact_ring.queue_free()
+	impact_flash.queue_free()
+	if freeze_shell != null:
+		freeze_shell.queue_free()
+	for crystal in trail_crystals:
+		crystal.queue_free()
 	for shard in shards:
 		shard.queue_free()
+
 	caster_card.scale = caster_scale
+	target_card.position = target_position
+	target_card.scale = target_scale
 	target_card.self_modulate = target_modulate
 	caster_card.is_animating = false
 	target_card.is_animating = false
 
 
-func create_cone(
-	source_center: Vector2,
-	target_center: Vector2,
-	perpendicular: Vector2,
-	width: float
-) -> Polygon2D:
+func play_cone_charge(
+	owner: Node,
+	caster_card: Card,
+	caster_scale: Vector2,
+	charge_ring: Panel,
+	projectile: Polygon2D,
+	projectile_core: Polygon2D
+) -> void:
+	var charge_duration := maxf(spell_animation_duration * 0.48, 0.15)
+	var charge := owner.create_tween()
+	charge.set_parallel(true)
+	charge.set_trans(Tween.TRANS_BACK)
+	charge.set_ease(Tween.EASE_OUT)
+	charge.tween_property(caster_card, "scale", caster_scale * 1.055, charge_duration)
+	charge.tween_property(charge_ring, "scale", Vector2.ONE, charge_duration)
+	charge.tween_property(charge_ring, "modulate:a", 0.88, charge_duration * 0.72)
+	charge.tween_property(projectile, "scale", Vector2.ONE, charge_duration)
+	charge.tween_property(projectile, "modulate:a", 0.98, charge_duration * 0.72)
+	charge.tween_property(projectile_core, "scale", Vector2.ONE, charge_duration)
+	charge.tween_property(projectile_core, "modulate:a", 1.0, charge_duration * 0.72)
+	await charge.finished
+
+
+func play_cone_flight(
+	owner: Node,
+	projectile: Polygon2D,
+	projectile_core: Polygon2D,
+	frost_trail: Line2D,
+	trail_crystals: Array[Polygon2D],
+	impact_position: Vector2,
+	distance: float
+) -> void:
+	var travel_duration := clampf(distance / 1050.0, 0.28, 0.52)
+	var flight := owner.create_tween()
+	flight.set_parallel(true)
+	flight.set_trans(Tween.TRANS_QUAD)
+	flight.set_ease(Tween.EASE_IN)
+	flight.tween_property(projectile, "position", impact_position, travel_duration)
+	flight.tween_property(projectile_core, "position", impact_position, travel_duration)
+	flight.tween_property(frost_trail, "position", impact_position, travel_duration)
+	flight.tween_property(frost_trail, "modulate:a", 0.72, travel_duration * 0.20)
+	flight.tween_property(
+		frost_trail,
+		"modulate:a",
+		0.0,
+		travel_duration * 0.42
+	).set_delay(travel_duration * 0.48)
+	for index in range(trail_crystals.size()):
+		var crystal := trail_crystals[index]
+		var appear_delay := travel_duration * (0.10 + float(index) * 0.065)
+		flight.tween_property(crystal, "modulate:a", 0.78, travel_duration * 0.18).set_delay(appear_delay)
+		flight.tween_property(crystal, "scale", Vector2.ONE, travel_duration * 0.22).set_delay(appear_delay)
+	await flight.finished
+
+
+func play_cone_impact(
+	owner: Node,
+	target_card: Card,
+	target_position: Vector2,
+	target_scale: Vector2,
+	target_modulate: Color,
+	impact_ring: Panel,
+	impact_flash: Panel,
+	freeze_shell: Panel,
+	shards: Array[Polygon2D],
+	is_magic_immune: bool
+) -> void:
+	var impact_duration := maxf(spell_animation_duration * 0.62, 0.20)
+	var burst := owner.create_tween()
+	burst.set_parallel(true)
+	burst.set_trans(Tween.TRANS_BACK)
+	burst.set_ease(Tween.EASE_OUT)
+	burst.tween_property(impact_ring, "scale", Vector2.ONE, impact_duration)
+	burst.tween_property(impact_ring, "modulate:a", 0.94, impact_duration * 0.54)
+	burst.tween_property(impact_flash, "scale", Vector2(1.16, 1.16), impact_duration)
+	burst.tween_property(impact_flash, "modulate:a", 0.78, impact_duration * 0.42)
+	if not is_magic_immune:
+		burst.tween_property(
+			target_card,
+			"position",
+			target_position + Vector2(-5.0, 2.0),
+			impact_duration * 0.30
+		)
+		burst.tween_property(target_card, "scale", target_scale * 1.035, impact_duration * 0.42)
+		burst.tween_property(
+			target_card,
+			"self_modulate",
+			Color(0.62, 0.88, 1.12, target_modulate.a),
+			impact_duration * 0.48
+		)
+		if freeze_shell != null:
+			burst.tween_property(freeze_shell, "scale", Vector2.ONE, impact_duration)
+			burst.tween_property(freeze_shell, "modulate:a", 0.82, impact_duration * 0.64)
+	for shard in shards:
+		var burst_offset: Vector2 = shard.get_meta("burst_offset", Vector2.ZERO)
+		burst.tween_property(shard, "position", shard.position + burst_offset, impact_duration)
+		burst.tween_property(shard, "scale", Vector2.ONE, impact_duration * 0.72)
+		burst.tween_property(shard, "modulate:a", 0.96, impact_duration * 0.46)
+	await burst.finished
+
+	var settle_duration := maxf(spell_animation_duration * 0.62, 0.20)
+	var settle := owner.create_tween()
+	settle.set_parallel(true)
+	settle.set_trans(Tween.TRANS_SINE)
+	settle.set_ease(Tween.EASE_IN_OUT)
+	settle.tween_property(target_card, "position", target_position, settle_duration)
+	settle.tween_property(target_card, "scale", target_scale, settle_duration)
+	settle.tween_property(target_card, "self_modulate", target_modulate, settle_duration)
+	settle.tween_property(impact_ring, "scale", Vector2(1.46, 1.46), settle_duration)
+	settle.tween_property(impact_ring, "modulate:a", 0.0, settle_duration)
+	settle.tween_property(impact_flash, "scale", Vector2(1.38, 1.38), settle_duration)
+	settle.tween_property(impact_flash, "modulate:a", 0.0, settle_duration)
+	if freeze_shell != null:
+		settle.tween_property(freeze_shell, "modulate:a", 0.30, settle_duration)
+	for shard in shards:
+		var drift: Vector2 = shard.get_meta("settle_offset", Vector2.ZERO)
+		settle.tween_property(shard, "position", shard.position + drift, settle_duration)
+		settle.tween_property(shard, "scale", Vector2(0.28, 0.28), settle_duration)
+		settle.tween_property(shard, "modulate:a", 0.0, settle_duration)
+	await settle.finished
+
+
+func create_ice_cone(length: float, width: float, is_core: bool) -> Polygon2D:
 	var cone := Polygon2D.new()
-	cone.name = "ConeOfColdBody"
+	cone.name = "ConeOfColdCore" if is_core else "ConeOfColdProjectile"
 	cone.polygon = PackedVector2Array([
-		source_center,
-		target_center + perpendicular * width,
-		target_center - perpendicular * width
+		Vector2(length * 0.58, 0.0),
+		Vector2(-length * 0.24, -width * 0.50),
+		Vector2(-length * 0.52, 0.0),
+		Vector2(-length * 0.24, width * 0.50)
 	])
-	cone.color = Color(0.24, 0.74, 1.0, 0.74)
+	cone.color = ICE_CORE_COLOR if is_core else ICE_BODY_COLOR
+	cone.scale = Vector2(0.18, 0.18)
 	cone.modulate.a = 0.0
-	cone.z_index = 2240
+	cone.z_index = 2250 if is_core else 2248
 	return cone
 
 
-func create_cone_outline(
-	source_center: Vector2,
-	target_center: Vector2,
-	perpendicular: Vector2,
-	width: float
-) -> Line2D:
-	var outline := Line2D.new()
-	outline.name = "ConeOfColdOutline"
-	outline.points = PackedVector2Array([
-		source_center,
-		target_center + perpendicular * width,
-		target_center - perpendicular * width,
-		source_center
+func create_charge_ring(source_rect: Rect2) -> Panel:
+	var ring := create_panel_effect(
+		source_rect,
+		"ConeOfColdCharge",
+		Color(0.08, 0.42, 0.68, 0.12),
+		ICE_EDGE_COLOR,
+		1.02,
+		4
+	)
+	ring.scale = Vector2(0.34, 0.34)
+	ring.modulate.a = 0.0
+	ring.z_index = 2244
+	return ring
+
+
+func create_frost_trail(start: Vector2, direction: Vector2, length: float) -> Line2D:
+	var trail := Line2D.new()
+	trail.name = "ConeOfColdTrail"
+	trail.points = PackedVector2Array([
+		Vector2(-length * 1.18, 0.0),
+		Vector2.ZERO
 	])
-	outline.width = 4.0
-	outline.default_color = Color(0.76, 0.96, 1.0, 0.96)
-	outline.joint_mode = Line2D.LINE_JOINT_ROUND
-	outline.modulate.a = 0.0
-	outline.z_index = 2242
-	return outline
+	trail.position = start
+	trail.rotation = direction.angle()
+	trail.width = 5.0
+	trail.default_color = FROST_TRAIL_COLOR
+	trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	trail.end_cap_mode = Line2D.LINE_CAP_ROUND
+	trail.modulate.a = 0.0
+	trail.z_index = 2238
+	return trail
 
 
-func create_ice_shards(
-	source_center: Vector2,
-	target_center: Vector2,
+func create_trail_crystals(
+	start: Vector2,
+	finish: Vector2,
 	perpendicular: Vector2,
 	width: float
 ) -> Array[Polygon2D]:
-	var shards: Array[Polygon2D] = []
-	for index in range(9):
-		var progress := 0.18 + float(index) * 0.085
+	var crystals: Array[Polygon2D] = []
+	for index in range(8):
+		var progress := 0.14 + float(index) * 0.10
 		var side := -1.0 if index % 2 == 0 else 1.0
-		var lateral := width * (0.10 + float(index % 3) * 0.13) * side
-		var shard := Polygon2D.new()
-		shard.name = "ConeOfColdShard_%d" % index
-		shard.polygon = PackedVector2Array([
-			Vector2(0.0, -9.0),
-			Vector2(4.0, 0.0),
-			Vector2(0.0, 12.0),
-			Vector2(-4.0, 0.0)
-		])
-		shard.position = source_center.lerp(target_center, progress) + perpendicular * lateral
-		shard.rotation = 0.28 * side + float(index) * 0.16
-		shard.scale = Vector2(0.18, 0.18)
-		shard.color = Color(0.72, 0.96, 1.0, 0.98)
+		var crystal := create_ice_shard(
+			start.lerp(finish, progress) + perpendicular * width * 0.16 * side,
+			7.0 + float(index % 3) * 2.0,
+			ICE_EDGE_COLOR
+		)
+		crystal.name = "ConeOfColdTrailCrystal_%d" % index
+		crystal.rotation = float(index) * 0.58 * side
+		crystal.scale = Vector2(0.12, 0.12)
+		crystal.modulate.a = 0.0
+		crystal.z_index = 2242
+		crystals.append(crystal)
+	return crystals
+
+
+func create_impact_shards(
+	center: Vector2,
+	direction: Vector2,
+	perpendicular: Vector2,
+	target_size: Vector2
+) -> Array[Polygon2D]:
+	var shards: Array[Polygon2D] = []
+	var radius := minf(target_size.x, target_size.y) * 0.34
+	for index in range(12):
+		var angle := TAU * float(index) / 12.0
+		var radial := direction.rotated(angle)
+		var shard := create_ice_shard(
+			center + radial * radius * 0.18,
+			10.0 + float(index % 4) * 2.4,
+			ICE_CORE_COLOR if index % 3 == 0 else ICE_EDGE_COLOR
+		)
+		shard.name = "ConeOfColdImpactShard_%d" % index
+		shard.rotation = radial.angle() + PI * 0.5
+		shard.scale = Vector2(0.16, 0.16)
 		shard.modulate.a = 0.0
-		shard.z_index = 2246
-		shard.set_meta("ice_drift", (target_center - source_center).normalized() * (18.0 + float(index) * 3.0))
+		shard.z_index = 2260
+		var side_bias := perpendicular * (4.0 if index % 2 == 0 else -4.0)
+		shard.set_meta("burst_offset", radial * radius * (0.72 + float(index % 3) * 0.16) + side_bias)
+		shard.set_meta("settle_offset", radial * radius * 0.22 + Vector2(0.0, 7.0))
 		shards.append(shard)
 	return shards
 
 
-func create_impact_ring(target_rect: Rect2) -> Panel:
-	var impact := Panel.new()
-	impact.name = "ConeOfColdImpact"
-	impact.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	impact.size = target_rect.size * 1.18
-	impact.pivot_offset = impact.size * 0.5
-	impact.global_position = target_rect.get_center() - impact.pivot_offset
-	impact.scale = Vector2(0.32, 0.32)
-	impact.modulate.a = 0.0
-	impact.z_index = 2248
+func create_ice_shard(position_value: Vector2, length: float, color: Color) -> Polygon2D:
+	var shard := Polygon2D.new()
+	shard.polygon = PackedVector2Array([
+		Vector2(0.0, -length),
+		Vector2(length * 0.34, 0.0),
+		Vector2(0.0, length * 0.72),
+		Vector2(-length * 0.34, 0.0)
+	])
+	shard.position = position_value
+	shard.color = color
+	return shard
+
+
+func create_impact_ring(target_rect: Rect2, is_magic_immune: bool) -> Panel:
+	var edge_color := Color(0.62, 0.72, 0.82, 0.76) if is_magic_immune else ICE_EDGE_COLOR
+	var ring := create_panel_effect(
+		target_rect,
+		"ConeOfColdImpact",
+		Color(0.16, 0.52, 0.78, 0.10),
+		edge_color,
+		1.30,
+		5
+	)
+	ring.scale = Vector2(0.24, 0.24)
+	ring.modulate.a = 0.0
+	ring.z_index = 2254
+	return ring
+
+
+func create_impact_flash(target_rect: Rect2, is_magic_immune: bool) -> Panel:
+	var flash_color := (
+		Color(0.54, 0.64, 0.72, 0.16)
+		if is_magic_immune
+		else Color(0.72, 0.96, 1.0, 0.24)
+	)
+	var flash := create_panel_effect(
+		target_rect,
+		"ConeOfColdFlash",
+		flash_color,
+		Color(0.0, 0.0, 0.0, 0.0),
+		0.72,
+		0
+	)
+	flash.scale = Vector2(0.36, 0.36)
+	flash.modulate.a = 0.0
+	flash.z_index = 2252
+	return flash
+
+
+func create_freeze_shell(target_rect: Rect2) -> Panel:
+	var shell := create_panel_effect(
+		target_rect,
+		"ConeOfColdFreezeShell",
+		Color(0.30, 0.72, 0.96, 0.18),
+		Color(0.76, 0.97, 1.0, 0.88),
+		0.92,
+		3
+	)
+	shell.scale = Vector2(0.58, 0.58)
+	shell.modulate.a = 0.0
+	shell.z_index = 2256
+	return shell
+
+
+func create_panel_effect(
+	target_rect: Rect2,
+	effect_name: String,
+	background_color: Color,
+	border_color: Color,
+	scale_factor: float,
+	border_width: int
+) -> Panel:
+	var panel := Panel.new()
+	panel.name = effect_name
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size = target_rect.size * scale_factor
+	panel.pivot_offset = panel.size * 0.5
+	panel.global_position = target_rect.get_center() - panel.pivot_offset
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.18, 0.58, 0.92, 0.14)
-	style.border_color = Color(0.72, 0.96, 1.0, 0.96)
-	style.set_border_width_all(5)
+	style.bg_color = background_color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
 	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.26, 0.76, 1.0, 0.62)
-	style.shadow_size = 20
-	impact.add_theme_stylebox_override("panel", style)
-	return impact
+	style.shadow_color = Color(border_color.r, border_color.g, border_color.b, border_color.a * 0.62)
+	style.shadow_size = 16
+	panel.add_theme_stylebox_override("panel", style)
+	return panel

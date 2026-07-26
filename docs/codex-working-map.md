@@ -335,6 +335,7 @@
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
 - 通用法术与种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域六种上下文声明 key。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。不要让规则层直接调用某个 provider；`GameManager` 只负责选择稳定 animation key，不创建表现节点。
+- 达拉然方向投射物由 `DalaranAnimationProvider` 读取施法者与命中目标的 UI 位置。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，不能用覆盖整条射线的静态三角遮罩；魔免只保留碰撞碎裂，不显示冻结结晶。
 - 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器与 provider 的 `*_KEYS` 常量，后者验证 provider 的上下文路由契约。
 - UI 控制器不拥有玩法规则。
 
