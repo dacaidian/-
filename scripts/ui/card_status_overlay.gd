@@ -22,22 +22,26 @@ var arcane_aura_glow_color := Color(0.40, 0.72, 1.0, 0.28)
 var freeze_ice_color := Color(0.30, 0.68, 0.96, 0.22)
 var freeze_ice_edge_color := Color(0.44, 0.82, 1.0, 0.72)
 var freeze_ice_glow_color := Color(0.24, 0.60, 0.96, 0.20)
-var encourage_gu_color := Color(0.42, 1.0, 0.36, 0.16)
-var encourage_gu_edge_color := Color(0.72, 1.0, 0.48, 0.72)
-var encourage_gu_venom_color := Color(0.20, 0.95, 0.38, 0.58)
-var encourage_gu_insect_color := Color(0.96, 1.0, 0.42, 0.82)
-var snake_venom_color := Color(0.26, 0.10, 0.36, 0.22)
-var snake_venom_edge_color := Color(0.72, 0.38, 1.0, 0.70)
-var snake_venom_fang_color := Color(0.82, 1.0, 0.34, 0.80)
-var life_link_larva_color := Color(0.36, 0.22, 0.04, 0.20)
-var life_link_larva_edge_color := Color(0.88, 0.82, 0.24, 0.74)
-var life_link_larva_core_color := Color(0.70, 1.0, 0.26, 0.80)
-var life_link_color := Color(0.10, 0.36, 0.08, 0.18)
-var life_link_edge_color := Color(0.62, 1.0, 0.32, 0.76)
-var life_link_thread_color := Color(0.46, 1.0, 0.24, 0.78)
-var death_immunity_color := Color(0.05, 0.12, 0.07, 0.26)
-var death_immunity_edge_color := Color(0.74, 1.0, 0.42, 0.74)
-var death_immunity_thread_color := Color(0.40, 0.92, 0.24, 0.62)
+var encourage_gu_color := Color(0.08, 0.30, 0.20, 0.10)
+var encourage_gu_edge_color := Color(0.32, 0.68, 0.36, 0.64)
+var encourage_gu_venom_color := Color(0.18, 0.62, 0.32, 0.58)
+var encourage_gu_insect_color := Color(0.68, 0.88, 0.24, 0.78)
+var snake_venom_color := Color(0.06, 0.28, 0.24, 0.12)
+var snake_venom_edge_color := Color(0.18, 0.58, 0.48, 0.66)
+var snake_venom_fang_color := Color(0.66, 0.84, 0.38, 0.76)
+var life_link_larva_color := Color(0.26, 0.18, 0.05, 0.12)
+var life_link_larva_edge_color := Color(0.70, 0.58, 0.22, 0.68)
+var life_link_larva_core_color := Color(0.68, 0.78, 0.24, 0.76)
+var life_link_color := Color(0.26, 0.03, 0.06, 0.10)
+var life_link_edge_color := Color(0.66, 0.12, 0.14, 0.70)
+var life_link_thread_color := Color(0.20, 0.56, 0.38, 0.74)
+var death_immunity_color := Color(0.28, 0.30, 0.25, 0.10)
+var death_immunity_edge_color := Color(0.66, 0.70, 0.58, 0.68)
+var death_immunity_thread_color := Color(0.06, 0.05, 0.05, 0.76)
+var devour_color := Color(0.10, 0.28, 0.12, 0.10)
+var devour_edge_color := Color(0.30, 0.62, 0.34, 0.68)
+var devour_chitin_color := Color(0.42, 0.66, 0.30, 0.72)
+var devour_royal_color := Color(0.50, 0.18, 0.58, 0.76)
 var precision_shot_color := Color(0.30, 0.78, 1.0, 0.16)
 var precision_shot_edge_color := Color(0.64, 0.94, 1.0, 0.86)
 var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
@@ -132,21 +136,28 @@ func set_state(new_state: CardState) -> void:
 
 func refresh() -> void:
 	visible = has_visible_status() or is_divine_shield_break_active()
-	set_process(
-		visible
-		and (
-			should_show_divine_shield()
-			or should_show_power_word_shield()
-			or should_show_arcane_aura()
-			or is_divine_shield_break_active()
-		)
-	)
+	set_process(visible and has_animated_status_visual())
 	if visible:
 		queue_redraw()
 
 
+func has_animated_status_visual() -> bool:
+	return (
+		should_show_divine_shield()
+		or should_show_power_word_shield()
+		or should_show_arcane_aura()
+		or should_show_encourage_gu()
+		or should_show_snake_venom()
+		or should_show_life_link_larva()
+		or should_show_life_link()
+		or should_show_death_immunity()
+		or should_show_devour()
+		or is_divine_shield_break_active()
+	)
+
+
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -280,6 +291,13 @@ func should_show_death_immunity() -> bool:
 	return state.is_face_up and state.is_unit() and state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
 
 
+func should_show_devour() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_minion() and state.has_status(CardStatus.STATUS_DEVOUR)
+
+
 func should_show_precision_shot() -> bool:
 	if state == null or state.data == null:
 		return false
@@ -392,6 +410,8 @@ func _draw() -> void:
 		draw_life_link_overlay()
 	if should_show_death_immunity():
 		draw_death_immunity_overlay()
+	if should_show_devour():
+		draw_devour_overlay()
 	if should_show_bronze_head_iron_arms():
 		draw_bronze_head_iron_arms()
 	if should_show_immortal_peach():
@@ -1302,37 +1322,62 @@ func draw_encourage_gu_overlay() -> void:
 	var status := state.get_status(CardStatus.STATUS_ENCOURAGE_GU) if state != null else null
 	var stack_count := status.stacks if status != null else 1
 	var pulse_count: int = mini(maxi(stack_count, 1), 5)
-	var edge_width := maxf(size.x * 0.025, 2.0)
+	var phase := animation_time * 0.92
+	var breath := 0.5 + 0.5 * sin(phase * 1.4)
+	var base_radius := minf(gu_rect.size.x, gu_rect.size.y) * (0.34 + breath * 0.018)
 
 	for index in range(pulse_count):
-		var grow := float(index) * 4.0
-		var pulse_alpha := encourage_gu_edge_color.a * (1.0 - float(index) * 0.12)
-		draw_rect(gu_rect.grow(grow), Color(encourage_gu_edge_color.r, encourage_gu_edge_color.g, encourage_gu_edge_color.b, pulse_alpha), false, edge_width, true)
+		var ring_radius := base_radius + float(index) * maxf(size.x * 0.025, 2.5)
+		var start_angle := phase * (0.10 + float(index) * 0.02) + float(index) * 0.64
+		draw_arc(
+			center,
+			ring_radius,
+			start_angle,
+			start_angle + PI * 1.46,
+			52,
+			Color(
+				encourage_gu_edge_color.r,
+				encourage_gu_edge_color.g,
+				encourage_gu_edge_color.b,
+				encourage_gu_edge_color.a * (0.82 - float(index) * 0.12)
+			),
+			2.0,
+			true
+		)
 
-	draw_rect(gu_rect, encourage_gu_color, true)
-	draw_gu_veins(center, gu_rect)
-	draw_gu_insects(center, gu_rect, pulse_count)
+	draw_circle(center, base_radius * 0.34, encourage_gu_color)
+	draw_gu_veins(center, gu_rect, phase)
+	draw_gu_insects(center, gu_rect, pulse_count, phase)
 
 
-func draw_gu_veins(center: Vector2, gu_rect: Rect2) -> void:
+func draw_gu_veins(center: Vector2, gu_rect: Rect2, phase: float) -> void:
 	var vein_count := 7
 	var vein_length := minf(gu_rect.size.x, gu_rect.size.y) * 0.35
 	for index in range(vein_count):
-		var angle := -PI * 0.78 + float(index) * PI * 1.56 / float(vein_count - 1)
+		var angle := -PI * 0.78 + float(index) * PI * 1.56 / float(vein_count - 1) + sin(phase + float(index)) * 0.025
 		var dir := Vector2(cos(angle), sin(angle))
 		var start := center + dir * vein_length * 0.18
-		var mid := center + dir * vein_length * 0.55 + Vector2(-dir.y, dir.x) * sin(float(index) * 1.7) * 7.0
+		var mid := center + dir * vein_length * 0.55 + Vector2(-dir.y, dir.x) * sin(float(index) * 1.7 + phase) * 7.0
 		var end := center + dir * vein_length
 		draw_line(start, mid, encourage_gu_venom_color, 2.2)
 		draw_line(mid, end, Color(encourage_gu_venom_color.r, encourage_gu_venom_color.g, encourage_gu_venom_color.b, encourage_gu_venom_color.a * 0.72), 1.7)
+		var branch_dir := Vector2(-dir.y, dir.x)
+		draw_line(
+			mid,
+			mid + dir * vein_length * 0.20 + branch_dir * vein_length * 0.10,
+			Color(encourage_gu_venom_color.r, encourage_gu_venom_color.g, encourage_gu_venom_color.b, 0.34),
+			1.2,
+			true
+		)
 
 
-func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int) -> void:
+func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int, phase: float) -> void:
 	var orbit_radius := minf(gu_rect.size.x, gu_rect.size.y) * 0.39
 	var insect_count := mini(count + 2, 7)
 	for index in range(insect_count):
-		var angle := TAU * float(index) / float(insect_count) + 0.34
-		var pos := center + Vector2(cos(angle), sin(angle)) * orbit_radius
+		var angle := TAU * float(index) / float(insect_count) + 0.34 + phase * (0.08 + float(index % 2) * 0.015)
+		var local_radius := orbit_radius * (0.94 + sin(phase * 1.3 + float(index)) * 0.05)
+		var pos := center + Vector2(cos(angle), sin(angle)) * local_radius
 		var wing_dir := Vector2(-sin(angle), cos(angle))
 		draw_circle(pos, 2.4, encourage_gu_insect_color)
 		draw_line(pos - wing_dir * 3.0, pos + wing_dir * 3.0, Color(encourage_gu_insect_color.r, encourage_gu_insect_color.g, encourage_gu_insect_color.b, 0.42), 1.4)
@@ -1341,16 +1386,33 @@ func draw_gu_insects(center: Vector2, gu_rect: Rect2, count: int) -> void:
 func draw_snake_venom_overlay() -> void:
 	var venom_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
 	var center := venom_rect.get_center()
-	var edge_width := maxf(size.x * 0.026, 2.0)
 	var status := state.get_status(CardStatus.STATUS_SNAKE_VENOM) if state != null else null
-	var stack_count := status.stacks if status != null else 1
-	var ring_count: int = mini(maxi(stack_count, 1), 4)
+	var remaining_turns := maxi(status.remaining_turns, 0) if status != null else 0
+	var phase := animation_time * 1.1
 
-	draw_rect(venom_rect, snake_venom_color, true)
-	for index in range(ring_count):
-		var grow := float(index) * 5.0
-		var alpha := snake_venom_edge_color.a * (1.0 - float(index) * 0.15)
-		draw_rect(venom_rect.grow(grow), Color(snake_venom_edge_color.r, snake_venom_edge_color.g, snake_venom_edge_color.b, alpha), false, edge_width, true)
+	draw_circle(center + Vector2(0.0, venom_rect.size.y * 0.18), minf(size.x, size.y) * 0.20, snake_venom_color)
+	for coil_index in range(2):
+		var coil_points := PackedVector2Array()
+		for point_index in range(25):
+			var t := float(point_index) / 24.0
+			coil_points.append(Vector2(
+				center.x
+					+ sin(t * TAU * 1.65 + phase + float(coil_index) * PI)
+					* venom_rect.size.x
+					* (0.14 + float(coil_index) * 0.04),
+				venom_rect.position.y + venom_rect.size.y * (0.50 + t * 0.38)
+			))
+		draw_polyline(
+			coil_points,
+			Color(
+				snake_venom_edge_color.r,
+				snake_venom_edge_color.g,
+				snake_venom_edge_color.b,
+				snake_venom_edge_color.a * (1.0 - float(coil_index) * 0.24)
+			),
+			2.8 - float(coil_index) * 0.6,
+			true
+		)
 
 	var fang_height := venom_rect.size.y * 0.28
 	var fang_width := venom_rect.size.x * 0.10
@@ -1360,28 +1422,67 @@ func draw_snake_venom_overlay() -> void:
 	draw_fang(Vector2(left_fang_x, fang_top), fang_width, fang_height)
 	draw_fang(Vector2(right_fang_x, fang_top), fang_width, fang_height)
 
-	for index in range(5):
-		var t := float(index) / 4.0
-		var drop_x := venom_rect.position.x + venom_rect.size.x * (0.28 + t * 0.44)
-		var drop_y := venom_rect.position.y + venom_rect.size.y * (0.60 + sin(t * TAU) * 0.06)
-		draw_circle(Vector2(drop_x, drop_y), 2.2 + float(index % 2), Color(snake_venom_fang_color.r, snake_venom_fang_color.g, snake_venom_fang_color.b, 0.56))
+	var duration_nodes := mini(maxi(remaining_turns, 1), 3)
+	for node_index in range(3):
+		var node_center := Vector2(
+			center.x + (float(node_index) - 1.0) * venom_rect.size.x * 0.16,
+			venom_rect.position.y + venom_rect.size.y * 0.88
+		)
+		var active := node_index < duration_nodes
+		draw_circle(
+			node_center,
+			maxf(size.x * 0.018, 2.4),
+			Color(
+				snake_venom_fang_color.r,
+				snake_venom_fang_color.g,
+				snake_venom_fang_color.b,
+				0.72 if active else 0.16
+			)
+		)
+
+	var weapon_anchor := venom_rect.position + Vector2(venom_rect.size.x * 0.22, venom_rect.size.y * 0.34)
+	for bind_index in range(3):
+		var bind_radius := venom_rect.size.x * (0.06 + float(bind_index) * 0.025)
+		draw_arc(
+			weapon_anchor,
+			bind_radius,
+			phase * 0.18 + float(bind_index),
+			phase * 0.18 + float(bind_index) + PI * 1.54,
+			24,
+			Color(0.08, 0.24, 0.18, 0.68),
+			1.6,
+			true
+		)
 
 
 func draw_life_link_larva_overlay() -> void:
 	var larva_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
 	var center := larva_rect.get_center()
-	var edge_width := maxf(size.x * 0.020, 2.0)
 	var status := state.get_status(CardStatus.STATUS_LIFE_LINK_LARVA) if state != null else null
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 3)
+	var phase := animation_time * 1.15
+	var breath := 0.5 + 0.5 * sin(phase * 1.7)
 
-	draw_rect(larva_rect, life_link_larva_color, true)
 	for index in range(ring_count):
-		var grow := float(index) * 3.5
-		var alpha := life_link_larva_edge_color.a * (1.0 - float(index) * 0.18)
-		draw_rect(larva_rect.grow(grow), Color(life_link_larva_edge_color.r, life_link_larva_edge_color.g, life_link_larva_edge_color.b, alpha), false, edge_width, true)
+		var ring_radius := minf(larva_rect.size.x, larva_rect.size.y) * (0.28 + float(index) * 0.055)
+		draw_arc(
+			center,
+			ring_radius,
+			phase * 0.08 + float(index) * 0.72,
+			phase * 0.08 + float(index) * 0.72 + PI * 1.38,
+			42,
+			Color(
+				life_link_larva_edge_color.r,
+				life_link_larva_edge_color.g,
+				life_link_larva_edge_color.b,
+				life_link_larva_edge_color.a * (0.82 - float(index) * 0.18)
+			),
+			1.8,
+			true
+		)
 
-	var cocoon_radius := minf(larva_rect.size.x, larva_rect.size.y) * 0.18
+	var cocoon_radius := minf(larva_rect.size.x, larva_rect.size.y) * (0.16 + breath * 0.012)
 	var cocoon_center := center + Vector2(0.0, -larva_rect.size.y * 0.02)
 	draw_circle(cocoon_center, cocoon_radius * 1.12, Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.18))
 	draw_arc(cocoon_center, cocoon_radius, -PI * 0.15, TAU - PI * 0.15, 36, life_link_larva_core_color, maxf(size.x * 0.018, 1.8), true)
@@ -1389,60 +1490,90 @@ func draw_life_link_larva_overlay() -> void:
 	draw_line(cocoon_center + Vector2(-cocoon_radius * 0.62, cocoon_radius * 0.36), cocoon_center + Vector2(cocoon_radius * 0.66, -cocoon_radius * 0.34), Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.46), 1.6)
 
 	for index in range(6):
-		var angle := TAU * float(index) / 6.0 + 0.34
-		var point := center + Vector2(cos(angle), sin(angle)) * minf(larva_rect.size.x, larva_rect.size.y) * 0.30
+		var angle := TAU * float(index) / 6.0 + 0.34 + phase * 0.06
+		var point := center + Vector2(cos(angle), sin(angle)) * minf(larva_rect.size.x, larva_rect.size.y) * (0.29 + sin(phase + float(index)) * 0.018)
 		draw_circle(point, maxf(size.x * 0.012, 2.0), Color(life_link_larva_core_color.r, life_link_larva_core_color.g, life_link_larva_core_color.b, 0.54))
+
+	if status != null:
+		var injection_angle := float(abs(str(status.payload.get(EffectData.KEY_LINK_ID, "")).hash()) % 360) * PI / 180.0
+		var injection_point := center + Vector2(cos(injection_angle), sin(injection_angle)) * cocoon_radius * 0.76
+		draw_circle(injection_point, maxf(size.x * 0.016, 2.2), Color(0.82, 0.16, 0.13, 0.82))
 
 
 func draw_life_link_overlay() -> void:
 	var link_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
 	var center := link_rect.get_center()
-	var edge_width := maxf(size.x * 0.022, 2.0)
 	var status := state.get_status(CardStatus.STATUS_LIFE_LINK) if state != null else null
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 4)
+	var link_id := str(status.payload.get(EffectData.KEY_LINK_ID, "")) if status != null else ""
+	var group_seed: int = absi(link_id.hash())
+	var phase := animation_time * (0.72 + float(group_seed % 5) * 0.025)
+	var breath := 0.5 + 0.5 * sin(phase * 1.35)
 
-	draw_rect(link_rect, life_link_color, true)
+	draw_circle(center, minf(link_rect.size.x, link_rect.size.y) * 0.18, life_link_color)
 	for index in range(ring_count):
-		var grow := float(index) * 4.0
-		var alpha := life_link_edge_color.a * (1.0 - float(index) * 0.14)
-		draw_rect(link_rect.grow(grow), Color(life_link_edge_color.r, life_link_edge_color.g, life_link_edge_color.b, alpha), false, edge_width, true)
+		var ring_radius := minf(link_rect.size.x, link_rect.size.y) * (0.30 + float(index) * 0.045 + breath * 0.008)
+		var start_angle := phase * 0.08 + float(index) * 0.62
+		draw_arc(
+			center,
+			ring_radius,
+			start_angle,
+			start_angle + PI * 1.48,
+			48,
+			Color(
+				life_link_edge_color.r,
+				life_link_edge_color.g,
+				life_link_edge_color.b,
+				life_link_edge_color.a * (0.84 - float(index) * 0.14)
+			),
+			2.0,
+			true
+		)
 
 	var left_anchor := center + Vector2(-link_rect.size.x * 0.20, -link_rect.size.y * 0.02)
 	var right_anchor := center + Vector2(link_rect.size.x * 0.20, -link_rect.size.y * 0.02)
-	draw_circle(left_anchor, size.x * 0.045, life_link_thread_color)
-	draw_circle(right_anchor, size.x * 0.045, life_link_thread_color)
+	draw_circle(left_anchor, size.x * (0.040 + breath * 0.004), life_link_edge_color)
+	draw_circle(right_anchor, size.x * (0.040 + breath * 0.004), life_link_edge_color)
 
 	var thread_points := PackedVector2Array()
 	for index in range(9):
 		var t := float(index) / 8.0
 		var x := lerpf(left_anchor.x, right_anchor.x, t)
-		var y := lerpf(left_anchor.y, right_anchor.y, t) + sin(t * TAU * 1.5) * size.y * 0.035
+		var y := lerpf(left_anchor.y, right_anchor.y, t) + sin(t * TAU * 1.5 + phase) * size.y * 0.035
 		thread_points.append(Vector2(x, y))
-	draw_polyline(thread_points, life_link_thread_color, 2.4, false)
+	draw_polyline(thread_points, life_link_edge_color, 2.6, true)
 
 	var lower_points := PackedVector2Array()
 	for index in range(9):
 		var t := float(index) / 8.0
 		var x := lerpf(left_anchor.x, right_anchor.x, t)
-		var y := lerpf(left_anchor.y, right_anchor.y, t) - sin(t * TAU * 1.5) * size.y * 0.035 + size.y * 0.07
+		var y := lerpf(left_anchor.y, right_anchor.y, t) - sin(t * TAU * 1.5 + phase) * size.y * 0.035 + size.y * 0.07
 		lower_points.append(Vector2(x, y))
 	draw_polyline(lower_points, Color(life_link_thread_color.r, life_link_thread_color.g, life_link_thread_color.b, life_link_thread_color.a * 0.70), 1.8, false)
+
+	var marker_count: int = 3 + group_seed % 3
+	for marker_index in range(marker_count):
+		var angle := TAU * float(marker_index) / float(marker_count) + float(group_seed % 11) * 0.17
+		var marker_center := center + Vector2(cos(angle), sin(angle)) * minf(link_rect.size.x, link_rect.size.y) * 0.39
+		draw_circle(marker_center, maxf(size.x * 0.012, 2.0), Color(0.82, 0.18, 0.16, 0.74))
 
 
 func draw_death_immunity_overlay() -> void:
 	var burial_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
 	var center := burial_rect.get_center()
-	var edge_width := maxf(size.x * 0.026, 2.0)
 	var status := state.get_status(CardStatus.STATUS_DEATH_IMMUNITY) if state != null else null
 	var remaining_turns := status.remaining_turns if status != null else 0
-	var ring_count: int = mini(maxi(remaining_turns, 1), 4)
+	var active_segments: int = mini(maxi(remaining_turns, 0), 4)
+	var is_suspended_at_zero := state != null and state.current_health <= 0
+	var phase := animation_time * (1.65 if is_suspended_at_zero else 0.72)
+	var breath := 0.5 + 0.5 * sin(phase)
 
-	draw_rect(burial_rect, death_immunity_color, true)
-	for index in range(ring_count):
-		var grow := float(index) * 4.0
-		var alpha := death_immunity_edge_color.a * (1.0 - float(index) * 0.14)
-		draw_rect(burial_rect.grow(grow), Color(death_immunity_edge_color.r, death_immunity_edge_color.g, death_immunity_edge_color.b, alpha), false, edge_width, true)
+	draw_circle(
+		center,
+		minf(burial_rect.size.x, burial_rect.size.y) * (0.20 + breath * 0.012),
+		death_immunity_color
+	)
 
 	var shroud_top := burial_rect.position.y + burial_rect.size.y * 0.18
 	var shroud_bottom := burial_rect.position.y + burial_rect.size.y * 0.82
@@ -1454,14 +1585,121 @@ func draw_death_immunity_overlay() -> void:
 		Vector2(center.x - shroud_width * 0.32, shroud_bottom),
 		Vector2(center.x - shroud_width * 0.45, shroud_top + burial_rect.size.y * 0.18)
 	])
-	draw_colored_polygon(shroud_points, Color(0.08, 0.18, 0.07, 0.34))
-	draw_polyline(shroud_points, death_immunity_edge_color, 2.6, true)
+	draw_colored_polygon(shroud_points, Color(0.42, 0.44, 0.36, 0.12 + breath * 0.025))
+	draw_polyline(
+		shroud_points,
+		Color(
+			death_immunity_edge_color.r,
+			death_immunity_edge_color.g,
+			death_immunity_edge_color.b,
+			death_immunity_edge_color.a + (0.14 * breath if is_suspended_at_zero else 0.0)
+		),
+		2.4,
+		true
+	)
 
 	for index in range(5):
 		var t := float(index) / 4.0
 		var x := lerpf(burial_rect.position.x + burial_rect.size.x * 0.24, burial_rect.position.x + burial_rect.size.x * 0.76, t)
-		var y := center.y + sin(t * TAU) * burial_rect.size.y * 0.10
-		draw_line(Vector2(x, y - burial_rect.size.y * 0.18), Vector2(x, y + burial_rect.size.y * 0.18), Color(death_immunity_thread_color.r, death_immunity_thread_color.g, death_immunity_thread_color.b, death_immunity_thread_color.a * (0.55 + t * 0.25)), 1.6)
+		var y := center.y + sin(t * TAU + phase * 0.18) * burial_rect.size.y * 0.10
+		var thread_reach := burial_rect.size.y * (0.18 + (0.05 * breath if is_suspended_at_zero else 0.0))
+		draw_line(
+			Vector2(x, y - thread_reach),
+			Vector2(x, y + thread_reach),
+			Color(
+				death_immunity_thread_color.r,
+				death_immunity_thread_color.g,
+				death_immunity_thread_color.b,
+				death_immunity_thread_color.a * (0.55 + t * 0.25)
+			),
+			1.6,
+			true
+		)
+
+	for segment_index in range(4):
+		var segment_center := Vector2(
+			center.x + (float(segment_index) - 1.5) * burial_rect.size.x * 0.13,
+			burial_rect.position.y + burial_rect.size.y * 0.90
+		)
+		var is_active := segment_index < active_segments
+		draw_circle(
+			segment_center,
+			maxf(size.x * 0.018, 2.4),
+			Color(
+				0.58 if is_active else 0.20,
+				0.70 if is_active else 0.22,
+				0.42 if is_active else 0.20,
+				0.76 if is_active else 0.22
+			)
+		)
+
+	for paper_index in range(3):
+		var angle := -PI * 0.76 + float(paper_index) * PI * 0.76 + phase * 0.025
+		var paper_center := center + Vector2(cos(angle), sin(angle)) * minf(size.x, size.y) * 0.34
+		var paper_size := Vector2(size.x * 0.10, size.y * 0.22)
+		var paper_rect := Rect2(paper_center - paper_size * 0.5, paper_size)
+		draw_rect(paper_rect, Color(0.72, 0.72, 0.58, 0.13), true)
+		draw_rect(paper_rect, Color(0.72, 0.76, 0.62, 0.52), false, 1.2, true)
+		draw_line(
+			paper_center + Vector2(0.0, -paper_size.y * 0.26),
+			paper_center + Vector2(0.0, paper_size.y * 0.26),
+			Color(0.62, 0.10, 0.09, 0.64),
+			1.4,
+			true
+		)
+
+
+func draw_devour_overlay() -> void:
+	var devour_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
+	var center := devour_rect.get_center()
+	var status := state.get_status(CardStatus.STATUS_DEVOUR) if state != null else null
+	var stack_count := status.stacks if status != null else 1
+	var poison_level := int(status.payload.get(EffectData.KEY_POISON_ATTACK_LEVEL, 0)) if status != null else 0
+	var phase := animation_time * 0.74
+	var breath := 0.5 + 0.5 * sin(phase * 1.35)
+	var plate_count := mini(maxi(stack_count + 2, 3), 8)
+
+	draw_circle(center, minf(devour_rect.size.x, devour_rect.size.y) * (0.18 + breath * 0.012), devour_color)
+	for plate_index in range(plate_count):
+		var angle := TAU * float(plate_index) / float(plate_count) + phase * 0.08
+		var plate_center := center + Vector2(cos(angle), sin(angle)) * minf(devour_rect.size.x, devour_rect.size.y) * 0.38
+		var direction := Vector2(cos(angle), sin(angle))
+		var tangent := Vector2(-direction.y, direction.x)
+		var plate_radius := minf(size.x, size.y) * (0.040 + float(plate_index % 3) * 0.006)
+		var plate_points := PackedVector2Array([
+			plate_center - direction * plate_radius,
+			plate_center + tangent * plate_radius * 0.72,
+			plate_center + direction * plate_radius,
+			plate_center - tangent * plate_radius * 0.72
+		])
+		draw_colored_polygon(plate_points, Color(devour_chitin_color.r, devour_chitin_color.g, devour_chitin_color.b, 0.24))
+		draw_polyline(
+			PackedVector2Array([plate_points[0], plate_points[1], plate_points[2], plate_points[3], plate_points[0]]),
+			devour_chitin_color,
+			1.5,
+			true
+		)
+
+	var poison_color := devour_edge_color
+	if poison_level == 1:
+		poison_color = Color(0.68, 0.88, 0.18, 0.72)
+	elif poison_level == 2:
+		poison_color = Color(0.12, 0.56, 0.46, 0.74)
+	elif poison_level >= 3:
+		poison_color = devour_royal_color
+
+	for poison_index in range(maxi(poison_level, 1)):
+		var ring_radius := minf(devour_rect.size.x, devour_rect.size.y) * (0.25 + float(poison_index) * 0.055)
+		draw_arc(
+			center,
+			ring_radius,
+			phase * 0.10 + float(poison_index),
+			phase * 0.10 + float(poison_index) + PI * 1.52,
+			44,
+			Color(poison_color.r, poison_color.g, poison_color.b, poison_color.a - float(poison_index) * 0.10),
+			2.0,
+			true
+		)
 
 
 func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:

@@ -1,12 +1,44 @@
 extends RefCounted
 class_name MiaoAnimationProvider
 
+const MiaoSpellVisualScript := preload("res://scripts/ui/animation/miao_spell_visual.gd")
+
 const TARGETED_KEYS: Array[String] = [
-	"medical_practice", "gu_infusion", "gu_lure", "gu_life_link_larva",
-	"gu_life_link", "thin_burial", "gu_summon", "gu_trap_trigger"
+	"medical_practice",
+	"gu_herb_poison",
+	"gu_infusion",
+	"gu_lure",
+	"gu_life_link_larva",
+	"gu_life_link",
+	"gu_life_link_death",
+	"thin_burial",
+	"thin_burial_release",
+	"thin_burial_break",
+	"gu_summon",
+	"gu_scorpion_breeding",
+	"gu_trap_trigger",
+	"gu_snake_venom_apply",
+	"gu_devour",
+	"gu_venom_inject",
+	"gu_venom_burst",
+	"gu_scorpion_venom_apply",
+	"gu_king_venom_apply",
+	"gu_poison_tick_scorpion",
+	"gu_poison_tick_snake",
+	"gu_poison_tick_king",
+	"gu_poison_burst"
 ]
 const RECT_KEYS: Array[String] = TARGETED_KEYS
 const SOURCE_RECT_KEYS: Array[String] = TARGETED_KEYS
+const MULTI_RECT_KEYS: Array[String] = [
+	"gu_venom_burst",
+	"gu_poison_tick_scorpion",
+	"gu_poison_tick_snake",
+	"gu_poison_tick_king",
+	"gu_poison_burst",
+	"thin_burial_release",
+	"thin_burial_break"
+]
 
 var spell_animation_duration := 0.32
 
@@ -21,6 +53,7 @@ func register_routes(router: SpellAnimationRouter) -> void:
 	router.register_targeted(TARGETED_KEYS, play_targeted)
 	router.register_at_rect(RECT_KEYS, play_at_rect)
 	router.register_from_rect(SOURCE_RECT_KEYS, play_from_rect)
+	router.register_multi_rect(MULTI_RECT_KEYS, play_multi_rect)
 
 
 func play_targeted(
@@ -30,12 +63,30 @@ func play_targeted(
 	target_card: Card,
 	animation_key: String
 ) -> void:
-	if target_card == null:
+	if target_card == null or not is_instance_valid(target_card):
 		return
-	if animation_key == "gu_infusion" and caster_card != null:
-		await _play_gu_projectile(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
-	else:
-		await play_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+
+	if animation_key == "gu_devour" and caster_card != null and is_instance_valid(caster_card):
+		await _play_organic_transfer(
+			owner,
+			effect_root,
+			target_card.get_global_rect().get_center(),
+			caster_card.get_global_rect().get_center(),
+			animation_key
+		)
+		await play_at_rect(owner, effect_root, caster_card.get_global_rect(), animation_key)
+		return
+
+	if caster_card != null and is_instance_valid(caster_card) and _uses_source_transfer(animation_key):
+		await _play_organic_transfer(
+			owner,
+			effect_root,
+			caster_card.get_global_rect().get_center(),
+			target_card.get_global_rect().get_center(),
+			animation_key
+		)
+
+	await play_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 
 
 func play_from_rect(
@@ -45,71 +96,124 @@ func play_from_rect(
 	target_card: Card,
 	animation_key: String
 ) -> void:
-	if target_card == null:
+	if (
+		owner == null
+		or effect_root == null
+		or source_rect.size == Vector2.ZERO
+		or target_card == null
+		or not is_instance_valid(target_card)
+	):
 		return
-	if animation_key == "gu_infusion":
-		await _play_gu_projectile(owner, effect_root, source_rect.get_center(), target_card)
-	else:
-		await play_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 
-
-func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+	var target_rect := target_card.get_global_rect()
+	if animation_key == "gu_devour":
+		await _play_organic_transfer(
+			owner,
+			effect_root,
+			target_rect.get_center(),
+			source_rect.get_center(),
+			animation_key
+		)
+		await play_at_rect(owner, effect_root, source_rect, animation_key)
 		return
-	var theme := _get_theme(animation_key)
-	var outer := _create_rect_panel(target_rect, "MiaoOuter", _create_style(
-		theme.outer_fill, theme.outer_border, 6, int(theme.corner_radius), theme.glow, 28
-	), float(theme.outer_scale))
-	var inner := _create_rect_panel(target_rect, "MiaoInner", _create_style(
-		theme.inner_fill, theme.inner_border, 3, int(theme.inner_radius), theme.glow, 18
-	), float(theme.inner_scale))
-	var symbol := _create_symbol(target_rect, str(theme.symbol), theme.symbol_color)
-	var motes := _create_motes(target_rect, int(theme.mote_count), theme.mote_fill, theme.mote_border)
 
-	effect_root.add_child(outer)
-	effect_root.add_child(inner)
-	effect_root.add_child(symbol)
-	for mote in motes:
-		effect_root.add_child(mote)
+	if _uses_source_transfer(animation_key):
+		await _play_organic_transfer(
+			owner,
+			effect_root,
+			source_rect.get_center(),
+			target_rect.get_center(),
+			animation_key
+		)
+	await play_at_rect(owner, effect_root, target_rect, animation_key)
 
-	var bind_tween := owner.create_tween()
-	bind_tween.set_parallel(true)
-	bind_tween.set_trans(Tween.TRANS_BACK)
-	bind_tween.set_ease(Tween.EASE_OUT)
-	bind_tween.tween_property(outer, "modulate:a", 0.90, spell_animation_duration * 0.38)
-	bind_tween.tween_property(outer, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.38)
-	bind_tween.tween_property(outer, "rotation", float(theme.rotation) * 0.32, spell_animation_duration * 0.38)
-	bind_tween.tween_property(inner, "modulate:a", 0.88, spell_animation_duration * 0.38)
-	bind_tween.tween_property(inner, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.38)
-	bind_tween.tween_property(symbol, "modulate:a", 0.96, spell_animation_duration * 0.38)
-	for mote in motes:
-		bind_tween.tween_property(mote, "modulate:a", 0.86, spell_animation_duration * 0.38)
-	await bind_tween.finished
 
-	var release_tween := owner.create_tween()
-	release_tween.set_parallel(true)
-	release_tween.set_trans(Tween.TRANS_CUBIC)
-	release_tween.set_ease(Tween.EASE_OUT)
-	release_tween.tween_property(outer, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.70)
-	release_tween.tween_property(outer, "rotation", float(theme.rotation), spell_animation_duration * 0.70)
-	release_tween.tween_property(outer, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	release_tween.tween_property(inner, "scale", Vector2(0.34, 0.34) if bool(theme.collapse) else Vector2(1.56, 1.56), spell_animation_duration * 0.70)
-	release_tween.tween_property(inner, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	release_tween.tween_property(symbol, "global_position", symbol.global_position + Vector2(0.0, -target_rect.size.y * 0.16), spell_animation_duration * 0.70)
-	release_tween.tween_property(symbol, "scale", Vector2(1.48, 1.48), spell_animation_duration * 0.70)
-	release_tween.tween_property(symbol, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	for mote in motes:
-		var drift: Vector2 = mote.get_meta("miao_drift", Vector2.ZERO)
-		release_tween.tween_property(mote, "global_position", mote.global_position + drift, spell_animation_duration * 0.70)
-		release_tween.tween_property(mote, "scale", Vector2(0.24, 0.24), spell_animation_duration * 0.70)
-		release_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.70)
-	await release_tween.finished
+func play_at_rect(
+	owner: Node,
+	effect_root: Control,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	if (
+		owner == null
+		or effect_root == null
+		or target_rect.size == Vector2.ZERO
+		or not RECT_KEYS.has(animation_key)
+	):
+		return
 
-	outer.queue_free()
-	inner.queue_free()
-	symbol.queue_free()
-	for mote in motes:
-		mote.queue_free()
+	var presentation := _get_presentation(animation_key)
+	var visual := _create_visual(target_rect, animation_key, presentation)
+	effect_root.add_child(visual)
+	await _animate_visual(owner, visual, presentation)
+	if is_instance_valid(visual):
+		visual.queue_free()
+
+
+func play_multi_rect(
+	owner: Node,
+	effect_root: Control,
+	target_rects: Array[Rect2],
+	animation_key: String
+) -> void:
+	if (
+		owner == null
+		or effect_root == null
+		or target_rects.is_empty()
+		or not MULTI_RECT_KEYS.has(animation_key)
+	):
+		return
+
+	var presentation := _get_presentation(animation_key)
+	var visuals: Array[Control] = []
+	for target_rect in target_rects:
+		if target_rect.size == Vector2.ZERO:
+			continue
+		var visual := _create_visual(target_rect, animation_key, presentation)
+		effect_root.add_child(visual)
+		visuals.append(visual)
+	if visuals.is_empty():
+		return
+
+	var total_duration := _get_total_duration(presentation)
+	var rise_duration := total_duration * 0.24
+	var hold_duration := total_duration * 0.38
+	var fade_duration := total_duration - rise_duration - hold_duration
+
+	var progress_tween := owner.create_tween()
+	progress_tween.set_parallel(true)
+	progress_tween.set_trans(Tween.TRANS_SINE)
+	progress_tween.set_ease(Tween.EASE_IN_OUT)
+	for visual in visuals:
+		progress_tween.tween_property(visual, "progress", 1.0, total_duration)
+
+	var rise_tween := owner.create_tween()
+	rise_tween.set_parallel(true)
+	rise_tween.set_trans(Tween.TRANS_QUART)
+	rise_tween.set_ease(Tween.EASE_OUT)
+	for visual in visuals:
+		rise_tween.tween_property(visual, "modulate:a", 1.0, rise_duration)
+		rise_tween.tween_property(visual, "scale", Vector2.ONE, rise_duration)
+	await rise_tween.finished
+	await owner.create_tween().tween_interval(hold_duration).finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN)
+	for visual in visuals:
+		fade_tween.tween_property(visual, "modulate:a", 0.0, fade_duration)
+		fade_tween.tween_property(
+			visual,
+			"scale",
+			Vector2.ONE * float(presentation.get("end_scale", 1.16)),
+			fade_duration
+		)
+	await fade_tween.finished
+
+	for visual in visuals:
+		if is_instance_valid(visual):
+			visual.queue_free()
 
 
 func play_life_link(
@@ -119,195 +223,348 @@ func play_life_link(
 	second_card: Card,
 	spell_data: Dictionary
 ) -> void:
-	if owner == null or effect_root == null or first_card == null or second_card == null:
+	if (
+		owner == null
+		or effect_root == null
+		or first_card == null
+		or second_card == null
+		or not is_instance_valid(first_card)
+		or not is_instance_valid(second_card)
+	):
 		return
+
 	var animation_key := str(spell_data.get("animation", "gu_life_link"))
-	var is_larva := animation_key == "gu_life_link_larva"
 	var first_rect := first_card.get_global_rect()
 	var second_rect := second_card.get_global_rect()
-	var link_color := Color(0.92, 0.78, 0.16, 0.0) if is_larva else Color(0.50, 1.0, 0.24, 0.0)
-	var tether := Line2D.new()
-	tether.name = "GuLifeLinkTether"
-	tether.width = 4.5 if is_larva else 7.0
-	tether.default_color = link_color
-	tether.z_index = 2310
-	tether.points = PackedVector2Array([first_rect.get_center(), second_rect.get_center()])
-	tether.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	tether.end_cap_mode = Line2D.LINE_CAP_ROUND
-	var first_ring := _create_link_ring(first_rect, is_larva)
-	var second_ring := _create_link_ring(second_rect, is_larva)
-	effect_root.add_child(tether)
-	effect_root.add_child(first_ring)
-	effect_root.add_child(second_ring)
+	var presentation := _get_presentation(animation_key)
+	var first_visual := _create_visual(first_rect, animation_key, presentation)
+	var second_visual := _create_visual(second_rect, animation_key, presentation)
+	effect_root.add_child(first_visual)
+	effect_root.add_child(second_visual)
+
+	var is_larva := animation_key == "gu_life_link_larva"
+	var is_death := animation_key == "gu_life_link_death"
+	var primary_line: Line2D = null
+	var secondary_line: Line2D = null
+	var travelling_node: Panel = null
+	if not is_larva:
+		primary_line = _create_link_line(
+			first_rect.get_center(),
+			second_rect.get_center(),
+			MiaoSpellVisualScript.CINNABAR if is_death else MiaoSpellVisualScript.DARK_RED,
+			6.4 if is_death else 4.8,
+			"GuLifeLinkPrimary"
+		)
+		secondary_line = _create_link_line(
+			first_rect.get_center(),
+			second_rect.get_center(),
+			MiaoSpellVisualScript.DEEP_TEAL,
+			2.4,
+			"GuLifeLinkVein"
+		)
+		effect_root.add_child(primary_line)
+		effect_root.add_child(secondary_line)
+		travelling_node = _create_transfer_mote(
+			first_rect.get_center(),
+			MiaoSpellVisualScript.CINNABAR,
+			12.0 if is_death else 8.0
+		)
+		effect_root.add_child(travelling_node)
+
+	var total_duration := _get_total_duration(presentation)
+	var progress_tween := owner.create_tween()
+	progress_tween.set_parallel(true)
+	progress_tween.tween_property(first_visual, "progress", 1.0, total_duration)
+	progress_tween.tween_property(second_visual, "progress", 1.0, total_duration)
 
 	var bind_tween := owner.create_tween()
 	bind_tween.set_parallel(true)
-	bind_tween.set_trans(Tween.TRANS_SINE)
+	bind_tween.set_trans(Tween.TRANS_QUART)
 	bind_tween.set_ease(Tween.EASE_OUT)
-	bind_tween.tween_property(tether, "default_color:a", 0.88, spell_animation_duration * 0.36)
-	bind_tween.tween_property(first_ring, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
-	bind_tween.tween_property(first_ring, "modulate:a", 0.92, spell_animation_duration * 0.36)
-	bind_tween.tween_property(second_ring, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.36)
-	bind_tween.tween_property(second_ring, "modulate:a", 0.92, spell_animation_duration * 0.36)
+	bind_tween.tween_property(first_visual, "modulate:a", 1.0, total_duration * 0.28)
+	bind_tween.tween_property(first_visual, "scale", Vector2.ONE, total_duration * 0.28)
+	bind_tween.tween_property(second_visual, "modulate:a", 1.0, total_duration * 0.28)
+	bind_tween.tween_property(second_visual, "scale", Vector2.ONE, total_duration * 0.28)
+	if primary_line != null:
+		bind_tween.tween_property(primary_line, "modulate:a", 0.92, total_duration * 0.28)
+		bind_tween.tween_property(secondary_line, "modulate:a", 0.72, total_duration * 0.28)
+	if travelling_node != null:
+		bind_tween.tween_property(
+			travelling_node,
+			"global_position",
+			second_rect.get_center() - travelling_node.size * 0.5,
+			total_duration * (0.56 if is_death else 0.72)
+		)
 	await bind_tween.finished
+	await owner.create_tween().tween_interval(total_duration * 0.30).finished
 
 	var fade_tween := owner.create_tween()
 	fade_tween.set_parallel(true)
-	fade_tween.tween_property(tether, "width", 2.0, spell_animation_duration * 0.64)
-	fade_tween.tween_property(tether, "default_color:a", 0.0, spell_animation_duration * 0.64)
-	fade_tween.tween_property(first_ring, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.64)
-	fade_tween.tween_property(first_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
-	fade_tween.tween_property(second_ring, "scale", Vector2(1.64, 1.64), spell_animation_duration * 0.64)
-	fade_tween.tween_property(second_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
+	fade_tween.set_trans(Tween.TRANS_SINE)
+	fade_tween.set_ease(Tween.EASE_IN)
+	fade_tween.tween_property(first_visual, "modulate:a", 0.0, total_duration * 0.42)
+	fade_tween.tween_property(second_visual, "modulate:a", 0.0, total_duration * 0.42)
+	if primary_line != null:
+		fade_tween.tween_property(primary_line, "width", 1.0 if is_death else 2.0, total_duration * 0.42)
+		fade_tween.tween_property(primary_line, "modulate:a", 0.0, total_duration * 0.42)
+		fade_tween.tween_property(secondary_line, "modulate:a", 0.0, total_duration * 0.42)
+	if travelling_node != null:
+		fade_tween.tween_property(travelling_node, "modulate:a", 0.0, total_duration * 0.42)
 	await fade_tween.finished
 
-	tether.queue_free()
-	first_ring.queue_free()
-	second_ring.queue_free()
+	for node in [first_visual, second_visual, primary_line, secondary_line, travelling_node]:
+		if node != null and is_instance_valid(node):
+			node.queue_free()
 
 
-func _play_gu_projectile(owner: Node, effect_root: Control, source_point: Vector2, target_card: Card) -> void:
-	if owner == null or effect_root == null or target_card == null:
-		return
-	var target_point := target_card.get_global_rect().get_center()
-	var direction := (target_point - source_point).normalized()
-	if direction == Vector2.ZERO:
-		await play_at_rect(owner, effect_root, target_card.get_global_rect(), "gu_infusion")
-		return
-	var perpendicular := Vector2(-direction.y, direction.x)
-	var worms: Array[Panel] = []
-	for index in range(5):
-		var worm := Panel.new()
-		worm.name = "GuProjectile_%d" % index
-		worm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		worm.size = Vector2(18.0, 10.0)
-		worm.pivot_offset = worm.size * 0.5
-		worm.global_position = source_point + perpendicular * ((float(index) - 2.0) * 8.0) - worm.pivot_offset
-		worm.rotation = direction.angle() + sin(float(index)) * 0.28
-		worm.z_index = 2320
-		worm.add_theme_stylebox_override("panel", _create_style(Color(0.09, 0.28, 0.08, 0.94), Color(0.54, 1.0, 0.20, 0.86), 2, 999, Color(0.34, 0.86, 0.14, 0.46), 12))
-		effect_root.add_child(worm)
-		worms.append(worm)
-		var flight := owner.create_tween()
-		flight.set_parallel(true)
-		flight.set_trans(Tween.TRANS_CUBIC)
-		flight.set_ease(Tween.EASE_IN_OUT)
-		flight.tween_property(worm, "global_position", target_point + perpendicular * ((float(index) - 2.0) * 1.8) - worm.pivot_offset, spell_animation_duration * 0.62)
-		flight.tween_property(worm, "rotation", worm.rotation + 0.75 + float(index) * 0.10, spell_animation_duration * 0.62)
-	await owner.create_tween().tween_interval(spell_animation_duration * 0.62).finished
-	await play_at_rect(owner, effect_root, target_card.get_global_rect(), "gu_infusion")
-	for worm in worms:
-		worm.queue_free()
+func _animate_visual(owner: Node, visual: Control, presentation: Dictionary) -> void:
+	var total_duration := _get_total_duration(presentation)
+	var rise_duration := total_duration * 0.26
+	var hold_duration := total_duration * 0.36
+	var fade_duration := total_duration - rise_duration - hold_duration
 
+	var progress_tween := owner.create_tween()
+	progress_tween.set_trans(Tween.TRANS_SINE)
+	progress_tween.set_ease(Tween.EASE_IN_OUT)
+	progress_tween.tween_property(visual, "progress", 1.0, total_duration)
 
-func _create_link_ring(target_rect: Rect2, is_larva: bool) -> Panel:
-	var style := _create_style(
-		Color(0.44, 0.30, 0.02, 0.24) if is_larva else Color(0.14, 0.42, 0.04, 0.22),
-		Color(0.96, 0.80, 0.18, 0.92) if is_larva else Color(0.56, 1.0, 0.28, 0.94),
-		6, 999,
-		Color(0.86, 0.58, 0.06, 0.46) if is_larva else Color(0.34, 0.84, 0.16, 0.48), 24
+	var presentation_tween := owner.create_tween()
+	presentation_tween.set_trans(Tween.TRANS_QUART)
+	presentation_tween.set_ease(Tween.EASE_OUT)
+	presentation_tween.tween_property(visual, "modulate:a", 1.0, rise_duration)
+	presentation_tween.parallel().tween_property(visual, "scale", Vector2.ONE, rise_duration)
+	presentation_tween.tween_interval(hold_duration)
+	presentation_tween.set_trans(Tween.TRANS_SINE)
+	presentation_tween.set_ease(Tween.EASE_IN)
+	presentation_tween.tween_property(visual, "modulate:a", 0.0, fade_duration)
+	presentation_tween.parallel().tween_property(
+		visual,
+		"scale",
+		Vector2.ONE * float(presentation.get("end_scale", 1.14)),
+		fade_duration
 	)
-	return _create_rect_panel(target_rect, "GuLifeLinkRing", style, 1.16)
+	await presentation_tween.finished
 
 
-func _create_rect_panel(target_rect: Rect2, node_name: String, style: StyleBoxFlat, size_multiplier: float) -> Panel:
-	var panel := Panel.new()
-	panel.name = node_name
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.size = target_rect.size * size_multiplier
-	panel.pivot_offset = panel.size * 0.5
-	panel.global_position = target_rect.get_center() - panel.pivot_offset
-	panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	panel.z_index = 2300
-	panel.add_theme_stylebox_override("panel", style)
-	return panel
+func _create_visual(
+	target_rect: Rect2,
+	animation_key: String,
+	presentation: Dictionary
+) -> Control:
+	var visual := MiaoSpellVisualScript.new()
+	visual.name = "Miao_%s" % animation_key
+	visual.configure(animation_key, float(presentation.get("strength", 1.0)))
+	visual.size = target_rect.size * float(presentation.get("size_scale", 1.54))
+	visual.pivot_offset = visual.size * 0.5
+	visual.global_position = (
+		target_rect.get_center()
+		+ target_rect.size * presentation.get("center_offset", Vector2.ZERO)
+		- visual.pivot_offset
+	)
+	visual.scale = Vector2.ONE * float(presentation.get("start_scale", 0.72))
+	visual.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	visual.z_index = 2470
+	var material := CanvasItemMaterial.new()
+	material.blend_mode = (
+		CanvasItemMaterial.BLEND_MODE_MIX
+		if animation_key in ["thin_burial", "thin_burial_release", "thin_burial_break", "gu_devour"]
+		else CanvasItemMaterial.BLEND_MODE_ADD
+	)
+	visual.material = material
+	return visual
 
 
-func _create_symbol(target_rect: Rect2, text: String, color: Color) -> Label:
-	var label := Label.new()
-	label.name = "MiaoSymbol"
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = text
-	label.size = target_rect.size * 0.46
-	label.pivot_offset = label.size * 0.5
-	label.global_position = target_rect.get_center() - label.pivot_offset
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	label.z_index = 2310
-	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * 0.34), 18))
-	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_shadow_color", Color(0.01, 0.04, 0.0, 0.92))
-	label.add_theme_constant_override("shadow_offset_x", 2)
-	label.add_theme_constant_override("shadow_offset_y", 2)
-	return label
+func _play_organic_transfer(
+	owner: Node,
+	effect_root: Control,
+	source_position: Vector2,
+	target_position: Vector2,
+	animation_key: String
+) -> void:
+	if owner == null or effect_root == null or source_position == target_position:
+		return
 
+	var color := _get_transfer_color(animation_key)
+	var direction := (target_position - source_position).normalized()
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var conduit := Line2D.new()
+	conduit.name = "MiaoOrganicConduit"
+	conduit.width = 4.0 if animation_key == "gu_devour" else 2.8
+	conduit.default_color = Color(color.r, color.g, color.b, 0.66)
+	conduit.antialiased = true
+	conduit.modulate.a = 0.0
+	conduit.z_index = 2472
+	var points := PackedVector2Array()
+	for point_index in range(13):
+		var t := float(point_index) / 12.0
+		var base := source_position.lerp(target_position, t)
+		var bend := sin(t * TAU * 1.5 + float(animation_key.hash() % 7)) * 7.0
+		points.append(base + perpendicular * bend * sin(t * PI))
+	conduit.points = points
+	effect_root.add_child(conduit)
 
-func _create_motes(target_rect: Rect2, count: int, fill_color: Color, border_color: Color) -> Array[Panel]:
 	var motes: Array[Panel] = []
-	for index in range(count):
-		var angle := TAU * float(index) / float(maxi(count, 1))
-		var mote := Panel.new()
-		mote.name = "MiaoMote_%d" % index
-		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		mote.size = Vector2(7.0 + float(index % 3) * 3.0, 7.0 + float(index % 3) * 3.0)
-		mote.pivot_offset = mote.size * 0.5
-		mote.global_position = target_rect.get_center() - mote.pivot_offset
-		mote.modulate = Color(1.0, 1.0, 1.0, 0.0)
-		mote.z_index = 2308
-		mote.add_theme_stylebox_override("panel", _create_style(fill_color, border_color, 2, 999, border_color * Color(1.0, 1.0, 1.0, 0.45), 10))
-		mote.set_meta("miao_drift", Vector2(cos(angle), sin(angle)) * target_rect.size.x * (0.46 + 0.04 * float(index % 2)))
+	for mote_index in range(5):
+		var mote := _create_transfer_mote(
+			source_position,
+			color,
+			7.0 + float(mote_index % 3) * 2.0
+		)
+		mote.global_position += perpendicular * (float(mote_index) - 2.0) * 4.0
+		effect_root.add_child(mote)
 		motes.append(mote)
-	return motes
+
+	var duration := maxf(spell_animation_duration * 0.74, 0.20)
+	var travel_tween := owner.create_tween()
+	travel_tween.set_parallel(true)
+	travel_tween.set_trans(Tween.TRANS_CUBIC)
+	travel_tween.set_ease(Tween.EASE_IN_OUT)
+	travel_tween.tween_property(conduit, "modulate:a", 1.0, duration * 0.26)
+	for mote_index in range(motes.size()):
+		var mote := motes[mote_index]
+		travel_tween.tween_property(
+			mote,
+			"global_position",
+			target_position
+				- mote.size * 0.5
+				+ perpendicular * (float(mote_index) - 2.0) * 2.0,
+			duration * (0.78 + float(mote_index) * 0.025)
+		)
+		travel_tween.tween_property(mote, "rotation", 1.4 + float(mote_index) * 0.26, duration)
+	await travel_tween.finished
+
+	var fade_tween := owner.create_tween()
+	fade_tween.set_parallel(true)
+	fade_tween.tween_property(conduit, "modulate:a", 0.0, duration * 0.28)
+	for mote in motes:
+		fade_tween.tween_property(mote, "modulate:a", 0.0, duration * 0.28)
+		fade_tween.tween_property(mote, "scale", Vector2(0.28, 0.28), duration * 0.28)
+	await fade_tween.finished
+
+	conduit.queue_free()
+	for mote in motes:
+		mote.queue_free()
 
 
-func _create_style(fill: Color, border: Color, width: int, radius: int, shadow: Color, shadow_size: int) -> StyleBoxFlat:
+func _create_link_line(
+	first_position: Vector2,
+	second_position: Vector2,
+	color: Color,
+	width: float,
+	node_name: String
+) -> Line2D:
+	var direction := (second_position - first_position).normalized()
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var line := Line2D.new()
+	line.name = node_name
+	line.width = width
+	line.default_color = color
+	line.antialiased = true
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	line.modulate.a = 0.0
+	line.z_index = 2471
+	var points := PackedVector2Array()
+	for point_index in range(17):
+		var t := float(point_index) / 16.0
+		points.append(
+			first_position.lerp(second_position, t)
+			+ perpendicular * sin(t * TAU * 2.0) * 4.5 * sin(t * PI)
+		)
+	line.points = points
+	return line
+
+
+func _create_transfer_mote(position: Vector2, color: Color, diameter: float) -> Panel:
+	var mote := Panel.new()
+	mote.name = "MiaoTransferMote"
+	mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mote.size = Vector2.ONE * diameter
+	mote.pivot_offset = mote.size * 0.5
+	mote.global_position = position - mote.pivot_offset
+	mote.z_index = 2473
 	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.set_border_width_all(width)
-	style.set_corner_radius_all(radius)
-	style.shadow_color = shadow
-	style.shadow_size = shadow_size
-	return style
+	style.bg_color = color
+	style.border_color = Color(0.90, 0.98, 0.58, 0.82)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(999)
+	style.shadow_color = Color(color.r, color.g, color.b, 0.38)
+	style.shadow_size = 8
+	mote.add_theme_stylebox_override("panel", style)
+	return mote
 
 
-func _get_theme(animation_key: String) -> Dictionary:
+func _uses_source_transfer(animation_key: String) -> bool:
+	return animation_key in [
+		"medical_practice",
+		"gu_herb_poison",
+		"gu_infusion",
+		"gu_snake_venom_apply",
+		"gu_venom_inject",
+		"gu_devour"
+	]
+
+
+func _get_transfer_color(animation_key: String) -> Color:
 	match animation_key:
 		"medical_practice":
-			return _theme("医", Color(0.04, 0.20, 0.10, 0.18), Color(0.42, 1.0, 0.52, 0.86), Color(0.10, 0.50, 0.22, 0.52), Color(0.72, 1.0, 0.68, 0.98), false, 8)
-		"gu_lure":
-			return _theme("诱", Color(0.04, 0.22, 0.02, 0.22), Color(0.52, 1.0, 0.20, 0.90), Color(0.14, 0.44, 0.04, 0.64), Color(0.78, 1.0, 0.34, 0.98), false, 9)
-		"gu_life_link_larva":
-			return _theme("幼", Color(0.24, 0.16, 0.01, 0.22), Color(0.96, 0.78, 0.16, 0.90), Color(0.46, 0.30, 0.02, 0.62), Color(1.0, 0.88, 0.36, 0.98), true, 7)
-		"gu_life_link":
-			return _theme("蛊", Color(0.06, 0.22, 0.02, 0.22), Color(0.56, 1.0, 0.24, 0.92), Color(0.16, 0.48, 0.04, 0.64), Color(0.76, 1.0, 0.38, 0.98), false, 8)
-		"thin_burial":
-			return _theme("葬", Color(0.08, 0.08, 0.08, 0.26), Color(0.72, 0.82, 0.66, 0.86), Color(0.20, 0.24, 0.18, 0.62), Color(0.88, 0.96, 0.82, 0.98), true, 6)
-		"gu_summon":
-			return _theme("生", Color(0.03, 0.18, 0.01, 0.24), Color(0.64, 1.0, 0.18, 0.92), Color(0.12, 0.42, 0.02, 0.68), Color(0.82, 1.0, 0.32, 0.98), false, 12)
-		"gu_trap_trigger":
-			return _theme("噬", Color(0.20, 0.01, 0.04, 0.26), Color(0.94, 0.18, 0.34, 0.94), Color(0.48, 0.02, 0.08, 0.70), Color(1.0, 0.38, 0.48, 0.98), true, 10)
+			return MiaoSpellVisualScript.AMBER
+		"gu_life_link_larva", "gu_life_link", "gu_life_link_death":
+			return MiaoSpellVisualScript.CINNABAR
+		"gu_devour":
+			return MiaoSpellVisualScript.OXIDIZED_COPPER
+		"gu_snake_venom_apply", "gu_venom_inject":
+			return MiaoSpellVisualScript.DEEP_TEAL
 		_:
-			return _theme("励", Color(0.03, 0.18, 0.02, 0.22), Color(0.50, 1.0, 0.20, 0.90), Color(0.12, 0.38, 0.03, 0.66), Color(0.72, 1.0, 0.30, 0.98), false, 8)
+			return MiaoSpellVisualScript.VENOM_LIME
 
 
-func _theme(symbol: String, outer_fill: Color, outer_border: Color, inner_fill: Color, symbol_color: Color, collapse: bool, mote_count: int) -> Dictionary:
-	return {
-		"symbol": symbol,
-		"symbol_color": symbol_color,
-		"outer_fill": outer_fill,
-		"outer_border": outer_border,
-		"outer_scale": 1.24,
-		"corner_radius": 999,
-		"inner_fill": inner_fill,
-		"inner_border": symbol_color,
-		"inner_scale": 0.64,
-		"inner_radius": 999,
-		"glow": Color(outer_border.r, outer_border.g, outer_border.b, 0.46),
-		"mote_fill": Color(inner_fill.r, inner_fill.g, inner_fill.b, 0.88),
-		"mote_border": symbol_color,
-		"mote_count": mote_count,
-		"rotation": 0.62 if collapse else -0.48,
-		"collapse": collapse
+func _get_total_duration(presentation: Dictionary) -> float:
+	return maxf(
+		spell_animation_duration * float(presentation.get("duration_scale", 1.45)),
+		float(presentation.get("minimum_duration", 0.42))
+	)
+
+
+func _get_presentation(animation_key: String) -> Dictionary:
+	var presentation := {
+		"size_scale": 1.62,
+		"center_offset": Vector2.ZERO,
+		"start_scale": 0.72,
+		"end_scale": 1.16,
+		"duration_scale": 1.55,
+		"minimum_duration": 0.46,
+		"strength": 1.0
 	}
+	match animation_key:
+		"medical_practice":
+			presentation["size_scale"] = 1.48
+			presentation["duration_scale"] = 1.72
+		"gu_scorpion_breeding":
+			presentation["size_scale"] = 1.74
+			presentation["duration_scale"] = 1.90
+		"gu_lure":
+			presentation["size_scale"] = 1.76
+		"gu_trap_trigger":
+			presentation["size_scale"] = 2.04
+			presentation["duration_scale"] = 1.86
+		"gu_life_link_larva", "gu_life_link", "gu_life_link_death":
+			presentation["size_scale"] = 1.52
+			presentation["duration_scale"] = 1.82
+		"thin_burial", "thin_burial_release", "thin_burial_break":
+			presentation["size_scale"] = 1.70
+			presentation["duration_scale"] = 1.92
+		"gu_summon":
+			presentation["size_scale"] = 1.94
+			presentation["duration_scale"] = 2.12
+		"gu_devour":
+			presentation["size_scale"] = 1.92
+			presentation["duration_scale"] = 2.05
+		"gu_venom_burst", "gu_poison_burst":
+			presentation["size_scale"] = 1.96
+			presentation["duration_scale"] = 1.84
+		"gu_poison_tick_scorpion", "gu_poison_tick_snake", "gu_poison_tick_king":
+			presentation["size_scale"] = 1.58
+			presentation["duration_scale"] = 1.36
+			presentation["minimum_duration"] = 0.38
+	return presentation

@@ -1212,7 +1212,25 @@ func set_board_slot_effect(slot_index: int, slot_effect: Variant) -> void:
 
 	slot_effect.slot_index = slot_index
 	board_slot_effect_resolver.add_slot_effect(slot_effect)
+	sync_board_slot_effect_visual(slot_index)
 	refresh_debug_panel()
+
+
+func sync_board_slot_effect_visual(slot_index: int) -> void:
+	var visual_key := ""
+	for effect_value in board_slot_effect_resolver.get_slot_effects(slot_index):
+		var slot_effect: Variant = effect_value
+		if slot_effect == null or str(slot_effect.persistent_animation) == "":
+			continue
+		var owner := get_player_by_id(str(slot_effect.owner_id)) as PlayerState
+		if owner != null and owner.is_ai:
+			continue
+		visual_key = str(slot_effect.persistent_animation)
+		break
+
+	var card_board := get_node_or_null(card_board_path)
+	if card_board != null and card_board.has_method("set_slot_effect_visual"):
+		card_board.set_slot_effect_visual(slot_index, visual_key)
 
 
 func resolve_slot_unit_entered(state: CardState) -> void:

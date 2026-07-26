@@ -22,15 +22,19 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 
 	var death_immunity_expired_states: Array[CardState] = []
 	var transform_restored_states: Array[CardState] = []
+	var expiry_animation_groups: Dictionary = {}
 	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
 			continue
 
 		var expired_statuses := state.expire_statuses_for_turn_timing(trigger, turn_player_id)
+		queue_status_expiry_animations(state, expired_statuses, expiry_animation_groups)
 		if restore_expired_transforms(state, expired_statuses):
 			transform_restored_states.append(state)
 		if should_check_death_after_status_expiry(state, expired_statuses):
 			death_immunity_expired_states.append(state)
+
+	await play_grouped_status_animations(game_manager, expiry_animation_groups)
 
 	if not transform_restored_states.is_empty():
 		game_manager.refresh_action_available_hints()
@@ -45,6 +49,8 @@ func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player
 
 
 func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
+	var damage_entries: Array[Dictionary] = []
+	var animation_groups: Dictionary = {}
 	var damaged_states: Array[CardState] = []
 	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
@@ -60,7 +66,21 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 		if poison_damage <= 0:
 			continue
 
-		state.take_damage(poison_damage)
+		damage_entries.append({
+			"state": state,
+			"damage": poison_damage
+		})
+		var animation_key := get_poison_tick_animation(poison)
+		if animation_key != "":
+			queue_grouped_status_animation(animation_groups, animation_key, state)
+
+	await play_grouped_status_animations(game_manager, animation_groups)
+
+	for entry in damage_entries:
+		var state := entry.get("state") as CardState
+		if state == null or state.is_pending_death:
+			continue
+		state.take_damage(int(entry.get("damage", 0)))
 		damaged_states.append(state)
 
 	if not damaged_states.is_empty():
@@ -115,11 +135,24 @@ func mature_life_link_larvae(game_manager: GameManager, turn_player_id: String) 
 			var second_state := participants[1]
 			var first_larva := get_life_link_larva_status(first_state, link_id, turn_player_id)
 			var mature_animation := get_life_link_mature_animation(first_larva)
+			var death_animation := get_life_link_death_animation(first_larva)
 
 			remove_life_link_larva_status(first_state, link_id, turn_player_id)
 			remove_life_link_larva_status(second_state, link_id, turn_player_id)
-			apply_mature_life_link_status(first_state, second_state, link_id, turn_player_id)
-			apply_mature_life_link_status(second_state, first_state, link_id, turn_player_id)
+			apply_mature_life_link_status(
+				first_state,
+				second_state,
+				link_id,
+				turn_player_id,
+				death_animation
+			)
+			apply_mature_life_link_status(
+				second_state,
+				first_state,
+				link_id,
+				turn_player_id,
+				death_animation
+			)
 			has_matured_or_removed = true
 
 			if game_manager.has_method("play_link_units_animation"):
@@ -202,11 +235,19 @@ func get_life_link_mature_animation(status: CardStatus) -> String:
 	return str(status.payload.get("mature_animation", "gu_life_link"))
 
 
+func get_life_link_death_animation(status: CardStatus) -> String:
+	if status == null:
+		return "gu_life_link_death"
+
+	return str(status.payload.get("death_animation", "gu_life_link_death"))
+
+
 func apply_mature_life_link_status(
 	target_state: CardState,
 	linked_state: CardState,
 	link_id: String,
-	owner_id: String
+	owner_id: String,
+	death_animation := "gu_life_link_death"
 ) -> void:
 	var status := CardStatus.new()
 	status.status_id = CardStatus.STATUS_LIFE_LINK
@@ -228,11 +269,77 @@ func apply_mature_life_link_status(
 		EffectData.KEY_STATUS_TRIGGER_EFFECTS: [
 			{
 				EffectData.KEY_ID: EffectData.EFFECT_DESTROY_LINKED_UNITS,
-				EffectData.KEY_TRIGGER: EventContext.TRIGGER_ON_DESTROYED
+				EffectData.KEY_TRIGGER: EventContext.TRIGGER_ON_DESTROYED,
+				EffectData.KEY_ANIMATION: death_animation
 			}
 		]
 	}
 	target_state.add_status(status)
+
+
+func get_poison_tick_animation(poison: CardStatus) -> String:
+	if poison == null:
+		return ""
+	if bool(poison.payload.get(EffectData.KEY_STATUS_COMPRESSED, false)):
+		return "gu_poison_burst"
+	return str(poison.payload.get(EffectData.KEY_TICK_ANIMATION, ""))
+
+
+func queue_status_expiry_animations(
+	state: CardState,
+	expired_statuses: Array[CardStatus],
+	animation_groups: Dictionary
+) -> void:
+	if state == null or expired_statuses.is_empty():
+		return
+
+	var will_die := state.current_health <= 0 and not state.has_status_with_tag(CardStatus.TAG_DEATH_PREVENTION)
+	for status in expired_statuses:
+		if status == null:
+			continue
+		var animation_key := ""
+		if will_die:
+			animation_key = str(status.payload.get(EffectData.KEY_DEATH_ON_EXPIRE_ANIMATION, ""))
+		if animation_key == "":
+			animation_key = str(status.payload.get(EffectData.KEY_EXPIRE_ANIMATION, ""))
+		if animation_key != "":
+			queue_grouped_status_animation(animation_groups, animation_key, state)
+
+
+func queue_grouped_status_animation(
+	animation_groups: Dictionary,
+	animation_key: String,
+	state: CardState
+) -> void:
+	if animation_key == "" or state == null:
+		return
+	var raw_states: Array = animation_groups.get(animation_key, [])
+	if not raw_states.has(state):
+		raw_states.append(state)
+	animation_groups[animation_key] = raw_states
+
+
+func play_grouped_status_animations(
+	game_manager: GameManager,
+	animation_groups: Dictionary
+) -> void:
+	if (
+		game_manager == null
+		or animation_groups.is_empty()
+		or not game_manager.has_method("play_multi_target_effect_animation")
+	):
+		return
+
+	for animation_key_value in animation_groups.keys():
+		var animation_key := str(animation_key_value)
+		var target_states: Array[CardState] = []
+		var raw_states: Array = animation_groups.get(animation_key, [])
+		for raw_state in raw_states:
+			var state := raw_state as CardState
+			if state != null and not target_states.has(state):
+				target_states.append(state)
+		if not target_states.is_empty():
+			await game_manager.play_multi_target_effect_animation(target_states, animation_key)
 
 
 func should_check_death_after_status_expiry(state: CardState, expired_statuses: Array[CardStatus]) -> bool:

@@ -1092,7 +1092,7 @@
 					{
 						"id": "summon_poison_scorpion",
 						"name": "生蛊毒蝎",
-						"animation": "summon",
+						"animation": "gu_scorpion_breeding",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -1121,6 +1121,7 @@
 						"slot_effect_name": "诱蛊",
 						"slot_effect_trigger": "unit_entered",
 						"consume_on_trigger": true,
+						"persistent_animation": "gu_lure_waiting",
 						"trigger_animation": "gu_trap_trigger",
 						"death_reason": "trap"
 					}
@@ -1143,7 +1144,8 @@
 						"selection_title": "选择两个随从注入子母蛊",
 						"animation": "gu_life_link_larva",
 						"larva_animation": "gu_life_link_larva",
-						"mature_animation": "gu_life_link"
+						"mature_animation": "gu_life_link",
+						"death_animation": "gu_life_link_death"
 					}
 				]
 			},
@@ -1164,7 +1166,7 @@
 							"herb"
 						],
 						"target_relation": "enemy",
-						"animation": "gu_infusion",
+						"animation": "gu_herb_poison",
 						"replace_effects": [
 							{
 								"id": "damage",
@@ -1244,7 +1246,10 @@
 										"expires_on_trigger": "after_turn_end",
 										"duration_scope": "target_owner",
 										"stack_policy": "refresh",
-										"apply_animation": "thin_burial"
+										"payload": {
+											"expire_animation": "thin_burial_release",
+											"death_on_expire_animation": "thin_burial_break"
+										}
 									}
 								]
 							}
@@ -1325,7 +1330,8 @@
 								"expires_on_trigger": "after_turn_end",
 								"duration_scope": "target_owner",
 								"payload": {
-									"poison_damage": 2
+									"poison_damage": 2,
+									"tick_animation": "gu_poison_tick_snake"
 								}
 							},
 							{
@@ -1340,7 +1346,7 @@
 								"duration_turns": 3,
 								"expires_on_trigger": "after_turn_end",
 								"duration_scope": "target_owner",
-								"apply_animation": "gu_infusion",
+								"apply_animation": "gu_snake_venom_apply",
 								"payload": {
 									"attack_bonus": -1
 								},
@@ -1384,7 +1390,7 @@
 					{
 						"id": "devour",
 						"name": "吞噬",
-						"animation": "gu_trap_trigger",
+						"animation": "gu_devour",
 						"target_rule": "minions_by_card_ids",
 						"card_ids": [
 							"poison_scorpion",
@@ -1435,8 +1441,10 @@
 						"duration_turns": 3,
 						"expires_on_trigger": "after_turn_end",
 						"duration_scope": "target_owner",
+						"apply_animation": "gu_scorpion_venom_apply",
 						"payload": {
-							"poison_damage": 1
+							"poison_damage": 1,
+							"tick_animation": "gu_poison_tick_scorpion"
 						}
 					}
 				]
@@ -1468,8 +1476,10 @@
 						"duration_turns": 3,
 						"expires_on_trigger": "after_turn_end",
 						"duration_scope": "target_owner",
+						"apply_animation": "gu_king_venom_apply",
 						"payload": {
-							"poison_damage": 3
+							"poison_damage": 3,
+							"tick_animation": "gu_poison_tick_king"
 						}
 					}
 				]

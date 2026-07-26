@@ -17,7 +17,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 
 - **白银之手**：圣光、治疗、护盾、复活、装备和阵线保护。
 - **达拉然议会**：法术工具箱、召唤、法术强度、奥术空间、吉安娜方向法术、巨水元素、极寒风暴光环和法师体系；奥术、冰霜、火焰、水元素使用统一学院派视觉语言与独立技能节奏。
-- **苗疆族**：毒、蛊、毒虫、陷阱、吞噬和毒爆。
+- **苗疆族**：毒、蛊、毒虫、陷阱、吞噬和毒爆；蛊术使用虫卵、菌丝、毒液、朱砂链接与草药烟气构成的统一有机视觉语言，并区分潜伏、成熟和结算阶段。
 - **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃。
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
 - **猴妖仙**：孙悟空神通、瞬移、透视、隐身、护甲、分身协攻、变身和猴族副动作。
@@ -63,6 +63,7 @@ war-card/
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立滚动，空区自动收缩，非空区按卡牌行数共享可用高度，焦点切换不会改变布局或重置滚动位置。
 - **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径、范围区域和多目标矩形组七种表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉。
 - **白银之手圣光体系**：白金核心、珍珠银盾面、誓约圣印和垂直圣光构成统一的军事圣光语言；群体信仰治疗同步结算，圣盾格挡有独立破碎反馈，真言术·盾按实际状态层数持续展示。
+- **苗疆蛊术体系**：一次性蛊术、单位持续覆盖和单元格陷阱分层管理；毒持续阶段以总伤害数字为主，毒种结算、幼虫成熟、同命传导、薄葬断裂和吞噬继承拥有独立可读反馈。
 - **持续区域特效数据驱动**：状态通过 `persistent_visuals` 声明范围与视觉 key，`BoardPersistentVisualController` 负责 renderer 注册、源单位跟随、区域布局和生命周期；卡面局部标识仍由 `CardStatusOverlay` 负责。
 - **统一入口**：目标选择走 `SpellTargetResolver`，死亡走 `DeathResolver`，补牌走 `BoardSlotResolver`，棋盘层级走 `BoardLayerResolver`，行动资源走 `ActionResourceResolver`。
 - **死亡可追溯**：所有击杀、范围伤害、亡语和直接摧毁都通过 `DeathResolver`，并携带击杀来源，确保矿脉资源分、复生、亡语和补牌稳定结算。
@@ -97,6 +98,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_animation_routing.gd -SuccessMarker "OK: animation provider routes are registered"
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_silver_hand_animation_provider.gd -SuccessMarker SILVER_HAND_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_dalaran_animation_provider.gd -SuccessMarker DALARAN_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_miao_animation_provider.gd -SuccessMarker MIAO_ANIMATION_TESTS_OK
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。

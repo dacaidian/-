@@ -57,6 +57,7 @@ func execute(user: CardState, _target: CardState, game_manager: GameManager) -> 
 	clear_stored_venom(user)
 
 	var allocation := allocation_resolver.allocate_integer(stored_damage, targets)
+	var damage_entries: Array[Dictionary] = []
 	var damaged_states: Array[CardState] = []
 	for allocated_target in allocation.keys():
 		var target_state := allocated_target as CardState
@@ -67,10 +68,23 @@ func execute(user: CardState, _target: CardState, game_manager: GameManager) -> 
 		if amount <= 0:
 			continue
 
-		if game_manager.has_method("play_status_apply_animation"):
-			await game_manager.play_status_apply_animation(target_state, "gu_trap_trigger")
-		target_state.take_damage(amount)
+		damage_entries.append({
+			"state": target_state,
+			"damage": amount
+		})
 		damaged_states.append(target_state)
+
+	if (
+		not damaged_states.is_empty()
+		and game_manager.has_method("play_multi_target_effect_animation")
+	):
+		await game_manager.play_multi_target_effect_animation(damaged_states, "gu_venom_burst")
+
+	for entry in damage_entries:
+		var target_state := entry.get("state") as CardState
+		if target_state == null or target_state.is_pending_death:
+			continue
+		target_state.take_damage(int(entry.get("damage", 0)))
 
 	if not damaged_states.is_empty():
 		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_POISON, user)

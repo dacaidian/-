@@ -35,6 +35,8 @@ func resolve_unit_entered(game_manager: GameManager, state: CardState) -> void:
 
 		if slot_effect.consume_on_trigger:
 			remove_slot_effect(slot_index, slot_effect)
+			if game_manager.has_method("sync_board_slot_effect_visual"):
+				game_manager.sync_board_slot_effect_visual(slot_index)
 
 		if slot_effect.trigger_animation != "":
 			await game_manager.play_slot_effect_animation(state, slot_effect.trigger_animation)

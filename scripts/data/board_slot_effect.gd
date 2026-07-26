@@ -13,6 +13,7 @@ var trigger := TRIGGER_UNIT_ENTERED
 var consume_on_trigger := true
 var death_reason := EffectData.DEATH_REASON_EFFECT
 var trigger_animation := ""
+var persistent_animation := ""
 var slot_index := -1
 
 
@@ -32,6 +33,7 @@ static func from_effect_data(
 	slot_effect.consume_on_trigger = bool(effect_data.get(EffectData.KEY_CONSUME_ON_TRIGGER, true))
 	slot_effect.death_reason = EffectData.get_death_reason(effect_data, EffectData.DEATH_REASON_EFFECT)
 	slot_effect.trigger_animation = str(effect_data.get(EffectData.KEY_TRIGGER_ANIMATION, ""))
+	slot_effect.persistent_animation = str(effect_data.get(EffectData.KEY_PERSISTENT_ANIMATION, ""))
 
 	if source_state != null:
 		if slot_effect.owner_id == "":

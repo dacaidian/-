@@ -14,7 +14,10 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if link_id == "":
 		return
 
+	var animation_key := str(effect_data.get(EffectData.KEY_ANIMATION, "gu_life_link_death"))
 	for linked_state in get_linked_states(gm, source_state, link_id):
+		if animation_key != "" and gm.has_method("play_link_units_animation"):
+			await gm.play_link_units_animation(source_state, linked_state, animation_key)
 		await gm.destroy_card_with_refill(linked_state, EffectData.DEATH_REASON_LINKED, source_state, true)
 
 

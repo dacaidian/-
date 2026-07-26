@@ -17,7 +17,13 @@ func _initialize() -> void:
 		"extreme_cold_storm_summon", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "fireball",
 		"pyroblast", "frost_shield", "arcane_wisdom", "arcane_space",
-		"arcane_aura", "arcane_aura_pulse", "healing_to_resolve"
+		"arcane_aura", "arcane_aura_pulse", "healing_to_resolve",
+		"gu_herb_poison", "gu_scorpion_breeding", "gu_life_link_death",
+		"thin_burial_release", "thin_burial_break", "gu_snake_venom_apply",
+		"gu_devour", "gu_venom_inject", "gu_venom_burst",
+		"gu_scorpion_venom_apply", "gu_king_venom_apply",
+		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
+		"gu_poison_tick_king", "gu_poison_burst"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
@@ -26,15 +32,31 @@ func _initialize() -> void:
 		"inner_fire", "healing_to_resolve", "faith_light", "resurrection", "water_summon",
 		"giant_water_summon", "academy_summon", "arcane_aura_prepare",
 		"arcane_aura", "arcane_aura_pulse", "frost_shield",
-		"arcane_wisdom", "arcane_space"
+		"arcane_wisdom", "arcane_space", "gu_herb_poison",
+		"gu_scorpion_breeding", "gu_life_link_death",
+		"thin_burial_release", "thin_burial_break", "gu_snake_venom_apply",
+		"gu_devour", "gu_venom_inject", "gu_venom_burst",
+		"gu_scorpion_venom_apply", "gu_king_venom_apply",
+		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
+		"gu_poison_tick_king", "gu_poison_burst"
 	])
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",
 		"soul_hook", "life_drain", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "healing_to_resolve", "fireball",
-		"pyroblast", "frost_shield"
+		"pyroblast", "frost_shield", "gu_herb_poison",
+		"gu_scorpion_breeding", "gu_life_link_death",
+		"thin_burial_release", "thin_burial_break", "gu_snake_venom_apply",
+		"gu_devour", "gu_venom_inject", "gu_venom_burst",
+		"gu_scorpion_venom_apply", "gu_king_venom_apply",
+		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
+		"gu_poison_tick_king", "gu_poison_burst"
 	])
-	_assert_routes(router, "multi_rect", ["faith_light"])
+	_assert_routes(router, "multi_rect", [
+		"faith_light", "gu_venom_burst", "gu_poison_tick_scorpion",
+		"gu_poison_tick_snake", "gu_poison_tick_king", "gu_poison_burst",
+		"thin_burial_release", "thin_burial_break"
+	])
 	_assert_routes(router, "board", ["chaos_corruption_burst", "kagune_release"])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])

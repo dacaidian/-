@@ -108,4 +108,5 @@ func preserve_total_damage(effect_data: Dictionary, next_duration: int) -> void:
 
 	var total_damage := poison_damage * current_duration
 	payload[EffectData.KEY_POISON_DAMAGE] = int(ceil(float(total_damage) / float(next_duration)))
+	payload[EffectData.KEY_STATUS_COMPRESSED] = true
 	effect_data[EffectData.KEY_STATUS_PAYLOAD] = payload

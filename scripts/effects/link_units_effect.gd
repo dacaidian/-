@@ -143,7 +143,8 @@ func apply_life_link_larva_status(
 		"linked_card_id": linked_state.card_id,
 		"linked_display_name": linked_state.display_name,
 		"mature_on_owner_id": owner_id,
-		"mature_animation": str(effect_data.get("mature_animation", "gu_life_link"))
+		"mature_animation": str(effect_data.get("mature_animation", "gu_life_link")),
+		"death_animation": str(effect_data.get("death_animation", "gu_life_link_death"))
 	}
 	target_state.add_status(status)
 
@@ -168,7 +169,8 @@ func apply_life_link_status(target_state: CardState, linked_state: CardState, li
 		EffectData.KEY_STATUS_TRIGGER_EFFECTS: [
 			{
 				EffectData.KEY_ID: EffectData.EFFECT_DESTROY_LINKED_UNITS,
-				EffectData.KEY_TRIGGER: EventContext.TRIGGER_ON_DESTROYED
+				EffectData.KEY_TRIGGER: EventContext.TRIGGER_ON_DESTROYED,
+				EffectData.KEY_ANIMATION: "gu_life_link_death"
 			}
 		]
 	}

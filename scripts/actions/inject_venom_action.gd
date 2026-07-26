@@ -64,7 +64,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	target.add_status(create_stored_venom_status(user, target, total_damage))
 	if game_manager.has_method("play_status_apply_animation"):
-		await game_manager.play_status_apply_animation(target, "gu_infusion")
+		await game_manager.play_status_apply_animation(target, "gu_venom_inject")
 
 
 func create_stored_venom_status(source_state: CardState, target_state: CardState, total_damage: int) -> CardStatus:

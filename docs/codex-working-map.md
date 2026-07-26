@@ -262,7 +262,7 @@
 当前系统：
 
 - 暗夜精灵时间循环。
-- 苗疆毒生态。子母蛊使用 `life_link_larva -> life_link` 两阶段状态：施放只注入幼虫，施术者下个回合开始前置状态结算时才成熟为同命链接；不要在 `link_units` 施放流程里直接挂死亡连带状态。
+- 苗疆毒生态。优先读 `scripts/game/status_resolver.gd`、`scripts/game/status_modifier_resolver.gd`、`scripts/effects/link_units_effect.gd`、`scripts/effects/destroy_linked_units_effect.gd`、`scripts/effects/devour_effect.gd`、`scripts/data/board_slot_effect.gd` 和 `data/cards.json` 中的 `miao_jiang`。子母蛊使用 `life_link_larva -> life_link` 两阶段状态：施放只注入幼虫，施术者下个回合开始前置状态结算时才成熟为同命链接；不要在 `link_units` 施放流程里直接挂死亡连带状态。毒种通过 payload 的 `tick_animation` 配置结算反馈；毒性爆发只由 `StatusModifierResolver.preserve_total_damage()` 压缩持续时间并写入 `status_compressed`，不得更改总剩余伤害。薄葬的正常释放与零生命断裂分别使用 `expire_animation`、`death_on_expire_animation`，新增类似状态时复用生命周期元数据，不按卡牌 id 分支。
 - 狐妖仙尾数与献祭。
 - 种族技能按钮由 `FactionSkillPanelController` 展示，点击后交给 `FactionSkillResolver` 把 skill config 转成 `CardAction` 并进入目标选择；新增种族技能类型时优先扩展 resolver 的 `create_action()`，不要把 action 构造写回 `GameManager`。
 - 猴妖仙施法/移动/攻击混合、透视、定身、隐身/暴击、护甲装备、固定方向副动作、分身协攻、阵营型净化。孙悟空四张 1 阶默认入手神通说明牌只用于文本展示，配置为 `count: 0`、`start_in_hand: true`、`effects: []`；真实能力仍在孙悟空自身 `spell_actions` 中。
@@ -337,7 +337,8 @@
 - 多格路径特效（例如 `beast_path`）走 `GameManager.play_path_effect_animation()`，由 `GameAnimationResolver` 收集格子 rect 后交给 `SpellAnimationRouter` 的 path 路由；范围区域特效（例如 `foxfire`）声明 area 路由。
 - 猴妖仙法术/技能释放特效由 `MonkeyAnimationProvider` 按 animation key 生成金瞳、筋斗云、毫毛、金铁、蟠桃、敕令、定身、气雾、法象等符号化部件；新增猴妖仙技能时扩展 provider 的 key 和主题数据，不要回退到通用光圈。
 - 白银之手法术由 `SilverHandAnimationProvider` 和 `HolySpellVisual` 负责，使用 `divine_shield`、`baptism`、`holy_heal`、`power_word_shield`、`inner_fire`、`faith_light`、`healing_to_resolve`、`resurrection` 八个专属 key。视觉必须保持白金核心、象牙金中层、珍珠银防御面、盾形/战锤/誓约印记、垂直圣光和军事秩序，禁止重新使用绿色治疗、普通红焰或无结构通用光圈。信仰圣光使用 `multi_rect` 同步军阵反馈；有效治疗转攻击在治疗结算后播放 `healing_to_resolve`。圣盾施放属于 provider，持续盾面、真言术·盾叠层和圣盾破碎属于 `CardStatusOverlay`；破碎由 `CardState.damage_prevented` 事件驱动，规则层不得创建视觉节点。修改后运行 `tools/test_silver_hand_animation_provider.gd`。
-- 野兽人特效由 `BeastmenAnimationProvider` 按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。苗疆族和狐妖仙分别由 `MiaoAnimationProvider`、`FoxSpiritAnimationProvider` 负责。
+- 野兽人特效由 `BeastmenAnimationProvider` 按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。狐妖仙由 `FoxSpiritAnimationProvider` 负责。
+- 苗疆表现优先读 `scripts/ui/animation/miao_animation_provider.gd`、`scripts/ui/animation/miao_spell_visual.gd`、`scripts/ui/card_status_overlay.gd`、`scripts/ui/gu_trap_slot_overlay.gd`、`scenes/card_board/scripts/card_board.gd` 和 `scripts/game/board_slot_effect_resolver.gd`。一次性蛊术采用“引蛊 → 注蛊 → 潜伏 → 成熟/结算 → 余韵”的有机节奏；`MiaoSpellVisual` 维护暗翡翠、朱砂、草药琥珀及蝎/蛇/王毒的共享形状，provider 只负责路由与临时节点生命周期。毒持续状态只显示总伤害数字，不恢复大面积毒雾；励蛊、蛇毒、链接、薄葬和吞噬由 `CardStatusOverlay` 读取真实状态绘制。诱蛊潜伏标记属于单元格，通过 `BoardSlotEffect.persistent_animation` 和 `CardBoard.set_slot_effect_visual()` 管理，卡牌移动或消失不得带走它；消费陷阱时先清除标记再播放触发。修改后运行 `tools/test_miao_animation_provider.gd`，至少验证所有 key 能释放临时节点、动态状态移除后停止处理、毒性压缩保持总伤害及链接死亡动画元数据完整。
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 卡面内的持续状态标识放在 `CardStatusOverlay`。覆盖多个格子并跟随来源移动的持续动态效果，通过状态 payload 的 `persistent_visuals` 声明，交给 `BoardPersistentVisualController`；新增主题时注册独立 renderer，不要让 `Card` 越界绘制。
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
@@ -346,7 +347,7 @@
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
 - 通用法术与种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域、多目标矩形组七种上下文声明 key。`multi_rect` 只接收一组已解析的可见目标矩形，用于同一时点同步播放群体治疗/祝福；未注册该上下文时调用方必须回退原有逐目标动画。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。不要让规则层直接调用某个 provider；`GameManager` 只负责选择稳定 animation key，不创建表现节点。
 - 达拉然表现优先读 `scripts/ui/animation/dalaran_animation_provider.gd`、`dalaran_spell_visual.gd`、`dalaran_fire_animation_player.gd`、`dalaran_space_swap_player.gd`、`scripts/ui/persistent_visuals/extreme_cold_storm_area_visual.gd` 和 `scripts/ui/card_status_overlay.gd`。`DalaranSpellVisual` 只提供奥术、冰霜、火焰、水元素的共享形状语言；provider 负责路由和生命周期；火球/炎爆的投射物阶段与奥术空间的双格交换分别由专用 player 管理。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，魔免只保留碰撞碎裂，不显示冻结结晶。辉煌光环属于卡面局部持续状态，回合产蓝反馈由 `gain_mana.source_animation` 配置；极寒风暴的 3x3 常驻风场属于 `BoardPersistentVisualController`，施放、回合结算坠落冰暴和原格召唤仍是一次性 provider 动画。不要把持续节点留在 provider，也不要让规则效果识别具体卡牌 id。
-- 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器、provider 的 `*_KEYS` 数组和 `*_ANIMATION_KEY` 常量，后者验证 provider 的上下文路由契约。拥有复杂自绘或持续刷新生命周期的主题还应提供独立测试，至少验证动画节点完整释放、状态移除后停止处理；达拉然使用 `tools/test_dalaran_animation_provider.gd`。
+- 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器、provider 的 `*_KEYS` 数组和 `*_ANIMATION_KEY` 常量，后者验证 provider 的上下文路由契约。拥有复杂自绘或持续刷新生命周期的主题还应提供独立测试，至少验证动画节点完整释放、状态移除后停止处理；达拉然使用 `tools/test_dalaran_animation_provider.gd`，苗疆使用 `tools/test_miao_animation_provider.gd`。
 - UI 控制器不拥有玩法规则。
 
 ## VFX 与素材资源

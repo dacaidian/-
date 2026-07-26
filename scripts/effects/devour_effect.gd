@@ -174,10 +174,32 @@ func create_poison_status_effect(
 		EffectData.KEY_STATUS_DURATION_TURNS: duration_turns,
 		EffectData.KEY_STATUS_EXPIRES_ON_TRIGGER: EventContext.TRIGGER_AFTER_TURN_END,
 		EffectData.KEY_STATUS_DURATION_SCOPE: CardStatus.DURATION_SCOPE_TARGET_OWNER,
+		"apply_animation": get_poison_apply_animation(damage_per_turn),
 		EffectData.KEY_STATUS_PAYLOAD: {
-			EffectData.KEY_POISON_DAMAGE: damage_per_turn
+			EffectData.KEY_POISON_DAMAGE: damage_per_turn,
+			EffectData.KEY_TICK_ANIMATION: get_poison_tick_animation(damage_per_turn)
 		}
 	}
+
+
+func get_poison_tick_animation(damage_per_turn: int) -> String:
+	match damage_per_turn:
+		1:
+			return "gu_poison_tick_scorpion"
+		2:
+			return "gu_poison_tick_snake"
+		_:
+			return "gu_poison_tick_king"
+
+
+func get_poison_apply_animation(damage_per_turn: int) -> String:
+	match damage_per_turn:
+		1:
+			return "gu_scorpion_venom_apply"
+		3:
+			return "gu_king_venom_apply"
+		_:
+			return ""
 
 
 func create_snake_venom_status_effect() -> Dictionary:
@@ -192,7 +214,7 @@ func create_snake_venom_status_effect() -> Dictionary:
 		EffectData.KEY_STATUS_DURATION_TURNS: 3,
 		EffectData.KEY_STATUS_EXPIRES_ON_TRIGGER: EventContext.TRIGGER_AFTER_TURN_END,
 		EffectData.KEY_STATUS_DURATION_SCOPE: CardStatus.DURATION_SCOPE_TARGET_OWNER,
-		"apply_animation": "gu_infusion",
+		"apply_animation": "gu_snake_venom_apply",
 		EffectData.KEY_STATUS_PAYLOAD: {
 			EffectData.KEY_ATTACK_BONUS: -1
 		},

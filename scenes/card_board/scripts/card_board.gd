@@ -2,6 +2,7 @@
 extends PanelContainer
 
 const CardScene := preload("res://scenes/card.tscn")
+const GuTrapSlotOverlayScript := preload("res://scripts/ui/gu_trap_slot_overlay.gd")
 
 @export var max_board_size := Vector2(980, 1340)
 @export var viewport_margin := Vector2(40, 40)
@@ -73,6 +74,29 @@ func ensure_slot_layer_cards(slot: Node) -> void:
 		aerial_card.allows_empty_clicks = false
 		aerial_card.z_index = 20
 		slot.add_child(aerial_card)
+
+
+func set_slot_effect_visual(slot_index: int, visual_key: String) -> void:
+	if grid_container == null or slot_index < 0 or slot_index >= grid_container.get_child_count():
+		return
+
+	var slot := grid_container.get_child(slot_index)
+	if slot == null:
+		return
+	var overlay := slot.get_node_or_null("GuTrapSlotOverlay") as GuTrapSlotOverlay
+	if visual_key == "":
+		if overlay != null:
+			overlay.queue_free()
+		return
+
+	if overlay == null:
+		overlay = GuTrapSlotOverlayScript.new() as GuTrapSlotOverlay
+		overlay.name = "GuTrapSlotOverlay"
+		overlay.z_index = 15
+		slot.add_child(overlay)
+		if slot is Control:
+			overlay.apply_card_size((slot as Control).size)
+	overlay.configure(visual_key)
 
 
 func create_slot_style() -> StyleBoxFlat:
