@@ -3,7 +3,9 @@ class_name TurnStatusController
 
 signal spell_turn_requested
 
-# TurnStatusController 只负责右上角当前回合铭牌的表现。
+const RightSideHudStyleScript := preload("res://scripts/ui/right_side_hud_style.gd")
+
+# Current-turn summary only. Geometry belongs to RightSideHudLayoutController.
 
 var panel: PanelContainer
 var logo_frame: PanelContainer
@@ -27,82 +29,187 @@ func setup(root: Node, panel_path: NodePath) -> void:
 	if panel == null:
 		return
 
-	logo_frame = panel.get_node_or_null("MarginContainer/HBoxContainer/LogoFrame") as PanelContainer
-	logo_texture = panel.get_node_or_null("MarginContainer/HBoxContainer/LogoFrame/LogoTexture") as TextureRect
-	var margin_container := panel.get_node_or_null("MarginContainer") as Control
-	var hbox_container := panel.get_node_or_null("MarginContainer/HBoxContainer") as Control
-	var vbox_container := panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer") as Control
-	turn_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/TurnLabel") as Label
-	player_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/PlayerLabel") as Label
-	faction_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/FactionLabel") as Label
-	mana_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/ManaLabel") as Label
-	flip_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/FlipLabel") as Label
-	resource_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/ResourceLabel") as Label
-	victory_label = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/VictoryLabel") as Label
-	spell_turn_button = panel.get_node_or_null("MarginContainer/HBoxContainer/VBoxContainer/SpellTurnButton") as Button
+	clear_panel_content()
+	build_content()
+	panel.custom_minimum_size = Vector2(RightSideHudStyleScript.PANEL_WIDTH, 0.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	panel.z_index = 3000
+	panel.add_theme_stylebox_override(
+		"panel",
+		RightSideHudStyleScript.create_panel_style(RightSideHudStyleScript.ACCENT_TURN)
+	)
 	panel.move_to_front.call_deferred()
-	panel.add_theme_stylebox_override("panel", create_panel_style())
 
-	for container in [margin_container, hbox_container, vbox_container]:
-		if container == null:
-			continue
-		container.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	if logo_frame != null:
-		logo_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		logo_frame.add_theme_stylebox_override("panel", create_logo_frame_style())
+func clear_panel_content() -> void:
+	for child in panel.get_children():
+		panel.remove_child(child)
+		child.queue_free()
 
-	if logo_texture != null:
-		logo_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	for label in [turn_label, player_label, faction_label, mana_label, flip_label, resource_label, victory_label]:
-		if label == null:
-			continue
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.75))
-		label.add_theme_constant_override("shadow_offset_x", 1)
-		label.add_theme_constant_override("shadow_offset_y", 1)
+func build_content() -> void:
+	var margin := MarginContainer.new()
+	margin.name = "MarginContainer"
+	margin.add_theme_constant_override("margin_left", RightSideHudStyleScript.CONTENT_MARGIN)
+	margin.add_theme_constant_override("margin_top", RightSideHudStyleScript.CONTENT_MARGIN)
+	margin.add_theme_constant_override("margin_right", RightSideHudStyleScript.CONTENT_MARGIN)
+	margin.add_theme_constant_override("margin_bottom", RightSideHudStyleScript.CONTENT_MARGIN)
+	margin.mouse_filter = Control.MOUSE_FILTER_PASS
+	panel.add_child(margin)
 
-	if turn_label != null:
-		turn_label.add_theme_color_override("font_color", Color(0.98, 0.76, 0.36, 1.0))
-		turn_label.add_theme_font_size_override("font_size", 15)
+	var content := VBoxContainer.new()
+	content.name = "Content"
+	content.add_theme_constant_override("separation", RightSideHudStyleScript.CONTENT_GAP)
+	content.mouse_filter = Control.MOUSE_FILTER_PASS
+	margin.add_child(content)
 
-	if player_label != null:
-		player_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.84, 1.0))
-		player_label.add_theme_font_size_override("font_size", 25)
+	content.add_child(create_identity_row())
+	content.add_child(create_metric_row())
 
-	if faction_label != null:
-		faction_label.add_theme_color_override("font_color", Color(0.78, 0.9, 1.0, 0.96))
-		faction_label.add_theme_font_size_override("font_size", 17)
+	victory_label = Label.new()
+	victory_label.name = "VictoryLabel"
+	victory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	victory_label.add_theme_font_size_override("font_size", 17)
+	victory_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.46, 1.0))
+	victory_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	victory_label.hide()
+	content.add_child(victory_label)
 
-	if mana_label != null:
-		mana_label.add_theme_color_override("font_color", Color(0.44, 0.82, 1.0, 1.0))
-		mana_label.add_theme_font_size_override("font_size", 16)
+	spell_turn_button = Button.new()
+	spell_turn_button.name = "SpellTurnButton"
+	spell_turn_button.custom_minimum_size = Vector2(0.0, 31.0)
+	spell_turn_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	spell_turn_button.add_theme_font_size_override("font_size", 14)
+	spell_turn_button.add_theme_color_override("font_color", RightSideHudStyleScript.PRIMARY_TEXT)
+	spell_turn_button.add_theme_color_override("font_disabled_color", RightSideHudStyleScript.MUTED_TEXT)
+	spell_turn_button.add_theme_stylebox_override(
+		"normal",
+		RightSideHudStyleScript.create_button_style(RightSideHudStyleScript.ACCENT_TIME)
+	)
+	spell_turn_button.add_theme_stylebox_override(
+		"hover",
+		RightSideHudStyleScript.create_button_style(RightSideHudStyleScript.ACCENT_TIME, true)
+	)
+	spell_turn_button.add_theme_stylebox_override(
+		"pressed",
+		RightSideHudStyleScript.create_button_style(RightSideHudStyleScript.ACCENT_TIME, true)
+	)
+	spell_turn_button.add_theme_stylebox_override(
+		"disabled",
+		RightSideHudStyleScript.create_disabled_button_style()
+	)
+	spell_turn_button.pressed.connect(func(): spell_turn_requested.emit())
+	content.add_child(spell_turn_button)
 
-	if flip_label != null:
-		flip_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.42, 1.0))
-		flip_label.add_theme_font_size_override("font_size", 16)
 
-	if resource_label != null:
-		resource_label.add_theme_color_override("font_color", Color(0.94, 0.72, 0.30, 1.0))
-		resource_label.add_theme_font_size_override("font_size", 16)
+func create_identity_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "IdentityRow"
+	row.add_theme_constant_override("separation", 9)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	if victory_label != null:
-		victory_label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.52, 1.0))
-		victory_label.add_theme_font_size_override("font_size", 18)
+	logo_frame = PanelContainer.new()
+	logo_frame.name = "LogoFrame"
+	logo_frame.custom_minimum_size = Vector2(48.0, 48.0)
+	logo_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	logo_frame.add_theme_stylebox_override(
+		"panel",
+		RightSideHudStyleScript.create_inner_style(RightSideHudStyleScript.ACCENT_TURN, 0.36)
+	)
+	row.add_child(logo_frame)
 
-	if spell_turn_button != null:
-		spell_turn_button.mouse_filter = Control.MOUSE_FILTER_STOP
-		spell_turn_button.pressed.connect(func(): spell_turn_requested.emit())
-		spell_turn_button.add_theme_color_override("font_color", Color(0.9, 0.96, 1.0, 1.0))
-		spell_turn_button.add_theme_color_override("font_disabled_color", Color(0.55, 0.58, 0.62, 1.0))
-		spell_turn_button.add_theme_font_size_override("font_size", 15)
-		spell_turn_button.add_theme_stylebox_override("normal", create_spell_button_style(false))
-		spell_turn_button.add_theme_stylebox_override("hover", create_spell_button_style(true))
-		spell_turn_button.add_theme_stylebox_override("pressed", create_spell_button_style(true))
-		spell_turn_button.add_theme_stylebox_override("disabled", create_spell_button_disabled_style())
+	logo_texture = TextureRect.new()
+	logo_texture.name = "LogoTexture"
+	logo_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	logo_frame.add_child(logo_texture)
+
+	var identity := VBoxContainer.new()
+	identity.name = "Identity"
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.alignment = BoxContainer.ALIGNMENT_CENTER
+	identity.add_theme_constant_override("separation", 1)
+	identity.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(identity)
+
+	var top_line := HBoxContainer.new()
+	top_line.add_theme_constant_override("separation", 6)
+	top_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	identity.add_child(top_line)
+
+	player_label = Label.new()
+	player_label.name = "PlayerLabel"
+	player_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	player_label.add_theme_font_size_override("font_size", 20)
+	player_label.add_theme_color_override("font_color", RightSideHudStyleScript.PRIMARY_TEXT)
+	player_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_line.add_child(player_label)
+
+	var turn_badge := HBoxContainer.new()
+	turn_badge.name = "TurnBadge"
+	turn_badge.alignment = BoxContainer.ALIGNMENT_END
+	turn_badge.add_theme_constant_override("separation", 3)
+	turn_badge.mouse_filter = Control.MOUSE_FILTER_PASS
+	turn_badge.tooltip_text = "当前累计回合"
+	turn_badge.add_child(
+		RightSideHudStyleScript.create_icon(
+			"turn",
+			RightSideHudStyleScript.ACCENT_TURN,
+			Vector2(16.0, 16.0),
+			"当前累计回合"
+		)
+	)
+
+	turn_label = Label.new()
+	turn_label.name = "TurnLabel"
+	turn_label.add_theme_font_size_override("font_size", 14)
+	turn_label.add_theme_color_override("font_color", RightSideHudStyleScript.ACCENT_TURN)
+	turn_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	turn_badge.add_child(turn_label)
+	top_line.add_child(turn_badge)
+
+	faction_label = Label.new()
+	faction_label.name = "FactionLabel"
+	faction_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	faction_label.add_theme_font_size_override("font_size", 13)
+	faction_label.add_theme_color_override("font_color", RightSideHudStyleScript.SECONDARY_TEXT)
+	faction_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	identity.add_child(faction_label)
+	return row
+
+
+func create_metric_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "MetricRow"
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var mana_chip := RightSideHudStyleScript.create_metric_chip(
+		"mana",
+		Color(0.38, 0.76, 0.98, 1.0),
+		"法力水晶"
+	)
+	mana_label = mana_chip.get("value_label") as Label
+	row.add_child(mana_chip.get("root") as Control)
+
+	var flip_chip := RightSideHudStyleScript.create_metric_chip(
+		"flip",
+		Color(0.94, 0.73, 0.30, 1.0),
+		"本回合翻牌次数"
+	)
+	flip_label = flip_chip.get("value_label") as Label
+	row.add_child(flip_chip.get("root") as Control)
+
+	var score_chip := RightSideHudStyleScript.create_metric_chip(
+		"score",
+		Color(0.58, 0.86, 0.50, 1.0),
+		"资源分 / 获胜目标"
+	)
+	resource_label = score_chip.get("value_label") as Label
+	row.add_child(score_chip.get("root") as Control)
+	return row
 
 
 func update(
@@ -122,52 +229,40 @@ func update(
 	if current_player == null:
 		return
 
-	if turn_label != null:
-		turn_label.text = "第 %d 回合" % turn_number
+	turn_label.text = str(turn_number)
+	player_label.text = current_player.display_name
+	faction_label.text = (
+		current_player.faction_name
+		if current_player.faction_name != ""
+		else current_player.faction_id
+	)
+	mana_label.text = "%d/%d" % [current_player.mana, current_player.max_mana]
+	flip_label.text = "%d/%d" % [
+		current_player.remaining_flips,
+		current_player.max_flips_per_turn,
+	]
+	resource_label.text = "%d/%d" % [
+		current_player.resource_score,
+		victory_resource_score,
+	]
 
-	if player_label != null:
-		player_label.text = current_player.display_name
+	victory_label.visible = is_game_over and winner_player != null
+	victory_label.text = "%s 获胜" % winner_player.display_name if winner_player != null else ""
 
-	if faction_label != null:
-		var faction_text := current_player.faction_name
-		if faction_text == "":
-			faction_text = current_player.faction_id
-		faction_label.text = faction_text
-
-	if mana_label != null:
-		mana_label.text = "法力 %d/%d" % [current_player.mana, current_player.max_mana]
-
-	if flip_label != null:
-		flip_label.text = "翻牌 %d/%d" % [
-			current_player.remaining_flips,
-			current_player.max_flips_per_turn
-		]
-
-	if resource_label != null:
-		resource_label.text = "资源分 %d/%d" % [
-			current_player.resource_score,
-			victory_resource_score
-		]
-
-	if victory_label != null:
-		victory_label.visible = is_game_over and winner_player != null
-		victory_label.text = "%s 获胜" % winner_player.display_name if winner_player != null else ""
-
-	if spell_turn_button != null:
-		var is_kagune_release := current_player.faction_id == "tokyo_ghoul"
-		if is_game_over:
-			spell_turn_button.text = "对战结束"
-			spell_turn_button.disabled = true
-		elif is_spell_turn_active:
-			spell_turn_button.text = "赫子已解放" if is_kagune_release else "施法已开启"
-			spell_turn_button.disabled = true
-		else:
-			spell_turn_button.text = (
-				"赫子解放  -%d" % spell_turn_cost
-				if is_kagune_release
-				else "开启施法  -%d" % spell_turn_cost
-			)
-			spell_turn_button.disabled = not can_activate_spell_turn
+	var is_kagune_release := current_player.faction_id == "tokyo_ghoul"
+	if is_game_over:
+		spell_turn_button.text = "对战结束"
+		spell_turn_button.disabled = true
+	elif is_spell_turn_active:
+		spell_turn_button.text = "赫子已解放" if is_kagune_release else "施法已开启"
+		spell_turn_button.disabled = true
+	else:
+		spell_turn_button.text = (
+			"赫子解放  -%d" % spell_turn_cost
+			if is_kagune_release
+			else "开启施法  -%d" % spell_turn_cost
+		)
+		spell_turn_button.disabled = not can_activate_spell_turn
 
 	update_logo(current_player)
 
@@ -192,59 +287,6 @@ func get_faction_logo_path(current_player: PlayerState) -> String:
 	var folder_name := current_player.faction_name
 	if folder_name == "":
 		folder_name = current_player.faction_id
-
 	if folder_name == "":
 		return ""
-
 	return "res://assets/img/%s/logo.png" % folder_name
-
-
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.055, 0.043, 0.032, 0.92)
-	style.border_color = Color(0.93, 0.68, 0.30, 0.9)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 2
-	style.content_margin_top = 2
-	style.content_margin_right = 2
-	style.content_margin_bottom = 2
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.58)
-	style.shadow_size = 22
-	style.shadow_offset = Vector2(0, 6)
-	return style
-
-
-func create_logo_frame_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.09, 0.055, 0.88)
-	style.border_color = Color(1.0, 0.78, 0.38, 0.72)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 8
-	style.content_margin_top = 8
-	style.content_margin_right = 8
-	style.content_margin_bottom = 8
-	style.shadow_color = Color(1.0, 0.7, 0.25, 0.18)
-	style.shadow_size = 10
-	return style
-
-
-func create_spell_button_style(is_hover := false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.18, 0.24, 0.92) if not is_hover else Color(0.13, 0.28, 0.36, 0.96)
-	style.border_color = Color(0.45, 0.86, 1.0, 0.78)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.shadow_color = Color(0.28, 0.78, 1.0, 0.18)
-	style.shadow_size = 8 if is_hover else 4
-	return style
-
-
-func create_spell_button_disabled_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.085, 0.09, 0.82)
-	style.border_color = Color(0.32, 0.34, 0.36, 0.72)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	return style

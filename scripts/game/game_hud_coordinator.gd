@@ -115,8 +115,8 @@ func update_right_side_layout(game_manager: GameManager) -> void:
 
 	game_manager.right_side_hud_layout_controller.update(game_manager.get_parent() as Control, [
 		game_manager.turn_status_controller.panel,
-		game_manager.faction_skill_panel_controller.panel,
 		game_manager.faction_time_panel_controller.panel,
+		game_manager.faction_skill_panel_controller.panel,
 		game_manager.equipment_display_controller.panel
 	])
 

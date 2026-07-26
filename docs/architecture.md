@@ -81,7 +81,7 @@
 
 `ActionMenuController` 只负责展示行动菜单，不负责判断行动是否可用。行动可用性应放在行动类或 resolver 中。
 
-`GameHudCoordinator` 负责对局 HUD 的生命周期编排：统一创建和刷新回合状态、种族技能、种族时间、手牌抽屉、装备区、牌池视图，并在内容变化后请求右侧布局。各 panel controller 仍只维护自身节点；`GameHudCoordinator` 不修改规则状态，`GameManager.update_*_view()` 只保留稳定的兼容门面。新增 HUD 面板时，应把创建/刷新顺序接入协调器，把几何排列接入 `RightSideHudLayoutController`，不要再把面板细节写回 `GameManager`。HUD 中需要展示卡牌缩略图时，统一通过 `CardTexturePreviewController` 绑定悬浮大图；该控制器只管理预览节点、视口内定位和显示生命周期，不读取规则状态。目前种族运行时状态牌与装备牌均使用此入口。
+`GameHudCoordinator` 负责对局 HUD 的生命周期编排：统一创建和刷新回合状态、种族技能、种族时间、手牌抽屉、装备区、牌池视图，并在内容变化后请求右侧布局。各 panel controller 仍只维护自身节点；`GameHudCoordinator` 不修改规则状态，`GameManager.update_*_view()` 只保留稳定的兼容门面。新增 HUD 面板时，应把创建/刷新顺序接入协调器，把几何排列接入 `RightSideHudLayoutController`，不要再把面板细节写回 `GameManager`。右侧面板按“回合概览 → 种族运行时状态 → 种族能力 → 装备”排序；控制器不得保留自己的绝对坐标或视口定位方法。HUD 中需要展示卡牌缩略图时，统一通过 `CardTexturePreviewController` 绑定悬浮大图；该控制器只管理预览节点、视口内定位和显示生命周期，不读取规则状态。目前种族运行时状态牌与装备牌均使用此入口。
 
 ## 行动系统
 
@@ -249,7 +249,9 @@ AI 分为候选行为生成、棋盘评估、手牌评估和行为执行。AI �
 
 UI 控制器只负责表现，不应直接修改规则数据，除非通过明确回调进入 game/action/effect 层。
 
-`RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
+`RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它统一右侧列宽、屏幕边距和面板间距，并按实际内容高度顺序排布；高度不足时只压缩间距，禁止把后续面板向上回夹到前一个面板上。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
+
+`RightSideHudStyle` 提供右侧面板共享的背景、边框、标题、按钮、指标块和资源刻度样式；`HudSymbolIcon` 提供不依赖种族素材的轻量矢量图标。面板标题和“法力、翻牌、资源分、装备类型、种族状态、种族技能”等稳定语义优先使用图标与 tooltip，精确玩法数值仍保留短格式。最大值不超过 12 的种族资源优先用离散刻度表示，较大资源使用进度条。各 controller 可以选择自己的强调色，但不得复制一套新的面板外壳、宽度或定位常量。
 
 一次性特效统一从 `CardAnimationController` 进入；通用移动、攻击和少量跨种族表现留在控制器，种族主题节点、Tween 与样式由独立 animation provider 持有。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。局限在单张卡牌内的持续状态标识放在 `CardStatusOverlay`；会覆盖多个单元格并跟随来源移动的持续效果由 `BoardPersistentVisualController` 管理。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
 

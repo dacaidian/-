@@ -11,7 +11,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **行动系统**：移动、攻击、施法是主行动组；副动作、骑乘攻击、固定方向移动、瞬移、飞行、移动攻击等由通用行动资源系统处理。
 - **状态系统**：支持圣盾、毒、火焰伤害、定身、隐身、魅惑、复生、护甲、生命上限修正、变身等可扩展状态。
 - **地图/中立设计储备**：当前中立牌池是未来地图系统原型；长期方向是不同地图拥有不同中立牌包和环境规则。
-- **表现层**：包含卡牌动画、全战场触发特效、跟随单位的持续区域 VFX、持续状态覆盖、数值图标、战场种族 logo、装备面板、种族面板、暗夜时间面板、背景音乐和音效门面。
+- **表现层**：包含卡牌动画、全战场触发特效、跟随单位的持续区域 VFX、持续状态覆盖、数值图标、战场种族 logo、统一右侧战斗 HUD、装备面板、种族面板、暗夜时间面板、背景音乐和音效门面。
 
 ## 已接入种族
 
@@ -86,12 +86,13 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_data_lazy_textures.gd -SuccessMarker CARD_DATA_LAZY_TEXTURES_TEST_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_tokyo_ghoul.gd -SuccessMarker TOKYO_GHOUL_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_rc_concentration.gd -SuccessMarker RC_CONCENTRATION_TESTS_OK
-powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_texture_preview.gd -SuccessMarker CARD_TEXTURE_PREVIEW_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_texture_preview.gd -SuccessMarker CARD_TEXTURE_PREVIEW_TEST_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_reserve.gd -SuccessMarker CARD_RESERVE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_status_attack_override.gd -SuccessMarker STATUS_ATTACK_OVERRIDE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_direction_ray_selection.gd -SuccessMarker DIRECTION_RAY_SELECTION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_dalaran_council.gd -SuccessMarker DALARAN_COUNCIL_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_board_persistent_visuals.gd -SuccessMarker BOARD_PERSISTENT_VISUAL_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_right_side_hud.gd -SuccessMarker RIGHT_SIDE_HUD_TESTS_OK
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
