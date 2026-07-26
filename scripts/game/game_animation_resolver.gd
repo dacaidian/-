@@ -13,7 +13,8 @@ func play_card_swap_animation(
 	first_card: Card,
 	second_card: Card,
 	first_slot_position: Vector2,
-	second_slot_position: Vector2
+	second_slot_position: Vector2,
+	animation_key := ""
 ) -> void:
 	if game_manager == null:
 		return
@@ -23,7 +24,9 @@ func play_card_swap_animation(
 		first_card,
 		second_card,
 		first_slot_position,
-		second_slot_position
+		second_slot_position,
+		get_overlay_animation_root(game_manager),
+		animation_key
 	)
 
 

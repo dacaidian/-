@@ -17,12 +17,14 @@ var _first_slot := -1
 var _completed_pairs := 0
 var _max_pairs := 0
 var _active := false
+var _swap_animation_key := ""
 
 
 func select_and_swap_pairs(
 	game_manager: GameManager,
 	max_pairs: int,
-	title: String
+	title: String,
+	swap_animation_key := ""
 ) -> int:
 	if game_manager == null or max_pairs <= 0:
 		return 0
@@ -32,6 +34,8 @@ func select_and_swap_pairs(
 	_completed_pairs = 0
 	_first_slot = -1
 	_active = true
+	if swap_animation_key != "":
+		_swap_animation_key = swap_animation_key
 
 	setup_ui(game_manager.get_parent(), title)
 	connect_board_cards()
@@ -157,7 +161,7 @@ func handle_slot_selected(slot_index: int) -> void:
 		update_hint()
 		return
 
-	await _game_manager.swap_board_cells(first_state, second_state)
+	await _game_manager.swap_board_cells(first_state, second_state, _swap_animation_key)
 	_completed_pairs += 1
 	set_all_targets_enabled(true)
 	update_hint()
@@ -224,6 +228,7 @@ func cleanup() -> void:
 	_hint_label = null
 	_finish_button = null
 	_game_manager = null
+	_swap_animation_key = ""
 
 
 func create_panel_style() -> StyleBoxFlat:

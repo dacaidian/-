@@ -1359,7 +1359,11 @@ func execute_selected_hand_card(target_state: CardState) -> void:
 	await hand_interaction_controller.execute_selected_hand_card(self, target_state)
 
 
-func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
+func swap_board_cells(
+	first_state: CardState,
+	second_state: CardState,
+	animation_key := ""
+) -> void:
 	# Swap two board cells; cell properties move with the cell.
 	if first_state == null or second_state == null:
 		return
@@ -1372,13 +1376,17 @@ func swap_board_cells(first_state: CardState, second_state: CardState) -> void:
 		sync_board_cell_state_flags(second_state.slot_index)
 		sync_card_board_slot_styles()
 
-	await swap_board_slot_contents(first_state, second_state)
+	await swap_board_slot_contents(first_state, second_state, animation_key)
 	sync_board_cell_state_flags(first_state.slot_index)
 	sync_board_cell_state_flags(second_state.slot_index)
 	sync_card_board_slot_styles()
 
 
-func swap_board_slot_contents(first_state: CardState, second_state: CardState) -> void:
+func swap_board_slot_contents(
+	first_state: CardState,
+	second_state: CardState,
+	animation_key := ""
+) -> void:
 	# Swap fixed-slot card contents while preserving slot indices and UI bindings.
 	if first_state == null or second_state == null:
 		return
@@ -1403,7 +1411,8 @@ func swap_board_slot_contents(first_state: CardState, second_state: CardState) -
 		first_card,
 		second_card,
 		first_global_position,
-		second_global_position
+		second_global_position,
+		animation_key
 	)
 	await resolve_slot_unit_entered(first_state)
 	await resolve_slot_unit_entered(second_state)
@@ -1417,14 +1426,16 @@ func play_card_swap_animation(
 	first_card: Card,
 	second_card: Card,
 	first_slot_position: Vector2,
-	second_slot_position: Vector2
+	second_slot_position: Vector2,
+	animation_key := ""
 ) -> void:
 	await game_animation_resolver.play_card_swap_animation(
 		self,
 		first_card,
 		second_card,
 		first_slot_position,
-		second_slot_position
+		second_slot_position,
+		animation_key
 	)
 
 

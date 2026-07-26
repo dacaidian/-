@@ -62,6 +62,7 @@ func _init() -> void:
 	test_reborn_queue_model(giant_water_elemental)
 	test_extreme_cold_storm(database)
 	test_death_slot_claim_priority()
+	test_dalaran_animation_configuration(database)
 
 	for upgrade_id in [
 		"basic_spell_power",
@@ -77,6 +78,38 @@ func _init() -> void:
 
 	print("DALARAN_COUNCIL_TESTS_OK")
 	quit()
+
+
+func test_dalaran_animation_configuration(database: CardDatabase) -> void:
+	assert(database.get_card("summon_water_elemental").animation == "water_summon")
+	assert(database.get_card("summon_giant_water_elemental").animation == "giant_water_summon")
+	assert(database.get_card("academy_summon").animation == "academy_summon")
+
+	var aura := database.get_card("brilliant_aura")
+	assert(aura.animation == "arcane_aura_prepare")
+	var aura_payload := (aura.effects[0] as Dictionary).get("payload", {}) as Dictionary
+	var aura_turn_effects := aura_payload.get("turn_effects", []) as Array
+	assert(aura_turn_effects.size() == 1)
+	assert(
+		str((aura_turn_effects[0] as Dictionary).get(EffectData.KEY_SOURCE_ANIMATION, ""))
+		== "arcane_aura_pulse"
+	)
+
+	var frost_witch := database.get_card("frost_witch")
+	assert(str((frost_witch.spell_actions[0] as Dictionary).get(EffectData.KEY_ANIMATION, "")) == "frost_shield")
+	var arcane_mage := database.get_card("arcane_mage")
+	assert(str((arcane_mage.spell_actions[0] as Dictionary).get(EffectData.KEY_ANIMATION, "")) == "arcane_wisdom")
+
+	var arcane_space_upgrade := database.get_card("arcane_space_upgrade")
+	var grant_effect := arcane_space_upgrade.effects[0] as Dictionary
+	var spell_actions := grant_effect.get(EffectData.KEY_SPELL_ACTIONS, []) as Array
+	var arcane_space_action := spell_actions[0] as Dictionary
+	assert(str(arcane_space_action.get(EffectData.KEY_ANIMATION, "")) == "arcane_space")
+	var swap_effects := arcane_space_action.get(EffectData.KEY_EFFECTS, []) as Array
+	assert(
+		str((swap_effects[0] as Dictionary).get(EffectData.KEY_ANIMATION, ""))
+		== "arcane_space_swap"
+	)
 
 
 func test_extreme_cold_storm(database: CardDatabase) -> void:

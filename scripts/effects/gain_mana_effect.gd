@@ -10,4 +10,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if player == null:
 		return
 
+	var source_animation_key := str(effect_data.get(EffectData.KEY_SOURCE_ANIMATION, ""))
+	if (
+		source_animation_key != ""
+		and source_state != null
+		and game_manager.has_method("play_status_apply_animation")
+	):
+		await game_manager.play_status_apply_animation(source_state, source_animation_key)
+
 	player.gain_mana(get_amount(effect_data))

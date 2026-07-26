@@ -81,6 +81,12 @@ def parse_animation_keys() -> set[str]:
             re.DOTALL,
         ):
             keys.update(re.findall(r'"([^"]+)"', match.group(1)))
+
+        for match in re.finditer(
+            r'const\s+[A-Z0-9_]*ANIMATION_KEY\s*(?::[^=]*)?=\s*"([^"]+)"',
+            content,
+        ):
+            keys.add(match.group(1))
     return keys
 
 

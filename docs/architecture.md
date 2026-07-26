@@ -261,6 +261,10 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 白银之手一次性法术由 `SilverHandAnimationProvider` 与程序化 `HolySpellVisual` 负责。专属 key 为 `divine_shield`、`baptism`、`holy_heal`、`power_word_shield`、`inner_fire`、`resurrection`：圣盾表现为流动圣光护壳，洗礼分为降光治愈与向外圣光冲击，治疗术使用绿色上升治愈能量，真言术·盾使用金色铭文与增益上升反馈，心灵之火把凝聚圣光塑造成火焰，复活术使用降临的纳鲁几何圣光。专属 key 只服务白银之手，通用 `heal` / `shield` 仍保留给其他种族，避免主题串色。圣盾施放瞬间属于 provider；生效后的持续流光属于 `CardStatusOverlay`，且仅在圣盾实际存在时以 30 FPS 刷新，移除状态后立即停止处理。一次性动画必须在 Tween 结束后释放全部临时节点，新增或调整时运行 `tools/test_silver_hand_animation_provider.gd`。
 
+达拉然法术表现由 `DalaranAnimationProvider` 统一编排，以程序化 `DalaranSpellVisual` 复用“规则几何、学派配色、透明能量层、起手聚能、释放冲击、余韵消散”的学院派语言。奥术使用蓝紫符文环、同心法阵、网格折叠和定向法力流；冰霜使用冰蓝晶体、六边形屏障、霜纹与清晰范围边界；火焰使用符文蓄力、白热核心、燃烧尾迹和集中冲击；水元素使用奥术召唤阵约束半透明流体、水纹、雾气和法力核心。`DalaranFireAnimationPlayer` 专门负责火球术/炎爆术的蓄力、投射物飞行和命中恢复，炎爆术通过更长蓄力、更大白热核心和更强冲击与火球术分级；`DalaranSpaceSwapPlayer` 负责奥术空间的双锚点法阵、稳定连接和格子内容交换，规则层只传 `arcane_space_swap`，不创建表现节点。召唤水元素、巨水元素、学院召唤、冰霜护盾、奥术智慧、暴风雪分别使用专属 key，不再复用通用 `summon` / `shield` / `arcane`。
+
+达拉然持续表现按范围分层：辉煌光环是单位局部、可叠加状态，由 `CardStatusOverlay` 绘制反向旋转符文轨道、法力流和层数轨道，仅在状态存在时刷新；其回合产蓝效果通过 `gain_mana.source_animation` 配置 `arcane_aura_pulse`，公共 `GainManaEffect` 只负责按配置请求来源动画，不识别卡牌 id。极寒风暴覆盖 3x3，继续由 `BoardPersistentVisualController` 和 `ExtremeColdStormAreaVisual` 管理边界、冰纹、旋转风场和来源跟随；回合结算的坠冰冲击仍是一段一次性 provider 动画。调整达拉然表现后至少运行 `tools/test_animation_routing.gd`、`tools/test_dalaran_animation_provider.gd`、`tools/test_dalaran_council.gd` 和 `tools/test_board_persistent_visuals.gd`。
+
 手牌抽屉仍按法术、随从、升级、装备四个语义分区，并保留各自独立滚动，但不再固定四等分。生产节点树位于独立场景 `scenes/ui/hand_drawer_panel.tscn`，主场景和 UI 集成测试共用同一组件。`HandSectionLayoutPolicy` 是不依赖节点的纯布局策略：空分区收缩为仅标题的窄条；非空分区先取得一致的可操作最低高度，再按实际卡牌行数的平方根分配剩余空间，使拥挤区明确获得更多高度，同时避免卡牌数量极端悬殊时独占抽屉；某分区达到完整内容高度后停止增长，空间继续分给仍需滚动的分区。`HandDrawerController` 只统计卡牌数、计算每行容量并应用高度；焦点变化不参与高度计算，因此点击卡牌不会引发布局跳动。完整重建前捕获四区滚动偏移；旧滚动节点会先脱离父节点再延迟释放，避免与新节点同名；随后在新高度应用并完成容器重排后统一恢复偏移。窗口尺寸变化只重新运行布局策略，不重新构造卡牌节点。
 
 当前结构优化优先级：新增 HUD 接入 `GameHudCoordinator`；新增种族主题特效直接实现 provider 并声明所需路由上下文；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。

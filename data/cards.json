@@ -423,7 +423,7 @@
 				"type": "spell",
 				"count": 2,
 				"level": 2,
-				"animation": "summon",
+				"animation": "giant_water_summon",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
@@ -782,7 +782,7 @@
 					{
 						"id": "frost_shield",
 						"name": "冰霜护盾",
-						"animation": "shield",
+						"animation": "frost_shield",
 						"target_rule": "all_minions",
 						"effects": [
 							{
@@ -811,7 +811,7 @@
 					{
 						"id": "arcane_wisdom",
 						"name": "奥术智慧",
-						"animation": "arcane",
+						"animation": "arcane_wisdom",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -845,7 +845,7 @@
 				"type": "spell",
 				"count": 3,
 				"level": 1,
-				"animation": "summon",
+				"animation": "water_summon",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
@@ -863,7 +863,7 @@
 				"type": "spell",
 				"count": 2,
 				"level": 2,
-				"animation": "arcane_aura",
+				"animation": "arcane_aura_prepare",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
@@ -888,7 +888,8 @@
 									"trigger": "before_turn_start",
 									"trigger_player": "source_owner",
 									"target": "owner",
-									"amount": 1
+									"amount": 1,
+									"source_animation": "arcane_aura_pulse"
 								}
 							]
 						}
@@ -903,7 +904,7 @@
 				"type": "spell",
 				"count": 1,
 				"level": 3,
-				"animation": "summon",
+				"animation": "academy_summon",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
@@ -962,12 +963,13 @@
 							{
 								"id": "arcane_space",
 								"name": "奥术空间",
-								"animation": "arcane",
+								"animation": "arcane_space",
 								"target_rule": "none",
 								"effects": [
 									{
 										"id": "swap_board_slots",
 										"amount": 3,
+										"animation": "arcane_space_swap",
 										"selection_title": "奥术空间：选择两个单元格交换"
 									}
 								]

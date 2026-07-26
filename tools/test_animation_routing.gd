@@ -15,22 +15,28 @@ func _initialize() -> void:
 		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
 		"extreme_cold_storm", "extreme_cold_storm_pulse",
 		"extreme_cold_storm_summon", "divine_shield", "baptism",
-		"holy_heal", "power_word_shield", "inner_fire"
+		"holy_heal", "power_word_shield", "inner_fire", "fireball",
+		"pyroblast", "frost_shield", "arcane_wisdom", "arcane_space",
+		"arcane_aura", "arcane_aura_pulse"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
 		"dark_portal", "centipede_form", "extreme_cold_storm_cast",
 		"divine_shield", "baptism", "holy_heal", "power_word_shield",
-		"inner_fire", "resurrection"
+		"inner_fire", "resurrection", "water_summon",
+		"giant_water_summon", "academy_summon", "arcane_aura_prepare",
+		"arcane_aura", "arcane_aura_pulse", "frost_shield",
+		"arcane_wisdom", "arcane_space"
 	])
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",
 		"soul_hook", "life_drain", "divine_shield", "baptism",
-		"holy_heal", "power_word_shield", "inner_fire"
+		"holy_heal", "power_word_shield", "inner_fire", "fireball",
+		"pyroblast", "frost_shield"
 	])
 	_assert_routes(router, "board", ["chaos_corruption_burst", "kagune_release"])
 	_assert_routes(router, "path", ["beast_path"])
-	_assert_routes(router, "area", ["foxfire"])
+	_assert_routes(router, "area", ["foxfire", "blizzard"])
 
 	if router.has_targeted_route("missing_animation_key"):
 		push_error("unknown animation key unexpectedly has a route")

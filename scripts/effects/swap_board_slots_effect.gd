@@ -25,7 +25,8 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	await controller.select_and_swap_pairs(
 		gm,
 		max_swaps,
-		EffectData.get_selection_title(effect_data, "选择两个单元格交换")
+		EffectData.get_selection_title(effect_data, "选择两个单元格交换"),
+		str(effect_data.get(EffectData.KEY_ANIMATION, ""))
 	)
 
 

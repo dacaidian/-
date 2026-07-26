@@ -71,7 +71,7 @@ func setup(config: Dictionary) -> void:
 	arcane_spell_effect_glow_color = config.get("arcane_spell_effect_glow_color", arcane_spell_effect_glow_color)
 	beastmen_animation_provider.setup(spell_animation_duration)
 	beastmen_animation_provider.register_routes(spell_animation_router)
-	dalaran_animation_provider.setup(spell_animation_duration)
+	dalaran_animation_provider.setup(spell_animation_duration, move_animation_duration)
 	dalaran_animation_provider.register_routes(spell_animation_router)
 	fox_spirit_animation_provider.setup(spell_animation_duration)
 	fox_spirit_animation_provider.register_routes(spell_animation_router)
@@ -94,9 +94,25 @@ func play_card_swap(
 	first_card: Card,
 	second_card: Card,
 	first_slot_position: Vector2,
-	second_slot_position: Vector2
+	second_slot_position: Vector2,
+	effect_root: Control = null,
+	animation_key := ""
 ) -> void:
 	if owner == null or first_card == null or second_card == null:
+		return
+
+	if (
+		animation_key == DalaranAnimationProviderScript.SWAP_ANIMATION_KEY
+		and effect_root != null
+	):
+		await dalaran_animation_provider.play_arcane_space_swap(
+			owner,
+			effect_root,
+			first_card,
+			second_card,
+			first_slot_position,
+			second_slot_position
+		)
 		return
 
 	var first_local_position: Vector2 = first_card.position

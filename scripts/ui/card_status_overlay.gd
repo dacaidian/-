@@ -118,7 +118,7 @@ func set_state(new_state: CardState) -> void:
 
 func refresh() -> void:
 	visible = has_visible_status()
-	set_process(visible and should_show_divine_shield())
+	set_process(visible and (should_show_divine_shield() or should_show_arcane_aura()))
 	if visible:
 		queue_redraw()
 
@@ -467,19 +467,56 @@ func draw_arcane_aura() -> void:
 	var status := state.get_status(CardStatus.STATUS_ARCANE_AURA) if state != null else null
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 4)
+	var pulse := 0.5 + 0.5 * sin(animation_time * 2.3)
+	var rotation := animation_time * 0.42
+
+	draw_circle(
+		center,
+		radius * (0.72 + pulse * 0.025),
+		Color(arcane_aura_color.r, arcane_aura_color.g, arcane_aura_color.b, arcane_aura_color.a * (0.72 + pulse * 0.22))
+	)
 
 	for index in range(ring_count):
-		var ring_radius := radius + float(index) * 5.0
-		var alpha := arcane_aura_edge_color.a * (1.0 - float(index) * 0.13)
-		draw_arc(center, ring_radius, 0.0, TAU, 96, Color(arcane_aura_edge_color.r, arcane_aura_edge_color.g, arcane_aura_edge_color.b, alpha), 2.4, true)
+		var ring_radius := radius + float(index) * 4.2
+		var direction := 1.0 if index % 2 == 0 else -1.0
+		var ring_rotation := rotation * direction + float(index) * 0.34
+		var alpha := arcane_aura_edge_color.a * (1.0 - float(index) * 0.12)
+		var ring_color := Color(
+			arcane_aura_edge_color.r,
+			arcane_aura_edge_color.g,
+			arcane_aura_edge_color.b,
+			alpha * (0.82 + pulse * 0.18)
+		)
+		draw_arc(center, ring_radius, ring_rotation, ring_rotation + TAU * 0.34, 36, ring_color, 2.4, true)
+		draw_arc(center, ring_radius, ring_rotation + TAU * 0.50, ring_rotation + TAU * 0.84, 36, ring_color, 2.4, true)
 
-	for index in range(8):
-		var angle := TAU * float(index) / 8.0 + 0.18
-		var from_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.72
-		var to_point := center + Vector2(cos(angle), sin(angle)) * radius * 1.08
-		draw_line(from_point, to_point, arcane_aura_glow_color, 2.0)
+		for rune_index in range(6):
+			var angle := ring_rotation + TAU * float(rune_index) / 6.0
+			var radial := Vector2.from_angle(angle)
+			var tangent := radial.orthogonal()
+			var rune_center := center + radial * ring_radius
+			var rune_size := 2.8 + float(index) * 0.45
+			draw_line(rune_center - tangent * rune_size, rune_center + tangent * rune_size, ring_color, 1.4, true)
+			draw_line(rune_center, rune_center + radial * rune_size * 1.5, ring_color, 1.2, true)
 
-	draw_circle(center, radius * 0.74, arcane_aura_color)
+	for stream_index in range(7):
+		var phase := fmod(animation_time * (0.24 + float(stream_index) * 0.015) + float(stream_index) * 0.137, 1.0)
+		var angle := TAU * float(stream_index) / 7.0 - rotation * 0.35
+		var radial := Vector2.from_angle(angle)
+		var stream_radius := radius * (0.30 + phase * 0.66)
+		var stream_point := center + radial * stream_radius + Vector2(0.0, -8.0 * sin(phase * PI))
+		var stream_alpha := sin(phase * PI) * (0.28 + pulse * 0.22)
+		draw_circle(
+			stream_point,
+			1.8 + pulse * 0.8,
+			Color(arcane_aura_glow_color.r, arcane_aura_glow_color.g, arcane_aura_glow_color.b, stream_alpha)
+		)
+
+	for orbit_index in range(3):
+		var orbit_angle := -rotation * 1.8 + TAU * float(orbit_index) / 3.0
+		var orbit_point := center + Vector2.from_angle(orbit_angle) * radius * 0.84
+		draw_circle(orbit_point, 2.5 + pulse, Color(0.76, 0.90, 1.0, 0.70))
+		draw_circle(orbit_point, 1.1 + pulse * 0.35, Color(0.94, 0.98, 1.0, 0.96))
 
 
 func draw_meteor_aura() -> void:

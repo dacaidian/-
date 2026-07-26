@@ -1,13 +1,48 @@
 extends RefCounted
 class_name DalaranAnimationProvider
 
+const DalaranSpellVisualScript := preload(
+	"res://scripts/ui/animation/dalaran_spell_visual.gd"
+)
+const DalaranFireAnimationPlayerScript := preload(
+	"res://scripts/ui/animation/dalaran_fire_animation_player.gd"
+)
+const DalaranSpaceSwapPlayerScript := preload(
+	"res://scripts/ui/animation/dalaran_space_swap_player.gd"
+)
+
+const SWAP_ANIMATION_KEY := "arcane_space_swap"
 const TARGETED_KEYS: Array[String] = [
 	"cone_of_cold",
 	"extreme_cold_storm",
 	"extreme_cold_storm_pulse",
-	"extreme_cold_storm_summon"
+	"extreme_cold_storm_summon",
+	"fireball",
+	"pyroblast",
+	"frost_shield",
+	"arcane_wisdom",
+	"arcane_space",
+	"arcane_aura",
+	"arcane_aura_pulse"
 ]
-const RECT_KEYS: Array[String] = ["extreme_cold_storm_cast"]
+const RECT_KEYS: Array[String] = [
+	"extreme_cold_storm_cast",
+	"water_summon",
+	"giant_water_summon",
+	"academy_summon",
+	"arcane_aura_prepare",
+	"arcane_aura",
+	"arcane_aura_pulse",
+	"frost_shield",
+	"arcane_wisdom",
+	"arcane_space"
+]
+const SOURCE_RECT_KEYS: Array[String] = [
+	"fireball",
+	"pyroblast",
+	"frost_shield"
+]
+const AREA_KEYS: Array[String] = ["blizzard"]
 
 const ICE_BODY_COLOR := Color(0.26, 0.76, 1.0, 0.96)
 const ICE_CORE_COLOR := Color(0.82, 0.98, 1.0, 1.0)
@@ -15,16 +50,22 @@ const ICE_EDGE_COLOR := Color(0.66, 0.94, 1.0, 0.92)
 const FROST_TRAIL_COLOR := Color(0.48, 0.84, 1.0, 0.58)
 
 var spell_animation_duration := 0.32
+var fire_animation_player := DalaranFireAnimationPlayerScript.new()
+var space_swap_player := DalaranSpaceSwapPlayerScript.new()
 
 
-func setup(duration: float) -> void:
+func setup(duration: float, move_duration := 0.24) -> void:
 	spell_animation_duration = duration
+	fire_animation_player.setup(duration)
+	space_swap_player.setup(duration, move_duration)
 
 
 func register_routes(router: SpellAnimationRouter) -> void:
 	if router != null:
 		router.register_targeted(TARGETED_KEYS, play_targeted)
 		router.register_at_rect(RECT_KEYS, play_at_rect)
+		router.register_from_rect(SOURCE_RECT_KEYS, play_from_rect)
+		router.register_area(AREA_KEYS, play_area)
 
 
 func play_targeted(
@@ -34,15 +75,40 @@ func play_targeted(
 	target_card: Card,
 	animation_key: String
 ) -> void:
-	if animation_key == "cone_of_cold":
-		await play_cone_of_cold(owner, effect_root, caster_card, target_card)
-	elif target_card != null:
-		await play_extreme_cold_storm_at_rect(
-			owner,
-			effect_root,
-			target_card.get_global_rect(),
-			animation_key
-		)
+	if target_card == null:
+		return
+
+	match animation_key:
+		"cone_of_cold":
+			await play_cone_of_cold(owner, effect_root, caster_card, target_card)
+		"fireball", "pyroblast":
+			var source_position := (
+				caster_card.get_global_rect().get_center()
+				if caster_card != null
+				else target_card.get_global_rect().get_center()
+			)
+			await fire_animation_player.play(
+				owner,
+				effect_root,
+				source_position,
+				target_card,
+				animation_key
+			)
+		"extreme_cold_storm", "extreme_cold_storm_pulse", "extreme_cold_storm_summon":
+			await play_extreme_cold_storm_at_rect(
+				owner,
+				effect_root,
+				target_card.get_global_rect(),
+				animation_key
+			)
+		_:
+			_play_target_pulse(owner, target_card, animation_key)
+			await play_school_visual_at_rect(
+				owner,
+				effect_root,
+				target_card.get_global_rect(),
+				animation_key
+			)
 
 
 func play_at_rect(
@@ -51,7 +117,210 @@ func play_at_rect(
 	target_rect: Rect2,
 	animation_key: String
 ) -> void:
-	await play_extreme_cold_storm_at_rect(owner, effect_root, target_rect, animation_key)
+	if animation_key == "extreme_cold_storm_cast":
+		await play_extreme_cold_storm_at_rect(owner, effect_root, target_rect, animation_key)
+		return
+	await play_school_visual_at_rect(owner, effect_root, target_rect, animation_key)
+
+
+func play_from_rect(
+	owner: Node,
+	effect_root: Control,
+	source_rect: Rect2,
+	target_card: Card,
+	animation_key: String
+) -> void:
+	if target_card == null:
+		return
+	if animation_key in ["fireball", "pyroblast"]:
+		await fire_animation_player.play(
+			owner,
+			effect_root,
+			source_rect.get_center(),
+			target_card,
+			animation_key
+		)
+		return
+
+	_play_target_pulse(owner, target_card, animation_key)
+	await play_school_visual_at_rect(
+		owner,
+		effect_root,
+		target_card.get_global_rect(),
+		animation_key
+	)
+
+
+func play_area(
+	owner: Node,
+	effect_root: Control,
+	caster_card: Card,
+	center_card: Card,
+	spell_data: Dictionary,
+	animation_key: String
+) -> void:
+	if (
+		owner == null
+		or effect_root == null
+		or caster_card == null
+		or center_card == null
+		or animation_key != "blizzard"
+	):
+		return
+
+	var area_rows := maxi(int(spell_data.get(EffectData.KEY_AREA_ROWS, 3)), 1)
+	var area_cols := maxi(int(spell_data.get(EffectData.KEY_AREA_COLS, 3)), 1)
+	var anchor_rect := center_card.get_global_rect()
+	var area_size := Vector2(
+		anchor_rect.size.x * float(area_cols),
+		anchor_rect.size.y * float(area_rows)
+	)
+	var area_rect := Rect2(anchor_rect.get_center() - area_size * 0.5, area_size)
+	_play_target_pulse(owner, caster_card, "blizzard")
+	await play_school_visual_at_rect(owner, effect_root, area_rect, animation_key)
+
+
+func play_arcane_space_swap(
+	owner: Node,
+	effect_root: Control,
+	first_card: Card,
+	second_card: Card,
+	first_slot_position: Vector2,
+	second_slot_position: Vector2
+) -> void:
+	await space_swap_player.play(
+		owner,
+		effect_root,
+		first_card,
+		second_card,
+		first_slot_position,
+		second_slot_position
+	)
+
+
+func play_school_visual_at_rect(
+	owner: Node,
+	effect_root: Control,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	if (
+		owner == null
+		or effect_root == null
+		or target_rect.size == Vector2.ZERO
+	):
+		return
+
+	var presentation := get_school_presentation(animation_key)
+	var visual := DalaranSpellVisualScript.new()
+	visual.name = "Dalaran_%s" % animation_key
+	visual.configure(animation_key, float(presentation.strength))
+	visual.size = target_rect.size * float(presentation.size_scale)
+	visual.pivot_offset = visual.size * 0.5
+	visual.global_position = (
+		target_rect.get_center()
+		+ target_rect.size * presentation.center_offset
+		- visual.pivot_offset
+	)
+	visual.scale = Vector2.ONE * float(presentation.start_scale)
+	visual.modulate.a = 0.0
+	visual.z_index = 2470
+	var material := CanvasItemMaterial.new()
+	material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	visual.material = material
+	effect_root.add_child(visual)
+
+	var total_duration := maxf(
+		spell_animation_duration * float(presentation.duration_scale),
+		float(presentation.minimum_duration)
+	)
+	var rise_duration := total_duration * 0.28
+	var hold_duration := total_duration * 0.36
+	var fade_duration := total_duration - rise_duration - hold_duration
+	var progress_tween := owner.create_tween()
+	progress_tween.set_trans(Tween.TRANS_SINE)
+	progress_tween.set_ease(Tween.EASE_IN_OUT)
+	progress_tween.tween_property(visual, "progress", 1.0, total_duration)
+
+	var presentation_tween := owner.create_tween()
+	presentation_tween.set_trans(Tween.TRANS_QUART)
+	presentation_tween.set_ease(Tween.EASE_OUT)
+	presentation_tween.tween_property(visual, "modulate:a", 1.0, rise_duration)
+	presentation_tween.parallel().tween_property(visual, "scale", Vector2.ONE, rise_duration)
+	presentation_tween.tween_interval(hold_duration)
+	presentation_tween.set_trans(Tween.TRANS_SINE)
+	presentation_tween.set_ease(Tween.EASE_IN)
+	presentation_tween.tween_property(visual, "modulate:a", 0.0, fade_duration)
+	presentation_tween.parallel().tween_property(
+		visual,
+		"scale",
+		Vector2.ONE * float(presentation.end_scale),
+		fade_duration
+	)
+	await presentation_tween.finished
+	visual.queue_free()
+
+
+func get_school_presentation(animation_key: String) -> Dictionary:
+	match animation_key:
+		"arcane_aura_prepare":
+			return _school_presentation(1.46, Vector2.ZERO, 0.58, 1.08, 1.90, 0.52, 0.82)
+		"arcane_aura", "arcane_aura_pulse":
+			return _school_presentation(1.86, Vector2.ZERO, 0.54, 1.12, 2.42, 0.70, 1.0)
+		"water_summon":
+			return _school_presentation(1.90, Vector2(0.0, -0.08), 0.52, 1.10, 2.62, 0.78, 1.0)
+		"giant_water_summon":
+			return _school_presentation(2.40, Vector2(0.0, -0.12), 0.46, 1.16, 3.10, 0.92, 1.24)
+		"academy_summon":
+			return _school_presentation(2.34, Vector2(0.0, -0.20), 0.50, 1.10, 3.00, 0.90, 1.12)
+		"blizzard":
+			return _school_presentation(1.0, Vector2.ZERO, 0.92, 1.04, 3.05, 0.92, 1.12)
+		"frost_shield":
+			return _school_presentation(1.76, Vector2.ZERO, 0.54, 1.10, 2.28, 0.68, 1.0)
+		"arcane_space":
+			return _school_presentation(1.82, Vector2.ZERO, 0.48, 1.14, 2.54, 0.74, 1.0)
+		_:
+			return _school_presentation(1.68, Vector2.ZERO, 0.58, 1.08, 2.18, 0.64, 1.0)
+
+
+func _school_presentation(
+	size_scale: float,
+	center_offset: Vector2,
+	start_scale: float,
+	end_scale: float,
+	duration_scale: float,
+	minimum_duration: float,
+	strength: float
+) -> Dictionary:
+	return {
+		"size_scale": size_scale,
+		"center_offset": center_offset,
+		"start_scale": start_scale,
+		"end_scale": end_scale,
+		"duration_scale": duration_scale,
+		"minimum_duration": minimum_duration,
+		"strength": strength
+	}
+
+
+func _play_target_pulse(owner: Node, target_card: Card, animation_key: String) -> void:
+	if owner == null or target_card == null:
+		return
+	var start_scale := target_card.scale
+	var start_modulate := target_card.self_modulate
+	var tint := Color(0.72, 0.84, 1.0, start_modulate.a)
+	if animation_key in ["frost_shield", "blizzard"]:
+		tint = Color(0.72, 0.94, 1.0, start_modulate.a)
+	var duration := maxf(spell_animation_duration * 0.72, 0.24)
+	var tween := owner.create_tween()
+	tween.set_trans(Tween.TRANS_QUART)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(target_card, "scale", start_scale * 1.045, duration * 0.42)
+	tween.parallel().tween_property(target_card, "self_modulate", tint, duration * 0.42)
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(target_card, "scale", start_scale, duration * 0.58)
+	tween.parallel().tween_property(target_card, "self_modulate", start_modulate, duration * 0.58)
 
 
 func play_extreme_cold_storm_at_rect(
@@ -64,7 +333,12 @@ func play_extreme_cold_storm_at_rect(
 		return
 
 	if animation_key == "extreme_cold_storm_summon":
-		await play_frozen_summon(owner, effect_root, target_rect)
+		await play_school_visual_at_rect(
+			owner,
+			effect_root,
+			target_rect,
+			"giant_water_summon"
+		)
 		return
 	if animation_key == "extreme_cold_storm_pulse":
 		await play_extreme_cold_storm_crash(owner, effect_root, target_rect)
@@ -348,48 +622,6 @@ func create_storm_shards(target_rect: Rect2, count: int) -> Array[Panel]:
 		shard.add_theme_stylebox_override("panel", style)
 		shards.append(shard)
 	return shards
-
-
-func play_frozen_summon(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	var pillar_rect := Rect2(
-		target_rect.position + Vector2(target_rect.size.x * 0.28, target_rect.size.y * 0.10),
-		Vector2(target_rect.size.x * 0.44, target_rect.size.y * 0.84)
-	)
-	var pillar := Panel.new()
-	pillar.name = "ExtremeColdSummonPillar"
-	pillar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pillar.position = pillar_rect.position
-	pillar.size = pillar_rect.size
-	pillar.pivot_offset = Vector2(pillar.size.x * 0.5, pillar.size.y)
-	pillar.scale = Vector2(0.25, 0.08)
-	pillar.modulate.a = 0.0
-	pillar.z_index = 2270
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.56, 0.90, 1.0, 0.78)
-	style.border_color = Color(0.92, 1.0, 1.0, 0.96)
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(int(pillar.size.x * 0.42))
-	style.shadow_color = Color(0.18, 0.64, 1.0, 0.72)
-	style.shadow_size = 14
-	pillar.add_theme_stylebox_override("panel", style)
-	effect_root.add_child(pillar)
-
-	var rise := owner.create_tween()
-	rise.set_parallel(true)
-	rise.set_trans(Tween.TRANS_BACK)
-	rise.set_ease(Tween.EASE_OUT)
-	rise.tween_property(pillar, "scale", Vector2.ONE, spell_animation_duration * 0.78)
-	rise.tween_property(pillar, "modulate:a", 0.96, spell_animation_duration * 0.50)
-	await rise.finished
-
-	var fade := owner.create_tween()
-	fade.set_parallel(true)
-	fade.set_trans(Tween.TRANS_SINE)
-	fade.set_ease(Tween.EASE_IN)
-	fade.tween_property(pillar, "scale", Vector2(1.18, 1.08), spell_animation_duration * 0.72)
-	fade.tween_property(pillar, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	await fade.finished
-	pillar.queue_free()
 
 
 func play_cone_of_cold(

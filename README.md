@@ -16,7 +16,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 ## 已接入种族
 
 - **白银之手**：圣光、治疗、护盾、复活、装备和阵线保护。
-- **达拉然议会**：法术工具箱、召唤、法术强度、奥术空间、吉安娜方向法术、巨水元素、极寒风暴光环和法师体系。
+- **达拉然议会**：法术工具箱、召唤、法术强度、奥术空间、吉安娜方向法术、巨水元素、极寒风暴光环和法师体系；奥术、冰霜、火焰、水元素使用统一学院派视觉语言与独立技能节奏。
 - **苗疆族**：毒、蛊、毒虫、陷阱、吞噬和毒爆。
 - **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃。
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
@@ -95,6 +95,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_right_side_hud.gd -SuccessMarker RIGHT_SIDE_HUD_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_animation_routing.gd -SuccessMarker "OK: animation provider routes are registered"
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_silver_hand_animation_provider.gd -SuccessMarker SILVER_HAND_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_dalaran_animation_provider.gd -SuccessMarker DALARAN_ANIMATION_TESTS_OK
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
