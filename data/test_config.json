@@ -3,14 +3,14 @@
   "cards": {
     "silver_hand": [
       "uther",
+      "divine_shield_spell",
       "blessed_infantry",
-      "baptism",
-      "divine_shield_spell"
+      "baptism"
     ],
     "dalaran_council": [
-      "antonidas",
-      "arcane_mage",
-      "arcane_space_upgrade"
+      "jaina",
+      "cone_of_cold",
+      "extreme_cold_storm"
     ],
     "miao_jiang": [
       "chen_duo",
