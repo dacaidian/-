@@ -14,15 +14,19 @@ func _initialize() -> void:
 		"fiery_eyes_golden_gaze", "beastmen_evolution", "gu_infusion",
 		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
 		"extreme_cold_storm", "extreme_cold_storm_pulse",
-		"extreme_cold_storm_summon"
+		"extreme_cold_storm_summon", "divine_shield", "baptism",
+		"holy_heal", "power_word_shield", "inner_fire"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
-		"dark_portal", "centipede_form", "extreme_cold_storm_cast"
+		"dark_portal", "centipede_form", "extreme_cold_storm_cast",
+		"divine_shield", "baptism", "holy_heal", "power_word_shield",
+		"inner_fire", "resurrection"
 	])
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",
-		"soul_hook", "life_drain"
+		"soul_hook", "life_drain", "divine_shield", "baptism",
+		"holy_heal", "power_word_shield", "inner_fire"
 	])
 	_assert_routes(router, "board", ["chaos_corruption_burst", "kagune_release"])
 	_assert_routes(router, "path", ["beast_path"])

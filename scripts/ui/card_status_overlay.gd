@@ -94,10 +94,21 @@ var taunt_rivet_color := Color(0.98, 0.72, 0.28, 0.56)
 var kagune_release_color := Color(0.34, 0.015, 0.08, 0.11)
 var kagune_release_edge_color := Color(0.88, 0.12, 0.30, 0.62)
 var kagune_release_core_color := Color(1.0, 0.34, 0.48, 0.76)
+var animation_time := 0.0
+var redraw_accumulator := 0.0
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_process(false)
+
+
+func _process(delta: float) -> void:
+	animation_time = fmod(animation_time + delta, 1000.0)
+	redraw_accumulator += delta
+	if redraw_accumulator >= 1.0 / 30.0:
+		redraw_accumulator = 0.0
+		queue_redraw()
 
 
 func set_state(new_state: CardState) -> void:
@@ -107,6 +118,7 @@ func set_state(new_state: CardState) -> void:
 
 func refresh() -> void:
 	visible = has_visible_status()
+	set_process(visible and should_show_divine_shield())
 	if visible:
 		queue_redraw()
 
@@ -751,6 +763,8 @@ func get_fel_madness_status() -> CardStatus:
 
 func draw_divine_shield() -> void:
 	var shield_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
+	var pulse := 0.5 + 0.5 * sin(animation_time * 2.8)
+	var edge_alpha := 0.72 + pulse * 0.18
 	var points := PackedVector2Array([
 		Vector2(shield_rect.position.x + shield_rect.size.x * 0.50, shield_rect.position.y + shield_rect.size.y * 0.04),
 		Vector2(shield_rect.position.x + shield_rect.size.x * 0.88, shield_rect.position.y + shield_rect.size.y * 0.17),
@@ -760,15 +774,56 @@ func draw_divine_shield() -> void:
 		Vector2(shield_rect.position.x + shield_rect.size.x * 0.12, shield_rect.position.y + shield_rect.size.y * 0.17)
 	])
 
-	draw_shield_glow(points, 6, 7.0, divine_shield_glow_color)
+	draw_shield_glow(
+		points,
+		6,
+		7.0 + pulse * 2.0,
+		Color(
+			divine_shield_glow_color.r,
+			divine_shield_glow_color.g,
+			divine_shield_glow_color.b,
+			divine_shield_glow_color.a + pulse * 0.10
+		)
+	)
 	draw_colored_polygon(points, divine_shield_color)
-	draw_polyline(points, divine_shield_edge_color, 4.0, true)
+	draw_polyline(
+		points,
+		Color(
+			divine_shield_edge_color.r,
+			divine_shield_edge_color.g,
+			divine_shield_edge_color.b,
+			edge_alpha
+		),
+		4.0,
+		true
+	)
 	draw_polyline(PackedVector2Array([points[5], points[0], points[1]]), Color(1.0, 0.98, 0.70, 0.95), 6.0, true)
 
 	var center := shield_rect.get_center()
 	var ray_color := Color(1.0, 0.95, 0.56, 0.22)
 	draw_line(Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.18), Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.78), ray_color, 2.0)
 	draw_line(Vector2(shield_rect.position.x + shield_rect.size.x * 0.28, center.y), Vector2(shield_rect.position.x + shield_rect.size.x * 0.72, center.y), ray_color, 2.0)
+
+	for strand_index in range(3):
+		var strand := PackedVector2Array()
+		for step in range(11):
+			var t := float(step) / 10.0
+			var y := shield_rect.position.y + shield_rect.size.y * (0.22 + t * 0.56)
+			var width_at_y := shield_rect.size.x * (0.24 - absf(t - 0.5) * 0.18)
+			var x := (
+				center.x
+				+ sin(t * TAU * 1.25 + animation_time * 2.1 + float(strand_index) * 2.0)
+				* width_at_y
+			)
+			strand.append(Vector2(x, y))
+		draw_polyline(strand, Color(1.0, 0.92, 0.32, 0.20), 1.8, true)
+
+	for mote_index in range(8):
+		var angle := animation_time * 1.6 + TAU * float(mote_index) / 8.0
+		var orbit := Vector2(cos(angle), sin(angle)) * shield_rect.size * Vector2(0.38, 0.43)
+		var mote_position := center + orbit
+		draw_circle(mote_position, 3.8, Color(1.0, 0.82, 0.18, 0.12))
+		draw_circle(mote_position, 1.6, Color(1.0, 0.96, 0.58, 0.84))
 
 
 func draw_bronze_head_iron_arms() -> void:

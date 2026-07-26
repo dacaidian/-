@@ -38,7 +38,7 @@
 				"type": "spell",
 				"count": 3,
 				"level": 1,
-				"animation": "shield",
+				"animation": "divine_shield",
 				"target_rule": "all_minions",
 				"keywords": [],
 				"effects": [
@@ -131,7 +131,7 @@
 					{
 						"id": "healing_spell",
 						"name": "治疗术",
-						"animation": "heal",
+						"animation": "holy_heal",
 						"target_rule": "all_minions",
 						"effects": [
 							{
@@ -263,7 +263,7 @@
 							{
 								"id": "inner_fire",
 								"name": "心灵之火",
-								"animation": "arcane",
+								"animation": "inner_fire",
 								"target_rule": "all_minions",
 								"effects": [
 									{
