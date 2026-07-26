@@ -4,10 +4,25 @@ class_name HealEffect
 # 治疗效果。target 由 CardEffect 统一解释。
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var healed_targets: Array[CardState] = []
+	var target_states := get_target_states(source_state, effect_data, game_manager)
+	var trigger_animation_key := str(effect_data.get(EffectData.KEY_ANIMATION, ""))
+	var should_try_multi_target_animation := (
+		should_play_trigger_animation(effect_data, game_manager)
+		and trigger_animation_key != ""
+		and game_manager.has_method("play_multi_target_effect_animation")
+	)
+	var did_play_multi_target_animation := false
+	if should_try_multi_target_animation:
+		did_play_multi_target_animation = bool(
+			await game_manager.play_multi_target_effect_animation(
+				target_states,
+				trigger_animation_key
+			)
+		)
 
-	for target_state in get_target_states(source_state, effect_data, game_manager):
+	for target_state in target_states:
 		var amount := get_heal_amount_for_target(source_state, target_state, effect_data, game_manager)
-		if should_play_trigger_animation(effect_data, game_manager):
+		if should_play_trigger_animation(effect_data, game_manager) and not did_play_multi_target_animation:
 			await game_manager.play_effect_heal_animation(target_state)
 		var healed_amount := target_state.heal(amount)
 		if healed_amount <= 0:

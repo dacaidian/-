@@ -1394,6 +1394,22 @@ func play_path_effect(owner: Node, effect_root: Control, target_rects: Array[Rec
 	await spell_animation_router.try_play_path(animation_key, owner, effect_root, target_rects)
 
 
+func play_multi_rect_effect(
+	owner: Node,
+	effect_root: Control,
+	target_rects: Array[Rect2],
+	animation_key: String
+) -> bool:
+	if owner == null or effect_root == null or target_rects.is_empty() or animation_key == "":
+		return false
+	return await spell_animation_router.try_play_multi_rect(
+		animation_key,
+		owner,
+		effect_root,
+		target_rects
+	)
+
+
 func play_life_link_spell(
 	owner: Node,
 	effect_root: Control,

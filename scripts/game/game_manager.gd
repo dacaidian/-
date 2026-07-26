@@ -1467,6 +1467,17 @@ func play_effect_heal_animation(target_state: CardState) -> void:
 	await game_animation_resolver.play_effect_heal_animation(self, target_state)
 
 
+func play_multi_target_effect_animation(
+	target_states: Array[CardState],
+	animation_key: String
+) -> bool:
+	return await game_animation_resolver.play_multi_target_effect_animation(
+		self,
+		target_states,
+		animation_key
+	)
+
+
 func play_status_apply_animation(target_state: CardState, animation_key: String) -> void:
 	await game_animation_resolver.play_status_apply_animation(self, target_state, animation_key)
 

@@ -4,13 +4,18 @@ class_name CardStatusOverlay
 # CardStatusOverlay draws persistent visual markers for statuses attached to a board card.
 # It is purely presentational: CardState remains the single source of truth.
 
+const DIVINE_SHIELD_BREAK_DURATION := 0.52
+
 var state: CardState
 var beast_path_color := Color(0.30, 0.16, 0.04, 0.28)
 var beast_path_edge_color := Color(0.86, 0.58, 0.20, 0.88)
 var beast_path_glow_color := Color(0.28, 0.70, 0.16, 0.42)
-var divine_shield_color := Color(1.0, 0.84, 0.24, 0.26)
-var divine_shield_edge_color := Color(1.0, 0.92, 0.48, 0.82)
-var divine_shield_glow_color := Color(1.0, 0.78, 0.18, 0.34)
+var divine_shield_color := Color(1.0, 0.96, 0.82, 0.18)
+var divine_shield_edge_color := Color(1.0, 0.88, 0.42, 0.76)
+var divine_shield_glow_color := Color(1.0, 0.76, 0.24, 0.22)
+var power_word_shield_color := Color(0.98, 0.96, 0.86, 0.08)
+var power_word_shield_edge_color := Color(0.94, 0.82, 0.46, 0.48)
+var power_word_shield_oath_color := Color(1.0, 0.95, 0.72, 0.68)
 var arcane_aura_color := Color(0.45, 0.35, 1.0, 0.18)
 var arcane_aura_edge_color := Color(0.72, 0.66, 1.0, 0.72)
 var arcane_aura_glow_color := Color(0.40, 0.72, 1.0, 0.28)
@@ -96,6 +101,7 @@ var kagune_release_edge_color := Color(0.88, 0.12, 0.30, 0.62)
 var kagune_release_core_color := Color(1.0, 0.34, 0.48, 0.76)
 var animation_time := 0.0
 var redraw_accumulator := 0.0
+var divine_shield_break_progress := -1.0
 
 
 func _ready() -> void:
@@ -105,6 +111,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	animation_time = fmod(animation_time + delta, 1000.0)
+	if is_divine_shield_break_active():
+		divine_shield_break_progress += delta / DIVINE_SHIELD_BREAK_DURATION
+		if divine_shield_break_progress >= 1.0:
+			divine_shield_break_progress = -1.0
+			refresh()
+
 	redraw_accumulator += delta
 	if redraw_accumulator >= 1.0 / 30.0:
 		redraw_accumulator = 0.0
@@ -112,19 +124,29 @@ func _process(delta: float) -> void:
 
 
 func set_state(new_state: CardState) -> void:
+	if state != new_state:
+		divine_shield_break_progress = -1.0
 	state = new_state
 	refresh()
 
 
 func refresh() -> void:
-	visible = has_visible_status()
-	set_process(visible and (should_show_divine_shield() or should_show_arcane_aura()))
+	visible = has_visible_status() or is_divine_shield_break_active()
+	set_process(
+		visible
+		and (
+			should_show_divine_shield()
+			or should_show_power_word_shield()
+			or should_show_arcane_aura()
+			or is_divine_shield_break_active()
+		)
+	)
 	if visible:
 		queue_redraw()
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -147,6 +169,24 @@ func should_show_divine_shield() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_DIVINE_SHIELD)
+
+
+func should_show_power_word_shield() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_POWER_WORD_SHIELD)
+
+
+func is_divine_shield_break_active() -> bool:
+	return divine_shield_break_progress >= 0.0 and divine_shield_break_progress < 1.0
+
+
+func play_divine_shield_break() -> void:
+	divine_shield_break_progress = 0.0
+	visible = true
+	set_process(true)
+	queue_redraw()
 
 
 func should_show_bronze_head_iron_arms() -> bool:
@@ -360,8 +400,12 @@ func _draw() -> void:
 		draw_rooted_overlay()
 	if should_show_stealth():
 		draw_stealth_overlay()
+	if should_show_power_word_shield():
+		draw_power_word_shield_overlay()
 	if should_show_divine_shield():
 		draw_divine_shield()
+	if is_divine_shield_break_active():
+		draw_divine_shield_break()
 	if should_show_freeze():
 		draw_freeze_overlay()
 
@@ -800,26 +844,19 @@ func get_fel_madness_status() -> CardStatus:
 
 func draw_divine_shield() -> void:
 	var shield_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
-	var pulse := 0.5 + 0.5 * sin(animation_time * 2.8)
-	var edge_alpha := 0.72 + pulse * 0.18
-	var points := PackedVector2Array([
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.50, shield_rect.position.y + shield_rect.size.y * 0.04),
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.88, shield_rect.position.y + shield_rect.size.y * 0.17),
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.82, shield_rect.position.y + shield_rect.size.y * 0.66),
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.50, shield_rect.position.y + shield_rect.size.y * 0.94),
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.18, shield_rect.position.y + shield_rect.size.y * 0.66),
-		Vector2(shield_rect.position.x + shield_rect.size.x * 0.12, shield_rect.position.y + shield_rect.size.y * 0.17)
-	])
+	var pulse := 0.5 + 0.5 * sin(animation_time * 1.15)
+	var edge_alpha := 0.70 + pulse * 0.08
+	var points := _get_divine_shield_points(shield_rect)
 
 	draw_shield_glow(
 		points,
-		6,
-		7.0 + pulse * 2.0,
+		5,
+		6.0 + pulse,
 		Color(
 			divine_shield_glow_color.r,
 			divine_shield_glow_color.g,
 			divine_shield_glow_color.b,
-			divine_shield_glow_color.a + pulse * 0.10
+			divine_shield_glow_color.a + pulse * 0.05
 		)
 	)
 	draw_colored_polygon(points, divine_shield_color)
@@ -834,10 +871,10 @@ func draw_divine_shield() -> void:
 		4.0,
 		true
 	)
-	draw_polyline(PackedVector2Array([points[5], points[0], points[1]]), Color(1.0, 0.98, 0.70, 0.95), 6.0, true)
+	draw_polyline(PackedVector2Array([points[5], points[0], points[1]]), Color(1.0, 0.98, 0.78, 0.88), 5.0, true)
 
 	var center := shield_rect.get_center()
-	var ray_color := Color(1.0, 0.95, 0.56, 0.22)
+	var ray_color := Color(1.0, 0.95, 0.66, 0.18)
 	draw_line(Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.18), Vector2(center.x, shield_rect.position.y + shield_rect.size.y * 0.78), ray_color, 2.0)
 	draw_line(Vector2(shield_rect.position.x + shield_rect.size.x * 0.28, center.y), Vector2(shield_rect.position.x + shield_rect.size.x * 0.72, center.y), ray_color, 2.0)
 
@@ -849,18 +886,134 @@ func draw_divine_shield() -> void:
 			var width_at_y := shield_rect.size.x * (0.24 - absf(t - 0.5) * 0.18)
 			var x := (
 				center.x
-				+ sin(t * TAU * 1.25 + animation_time * 2.1 + float(strand_index) * 2.0)
+				+ sin(t * TAU * 1.25 + animation_time * 0.85 + float(strand_index) * 2.0)
 				* width_at_y
 			)
 			strand.append(Vector2(x, y))
-		draw_polyline(strand, Color(1.0, 0.92, 0.32, 0.20), 1.8, true)
+		draw_polyline(strand, Color(1.0, 0.94, 0.58, 0.14), 1.6, true)
 
-	for mote_index in range(8):
-		var angle := animation_time * 1.6 + TAU * float(mote_index) / 8.0
+	for mote_index in range(4):
+		var angle := animation_time * 0.65 + TAU * float(mote_index) / 4.0
 		var orbit := Vector2(cos(angle), sin(angle)) * shield_rect.size * Vector2(0.38, 0.43)
 		var mote_position := center + orbit
-		draw_circle(mote_position, 3.8, Color(1.0, 0.82, 0.18, 0.12))
-		draw_circle(mote_position, 1.6, Color(1.0, 0.96, 0.58, 0.84))
+		draw_circle(mote_position, 3.4, Color(1.0, 0.86, 0.34, 0.09))
+		draw_circle(mote_position, 1.4, Color(1.0, 0.97, 0.72, 0.72))
+
+
+func draw_power_word_shield_overlay() -> void:
+	var status := state.get_status(CardStatus.STATUS_POWER_WORD_SHIELD)
+	var stack_count: int = maxi(status.stacks if status != null else 1, 1)
+	var visible_layers: int = mini(stack_count, 5)
+	var armor_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.095)
+	var center := armor_rect.get_center()
+	var pulse := 0.5 + 0.5 * sin(animation_time * 0.72)
+
+	draw_colored_polygon(_get_divine_shield_points(armor_rect), power_word_shield_color)
+	for layer_index in range(visible_layers):
+		var inset := float(layer_index) * 2.5
+		var layer_rect := armor_rect.grow(-inset)
+		var layer_alpha := power_word_shield_edge_color.a * (0.88 - float(layer_index) * 0.10)
+		draw_polyline(
+			_close_polyline(_get_divine_shield_points(layer_rect)),
+			Color(
+				power_word_shield_edge_color.r,
+				power_word_shield_edge_color.g,
+				power_word_shield_edge_color.b,
+				layer_alpha + pulse * 0.04
+			),
+			maxf(2.8 - float(layer_index) * 0.25, 1.5),
+			true
+		)
+
+	var oath_width := armor_rect.size.x * 0.18
+	var oath_top := center + Vector2(0.0, -armor_rect.size.y * 0.17)
+	var oath_bottom := center + Vector2(0.0, armor_rect.size.y * 0.20)
+	draw_line(oath_top, oath_bottom, power_word_shield_oath_color, 3.0, true)
+	draw_line(
+		center + Vector2(-oath_width, -armor_rect.size.y * 0.02),
+		center + Vector2(oath_width, -armor_rect.size.y * 0.02),
+		power_word_shield_oath_color,
+		3.0,
+		true
+	)
+
+	for layer_index in range(visible_layers):
+		var marker_x := center.x + (float(layer_index) - float(visible_layers - 1) * 0.5) * 8.0
+		var marker_y := armor_rect.end.y - armor_rect.size.y * 0.10
+		var marker_alpha := 0.48 + pulse * 0.08
+		draw_circle(
+			Vector2(marker_x, marker_y),
+			2.2,
+			Color(1.0, 0.90, 0.48, marker_alpha)
+		)
+
+
+func draw_divine_shield_break() -> void:
+	var progress := clampf(divine_shield_break_progress, 0.0, 1.0)
+	var fade := 1.0 - progress
+	var shield_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.07)
+	var points := _get_divine_shield_points(shield_rect)
+	var center := shield_rect.get_center()
+	var crack_reach := clampf(progress * 3.8, 0.0, 1.0)
+	var impact_radius := minf(size.x, size.y) * (0.08 + progress * 0.44)
+
+	draw_arc(
+		center,
+		impact_radius,
+		0.0,
+		TAU,
+		40,
+		Color(1.0, 0.91, 0.50, fade * 0.82),
+		5.0 * fade + 1.0,
+		true
+	)
+
+	for point_index in range(points.size()):
+		var endpoint := center.lerp(points[point_index], crack_reach)
+		var bend_direction := Vector2(
+			-1.0 if point_index % 2 == 0 else 1.0,
+			1.0 if point_index % 3 == 0 else -1.0
+		)
+		var bend := center.lerp(endpoint, 0.52) + bend_direction * minf(size.x, size.y) * 0.025
+		draw_polyline(
+			PackedVector2Array([center, bend, endpoint]),
+			Color(1.0, 0.98, 0.82, fade * 0.94),
+			3.2 * fade + 0.8,
+			true
+		)
+
+		var next_point := points[(point_index + 1) % points.size()]
+		var fragment_origin := points[point_index].lerp(next_point, 0.5)
+		var direction := (fragment_origin - center).normalized()
+		var tangent := Vector2(-direction.y, direction.x)
+		var fragment_position := fragment_origin + direction * minf(size.x, size.y) * progress * 0.16
+		var fragment_size := minf(size.x, size.y) * (0.035 + 0.018 * fade)
+		draw_colored_polygon(
+			PackedVector2Array([
+				fragment_position + tangent * fragment_size,
+				fragment_position - tangent * fragment_size,
+				fragment_position + direction * fragment_size * 1.7
+			]),
+			Color(1.0, 0.88, 0.40, fade * 0.72)
+		)
+
+
+func _get_divine_shield_points(shield_rect: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.50, shield_rect.position.y + shield_rect.size.y * 0.04),
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.88, shield_rect.position.y + shield_rect.size.y * 0.17),
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.82, shield_rect.position.y + shield_rect.size.y * 0.66),
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.50, shield_rect.position.y + shield_rect.size.y * 0.94),
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.18, shield_rect.position.y + shield_rect.size.y * 0.66),
+		Vector2(shield_rect.position.x + shield_rect.size.x * 0.12, shield_rect.position.y + shield_rect.size.y * 0.17)
+	])
+
+
+func _close_polyline(points: PackedVector2Array) -> PackedVector2Array:
+	var closed_points := points.duplicate()
+	if not closed_points.is_empty():
+		closed_points.append(closed_points[0])
+	return closed_points
 
 
 func draw_bronze_head_iron_arms() -> void:

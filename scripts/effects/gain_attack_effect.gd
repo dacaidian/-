@@ -11,5 +11,12 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if amount <= 0:
 		return
 
+	var animation_key := str(effect_data.get(EffectData.KEY_ANIMATION, ""))
 	for target_state in get_target_states(source_state, effect_data, game_manager):
+		if (
+			animation_key != ""
+			and game_manager != null
+			and game_manager.has_method("play_status_apply_animation")
+		):
+			await game_manager.play_status_apply_animation(target_state, animation_key)
 		target_state.set_current_attack(target_state.current_attack + amount)

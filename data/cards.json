@@ -104,6 +104,7 @@
 						"id": "heal",
 						"trigger": "after_turn_end",
 						"active_zone": "hand",
+						"animation": "faith_light",
 						"target": "turn_player_minions_by_card_ids",
 						"card_ids": [
 							"blessed_infantry",
@@ -238,6 +239,7 @@
 						"id": "gain_attack",
 						"trigger": "on_effective_heal",
 						"target": "self",
+						"animation": "healing_to_resolve",
 						"amount_source": "effective_heal"
 					}
 				]

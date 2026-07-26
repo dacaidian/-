@@ -143,12 +143,15 @@ func bind_state(new_state: CardState) -> void:
 	# 重新绑定状态时，先断开旧状态信号，避免重复刷新。
 	if state != null and state.state_changed.is_connected(_on_state_changed):
 		state.state_changed.disconnect(_on_state_changed)
+	if state != null and state.damage_prevented.is_connected(_on_damage_prevented):
+		state.damage_prevented.disconnect(_on_damage_prevented)
 
 	state = new_state
 
 	# Card 只监听状态变化并刷新显示，不主动修改状态。
 	if state != null:
 		state.state_changed.connect(_on_state_changed)
+		state.damage_prevented.connect(_on_damage_prevented)
 
 	update_card_texture()
 
@@ -158,6 +161,18 @@ func _on_state_changed(changed_state: CardState) -> void:
 	update_card_texture()
 	update_interaction_visual()
 	face_changed.emit(changed_state.is_face_up)
+
+
+func _on_damage_prevented(
+	changed_state: CardState,
+	prevention_id: String,
+	_prevented_amount: int
+) -> void:
+	if changed_state != state or status_overlay == null:
+		return
+
+	if prevention_id == CardStatus.STATUS_DIVINE_SHIELD:
+		status_overlay.play_divine_shield_break()
 
 
 func play_flip_animation(apply_state_change: Callable) -> void:

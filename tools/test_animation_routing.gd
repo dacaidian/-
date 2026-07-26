@@ -17,13 +17,13 @@ func _initialize() -> void:
 		"extreme_cold_storm_summon", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "fireball",
 		"pyroblast", "frost_shield", "arcane_wisdom", "arcane_space",
-		"arcane_aura", "arcane_aura_pulse"
+		"arcane_aura", "arcane_aura_pulse", "healing_to_resolve"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
 		"dark_portal", "centipede_form", "extreme_cold_storm_cast",
 		"divine_shield", "baptism", "holy_heal", "power_word_shield",
-		"inner_fire", "resurrection", "water_summon",
+		"inner_fire", "healing_to_resolve", "faith_light", "resurrection", "water_summon",
 		"giant_water_summon", "academy_summon", "arcane_aura_prepare",
 		"arcane_aura", "arcane_aura_pulse", "frost_shield",
 		"arcane_wisdom", "arcane_space"
@@ -31,9 +31,10 @@ func _initialize() -> void:
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",
 		"soul_hook", "life_drain", "divine_shield", "baptism",
-		"holy_heal", "power_word_shield", "inner_fire", "fireball",
+		"holy_heal", "power_word_shield", "inner_fire", "healing_to_resolve", "fireball",
 		"pyroblast", "frost_shield"
 	])
+	_assert_routes(router, "multi_rect", ["faith_light"])
 	_assert_routes(router, "board", ["chaos_corruption_burst", "kagune_release"])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])
@@ -58,6 +59,8 @@ func _assert_routes(router: SpellAnimationRouter, context: String, animation_key
 				registered = router.has_rect_route(animation_key)
 			"source_rect":
 				registered = router.has_source_rect_route(animation_key)
+			"multi_rect":
+				registered = router.has_multi_rect_route(animation_key)
 			"board":
 				registered = router.has_board_route(animation_key)
 			"path":

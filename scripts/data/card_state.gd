@@ -4,6 +4,7 @@ class_name CardState
 const ActionResourceResolverScript := preload("res://scripts/game/action_resource_resolver.gd")
 
 signal state_changed(state: CardState)
+signal damage_prevented(state: CardState, prevention_id: String, prevented_amount: int)
 
 const ACTION_GROUP_MOVE := "move"
 const ACTION_GROUP_ATTACK := "attack"
@@ -1547,6 +1548,7 @@ func take_damage(amount: int) -> void:
 		return
 
 	if consume_divine_shield():
+		damage_prevented.emit(self, CardStatus.STATUS_DIVINE_SHIELD, effective_amount)
 		return
 
 	var remaining_damage := effective_amount

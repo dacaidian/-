@@ -201,6 +201,30 @@ func play_effect_heal_animation(game_manager: GameManager, target_state: CardSta
 	)
 
 
+func play_multi_target_effect_animation(
+	game_manager: GameManager,
+	target_states: Array[CardState],
+	animation_key: String
+) -> bool:
+	if game_manager == null or target_states.is_empty() or animation_key == "":
+		return false
+
+	var target_rects: Array[Rect2] = []
+	for target_state in target_states:
+		var target_card: Card = game_manager.get_card_for_state(target_state)
+		if target_card != null and is_instance_valid(target_card):
+			target_rects.append(target_card.get_global_rect())
+	if target_rects.is_empty():
+		return false
+
+	return await game_manager.card_animation_controller.play_multi_rect_effect(
+		game_manager,
+		get_overlay_animation_root(game_manager),
+		target_rects,
+		animation_key
+	)
+
+
 func play_status_apply_animation(
 	game_manager: GameManager,
 	target_state: CardState,
