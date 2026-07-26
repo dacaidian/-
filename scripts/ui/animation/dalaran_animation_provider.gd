@@ -66,17 +66,19 @@ func play_extreme_cold_storm_at_rect(
 	if animation_key == "extreme_cold_storm_summon":
 		await play_frozen_summon(owner, effect_root, target_rect)
 		return
+	if animation_key == "extreme_cold_storm_pulse":
+		await play_extreme_cold_storm_crash(owner, effect_root, target_rect)
+		return
 
-	var is_pulse := animation_key == "extreme_cold_storm_pulse"
-	var scale_factor := 3.25 if is_pulse else 1.45
+	var scale_factor := 1.45
 	var storm_rect := Rect2(
 		target_rect.get_center() - target_rect.size * scale_factor * 0.5,
 		target_rect.size * scale_factor
 	)
-	var veil := create_storm_disc(storm_rect, is_pulse)
-	var outer_ring := create_storm_ring(storm_rect, 1.0, 8.0 if is_pulse else 5.0)
+	var veil := create_storm_disc(storm_rect, false)
+	var outer_ring := create_storm_ring(storm_rect, 1.0, 5.0)
 	var inner_ring := create_storm_ring(storm_rect, 0.68, 4.0)
-	var snow_shards := create_storm_shards(storm_rect, 18 if is_pulse else 10)
+	var snow_shards := create_storm_shards(storm_rect, 10)
 
 	effect_root.add_child(veil)
 	effect_root.add_child(outer_ring)
@@ -88,7 +90,7 @@ func play_extreme_cold_storm_at_rect(
 	gather.set_parallel(true)
 	gather.set_trans(Tween.TRANS_QUART)
 	gather.set_ease(Tween.EASE_OUT)
-	gather.tween_property(veil, "modulate:a", 0.72 if is_pulse else 0.48, spell_animation_duration * 0.62)
+	gather.tween_property(veil, "modulate:a", 0.48, spell_animation_duration * 0.62)
 	gather.tween_property(outer_ring, "scale", Vector2.ONE, spell_animation_duration * 0.72)
 	gather.tween_property(outer_ring, "modulate:a", 0.96, spell_animation_duration * 0.52)
 	gather.tween_property(inner_ring, "scale", Vector2.ONE, spell_animation_duration * 0.58)
@@ -121,6 +123,160 @@ func play_extreme_cold_storm_at_rect(
 	inner_ring.queue_free()
 	for shard in snow_shards:
 		shard.queue_free()
+
+
+func play_extreme_cold_storm_crash(
+	owner: Node,
+	effect_root: Control,
+	target_rect: Rect2
+) -> void:
+	var scale_factor := 3.30
+	var storm_rect := Rect2(
+		target_rect.get_center() - target_rect.size * scale_factor * 0.5,
+		target_rect.size * scale_factor
+	)
+	var cloud := create_storm_cloud(storm_rect)
+	var veil := create_storm_disc(storm_rect, true)
+	var impact_ring := create_storm_ring(storm_rect, 0.92, 7.0)
+	var falling_ice := create_falling_ice(storm_rect, 26)
+
+	veil.scale = Vector2(0.62, 0.62)
+	impact_ring.scale = Vector2(0.32, 0.32)
+	effect_root.add_child(cloud)
+	effect_root.add_child(veil)
+	effect_root.add_child(impact_ring)
+	for ice_streak in falling_ice:
+		effect_root.add_child(ice_streak)
+
+	var fall_duration := maxf(spell_animation_duration * 1.55, 0.52)
+	var descend := owner.create_tween()
+	descend.set_parallel(true)
+	descend.set_trans(Tween.TRANS_QUART)
+	descend.set_ease(Tween.EASE_IN)
+	descend.tween_property(cloud, "modulate:a", 0.88, fall_duration * 0.42)
+	descend.tween_property(cloud, "scale", Vector2(1.02, 1.08), fall_duration)
+	descend.tween_property(veil, "modulate:a", 0.34, fall_duration * 0.72)
+	descend.tween_property(veil, "scale", Vector2.ONE, fall_duration)
+	for index in range(falling_ice.size()):
+		var ice_streak := falling_ice[index]
+		var target_position: Vector2 = ice_streak.get_meta("impact_position", ice_streak.position)
+		var delay := float(index % 6) * fall_duration * 0.035
+		descend.tween_property(
+			ice_streak,
+			"position",
+			target_position,
+			fall_duration * (0.66 + float(index % 4) * 0.055)
+		).set_delay(delay)
+		descend.tween_property(
+			ice_streak,
+			"modulate:a",
+			0.96,
+			fall_duration * 0.34
+		).set_delay(delay)
+	await descend.finished
+
+	var impact_duration := maxf(spell_animation_duration * 0.78, 0.28)
+	var impact := owner.create_tween()
+	impact.set_parallel(true)
+	impact.set_trans(Tween.TRANS_BACK)
+	impact.set_ease(Tween.EASE_OUT)
+	impact.tween_property(impact_ring, "scale", Vector2.ONE, impact_duration)
+	impact.tween_property(impact_ring, "modulate:a", 0.98, impact_duration * 0.46)
+	impact.tween_property(veil, "modulate:a", 0.72, impact_duration * 0.38)
+	impact.tween_property(cloud, "position:y", cloud.position.y + storm_rect.size.y * 0.10, impact_duration)
+	for ice_streak in falling_ice:
+		impact.tween_property(ice_streak, "scale", Vector2(0.42, 1.32), impact_duration * 0.48)
+	await impact.finished
+
+	var fade_duration := maxf(spell_animation_duration * 1.10, 0.38)
+	var fade := owner.create_tween()
+	fade.set_parallel(true)
+	fade.set_trans(Tween.TRANS_SINE)
+	fade.set_ease(Tween.EASE_OUT)
+	fade.tween_property(cloud, "modulate:a", 0.0, fade_duration)
+	fade.tween_property(veil, "scale", Vector2(1.10, 1.10), fade_duration)
+	fade.tween_property(veil, "modulate:a", 0.0, fade_duration)
+	fade.tween_property(impact_ring, "scale", Vector2(1.22, 1.22), fade_duration)
+	fade.tween_property(impact_ring, "modulate:a", 0.0, fade_duration)
+	for index in range(falling_ice.size()):
+		var ice_streak := falling_ice[index]
+		var shatter_offset := Vector2(
+			-10.0 + float(index % 5) * 5.0,
+			8.0 + float(index % 3) * 5.0
+		)
+		fade.tween_property(ice_streak, "position", ice_streak.position + shatter_offset, fade_duration)
+		fade.tween_property(ice_streak, "scale", Vector2(0.18, 0.18), fade_duration)
+		fade.tween_property(ice_streak, "modulate:a", 0.0, fade_duration)
+	await fade.finished
+
+	cloud.queue_free()
+	veil.queue_free()
+	impact_ring.queue_free()
+	for ice_streak in falling_ice:
+		ice_streak.queue_free()
+
+
+func create_storm_cloud(storm_rect: Rect2) -> Panel:
+	var cloud := Panel.new()
+	cloud.name = "ExtremeColdStormCloud"
+	cloud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cloud.position = Vector2(
+		storm_rect.position.x,
+		storm_rect.position.y - storm_rect.size.y * 0.16
+	)
+	cloud.size = Vector2(storm_rect.size.x, storm_rect.size.y * 0.34)
+	cloud.pivot_offset = cloud.size * 0.5
+	cloud.scale = Vector2(1.12, 0.72)
+	cloud.modulate.a = 0.0
+	cloud.z_index = 2248
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.18, 0.42, 0.58)
+	style.border_color = Color(0.40, 0.82, 1.0, 0.62)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(int(cloud.size.y * 0.48))
+	style.shadow_color = Color(0.18, 0.62, 1.0, 0.66)
+	style.shadow_size = 22
+	cloud.add_theme_stylebox_override("panel", style)
+	return cloud
+
+
+func create_falling_ice(storm_rect: Rect2, count: int) -> Array[Panel]:
+	var falling_ice: Array[Panel] = []
+	for index in range(count):
+		var horizontal_ratio := fmod(float(index) * 0.6180339 + 0.11, 1.0)
+		var depth_ratio := fmod(float(index) * 0.381966 + 0.18, 1.0)
+		var streak := Panel.new()
+		streak.name = "ExtremeColdFallingIce_%d" % index
+		streak.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		streak.size = Vector2(
+			3.0 + float(index % 3),
+			20.0 + float(index % 5) * 4.0
+		)
+		streak.pivot_offset = streak.size * 0.5
+		streak.position = Vector2(
+			storm_rect.position.x + storm_rect.size.x * horizontal_ratio,
+			storm_rect.position.y - storm_rect.size.y * (0.24 + float(index % 4) * 0.05)
+		)
+		streak.rotation = -0.18 + float(index % 3) * 0.08
+		streak.modulate.a = 0.0
+		streak.z_index = 2265
+		streak.set_meta(
+			"impact_position",
+			Vector2(
+				storm_rect.position.x + storm_rect.size.x * horizontal_ratio,
+				storm_rect.position.y + storm_rect.size.y * (0.12 + depth_ratio * 0.78)
+			)
+		)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.90, 0.99, 1.0, 0.98)
+		style.border_color = Color(0.54, 0.88, 1.0, 0.96)
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(2)
+		style.shadow_color = Color(0.22, 0.70, 1.0, 0.82)
+		style.shadow_size = 7
+		streak.add_theme_stylebox_override("panel", style)
+		falling_ice.append(streak)
+	return falling_ice
 
 
 func create_storm_disc(target_rect: Rect2, is_pulse: bool) -> Panel:

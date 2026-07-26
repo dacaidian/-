@@ -164,7 +164,7 @@
 - `life_link`：成熟同命蛊，带 `death_link` 标签和 `on_destroyed` 触发效果；其中一个链接随从死亡时，另一方通过死亡链路直接死亡。
 - `charm`：改变控制权，可被净化。
 - `death_immunity`：生命可固定到 0，状态结束后再检查死亡。
-- `reborn`：死亡触发仍会正常发生，然后原地复生，跳过坟场、补牌和占领。卡牌文案可使用 `复生[层数,生命值]` 的易读缩写，例如巨水元素的 `复生[1,4]`；静态数据不要保存这组冗余二元值，而统一配置为顶层 `reborn_health_values: Array[int]`。数组顺序就是复生消耗顺序：`0` 表示该次满血复生，正整数表示该次以指定生命值复生；因此 `复生[1,4]` 的配置是 `[4]`，`[0, 0, 2, 3]` 则是依次满血、满血、2血、3血的四次复生。层数由数组长度唯一决定，不额外保存容易失配的 count。运行时由 `CardState.reborn_health_values` 保存剩余队列，并写入实例快照与 `origin`；`grant_reborn` 继续向同一队列追加。旧 `reborn` / `reborn_N` 关键字只做兼容，新卡不得与显式数组混用。
+- `reborn`：死亡触发仍会正常发生，然后原地复生，跳过坟场、补牌和占领。卡牌文案可使用 `复生[层数,生命值]` 的易读缩写，例如巨水元素的 `复生[1,1]`；静态数据不要保存这组冗余二元值，而统一配置为顶层 `reborn_health_values: Array[int]`。数组顺序就是复生消耗顺序：`0` 表示该次满血复生，正整数表示该次以指定生命值复生；因此 `复生[1,1]` 的配置是 `[1]`，`[0, 0, 2, 3]` 则是依次满血、满血、2血、3血的四次复生。层数由数组长度唯一决定，不额外保存容易失配的 count。运行时由 `CardState.reborn_health_values` 保存剩余队列，并写入实例快照与 `origin`；`grant_reborn` 继续向同一队列追加。旧 `reborn` / `reborn_N` 关键字只做兼容，新卡不得与显式数组混用。
 - `health_modifier`：可叠加生命上限修正，如真言术·盾。净化时会降低生命上限和当前生命，并可能触发死亡。
 - `transform`：变身状态。变身形态不继承原状态；原形完整快照会被保存，持续结束时恢复原形和原状态。变身是形态规则，不可被净化/驱散。变身不刷新行动经济，进入变身和恢复原形时都会保留本回合已消耗的移动、攻击、主行动组、行动 id 和副动作使用量；当前可用行动按“当前形态上限 - 已消耗量”重新计算，只有正常回合开始流程会恢复行动力。同一单位任一时刻只允许存在一层变身，`TransformUnitEffect` 在目标已经变身时判定不可执行，禁止嵌套原形快照。
 
@@ -251,7 +251,9 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 `RightSideHudLayoutController` 只负责排列已经创建好的右侧 HUD 面板，例如回合状态、种族技能、种族时间和装备展示。它不决定面板是否可见，也不读取或修改玩法状态；`GameManager` 只把需要参与布局的 panel 列表交给它。
 
-一次性特效统一从 `CardAnimationController` 进入；通用移动、攻击和少量跨种族表现留在控制器，种族主题节点、Tween 与样式由独立 animation provider 持有。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。持续状态表现放在 `CardStatusOverlay`。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
+一次性特效统一从 `CardAnimationController` 进入；通用移动、攻击和少量跨种族表现留在控制器，种族主题节点、Tween 与样式由独立 animation provider 持有。需要从棋盘状态、手牌锚点或牌池面板找到实际 UI 节点并发起动画时，走 `GameAnimationResolver`；`GameManager.play_*` 只保留兼容门面。局限在单张卡牌内的持续状态标识放在 `CardStatusOverlay`；会覆盖多个单元格并跟随来源移动的持续效果由 `BoardPersistentVisualController` 管理。数值图标放在 `Card` 的状态/数值堆叠区域。战场翻开的随从和建筑左上角显示种族 logo，资源从卡牌 `url` 所在目录的 `logo.png` 自动推导；没有 logo 时隐藏，不影响手牌和悬浮预览。
+
+`BoardPersistentVisualController` 挂在全屏表现根节点下，扫描棋盘状态 payload 中的 `persistent_visuals` 描述，并通过 `visual_key` 注册表创建独立 renderer。`PersistentBoardAreaVisual` 负责来源状态生命周期、真实棋盘区域矩形计算、源单位移动跟随和逐帧刷新；具体主题 renderer 只负责绘制。区域大小复用 `area_rows` / `area_cols`，规则层不创建视觉节点。状态被移除、来源死亡或离场后，控制器自动回收表现。当前首个实现是 `ExtremeColdStormAreaVisual`，以后新增毒雾、火焰领域、空间扭曲或建筑光环时，应新增 renderer 并注册 key，而不是让卡牌节点越界绘制或在 `GameManager` 中写特效分支。
 
 `CardAnimationController` 是稳定动画门面，通用法术和种族主题特效通过 `SpellAnimationRouter` 注册 provider。路由按“卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域”六种表现上下文分别保存 animation key，不创建节点也不读取规则状态；provider 只接收表现上下文并拥有该主题的节点、Tween 和 StyleBox 实现。普通种族成功开启施法回合后使用 `spell_turn_activation`，由 `GenericSpellAnimationProvider` 播放蓝金法阵、法力脉冲和粒子演出；东京喰种改走专属 `kagune_release`，不会重复播放通用效果。猴妖仙、野兽人、苗疆族、狐妖仙、影月议会、东京喰种和达拉然主题均已迁移到独立 provider；兽径使用 path 路由，狐火使用 area 路由。达拉然“冰锥术”在 `DalaranAnimationProvider` 内按凝聚、定向飞行、命中碎裂、冻结反馈四阶段播放；魔免目标仍显示碰撞碎裂，但不显示冻结结晶。原有 key、默认回退和 `GameAnimationResolver` 门面保持兼容，新主题不得再追加回中央 `match`。
 
@@ -282,7 +284,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 - `GameAnimationResolver` 把规则事件转换为表现事件，并查找棋盘、手牌、牌池或 UI 锚点。
 - `VfxManager` 负责实例化特效和生命周期，不读取或修改规则数据。
 - `AudioManager` 负责音频播放，VFX 场景不直接 new 音频播放器，最多声明音效 key。
-- `CardStatusOverlay` 仍负责持续状态图标、数字和可读性强的战场状态；不要用持续粒子替代所有状态信息。
+- `CardStatusOverlay` 仍负责卡面局部状态图标、数字和可读性强的战场状态；`BoardPersistentVisualController` 只承接确实覆盖多个格子的持续动态区域。不要用持续粒子替代所有状态信息。
 
 素材来源建议：
 
@@ -388,7 +390,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 ### 现有种族方向
 
 - 白银之手：信仰、祝福、阵线、治疗、保护、牺牲和反推。不要变成同时拥有硬控和高爆发的泛用种族。
-- 达拉然议会：灵活法术工具箱。当前可选英雄包括安东尼达斯与吉安娜；吉安娜的 1 阶法术“冰锥术”是首个方向射线手牌法术，2 阶法术“巨水元素”通过通用 `add_card_to_hand` 获取 8/8 衍生随从，其原生复生队列为 `[4]`。3 阶“极寒风暴”在吉安娜身上附加永久光环：每个己方回合结束时，对本格及相邻八格、地面与空中层的敌方随从造成固定 2 点法术伤害，首次结算额外冻结一回合；被其击败的地面随从通过 `death_slot_replacement` 在原格召来巨水元素。英雄专属牌继续通过 `heroes[].attached_cards` 隔离，共享法术能量升级则通过效果 `card_ids` 显式覆盖适用英雄与法师单位。需要持续关注法术强度、重复施法和高影响法术解锁的膨胀。
+- 达拉然议会：灵活法术工具箱。当前可选英雄包括安东尼达斯与吉安娜；吉安娜的 1 阶法术“冰锥术”是首个方向射线手牌法术，2 阶法术“巨水元素”通过通用 `add_card_to_hand` 获取 8/8 衍生随从，其原生复生队列为 `[1]`。3 阶“极寒风暴”在吉安娜身上附加永久光环：每个己方回合结束时，对本格及相邻八格、地面与空中层的敌方随从造成固定 4 点法术伤害，首次结算额外冻结一回合；被其击败的地面随从通过 `death_slot_replacement` 在原格召来巨水元素。其持续 3x3 蓝色冰风暴由 `persistent_visuals` 声明并交给 `BoardPersistentVisualController` 跟随吉安娜，回合结算时的坠落冰暴仍由 `DalaranAnimationProvider` 播放。英雄专属牌继续通过 `heroes[].attached_cards` 隔离，共享法术能量升级则通过效果 `card_ids` 显式覆盖适用英雄与法师单位。需要持续关注法术强度、重复施法和高影响法术解锁的膨胀。
 - 苗疆族：毒和蛊生态。毒爆、陷阱和吞噬可以强，但要留下净化、站位和目标限制等反制。
 - 暗夜精灵哨兵：时间、月相、远程、站位、坐骑和夜晚奖励。
 - 狐妖仙：尾数、魅惑、献祭、控制和复生操纵。魅惑阈值和永久控制要保守。

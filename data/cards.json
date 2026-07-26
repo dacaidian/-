@@ -418,7 +418,7 @@
 			{
 				"id": "summon_giant_water_elemental",
 				"name": "巨水元素",
-				"description": "英雄法术。将一个巨水元素随从置入手牌。巨水元素拥有一次复生，复生后剩余4点生命值。",
+				"description": "英雄法术。将一个巨水元素随从置入手牌。巨水元素拥有一次复生，复生后剩余1点生命值。",
 				"url": "res://assets/img/达拉然议会/巨水元素.png",
 				"type": "spell",
 				"count": 2,
@@ -436,7 +436,7 @@
 			{
 				"id": "extreme_cold_storm",
 				"name": "极寒风暴",
-				"description": "英雄法术。吉安娜获得极寒风暴光环。每个自己的回合结束时，对吉安娜所在及相邻单元格内的所有敌方随从造成2点伤害；首次结算还会冻结其一回合。被风暴击败的地面随从会在空出的原格召来一个巨水元素。",
+				"description": "英雄法术。吉安娜获得极寒风暴光环。每个自己的回合结束时，对吉安娜所在及相邻单元格内的所有敌方随从造成4点伤害；首次结算还会冻结其一回合。被风暴击败的地面随从会在空出的原格召来一个巨水元素。",
 				"url": "res://assets/img/达拉然议会/极寒领域.png",
 				"type": "spell",
 				"count": 1,
@@ -492,7 +492,7 @@
 						"status_id": "extreme_cold_storm",
 						"apply_animation": "extreme_cold_storm",
 						"status_name": "极寒风暴",
-						"status_description": "每个自己的回合结束时，对所在及相邻单元格内的所有敌方随从造成2点伤害。",
+						"status_description": "每个自己的回合结束时，对所在及相邻单元格内的所有敌方随从造成4点伤害。",
 						"status_tags": [
 							"aura"
 						],
@@ -500,6 +500,14 @@
 						"permanent": true,
 						"persists_after_death": false,
 						"payload": {
+							"persistent_visuals": [
+								{
+									"visual_key": "extreme_cold_storm",
+									"area_rows": 3,
+									"area_cols": 3,
+									"visual_z_index": 40
+								}
+							],
 							"turn_effects": [
 								{
 									"id": "damage",
@@ -508,7 +516,7 @@
 									"target": "source_area_enemy_minions",
 									"area_rows": 3,
 									"area_cols": 3,
-									"amount": 2,
+									"amount": 4,
 									"spell_power_scaling": false,
 									"death_reason": "spell",
 									"source_animation": "extreme_cold_storm_pulse",
@@ -986,7 +994,7 @@
 			{
 				"id": "giant_water_elemental",
 				"name": "巨水元素随从",
-				"description": "达拉然议会衍生随从。复生[1,4]：拥有一次复生，复生后剩余4点生命值。",
+				"description": "达拉然议会衍生随从。复生[1,1]：拥有一次复生，复生后剩余1点生命值。",
 				"url": "res://assets/img/达拉然议会/巨水元素随从.png",
 				"type": "minion",
 				"count": 0,
@@ -995,7 +1003,7 @@
 				"attack": 8,
 				"health": 8,
 				"reborn_health_values": [
-					4
+					1
 				],
 				"effects": []
 			}

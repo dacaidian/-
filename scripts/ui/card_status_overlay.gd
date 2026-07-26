@@ -39,9 +39,6 @@ var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
 var meteor_aura_color := Color(0.42, 0.16, 0.72, 0.18)
 var meteor_aura_edge_color := Color(0.92, 0.78, 1.0, 0.80)
 var meteor_aura_star_color := Color(1.0, 0.86, 0.42, 0.88)
-var extreme_cold_color := Color(0.12, 0.38, 0.68, 0.16)
-var extreme_cold_edge_color := Color(0.52, 0.90, 1.0, 0.82)
-var extreme_cold_core_color := Color(0.90, 0.99, 1.0, 0.92)
 var soul_hook_color := Color(0.45, 0.04, 0.18, 0.20)
 var soul_hook_edge_color := Color(1.0, 0.24, 0.56, 0.74)
 var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
@@ -115,7 +112,7 @@ func refresh() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_extreme_cold_storm() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -187,17 +184,6 @@ func should_show_meteor_aura() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_METEOR_AURA)
-
-
-func should_show_extreme_cold_storm() -> bool:
-	if state == null or state.data == null:
-		return false
-
-	return (
-		state.is_face_up
-		and state.is_unit()
-		and state.has_status(CardStatus.STATUS_EXTREME_COLD_STORM)
-	)
 
 
 func should_show_freeze() -> bool:
@@ -324,8 +310,6 @@ func _draw() -> void:
 		draw_arcane_aura()
 	if should_show_meteor_aura():
 		draw_meteor_aura()
-	if should_show_extreme_cold_storm():
-		draw_extreme_cold_storm()
 	if should_show_precision_shot():
 		draw_precision_shot_overlay()
 	if should_show_soul_hook():
@@ -505,33 +489,6 @@ func draw_meteor_aura() -> void:
 		var pos := center + Vector2(cos(angle), sin(angle)) * radius * 0.78
 		draw_line(pos + Vector2(-4.0, 0.0), pos + Vector2(4.0, 0.0), meteor_aura_star_color, 1.8)
 		draw_line(pos + Vector2(0.0, -4.0), pos + Vector2(0.0, 4.0), meteor_aura_star_color, 1.8)
-
-
-func draw_extreme_cold_storm() -> void:
-	var aura_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
-	var center := aura_rect.get_center()
-	var radius := minf(aura_rect.size.x, aura_rect.size.y) * 0.44
-
-	draw_circle(center, radius * 0.82, extreme_cold_color)
-	draw_arc(center, radius, -PI * 0.18, TAU - PI * 0.18, 88, extreme_cold_edge_color, 2.4, true)
-	draw_arc(
-		center,
-		radius * 0.72,
-		PI * 0.26,
-		TAU + PI * 0.26,
-		72,
-		Color(extreme_cold_edge_color.r, extreme_cold_edge_color.g, extreme_cold_edge_color.b, 0.52),
-		1.8,
-		true
-	)
-
-	for index in range(8):
-		var angle := TAU * float(index) / 8.0 + 0.22
-		var snow_center := center + Vector2(cos(angle), sin(angle)) * radius * 0.79
-		var tangent := Vector2(-sin(angle), cos(angle)) * 4.2
-		var radial := Vector2(cos(angle), sin(angle)) * 4.2
-		draw_line(snow_center - tangent, snow_center + tangent, extreme_cold_core_color, 1.5)
-		draw_line(snow_center - radial, snow_center + radial, extreme_cold_core_color, 1.5)
 
 
 func draw_wanmo_charge_overlay() -> void:

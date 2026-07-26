@@ -11,6 +11,9 @@ const RightSideHudLayoutControllerScript := preload("res://scripts/ui/right_side
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 const GameAnimationResolverScript := preload("res://scripts/game/game_animation_resolver.gd")
+const BoardPersistentVisualControllerScript := preload(
+	"res://scripts/ui/board_persistent_visual_controller.gd"
+)
 const AudioManagerScript := preload("res://scripts/audio/audio_manager.gd")
 const BoardSlotResolverScript := preload("res://scripts/game/board_slot_resolver.gd")
 const ActionHintResolverScript := preload("res://scripts/game/action_hint_resolver.gd")
@@ -150,6 +153,7 @@ var right_side_hud_layout_controller := RightSideHudLayoutControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
 var card_animation_controller := CardAnimationControllerScript.new()
 var game_animation_resolver := GameAnimationResolverScript.new()
+var board_persistent_visual_controller: BoardPersistentVisualController
 var audio_manager := AudioManagerScript.new()
 var board_slot_resolver := BoardSlotResolverScript.new()
 var action_hint_resolver := ActionHintResolverScript.new()
@@ -203,6 +207,7 @@ func _ready() -> void:
 	card_pool = create_initial_card_pool()
 	initialize_board()
 	setup_card_pool_view()
+	setup_board_persistent_visuals()
 	update_card_pool_view()
 	start_battle_music()
 	schedule_ai_turn_if_needed()
@@ -600,6 +605,12 @@ func setup_card_animation_controller() -> void:
 		"heal_spell_effect_color": heal_spell_effect_color,
 		"heal_spell_effect_glow_color": heal_spell_effect_glow_color
 	})
+
+
+func setup_board_persistent_visuals() -> void:
+	if board_persistent_visual_controller == null:
+		board_persistent_visual_controller = BoardPersistentVisualControllerScript.new()
+	board_persistent_visual_controller.setup(self, get_overlay_animation_root())
 
 
 func setup_audio_manager() -> void:
@@ -1613,6 +1624,8 @@ func _on_faction_skill_requested(skill_id: String) -> void:
 func _on_card_state_changed(state: CardState) -> void:
 	if state != null:
 		sync_slot_card_layout(state.slot_index)
+	if board_persistent_visual_controller != null:
+		board_persistent_visual_controller.refresh_sources()
 	refresh_debug_panel()
 
 

@@ -12,11 +12,13 @@ func _initialize() -> void:
 
 	_assert_routes(router, "targeted", [
 		"fiery_eyes_golden_gaze", "beastmen_evolution", "gu_infusion",
-		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold"
+		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
+		"extreme_cold_storm", "extreme_cold_storm_pulse",
+		"extreme_cold_storm_summon"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
-		"dark_portal", "centipede_form"
+		"dark_portal", "centipede_form", "extreme_cold_storm_cast"
 	])
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",

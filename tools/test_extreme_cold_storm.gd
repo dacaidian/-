@@ -156,7 +156,7 @@ func test_damage_replacement_beats_refill(game_manager: GameManager) -> void:
 	await DamageEffect.new().execute(
 		jaina,
 		{
-			EffectData.KEY_AMOUNT: 2,
+			EffectData.KEY_AMOUNT: 4,
 			EffectData.KEY_TARGET: EffectData.TARGET_SOURCE_AREA_ENEMY_MINIONS,
 			EffectData.KEY_AREA_ROWS: 3,
 			EffectData.KEY_AREA_COLS: 3,

@@ -129,6 +129,9 @@ const KEY_DESTINATION_LAYER := "destination_layer"
 const KEY_PRIORITY := "priority"
 const KEY_ANIMATION := "animation"
 const KEY_SOURCE_ANIMATION := "source_animation"
+const KEY_PERSISTENT_VISUALS := "persistent_visuals"
+const KEY_VISUAL_KEY := "visual_key"
+const KEY_VISUAL_Z_INDEX := "visual_z_index"
 
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
@@ -748,6 +751,22 @@ static func get_status_payload(effect_data: Dictionary) -> Dictionary:
 		return raw_payload.duplicate(true)
 
 	return {}
+
+
+static func get_status_persistent_visuals(status: CardStatus) -> Array[Dictionary]:
+	var visuals: Array[Dictionary] = []
+	if status == null:
+		return visuals
+
+	var raw_visuals: Variant = status.payload.get(KEY_PERSISTENT_VISUALS, [])
+	if raw_visuals is Dictionary:
+		visuals.append((raw_visuals as Dictionary).duplicate(true))
+	elif raw_visuals is Array:
+		for raw_visual in raw_visuals:
+			if raw_visual is Dictionary:
+				visuals.append((raw_visual as Dictionary).duplicate(true))
+
+	return visuals
 
 
 static func get_status_turn_effects(status: CardStatus) -> Array[Dictionary]:

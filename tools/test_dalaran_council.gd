@@ -58,7 +58,7 @@ func _init() -> void:
 	assert(giant_water_elemental != null and giant_water_elemental.is_minion())
 	assert(giant_water_elemental.count == 0 and giant_water_elemental.level == 2)
 	assert(giant_water_elemental.attack == 8 and giant_water_elemental.health == 8)
-	assert(giant_water_elemental.reborn_health_values == [4])
+	assert(giant_water_elemental.reborn_health_values == [1])
 	test_reborn_queue_model(giant_water_elemental)
 	test_extreme_cold_storm(database)
 	test_death_slot_claim_priority()
@@ -104,7 +104,7 @@ func test_extreme_cold_storm(database: CardDatabase) -> void:
 	var turn_effects := aura_payload.get("turn_effects", []) as Array
 	assert(turn_effects.size() == 1)
 	var damage_effect := turn_effects[0] as Dictionary
-	assert(int(damage_effect.get(EffectData.KEY_AMOUNT, 0)) == 2)
+	assert(int(damage_effect.get(EffectData.KEY_AMOUNT, 0)) == 4)
 	assert(
 		str(damage_effect.get(EffectData.KEY_TRIGGER_PLAYER, ""))
 		== EffectData.TRIGGER_PLAYER_SOURCE_OWNER
@@ -114,6 +114,16 @@ func test_extreme_cold_storm(database: CardDatabase) -> void:
 	assert(str(replacement.get(EffectData.KEY_CARD_ID, "")) == "giant_water_elemental")
 	assert(str(replacement.get(EffectData.KEY_VICTIM_LAYER, "")) == EffectData.BOARD_LAYER_GROUND)
 	assert(int(replacement.get(EffectData.KEY_PRIORITY, 0)) == 100)
+	var persistent_visuals := EffectData.get_status_persistent_visuals(
+		CardStatus.from_effect_data(aura, null, null)
+	)
+	assert(persistent_visuals.size() == 1)
+	assert(
+		str(persistent_visuals[0].get(EffectData.KEY_VISUAL_KEY, ""))
+		== ExtremeColdStormAreaVisual.VISUAL_KEY
+	)
+	assert(int(persistent_visuals[0].get(EffectData.KEY_AREA_ROWS, 0)) == 3)
+	assert(int(persistent_visuals[0].get(EffectData.KEY_AREA_COLS, 0)) == 3)
 
 
 func test_death_slot_claim_priority() -> void:
@@ -146,12 +156,12 @@ func test_reborn_queue_model(giant_water_elemental: CardData) -> void:
 	state.set_card_data(giant_water_elemental)
 	state.owner_id = "player_1"
 	state.is_face_up = true
-	assert(state.reborn_health_values == [4])
-	assert(state.origin.get("reborn_health_values", []) == [4])
-	assert(state.consume_next_reborn_health_value() == 4)
+	assert(state.reborn_health_values == [1])
+	assert(state.origin.get("reborn_health_values", []) == [1])
+	assert(state.consume_next_reborn_health_value() == 1)
 	state.damage_taken = state.max_health
-	state.revive_from_reborn(4)
-	assert(state.current_health == 4)
+	state.revive_from_reborn(1)
+	assert(state.current_health == 1)
 	assert(state.max_health == 8)
 	assert(not state.has_reborn())
 

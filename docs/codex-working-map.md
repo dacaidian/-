@@ -146,6 +146,8 @@
 - `scripts/effects/transform_unit_effect.gd`
 - `scripts/effects/cleanse_effect.gd`
 - `scripts/ui/card_status_overlay.gd`
+- `scripts/ui/board_persistent_visual_controller.gd`
+- `scripts/ui/persistent_visuals/`
 
 常见规则：
 
@@ -334,12 +336,12 @@
 - 猴妖仙法术/技能释放特效由 `MonkeyAnimationProvider` 按 animation key 生成金瞳、筋斗云、毫毛、金铁、蟠桃、敕令、定身、气雾、法象等符号化部件；新增猴妖仙技能时扩展 provider 的 key 和主题数据，不要回退到通用光圈。
 - 野兽人特效由 `BeastmenAnimationProvider` 按语义拆 key：`savage_roar` 是咆哮冲击波，`wild_call` 是荒野召唤，`wanmo_ritual` 是万魔岩仪式，`beast_path` 是兽径地道贯通，`beastmen_evolution` / `beastmen_slaughter` 继续表示适者生存和卡扎克杀戮成长。苗疆族和狐妖仙分别由 `MiaoAnimationProvider`、`FoxSpiritAnimationProvider` 负责。
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
-- 持续状态表现放在 `CardStatusOverlay`。
+- 卡面内的持续状态标识放在 `CardStatusOverlay`。覆盖多个格子并跟随来源移动的持续动态效果，通过状态 payload 的 `persistent_visuals` 声明，交给 `BoardPersistentVisualController`；新增主题时注册独立 renderer，不要让 `Card` 越界绘制。
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
 - 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它只排列已有 panel，不负责面板内容、可见性或玩法规则。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
 - 通用法术与种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域六种上下文声明 key。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。不要让规则层直接调用某个 provider；`GameManager` 只负责选择稳定 animation key，不创建表现节点。
-- 达拉然方向投射物由 `DalaranAnimationProvider` 读取施法者与命中目标的 UI 位置。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，不能用覆盖整条射线的静态三角遮罩；魔免只保留碰撞碎裂，不显示冻结结晶。极寒风暴的施放、持续光环脉冲和原格召唤也由该 provider 分别消费 `extreme_cold_storm_cast`、`extreme_cold_storm_pulse`、`extreme_cold_storm_summon`。
+- 达拉然方向投射物由 `DalaranAnimationProvider` 读取施法者与命中目标的 UI 位置。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，不能用覆盖整条射线的静态三角遮罩；魔免只保留碰撞碎裂，不显示冻结结晶。极寒风暴的施放、回合结算坠落冰暴和原格召唤由该 provider 分别消费 `extreme_cold_storm_cast`、`extreme_cold_storm_pulse`、`extreme_cold_storm_summon`；常驻旋转风暴属于 `BoardPersistentVisualController`，不要在 provider 中创建永久节点。
 - 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器与 provider 的 `*_KEYS` 常量，后者验证 provider 的上下文路由契约。
 - UI 控制器不拥有玩法规则。
 
