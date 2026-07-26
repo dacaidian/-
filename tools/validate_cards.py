@@ -358,6 +358,7 @@ class CardValidator:
             self.reporter.error(f"{path}.role", "hero cards must be minions")
 
         self.validate_keywords(card, path)
+        self.validate_reborn(card, path, card_type)
 
         if card_type in {"minion", "building"}:
             self.require_int(card, "attack", path)
@@ -444,6 +445,41 @@ class CardValidator:
             keyword = str(keyword_raw)
             if not self.is_known_keyword(keyword):
                 self.reporter.warn(f"{path}.keywords[{index}]", f"unknown keyword '{keyword}'")
+
+    def validate_reborn(self, card: dict[str, Any], path: str, card_type: str) -> None:
+        if "reborn_health_values" not in card:
+            return
+
+        raw_values = card["reborn_health_values"]
+        field_path = f"{path}.reborn_health_values"
+        if card_type != "minion":
+            self.reporter.error(field_path, "is only valid for minions")
+        if not isinstance(raw_values, list):
+            self.reporter.error(field_path, "must be an array of non-negative integers")
+            return
+        if not raw_values:
+            self.reporter.warn(field_path, "empty array grants no reborn charges")
+
+        max_health = card.get("health", 0)
+        for index, health_value in enumerate(raw_values):
+            value_path = f"{field_path}[{index}]"
+            if not isinstance(health_value, int) or isinstance(health_value, bool):
+                self.reporter.error(value_path, "must be a non-negative integer")
+                continue
+            if health_value < 0:
+                self.reporter.error(value_path, "must be non-negative; use 0 for full health")
+            elif isinstance(max_health, int) and max_health > 0 and health_value > max_health:
+                self.reporter.error(value_path, "cannot exceed the card's printed maximum health")
+
+        raw_keywords = card.get("keywords", [])
+        if isinstance(raw_keywords, list) and any(
+            str(keyword) == "reborn" or str(keyword).startswith("reborn_")
+            for keyword in raw_keywords
+        ):
+            self.reporter.error(
+                field_path,
+                "cannot be combined with legacy reborn/reborn_N keywords",
+            )
 
     def is_known_keyword(self, keyword: str) -> bool:
         if keyword in self.keywords:

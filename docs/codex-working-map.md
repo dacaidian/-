@@ -158,6 +158,7 @@
 - 毒状态按总伤害唯一化，回合结束时先于治疗结算。
 - 火焰伤害状态 `fire` 复用 DOT 生命周期，按总剩余伤害唯一化，回合结束由 `StatusResolver` 结算；持续数字图标使用 `assets/img/火焰数字`，不要用持续粒子替代可读数值。
 - 变身使用 `transform_unit` 效果和 `transform` 状态。变身状态不可净化；进化变身死亡时正常死亡，覆盖变身死亡时先恢复原形。主动结束覆盖变身使用通用 `restore_transform`，它必须调用 `CardState.restore_from_transform_status()`，不得自行复制快照恢复。变身和恢复原形不能刷新行动力，必须保留本回合已消耗的行动经济。变身不能嵌套；需要让形态不再满足原英雄/原卡牌在场条件时配置 `preserve_original_identity: false`，默认值仍为 `true`。
+- 原生复生使用卡牌顶层 `reborn_health_values`，运行时与快照统一使用 `CardState.reborn_health_values`。数组每项代表一层复生的恢复生命，`0` 为满血，正整数为指定生命；按队首依次消费。文案 `复生[1,4]` 对应数据 `[4]`，层数直接取数组长度。动态授予继续使用 `grant_reborn.health_values` 向队尾追加。不要同时配置旧 `reborn` / `reborn_N` 关键字和显式数组，也不要另建“层数”字段。修改后运行 `tools/test_dalaran_council.gd`。
 
 ## 法术目标
 

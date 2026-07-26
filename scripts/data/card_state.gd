@@ -471,6 +471,10 @@ func create_initial_reborn_health_values() -> Array[int]:
 	if data == null:
 		return values
 
+	if not data.reborn_health_values.is_empty():
+		return data.reborn_health_values.duplicate()
+
+	# Legacy keyword support. New cards should use CardData.reborn_health_values.
 	for keyword in data.keywords:
 		var value := get_reborn_health_value_from_keyword(keyword)
 		if value >= 0:
@@ -786,6 +790,7 @@ func create_origin_snapshot() -> Dictionary:
 		"health": data.health,
 		"armor": data.armor,
 		"chaos_corruption": data.chaos_corruption,
+		"reborn_health_values": reborn_health_values.duplicate(),
 		"movement": max_movement,
 		"attack_speed": max_attack_speed,
 		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),

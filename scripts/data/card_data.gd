@@ -74,6 +74,7 @@ var armor := 0
 var movement := 1
 var attack_speed := 1
 var chaos_corruption := 0
+var reborn_health_values: Array[int] = []
 var owner_hero_card_id := ""
 var start_in_hand := false
 var evolution_line := ""
@@ -215,6 +216,10 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.movement = int(card_dictionary.get("movement", 1))
 	data.attack_speed = int(card_dictionary.get("attack_speed", 1))
 	data.chaos_corruption = int(card_dictionary.get("chaos_corruption", 0))
+	var raw_reborn_health_values: Variant = card_dictionary.get("reborn_health_values", [])
+	if raw_reborn_health_values is Array:
+		for health_value in raw_reborn_health_values:
+			data.reborn_health_values.append(maxi(int(health_value), 0))
 	data.start_in_hand = bool(card_dictionary.get("start_in_hand", false))
 	data.evolution_line = str(card_dictionary.get("evolution_line", ""))
 	data.front_texture_path = str(card_dictionary.get("url", ""))

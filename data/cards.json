@@ -335,7 +335,8 @@
 			{
 				"card_id": "jaina",
 				"attached_cards": [
-					"cone_of_cold"
+					"cone_of_cold",
+					"summon_giant_water_elemental"
 				]
 			}
 		],
@@ -410,6 +411,24 @@
 						"id": "damage",
 						"amount": 2,
 						"target": "selected"
+					}
+				]
+			},
+			{
+				"id": "summon_giant_water_elemental",
+				"name": "巨水元素",
+				"description": "英雄法术。将一个巨水元素随从置入手牌。巨水元素拥有一次复生，复生后剩余4点生命值。",
+				"url": "res://assets/img/达拉然议会/巨水元素.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"animation": "summon",
+				"target_rule": "none",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "add_card_to_hand",
+						"card_id": "giant_water_elemental"
 					}
 				]
 			},
@@ -868,6 +887,22 @@
 				"keywords": [],
 				"attack": 2,
 				"health": 2,
+				"effects": []
+			},
+			{
+				"id": "giant_water_elemental",
+				"name": "巨水元素随从",
+				"description": "达拉然议会衍生随从。复生[1,4]：拥有一次复生，复生后剩余4点生命值。",
+				"url": "res://assets/img/达拉然议会/巨水元素随从.png",
+				"type": "minion",
+				"count": 0,
+				"level": 2,
+				"keywords": [],
+				"attack": 8,
+				"health": 8,
+				"reborn_health_values": [
+					4
+				],
 				"effects": []
 			}
 		]
