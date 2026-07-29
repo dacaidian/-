@@ -4,7 +4,8 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 
 ## 当前玩法
 
-- **完整应用流程**：主菜单提供开始游戏、牌局历史、卡牌图鉴和退出入口；历史与图鉴已建立独立页面骨架。种族选择可返回主菜单，对局可确认投降，资源胜利和投降共用结算与返回流程。
+- **完整应用流程**：主菜单提供开始游戏、牌局历史、卡牌图鉴和退出入口；图鉴支持完整卡牌浏览、组合筛选、搜索、排序和详情查看，牌局历史保留独立页面骨架。种族选择可返回主菜单，对局可确认投降，资源胜利和投降共用结算与返回流程。
+- **卡牌图鉴**：按种族归档普通牌与衍生牌，明确区分常规牌池、默认入手、衍生牌和状态展示；支持英雄专属关系、阶级、类型、来源、中文关键字搜索和分页卡墙。
 - **种族与英雄选择**：不同种族拥有独立机制、英雄、默认升级、衍生牌和配套法术。
 - **7x7 分层棋盘**：内圈 5x5 是常规战场，外圈为边缘区域；飞行单位可进入空中层并可与地面单位同格存在。
 - **等级牌池**：卡牌按 1-3 阶推进，低阶牌池耗尽后进入更高阶。
@@ -39,7 +40,7 @@ war-card/
 │   └── runtime-effect-lifecycle.md # 跨回合效果与状态时点约定
 ├── scenes/                     # Godot 场景
 ├── scripts/
-│   ├── application/            # 对局结果等跨页面应用数据契约
+│   ├── application/            # 对局结果、图鉴目录等跨页面应用数据契约
 │   ├── actions/                # 移动、攻击、施法、副动作等行动
 │   ├── ai/                     # AI 候选生成、评估和执行
 │   ├── audio/                  # 音频管理
@@ -60,6 +61,7 @@ war-card/
 
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
 - **应用外壳常驻**：`GameShell` 是唯一顶层场景宿主；主菜单、种族选择、功能页和对局只发出导航意图，不互相实例化或释放。
+- **图鉴查询与 UI 分离**：`CardCollectionCatalog` 只构建只读目录并执行筛选排序，`CardCollectionScreen` 只维护页面交互；普通牌与衍生牌来源由 `CardDatabase` 的独立索引判定，不通过 `count` 猜测。
 - **结算契约统一**：资源胜利和投降都生成 `MatchResult`，由同一结算页面展示；未来牌局历史只消费结果快照，不读取已销毁的 `GameManager`。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
@@ -90,6 +92,7 @@ war-card/
 python tools/validate_cards.py
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_application_flow.gd -SuccessMarker APPLICATION_FLOW_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_collection.gd -SuccessMarker CARD_COLLECTION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_data_lazy_textures.gd -SuccessMarker CARD_DATA_LAZY_TEXTURES_TEST_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_tokyo_ghoul.gd -SuccessMarker TOKYO_GHOUL_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_rc_concentration.gd -SuccessMarker RC_CONCENTRATION_TESTS_OK

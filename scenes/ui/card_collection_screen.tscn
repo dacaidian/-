@@ -1,0 +1,434 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/card_collection_screen.gd" id="1_screen"]
+[ext_resource type="Texture2D" path="res://assets/img/startPanel/back.png" id="2_background"]
+
+[node name="CardCollectionScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_screen")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.012, 0.014, 0.014, 0.76)
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 30
+
+[node name="RootLayout" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="RootMargin/RootLayout"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BackButton" type="Button" parent="RootMargin/RootLayout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="PageTitle" type="Label" parent="RootMargin/RootLayout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.96, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 32
+text = "卡牌图鉴"
+vertical_alignment = 1
+
+[node name="CollectionCountLabel" type="Label" parent="RootMargin/RootLayout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.71, 0.72, 0.69, 1)
+theme_override_font_sizes/font_size = 16
+text = "收录 0 张卡牌"
+vertical_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="RootMargin/RootLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="FactionPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(216, 0)
+layout_mode = 2
+
+[node name="FactionMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/FactionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 14
+
+[node name="FactionLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FactionTitle" type="Label" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin/FactionLayout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.76, 1)
+theme_override_font_sizes/font_size = 20
+text = "种族"
+
+[node name="FactionSeparator" type="HSeparator" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin/FactionLayout"]
+layout_mode = 2
+
+[node name="FactionScroll" type="ScrollContainer" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin/FactionLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="FactionList" type="VBoxContainer" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin/FactionLayout/FactionScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CenterColumn" type="VBoxContainer" parent="RootMargin/RootLayout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="FilterPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body/CenterColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FilterMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="FilterLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="SearchRow" type="HBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SearchInput" type="LineEdit" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/SearchRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "搜索名称、描述、关键字或卡牌 ID"
+clear_button_enabled = true
+
+[node name="ResetButton" type="Button" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/SearchRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重置"
+
+[node name="OptionsRow" type="HBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TypeOption" type="OptionButton" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/OptionsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CategoryOption" type="OptionButton" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/OptionsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LevelOption" type="OptionButton" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/OptionsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(124, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SortOption" type="OptionButton" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/OptionsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ResultsPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body/CenterColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResultsMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ResultsLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ResultSummaryLabel" type="Label" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.80, 0.81, 0.78, 1)
+theme_override_font_sizes/font_size = 15
+text = "全部种族 · 0 张"
+
+[node name="ResultSeparator" type="HSeparator" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout"]
+layout_mode = 2
+
+[node name="CardGridScroll" type="ScrollContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CardGridMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout/CardGridScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="CardGrid" type="GridContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout/CardGridScroll/CardGridMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
+
+[node name="EmptyState" type="CenterContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EmptyLabel" type="Label" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin/ResultsLayout/EmptyState"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.61, 0.61, 0.58, 1)
+theme_override_font_sizes/font_size = 18
+text = "没有符合筛选条件的卡牌"
+
+[node name="Pager" type="HBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="PreviousPageButton" type="Button" parent="RootMargin/RootLayout/Body/CenterColumn/Pager"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "上一页"
+
+[node name="PageLabel" type="Label" parent="RootMargin/RootLayout/Body/CenterColumn/Pager"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.80, 0.75, 1)
+theme_override_font_sizes/font_size = 15
+text = "第 1 / 1 页"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NextPageButton" type="Button" parent="RootMargin/RootLayout/Body/CenterColumn/Pager"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "下一页"
+
+[node name="DetailsPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(342, 0)
+layout_mode = 2
+
+[node name="DetailsScroll" type="ScrollContainer" parent="RootMargin/RootLayout/Body/DetailsPanel"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="DetailsMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll"]
+custom_minimum_size = Vector2(326, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="DetailsLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="DetailsTitle" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.72, 0.65, 1)
+theme_override_font_sizes/font_size = 14
+text = "卡牌详情"
+
+[node name="DetailsImageCenter" type="CenterContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+layout_mode = 2
+
+[node name="DetailsImageArea" type="Control" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout/DetailsImageCenter"]
+custom_minimum_size = Vector2(240, 336)
+layout_mode = 2
+clip_contents = true
+
+[node name="DetailsTexture" type="TextureRect" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout/DetailsImageCenter/DetailsImageArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DetailsMissingImage" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout/DetailsImageCenter/DetailsImageArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.54, 0.52, 0.49, 1)
+theme_override_font_sizes/font_size = 16
+text = "暂无卡图"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DetailsNameLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.92, 0.80, 1)
+theme_override_font_sizes/font_size = 25
+text = "卡牌名称"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DetailsFactionLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.72, 0.84, 1)
+theme_override_font_sizes/font_size = 16
+text = "所属种族"
+horizontal_alignment = 1
+
+[node name="DetailsMetaRow" type="HBoxContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="DetailsMetaLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout/DetailsMetaRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.77, 0.73, 1)
+theme_override_font_sizes/font_size = 14
+text = "1阶 · 随从牌"
+vertical_alignment = 1
+
+[node name="DetailsCategoryLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout/DetailsMetaRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.94, 0.90, 1)
+theme_override_font_sizes/font_size = 12
+text = "常规牌池"
+vertical_alignment = 1
+
+[node name="DetailsSeparatorA" type="HSeparator" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+layout_mode = 2
+
+[node name="DetailsStatsLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.79, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+text = "攻击 2 · 生命 4"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DetailsDescriptionLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.81, 0.80, 0.76, 1)
+theme_override_font_sizes/font_size = 15
+text = "卡牌描述"
+autowrap_mode = 2
+theme_override_constants/line_spacing = 4
+
+[node name="KeywordTitleLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.70, 0.70, 1)
+theme_override_font_sizes/font_size = 13
+text = "关键字"
+
+[node name="KeywordFlow" type="HFlowContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="DetailsSeparatorB" type="HSeparator" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+layout_mode = 2
+
+[node name="OwnerHeroLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.65, 0.33, 1)
+theme_override_font_sizes/font_size = 14
+text = "英雄专属：安东尼达斯"
+autowrap_mode = 2
+
+[node name="CollectionNoteLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.61, 1)
+theme_override_font_sizes/font_size = 13
+text = "常规牌池中共有 1 张。"
+autowrap_mode = 2
+
+[node name="CardIdLabel" type="Label" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin/DetailsLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.43, 0.44, 0.43, 1)
+theme_override_font_sizes/font_size = 11
+text = "ID  card_id"
+autowrap_mode = 2
+
+[node name="SearchDebounce" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 0.12
+one_shot = true

@@ -101,8 +101,10 @@ func test_shell_navigation() -> void:
 	shell.show_card_collection()
 	await process_frame
 	assert(shell.current_screen_id == "card_collection")
-
-	shell.show_main_menu()
+	assert(shell.current_screen.get_node_or_null("%SearchInput") != null)
+	var collection_back_button := shell.current_screen.get_node("%BackButton") as Button
+	assert(collection_back_button != null)
+	collection_back_button.pressed.emit()
 	await process_frame
 	assert(shell.current_screen_id == "main_menu")
 

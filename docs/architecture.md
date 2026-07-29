@@ -24,13 +24,26 @@
 
 ## 应用外壳与页面流程
 
-`project.godot` 的唯一正常入口是 `scenes/app/game_shell.tscn`。`GameShell` 在整个应用生命周期内常驻，并通过 `ScreenHost` 挂载当前页面。当前页面状态包括主菜单、种族选择、牌局历史骨架、卡牌图鉴骨架和战斗。页面不能直接创建另一个页面，也不能修改 `SceneTree.current_scene`；它们只发出用户意图，由 `GameShell` 负责实例化、卸载和淡入。
+`project.godot` 的唯一正常入口是 `scenes/app/game_shell.tscn`。`GameShell` 在整个应用生命周期内常驻，并通过 `ScreenHost` 挂载当前页面。当前页面状态包括主菜单、种族选择、牌局历史骨架、卡牌图鉴和战斗。页面不能直接创建另一个页面，也不能修改 `SceneTree.current_scene`；它们只发出用户意图，由 `GameShell` 负责实例化、卸载和淡入。
 
-主菜单位于 `scenes/main_menu/main_menu.tscn`，提供开始游戏、牌局历史、卡牌图鉴和退出游戏。历史与图鉴当前复用独立的功能页骨架，只拥有标题、空状态和返回信号；未来实现具体模块时应替换对应 PackedScene，不改变主菜单或对局代码。
+主菜单位于 `scenes/main_menu/main_menu.tscn`，提供开始游戏、牌局历史、卡牌图鉴和退出游戏。牌局历史当前使用独立功能页骨架；卡牌图鉴使用 `scenes/ui/card_collection_screen.tscn`。两者都只向 `GameShell` 发出返回意图，不直接加载主菜单。
 
 原 `StartMenu` 现在是纯种族/英雄选择页。它维护 `MatchSetup`，开始时发出 `match_start_requested`，返回时发出 `back_requested`。`MatchSetup.duplicate_configuration()` 生成与页面生命周期解耦的配置快照；`GameShell` 在战斗节点进入场景树、触发 `_ready()` 之前调用 `GameManager.configure_match()`。选择页不得直接加载 `main.tscn`。
 
 `GameManager` 只管理一局对战。资源分胜利和投降都进入 `_finish_match()`，停止 AI 调度、取消交互并生成 `MatchResult`。`MatchResult` 保存结束原因、胜负方、回合、目标分和玩家摘要，是未来牌局历史持久化的稳定输入；历史模块不得持有 `PlayerState` 或已销毁战斗节点。`MatchResultScreenController` 根据结束原因展示资源胜利或投降结算，玩家确认返回后，`GameManager` 只发出 `match_finished`，由 `GameShell` 卸载战斗并回到主菜单。
+
+### 卡牌图鉴
+
+图鉴的数据入口仍是 `CardDatabase`，UI 不重新解析 `cards.json`。`CardDatabase` 分别维护 `cards_by_faction_id` 与 `token_cards_by_faction_id`：前者用于常规牌池，后者用于衍生牌归档；两类卡牌都进入全局 `cards_by_id`。`get_faction_token_cards()` 只暴露衍生牌查询，不改变其“不进入牌池”的规则。即使未来某个种族只有 `tokens[]` 而没有 `cards[]`，两个索引也必须独立完成加载。
+
+`CardCollectionCatalog` 是图鉴只读查询模型。它把普通牌和衍生牌转换为 `CardCatalogEntry`，解析种族显示名、英雄专属关系、中文类型/关键字和来源分类，并提供种族、类型、阶级、来源、全文搜索与排序组合。来源分类不是简单读取 `count`：
+
+- 常规牌池：普通 `cards[]` 中会进入牌池的卡牌。
+- 默认入手：`start_in_hand: true`，开局进入手牌但不进入牌池。
+- 衍生牌：定义在对应种族 `tokens[]`，只能由效果、技能或形态变化生成。
+- 状态展示：时间、RC 浓度等规则状态牌，保留图鉴可见性但不进入牌池。
+
+`CardCollectionScreen` 只维护筛选状态、种族导航、分页、悬浮预览、点击选择和详情面板，不决定卡牌来源。搜索同时覆盖名称、描述、id、种族、英雄归属、原始关键字与中文关键字。英雄是独立图鉴类型；“随从牌”筛选不重复包含英雄。卡墙每页最多实例化 12 张卡图，筛选作用于完整目录；换页和离开图鉴时释放 `CardData` 的正面纹理强引用，避免浏览图鉴后长期保留整套高分辨率卡面。卡牌正面使用 `front_texture`，不得使用仅供棋盘展示的 `table_texture`。
 
 投降按钮及确认窗口由 `MatchExitController` 管理，并挂在 `GameManager` 持有的独立 `MatchExitLayer` 上，避免战斗根节点 `_ready()` 装配期间的兄弟节点插入竞争。它只负责展示、确认和发出意图；投降方识别、忙碌状态校验、胜者判定和结算仍属于 `GameManager`。单人对 AI 时，唯一的非 AI 玩家是投降方；本地双人时，当前行动玩家是投降方。未来增加暂停、设置或返回桌面时，应扩展独立的对局菜单控制器，不把场景导航塞回回合 HUD。
 
@@ -47,7 +60,7 @@
 
 ## 核心数据模型
 
-`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则记录为 `table_texture_path`，用于棋盘正面展示和种族选择界面的英雄预览。`CardDatabase` 初始化只解析纹理路径；`front_texture`、`table_texture` 和 `back_texture` 是带缓存的惰性属性，首次被具体 UI 使用时才通过 `ResourceLoader` 加载，禁止在 `from_dictionary()` 中重新全量解码卡图。
+`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则记录为 `table_texture_path`，用于棋盘正面展示和种族选择界面的英雄预览。`CardDatabase` 初始化只解析纹理路径；`front_texture`、`table_texture` 和 `back_texture` 是带缓存的惰性属性，首次被具体 UI 使用时才通过 `ResourceLoader` 加载，禁止在 `from_dictionary()` 中重新全量解码卡图。图鉴分页可以通过 `release_front_texture_cache()` 放弃自己的缓存引用，但不能修改卡牌路径或规则数据。
 
 `CardState` 是棋盘上的卡牌实例，保存拥有者、位置、层级、翻开状态、当前攻击、当前生命、生命上限、护盾、护甲、状态、行动次数、原始快照和棋盘展示图。
 

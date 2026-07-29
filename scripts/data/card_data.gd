@@ -271,6 +271,11 @@ static func load_texture(texture_path: String) -> Texture2D:
 	return ResourceLoader.load(texture_path) as Texture2D
 
 
+func release_front_texture_cache() -> void:
+	# 图鉴分页离开当前页时可释放自己的强引用；仍在 UI 上显示的纹理不受影响。
+	_front_texture = null
+
+
 static func get_table_texture_path(front_path: String) -> String:
 	if front_path == "":
 		return ""

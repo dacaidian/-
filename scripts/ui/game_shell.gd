@@ -12,6 +12,7 @@ const SCREEN_MATCH := "match"
 @export_file("*.tscn") var main_menu_scene_path := "res://scenes/main_menu/main_menu.tscn"
 @export_file("*.tscn") var faction_selection_scene_path := "res://scenes/start_menu/start_menu.tscn"
 @export_file("*.tscn") var feature_placeholder_scene_path := "res://scenes/ui/feature_placeholder_screen.tscn"
+@export_file("*.tscn") var card_collection_scene_path := "res://scenes/ui/card_collection_screen.tscn"
 @export_file("*.tscn") var battle_scene_path := "res://main.tscn"
 
 @onready var screen_host: Control = %ScreenHost
@@ -60,12 +61,12 @@ func show_match_history() -> void:
 
 
 func show_card_collection() -> void:
-	_show_placeholder(
-		SCREEN_CARD_COLLECTION,
-		"卡牌图鉴",
-		"图鉴正在整理",
-		"卡牌浏览、筛选与种族收藏将在这里呈现。"
-	)
+	var screen := _instantiate_scene(card_collection_scene_path)
+	if screen == null:
+		return
+
+	screen.back_requested.connect(show_main_menu)
+	_mount_screen(screen, SCREEN_CARD_COLLECTION)
 
 
 func _show_placeholder(

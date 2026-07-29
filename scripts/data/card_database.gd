@@ -7,6 +7,7 @@ class_name CardDatabase
 var factions_by_id: Dictionary = {}
 var cards_by_id: Dictionary = {}
 var cards_by_faction_id: Dictionary = {}
+var token_cards_by_faction_id: Dictionary = {}
 var faction_ids_in_load_order: Array[String] = []
 
 # 测试模式：白名单过滤 + 游戏参数覆盖，不修改 cards.json
@@ -82,6 +83,7 @@ func clear() -> void:
 	factions_by_id.clear()
 	cards_by_id.clear()
 	cards_by_faction_id.clear()
+	token_cards_by_faction_id.clear()
 	faction_ids_in_load_order.clear()
 
 
@@ -97,24 +99,23 @@ func load_faction(faction_dictionary: Dictionary) -> void:
 
 	# cards_by_faction_id 保存这个阵营下的 CardData 列表。
 	cards_by_faction_id[faction_id] = []
+	token_cards_by_faction_id[faction_id] = []
 
 	var raw_cards = faction_dictionary.get("cards", [])
-	if not raw_cards is Array:
-		return
+	if raw_cards is Array:
+		for card_dictionary in raw_cards:
+			if not card_dictionary is Dictionary:
+				continue
 
-	for card_dictionary in raw_cards:
-		if not card_dictionary is Dictionary:
-			continue
+			var card_data := CardData.from_dictionary(card_dictionary, faction_dictionary)
+			if card_data.id == "":
+				continue
 
-		var card_data := CardData.from_dictionary(card_dictionary, faction_dictionary)
-		if card_data.id == "":
-			continue
+			# 全局按 id 查询。
+			cards_by_id[card_data.id] = card_data
 
-		# 全局按 id 查询。
-		cards_by_id[card_data.id] = card_data
-
-		# 按阵营查询。
-		cards_by_faction_id[faction_id].append(card_data)
+			# 按阵营查询。
+			cards_by_faction_id[faction_id].append(card_data)
 
 	var raw_tokens = faction_dictionary.get("tokens", [])
 	if raw_tokens is Array:
@@ -127,6 +128,7 @@ func load_faction(faction_dictionary: Dictionary) -> void:
 				continue
 
 			cards_by_id[token_data.id] = token_data
+			token_cards_by_faction_id[faction_id].append(token_data)
 
 	apply_hero_attachment_metadata(faction_dictionary)
 
@@ -144,6 +146,20 @@ func get_faction_cards(faction_id: String) -> Array[CardData]:
 		cards.append(card_data)
 
 	return cards
+
+
+func get_faction_token_cards(faction_id: String) -> Array[CardData]:
+	# 衍生牌拥有种族归属并参与图鉴查询，但永远不进入常规牌池。
+	var cards: Array[CardData] = []
+
+	for card_data in token_cards_by_faction_id.get(faction_id, []):
+		cards.append(card_data)
+
+	return cards
+
+
+func get_all_faction_ids() -> Array[String]:
+	return faction_ids_in_load_order.duplicate()
 
 
 func get_playable_faction_ids() -> Array[String]:

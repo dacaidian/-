@@ -1,0 +1,106 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/card_collection_item.gd" id="1_item"]
+
+[node name="CardCollectionItem" type="Button"]
+custom_minimum_size = Vector2(176, 286)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+focus_mode = 2
+action_mode = 0
+script = ExtResource("1_item")
+
+[node name="ContentMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = -9.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Content" type="VBoxContainer" parent="ContentMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="ImageFrame" type="PanelContainer" parent="ContentMargin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(158, 220)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ImageArea" type="Control" parent="ContentMargin/Content/ImageFrame"]
+layout_mode = 2
+mouse_filter = 2
+clip_contents = true
+
+[node name="CardTexture" type="TextureRect" parent="ContentMargin/Content/ImageFrame/ImageArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MissingImageLabel" type="Label" parent="ContentMargin/Content/ImageFrame/ImageArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.52, 0.50, 0.47, 1)
+theme_override_font_sizes/font_size = 14
+text = "暂无卡图"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CategoryBadge" type="Label" parent="ContentMargin/Content/ImageFrame/ImageArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -76.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = 33.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "常规牌池"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CardNameLabel" type="Label" parent="ContentMargin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 17
+text = "卡牌名称"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="MetadataLabel" type="Label" parent="ContentMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.65, 0.64, 0.61, 1)
+theme_override_font_sizes/font_size = 13
+text = "1阶 · 随从牌"
+horizontal_alignment = 1

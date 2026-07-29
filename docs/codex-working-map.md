@@ -351,6 +351,28 @@
 - 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器、provider 的 `*_KEYS` 数组和 `*_ANIMATION_KEY` 常量，后者验证 provider 的上下文路由契约。拥有复杂自绘或持续刷新生命周期的主题还应提供独立测试，至少验证动画节点完整释放、状态移除后停止处理；达拉然使用 `tools/test_dalaran_animation_provider.gd`，苗疆使用 `tools/test_miao_animation_provider.gd`。
 - UI 控制器不拥有玩法规则。
 
+## 卡牌图鉴
+
+优先读：
+
+- `scripts/data/card_database.gd`
+- `scripts/application/card_catalog_entry.gd`
+- `scripts/application/card_collection_catalog.gd`
+- `scripts/ui/card_collection_screen.gd`
+- `scripts/ui/card_collection_item.gd`
+- `scenes/ui/card_collection_screen.tscn`
+- `tools/test_card_collection.gd`
+
+常见规则：
+
+- 图鉴必须从 `CardDatabase` 读取普通牌和 `tokens[]` 衍生牌，不得在 UI 内重新解析 `cards.json`。
+- `cards_by_faction_id` 和 `token_cards_by_faction_id` 是两个权威索引。衍生牌参与图鉴和全局 id 查询，但不进入常规牌池。
+- 来源分类统一为常规牌池、默认入手、衍生牌和状态展示。不要用 `count == 0` 判断衍生牌；衍生牌身份来自其所在的 `tokens[]`。
+- 英雄作为独立类型展示；普通“随从牌”筛选排除英雄。英雄附属牌通过 `owner_hero_card_id` 展示专属关系。
+- 搜索与排序属于 `CardCollectionCatalog`，页面只组合筛选条件。新增可搜索字段时扩展条目的 `search_text`，不要在各控件回调里复制搜索逻辑。
+- 图鉴使用卡牌原始 `front_texture`，不用棋盘专用 `table_texture`。卡墙保持分页按需加载，换页和退出时释放不再显示的正面纹理缓存。
+- 修改图鉴、衍生牌索引或应用入口后运行 `tools/test_card_collection.gd`、`tools/test_application_flow.gd` 和安全项目检查。
+
 ## 应用导航与对局生命周期
 
 优先读：
@@ -362,6 +384,9 @@
 - `scripts/ui/start_menu.gd`
 - `scripts/game/match_setup.gd`
 - `scripts/application/match_result.gd`
+- `scenes/ui/card_collection_screen.tscn`
+- `scripts/application/card_collection_catalog.gd`
+- `scripts/ui/card_collection_screen.gd`
 - `scripts/ui/match_exit_controller.gd`
 - `scripts/ui/match_result_screen_controller.gd`
 - `scripts/game/game_manager.gd` 的 `configure_match()`、`surrender_match()` 和 `_finish_match()`
@@ -373,7 +398,7 @@
 - 资源胜利和投降必须共用 `_finish_match()`、`MatchResult` 和 `MatchResultScreenController`。新增超时、断线、任务胜利等结束原因时扩展 `MatchResult.EndReason`，不要复制结算流程。
 - `MatchResult` 只能保存可序列化摘要，不持有 `PlayerState`、棋盘节点或 UI。未来牌局历史以它为输入。
 - `MatchExitController` 只负责 `MatchExitLayer` 中的投降按钮和确认窗口；投降合法性、投降方与胜者判定在 `GameManager`。不要在 `GameManager._ready()` 期间向仍在装配的战斗根节点直接插入兄弟 UI。
-- 牌局历史和卡牌图鉴当前是页面骨架。实现具体模块时替换对应页面，不要让主菜单承担数据查询。
+- 牌局历史当前是页面骨架；卡牌图鉴是独立模块。主菜单只发出打开意图，图鉴查询由 `CardCollectionCatalog` 负责，`GameShell` 只装卸页面。
 - 修改应用导航、种族选择或对局退出流程后运行 `tools/test_application_flow.gd` 和安全项目检查。
 
 ## VFX 与素材资源
