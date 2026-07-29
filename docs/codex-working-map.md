@@ -351,6 +351,31 @@
 - 新增或迁移动画 key 后运行 `python tools/validate_cards.py` 和 `tools/test_animation_routing.gd`；前者扫描中央控制器、provider 的 `*_KEYS` 数组和 `*_ANIMATION_KEY` 常量，后者验证 provider 的上下文路由契约。拥有复杂自绘或持续刷新生命周期的主题还应提供独立测试，至少验证动画节点完整释放、状态移除后停止处理；达拉然使用 `tools/test_dalaran_animation_provider.gd`，苗疆使用 `tools/test_miao_animation_provider.gd`。
 - UI 控制器不拥有玩法规则。
 
+## 应用导航与对局生命周期
+
+优先读：
+
+- `scenes/app/game_shell.tscn`
+- `scripts/ui/game_shell.gd`
+- `scenes/main_menu/main_menu.tscn`
+- `scripts/ui/main_menu.gd`
+- `scripts/ui/start_menu.gd`
+- `scripts/game/match_setup.gd`
+- `scripts/application/match_result.gd`
+- `scripts/ui/match_exit_controller.gd`
+- `scripts/ui/match_result_screen_controller.gd`
+- `scripts/game/game_manager.gd` 的 `configure_match()`、`surrender_match()` 和 `_finish_match()`
+
+常见规则：
+
+- `GameShell` 是唯一正常应用入口和页面 owner。页面只发 `start_game_requested`、`back_requested`、`match_finished` 等意图，不直接实例化其他页面，也不改 `SceneTree.current_scene`。
+- 种族选择只维护 `MatchSetup`；开始对局时传递 `duplicate_configuration()`，并在战斗节点进入场景树前调用 `GameManager.configure_match()`。
+- 资源胜利和投降必须共用 `_finish_match()`、`MatchResult` 和 `MatchResultScreenController`。新增超时、断线、任务胜利等结束原因时扩展 `MatchResult.EndReason`，不要复制结算流程。
+- `MatchResult` 只能保存可序列化摘要，不持有 `PlayerState`、棋盘节点或 UI。未来牌局历史以它为输入。
+- `MatchExitController` 只负责 `MatchExitLayer` 中的投降按钮和确认窗口；投降合法性、投降方与胜者判定在 `GameManager`。不要在 `GameManager._ready()` 期间向仍在装配的战斗根节点直接插入兄弟 UI。
+- 牌局历史和卡牌图鉴当前是页面骨架。实现具体模块时替换对应页面，不要让主菜单承担数据查询。
+- 修改应用导航、种族选择或对局退出流程后运行 `tools/test_application_flow.gd` 和安全项目检查。
+
 ## VFX 与素材资源
 
 优先读：

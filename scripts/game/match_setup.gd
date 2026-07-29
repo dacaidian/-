@@ -167,3 +167,13 @@ func get_ai_difficulty(player_index: int) -> String:
 	if player_index < 0 or player_index >= player_ai_difficulties.size():
 		return "normal"
 	return player_ai_difficulties[player_index]
+
+
+func duplicate_configuration() -> MatchSetup:
+	var copy := MatchSetup.new()
+	copy.player_names = player_names.duplicate()
+	copy.player_faction_ids = player_faction_ids.duplicate()
+	copy.selected_hero_card_ids = selected_hero_card_ids.duplicate()
+	copy.player_ai_flags = player_ai_flags.duplicate()
+	copy.player_ai_difficulties = player_ai_difficulties.duplicate()
+	return copy

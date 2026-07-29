@@ -1,0 +1,140 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/img/startPanel/back.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://assets/img/startPanel/title.png" id="3_title"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.018, 0.016, 0.014, 0.54)
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 110
+theme_override_constants/margin_top = 92
+theme_override_constants/margin_right = 110
+theme_override_constants/margin_bottom = 80
+
+[node name="Layout" type="HBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 90
+
+[node name="BrandArea" type="VBoxContainer" parent="RootMargin/Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="TitleTexture" type="TextureRect" parent="RootMargin/Layout/BrandArea"]
+custom_minimum_size = Vector2(690, 230)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_title")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Tagline" type="Label" parent="RootMargin/Layout/BrandArea"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 0.78, 0.69, 0.94)
+theme_override_font_sizes/font_size = 18
+text = "选择阵营，调度法术，在战场上赢得资源与胜利"
+horizontal_alignment = 1
+
+[node name="MenuColumn" type="VBoxContainer" parent="RootMargin/Layout"]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="MenuPanel" type="PanelContainer" parent="RootMargin/Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="RootMargin/Layout/MenuColumn/MenuPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 34
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 34
+theme_override_constants/margin_bottom = 28
+
+[node name="Menu" type="VBoxContainer" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 13
+
+[node name="MenuTitle" type="Label" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 28
+text = "主菜单"
+horizontal_alignment = 1
+
+[node name="MenuSeparator" type="HSeparator" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+layout_mode = 2
+
+[node name="StartGameButton" type="Button" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "开始游戏"
+
+[node name="MatchHistoryButton" type="Button" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "牌局历史"
+
+[node name="CardCollectionButton" type="Button" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "卡牌图鉴"
+
+[node name="ExitSeparator" type="HSeparator" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+layout_mode = 2
+
+[node name="ExitGameButton" type="Button" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "退出游戏"
+
+[node name="VersionLabel" type="Label" parent="RootMargin/Layout/MenuColumn/MenuPanel/Margin/Menu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.46, 0.43, 1)
+theme_override_font_sizes/font_size = 12
+text = "WAR CARD"
+horizontal_alignment = 1
+
+[node name="ExitConfirmation" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "退出游戏"
+initial_position = 2
+size = Vector2i(420, 180)

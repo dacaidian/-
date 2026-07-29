@@ -6,20 +6,33 @@
 
 ## 项目形态
 
-这是一个 Godot 桌面卡牌战棋游戏。流程是：进入种族/英雄选择页，完成选择后进入棋盘对局。卡牌规则主要由 `data/cards.json` 驱动，运行时行为由通用行动、效果、状态、触发器和 UI 控制器组合实现。
+这是一个 Godot 桌面卡牌战棋游戏。正常流程是：主菜单 -> 种族/英雄选择 -> 棋盘对局 -> 对局结算 -> 主菜单。卡牌规则主要由 `data/cards.json` 驱动，运行时行为由通用行动、效果、状态、触发器和 UI 控制器组合实现。
 
 主要目录：
 
 - `data/`：种族、英雄、卡牌和衍生牌定义。
-- `scenes/`：Godot 场景，包括棋盘、卡牌、开始菜单和 debug UI。
+- `scenes/`：Godot 场景，包括应用外壳、主菜单、种族选择、棋盘、卡牌和 debug UI。
+- `scripts/application/`：跨页面应用数据契约，目前包含统一对局结果 `MatchResult`。
 - `scripts/data/`：静态数据和运行时数据模型。
 - `scripts/actions/`：玩家可见的行动，如移动、攻击、施法、注入毒液、毒爆、骑乘攻击、方向移动、种族技能等。
 - `scripts/effects/`：由 JSON 配置调用的通用效果。
 - `scripts/game/`：对局编排、目标选择、触发、死亡、手牌使用、被动、棋盘层、AI 和比赛配置。
-- `scripts/ui/`：动画、状态显示、手牌抽屉、装备面板、种族面板、胜利画面等。
+- `scripts/ui/`：应用导航、菜单页面、结算画面、动画、状态显示、手牌抽屉、装备面板和种族面板等。
 - `scripts/ai/`：AI 候选行为生成、评估和执行。
 - `scripts/audio/`：背景音乐、音效池和音频配置解析。
 - `assets/`：卡面、UI、音乐和未来 VFX 贴图资源。
+
+## 应用外壳与页面流程
+
+`project.godot` 的唯一正常入口是 `scenes/app/game_shell.tscn`。`GameShell` 在整个应用生命周期内常驻，并通过 `ScreenHost` 挂载当前页面。当前页面状态包括主菜单、种族选择、牌局历史骨架、卡牌图鉴骨架和战斗。页面不能直接创建另一个页面，也不能修改 `SceneTree.current_scene`；它们只发出用户意图，由 `GameShell` 负责实例化、卸载和淡入。
+
+主菜单位于 `scenes/main_menu/main_menu.tscn`，提供开始游戏、牌局历史、卡牌图鉴和退出游戏。历史与图鉴当前复用独立的功能页骨架，只拥有标题、空状态和返回信号；未来实现具体模块时应替换对应 PackedScene，不改变主菜单或对局代码。
+
+原 `StartMenu` 现在是纯种族/英雄选择页。它维护 `MatchSetup`，开始时发出 `match_start_requested`，返回时发出 `back_requested`。`MatchSetup.duplicate_configuration()` 生成与页面生命周期解耦的配置快照；`GameShell` 在战斗节点进入场景树、触发 `_ready()` 之前调用 `GameManager.configure_match()`。选择页不得直接加载 `main.tscn`。
+
+`GameManager` 只管理一局对战。资源分胜利和投降都进入 `_finish_match()`，停止 AI 调度、取消交互并生成 `MatchResult`。`MatchResult` 保存结束原因、胜负方、回合、目标分和玩家摘要，是未来牌局历史持久化的稳定输入；历史模块不得持有 `PlayerState` 或已销毁战斗节点。`MatchResultScreenController` 根据结束原因展示资源胜利或投降结算，玩家确认返回后，`GameManager` 只发出 `match_finished`，由 `GameShell` 卸载战斗并回到主菜单。
+
+投降按钮及确认窗口由 `MatchExitController` 管理，并挂在 `GameManager` 持有的独立 `MatchExitLayer` 上，避免战斗根节点 `_ready()` 装配期间的兄弟节点插入竞争。它只负责展示、确认和发出意图；投降方识别、忙碌状态校验、胜者判定和结算仍属于 `GameManager`。单人对 AI 时，唯一的非 AI 玩家是投降方；本地双人时，当前行动玩家是投降方。未来增加暂停、设置或返回桌面时，应扩展独立的对局菜单控制器，不把场景导航塞回回合 HUD。
 
 ## 依赖方向与编排边界
 
@@ -81,7 +94,7 @@
 
 `ActionMenuController` 只负责展示行动菜单，不负责判断行动是否可用。行动可用性应放在行动类或 resolver 中。
 
-`GameHudCoordinator` 负责对局 HUD 的生命周期编排：统一创建和刷新回合状态、种族技能、种族时间、手牌抽屉、装备区、牌池视图，并在内容变化后请求右侧布局。各 panel controller 仍只维护自身节点；`GameHudCoordinator` 不修改规则状态，`GameManager.update_*_view()` 只保留稳定的兼容门面。新增 HUD 面板时，应把创建/刷新顺序接入协调器，把几何排列接入 `RightSideHudLayoutController`，不要再把面板细节写回 `GameManager`。右侧面板按“回合概览 → 种族运行时状态 → 种族能力 → 装备”排序；控制器不得保留自己的绝对坐标或视口定位方法。HUD 中需要展示卡牌缩略图时，统一通过 `CardTexturePreviewController` 绑定悬浮大图；该控制器只管理预览节点、视口内定位和显示生命周期，不读取规则状态。目前种族运行时状态牌与装备牌均使用此入口。
+`GameHudCoordinator` 负责对局 HUD 的生命周期编排：统一创建和刷新回合状态、种族技能、种族时间、手牌抽屉、装备区、牌池视图和投降入口，并在内容变化后请求右侧布局。各 panel controller 仍只维护自身节点；`GameHudCoordinator` 不修改规则状态，`GameManager.update_*_view()` 只保留稳定的兼容门面。新增 HUD 面板时，应把创建/刷新顺序接入协调器，把几何排列接入 `RightSideHudLayoutController`，不要再把面板细节写回 `GameManager`。右侧面板按“回合概览 → 种族运行时状态 → 种族能力 → 装备”排序；控制器不得保留自己的绝对坐标或视口定位方法。HUD 中需要展示卡牌缩略图时，统一通过 `CardTexturePreviewController` 绑定悬浮大图；该控制器只管理预览节点、视口内定位和显示生命周期，不读取规则状态。目前种族运行时状态牌与装备牌均使用此入口。
 
 ## 行动系统
 

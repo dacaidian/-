@@ -61,6 +61,17 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.03137255, 0.023529412, 0.019607844, 0.21960784)
 
+[node name="BackButton" type="Button" parent="."]
+unique_name_in_owner = true
+z_index = 20
+custom_minimum_size = Vector2(174, 42)
+layout_mode = 1
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 202.0
+offset_bottom = 66.0
+text = "返回主菜单"
+
 [node name="RootMargin" type="MarginContainer" parent="." unique_id=725258963]
 layout_mode = 1
 anchors_preset = 15

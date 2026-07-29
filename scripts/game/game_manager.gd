@@ -1,6 +1,8 @@
 extends Node
 class_name GameManager
 
+signal match_finished(result)
+
 const CardPoolViewControllerScript := preload("res://scripts/ui/card_pool_view_controller.gd")
 const TurnStatusControllerScript := preload("res://scripts/ui/turn_status_controller.gd")
 const FactionTimePanelControllerScript := preload("res://scripts/ui/faction_time_panel_controller.gd")
@@ -37,7 +39,10 @@ const TurnEventLedgerScript := preload("res://scripts/game/turn_event_ledger.gd"
 const FactionRuntimeStateResolverScript := preload("res://scripts/game/faction_runtime_state_resolver.gd")
 const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
 const GameHudCoordinatorScript := preload("res://scripts/game/game_hud_coordinator.gd")
-const VictoryScreenControllerScript := preload("res://scripts/ui/victory_screen_controller.gd")
+const MatchResultScreenControllerScript := preload(
+	"res://scripts/ui/match_result_screen_controller.gd"
+)
+const MatchExitControllerScript := preload("res://scripts/ui/match_exit_controller.gd")
 const AICommonScript := preload("res://scripts/ai/ai_common.gd")
 const AIBoardEvaluatorScript := preload("res://scripts/ai/ai_board_evaluator.gd")
 const AIHandEvaluatorScript := preload("res://scripts/ai/ai_hand_evaluator.gd")
@@ -177,7 +182,8 @@ var turn_event_ledger := TurnEventLedgerScript.new()
 var faction_runtime_state_resolver := FactionRuntimeStateResolverScript.new()
 var kagune_power_resolver := KagunePowerResolverScript.new()
 var game_hud_coordinator := GameHudCoordinatorScript.new()
-var victory_screen_controller: VictoryScreenController
+var match_result_screen_controller
+var match_exit_controller := MatchExitControllerScript.new()
 var ai_controller := AIControllerScript.new()
 
 var current_player_index := 0
@@ -213,6 +219,16 @@ func _ready() -> void:
 	schedule_ai_turn_if_needed()
 
 
+func configure_match(match_setup: MatchSetup) -> void:
+	if match_setup == null:
+		return
+	player_faction_ids = match_setup.player_faction_ids.duplicate()
+	selected_hero_card_ids = match_setup.selected_hero_card_ids.duplicate()
+	player_names = match_setup.player_names.duplicate()
+	player_ai_flags = match_setup.player_ai_flags.duplicate()
+	player_ai_difficulties = match_setup.player_ai_difficulties.duplicate()
+
+
 func _input(event: InputEvent) -> void:
 	if is_game_over:
 		return
@@ -220,8 +236,7 @@ func _input(event: InputEvent) -> void:
 	if _is_ai_controlling():
 		return
 
-	# 鍥炲悎缁撴潫鍚庡垏鎹㈠綋鍓嶆搷浣滀汉銆?	# Switch the active player after ending the turn.
-	# Switch the active player after ending the turn.
+	# 对局忙碌期间不接受新的玩家输入。
 	if is_game_busy():
 		return
 
@@ -1087,42 +1102,96 @@ func check_victory() -> void:
 	if winner == null:
 		return
 
-	is_game_over = true
-	winner_player_id = winner.id
-	hide_action_menu()
-	interaction_manager.cancel(get_all_board_states())
-	update_turn_status_view()
-	update_hand_drawer_view()
-	refresh_debug_panel()
-
-	await _show_victory_screen(winner)
-	_transition_to_start_menu()
+	await _finish_match(winner, MatchResult.EndReason.RESOURCE_VICTORY)
 
 
 func get_winner_player() -> PlayerState:
 	return get_player_by_id(winner_player_id)
 
 
-func _show_victory_screen(winner: PlayerState) -> void:
-	victory_screen_controller = VictoryScreenControllerScript.new()
-	await victory_screen_controller.show(
-		get_parent(), winner, players, turn_number, victory_resource_score
+func can_surrender() -> bool:
+	return (
+		not is_game_over
+		and not is_resolving_card_action
+		and not is_executing_action
+		and get_surrendering_player() != null
+		and players.size() >= 2
 	)
 
 
-func _transition_to_start_menu() -> void:
-	var start_menu_scene := load("res://scenes/start_menu/start_menu.tscn") as PackedScene
-	if start_menu_scene == null:
-		push_error("閹靛彞绗夐崚棰佸瘜閼挎粌宕熼崷鐑樻珯: res://scenes/start_menu/start_menu.tscn")
+func get_surrendering_player() -> PlayerState:
+	var human_players: Array[PlayerState] = []
+	for player in players:
+		if player != null and not player.is_ai:
+			human_players.append(player)
+	if human_players.is_empty():
+		return null
+	if human_players.size() == 1:
+		return human_players[0]
+	return get_current_player()
+
+
+func get_opponent_player(player: PlayerState) -> PlayerState:
+	if player == null:
+		return null
+	for candidate in players:
+		if candidate != null and candidate.id != player.id:
+			return candidate
+	return null
+
+
+func surrender_match() -> void:
+	if not can_surrender():
 		return
 
-	var start_menu := start_menu_scene.instantiate()
-	get_tree().root.add_child(start_menu)
-	get_tree().current_scene = start_menu
+	var surrendered_player := get_surrendering_player()
+	var winner := get_opponent_player(surrendered_player)
+	if winner == null:
+		return
+	await _finish_match(winner, MatchResult.EndReason.SURRENDER, surrendered_player)
 
-	var main_root := get_parent()
-	if main_root != null:
-		main_root.queue_free()
+
+func _finish_match(
+	winner: PlayerState,
+	end_reason: int,
+	surrendered_player: PlayerState = null
+) -> void:
+	if winner == null or is_game_over:
+		return
+
+	is_game_over = true
+	winner_player_id = winner.id
+	ai_turn_watchdog_token += 1
+	is_ai_turn_scheduled = false
+	hide_action_menu()
+	interaction_manager.cancel(get_all_board_states())
+	update_turn_status_view()
+	update_hand_drawer_view()
+	game_hud_coordinator.update_match_exit(self)
+	refresh_debug_panel()
+
+	var result := MatchResult.create(
+		end_reason,
+		winner,
+		players,
+		turn_number,
+		victory_resource_score,
+		surrendered_player
+	)
+	await _show_match_result_screen(winner, result)
+	match_finished.emit(result)
+
+
+func _show_match_result_screen(winner: PlayerState, result: MatchResult) -> void:
+	match_result_screen_controller = MatchResultScreenControllerScript.new()
+	await match_result_screen_controller.show(
+		get_parent(),
+		winner,
+		players,
+		turn_number,
+		victory_resource_score,
+		result
+	)
 
 
 func check_and_destroy_if_dead(state: CardState, reason: String = "damage", source_state: CardState = null) -> bool:

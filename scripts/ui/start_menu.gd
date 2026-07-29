@@ -1,10 +1,12 @@
 extends Control
 class_name StartMenu
 
+signal match_start_requested(match_setup: MatchSetup)
+signal back_requested
+
 const PLAYER_COUNT := 2
 
 @export var cards_json_path := "res://data/cards.json"
-@export var battle_scene_path := "res://main.tscn"
 @export var player_names: Array[String] = ["Player 1", "Player 2"]
 
 var card_database := CardDatabase.new()
@@ -15,6 +17,7 @@ var player_panels: Array = []
 @onready var start_button: Button = $"RootMargin/VBoxContainer/Footer/StartButton"
 @onready var warning_label: Label = $"RootMargin/VBoxContainer/Footer/WarningLabel"
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var back_button: Button = %BackButton
 
 
 func _ready() -> void:
@@ -46,6 +49,8 @@ func _ready() -> void:
 		panel.ai_difficulty_selected.connect(_on_panel_ai_difficulty_selected)
 
 	start_button.pressed.connect(_on_start_pressed)
+	back_button.pressed.connect(func(): back_requested.emit())
+	ApplicationUiStyle.style_compact_button(back_button, ApplicationUiStyle.GOLD)
 	refresh_start_button()
 	_add_ambient_lighting()
 	_setup_animations()
@@ -196,24 +201,10 @@ func _on_start_pressed() -> void:
 	if not match_setup.can_start():
 		return
 
-	var battle_scene := load(battle_scene_path) as PackedScene
-	if battle_scene == null:
-		push_error("找不到战斗场景: %s" % battle_scene_path)
-		return
+	match_start_requested.emit(match_setup.duplicate_configuration())
 
-	var battle_root := battle_scene.instantiate()
-	var game_manager := battle_root.get_node_or_null("GameManager") as GameManager
-	if game_manager == null:
-		push_error("战斗场景缺少 GameManager")
-		battle_root.queue_free()
-		return
 
-	game_manager.player_faction_ids = match_setup.player_faction_ids.duplicate()
-	game_manager.selected_hero_card_ids = match_setup.selected_hero_card_ids.duplicate()
-	game_manager.player_names = match_setup.player_names.duplicate()
-	game_manager.player_ai_flags = match_setup.player_ai_flags.duplicate()
-	game_manager.player_ai_difficulties = match_setup.player_ai_difficulties.duplicate()
-
-	get_tree().root.add_child(battle_root)
-	get_tree().current_scene = battle_root
-	queue_free()
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		back_requested.emit()
+		get_viewport().set_input_as_handled()

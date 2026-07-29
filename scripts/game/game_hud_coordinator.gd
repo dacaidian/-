@@ -21,6 +21,9 @@ func setup(game_manager: GameManager) -> void:
 
 	game_manager.hand_interaction_controller.setup(game_manager)
 	game_manager.equipment_display_controller.setup(root)
+	game_manager.match_exit_controller.setup(root, game_manager)
+	if not game_manager.match_exit_controller.surrender_requested.is_connected(game_manager.surrender_match):
+		game_manager.match_exit_controller.surrender_requested.connect(game_manager.surrender_match)
 
 
 func setup_card_pool(game_manager: GameManager) -> void:
@@ -43,6 +46,7 @@ func refresh_all(game_manager: GameManager) -> void:
 	update_faction_time(game_manager)
 	update_faction_skill(game_manager)
 	update_hand_drawer(game_manager)
+	update_match_exit(game_manager)
 
 
 func update_turn_status(game_manager: GameManager) -> void:
@@ -136,6 +140,12 @@ func update_card_pool(game_manager: GameManager) -> void:
 		game_manager.get_parent(),
 		next_back_texture
 	)
+
+
+func update_match_exit(game_manager: GameManager) -> void:
+	if game_manager == null:
+		return
+	game_manager.match_exit_controller.update(game_manager.can_surrender())
 
 
 func request_right_side_layout(game_manager: GameManager) -> void:

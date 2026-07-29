@@ -1,7 +1,5 @@
 extends RefCounted
-class_name VictoryScreenController
-
-signal return_to_menu_requested()
+class_name MatchResultScreenController
 
 var _layer: CanvasLayer
 var _backdrop: ColorRect
@@ -14,21 +12,34 @@ var _return_button: Button
 var _pending_particles: Array[Node] = []
 
 
-func show(root: Node, winner: PlayerState, all_players: Array[PlayerState], turn_number: int, victory_target: int) -> void:
+func show(
+	root: Node,
+	winner: PlayerState,
+	all_players: Array[PlayerState],
+	turn_number: int,
+	victory_target: int,
+	match_result: MatchResult = null
+) -> void:
 	if root == null or winner == null:
 		return
 
-	_build_ui(root, winner, all_players, turn_number, victory_target)
+	_build_ui(root, winner, all_players, turn_number, victory_target, match_result)
 	await _play_animation_sequence(root)
 	await _return_button.pressed
 	_layer.hide()
 	_cleanup()
-	return_to_menu_requested.emit()
 
 
-func _build_ui(root: Node, winner: PlayerState, all_players: Array[PlayerState], turn_number: int, victory_target: int) -> void:
+func _build_ui(
+	root: Node,
+	winner: PlayerState,
+	all_players: Array[PlayerState],
+	turn_number: int,
+	victory_target: int,
+	match_result: MatchResult
+) -> void:
 	_layer = CanvasLayer.new()
-	_layer.name = "VictoryScreenLayer"
+	_layer.name = "MatchResultScreenLayer"
 	_layer.layer = 4000
 	root.add_child(_layer)
 
@@ -81,7 +92,16 @@ func _build_ui(root: Node, winner: PlayerState, all_players: Array[PlayerState],
 
 	_subtitle_label = Label.new()
 	_subtitle_label.name = "SubtitleLabel"
-	_subtitle_label.text = "以 %d 资源分赢得胜利" % winner.resource_score
+	if match_result != null and match_result.is_surrender():
+		var surrendered_summary := match_result.get_player_summary(
+			match_result.surrendered_player_id
+		)
+		var surrendered_name := str(
+			surrendered_summary.get("display_name", "对手")
+		)
+		_subtitle_label.text = "%s 投降，牌局结束" % surrendered_name
+	else:
+		_subtitle_label.text = "以 %d 资源分赢得胜利" % winner.resource_score
 	_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle_label.add_theme_font_size_override("font_size", 22)
 	_subtitle_label.add_theme_color_override("font_color", Color(0.93, 0.87, 0.74, 0.95))
@@ -94,10 +114,17 @@ func _build_ui(root: Node, winner: PlayerState, all_players: Array[PlayerState],
 	banner_panel.modulate = Color(1, 1, 1, 0)
 	_banner_container.position = Vector2(0, -300)
 
-	_stats_panel = _build_stats_panel(winner, all_players, turn_number, victory_target)
+	_stats_panel = _build_stats_panel(
+		winner,
+		all_players,
+		turn_number,
+		victory_target,
+		match_result
+	)
+	var stats_size := _stats_panel.get_combined_minimum_size()
 	_stats_panel.modulate = Color(1, 1, 1, 0)
 	_stats_panel.scale = Vector2(0.85, 0.85)
-	_stats_panel.position = _get_centered_position(root, _stats_panel.custom_minimum_size)
+	_stats_panel.position = _get_centered_position(root, stats_size)
 	_layer.add_child(_stats_panel)
 
 	_return_button = Button.new()
@@ -115,14 +142,20 @@ func _build_ui(root: Node, winner: PlayerState, all_players: Array[PlayerState],
 	_return_button.add_theme_stylebox_override("disabled", _create_button_disabled_style())
 	_layer.add_child(_return_button)
 
-	var stats_bottom: float = _stats_panel.position.y + _stats_panel.custom_minimum_size.y
+	var stats_bottom: float = _stats_panel.position.y + stats_size.y
 	_return_button.position = Vector2(
 		(viewport_size.x - _return_button.custom_minimum_size.x) * 0.5,
 		stats_bottom + 20
 	)
 
 
-func _build_stats_panel(winner: PlayerState, all_players: Array[PlayerState], turn_number: int, victory_target: int) -> PanelContainer:
+func _build_stats_panel(
+	winner: PlayerState,
+	all_players: Array[PlayerState],
+	turn_number: int,
+	victory_target: int,
+	match_result: MatchResult
+) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.name = "StatsPanel"
 	panel.custom_minimum_size = Vector2(580, 0)
@@ -154,6 +187,12 @@ func _build_stats_panel(winner: PlayerState, all_players: Array[PlayerState], tu
 
 	vbox.add_child(_create_stat_row("获胜方", winner.faction_name, Color(1.0, 0.87, 0.52, 1.0)))
 	vbox.add_child(_create_stat_row("总回合数", "第 %d 回合" % turn_number, Color(0.93, 0.87, 0.74, 0.95)))
+	var end_reason_text := (
+		match_result.get_end_reason_text()
+		if match_result != null
+		else "达到资源分目标"
+	)
+	vbox.add_child(_create_stat_row("结束原因", end_reason_text, Color(0.93, 0.87, 0.74, 0.95)))
 	vbox.add_child(_create_stat_row("胜利目标", "%d 资源分" % victory_target, Color(0.93, 0.87, 0.74, 0.95)))
 
 	vbox.add_child(_create_separator())
