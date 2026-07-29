@@ -831,6 +831,11 @@ func advance_faction_runtime_state_for_player(player: PlayerState) -> void:
 	if await faction_runtime_state_resolver.resolve_after_turn_end(self, player, turn_event_ledger):
 		refresh_hand_passives_for_player(player, false)
 		update_faction_time_panel_view()
+		if player.faction_id == "night_elf_sentinels":
+			var time_animation_key := "night_elf_time_transition"
+			if player.faction_runtime_state_id != "":
+				time_animation_key += "_%s" % player.faction_runtime_state_id
+			await play_board_effect_animation(time_animation_key)
 
 
 func record_turn_death_event(death_event: Dictionary) -> void:
@@ -1457,8 +1462,19 @@ func play_card_swap_animation(
 	)
 
 
-func play_card_attack_animation(attacker_state: CardState, target_state: CardState, is_melee_attack := true) -> void:
-	await game_animation_resolver.play_card_attack_animation(self, attacker_state, target_state, is_melee_attack)
+func play_card_attack_animation(
+	attacker_state: CardState,
+	target_state: CardState,
+	is_melee_attack := true,
+	attack_animation_key := ""
+) -> void:
+	await game_animation_resolver.play_card_attack_animation(
+		self,
+		attacker_state,
+		target_state,
+		is_melee_attack,
+		attack_animation_key
+	)
 
 
 func play_secondary_attack_impact_animation(target_states: Array[CardState]) -> void:

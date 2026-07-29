@@ -23,7 +23,9 @@ func _initialize() -> void:
 		"gu_devour", "gu_venom_inject", "gu_venom_burst",
 		"gu_scorpion_venom_apply", "gu_king_venom_apply",
 		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
-		"gu_poison_tick_king", "gu_poison_burst"
+		"gu_poison_tick_king", "gu_poison_burst",
+		"moonblade", "tranquil_spring", "precision_shot", "full_moon_cover",
+		"meteor_aura", "meteor_strike", "claw_strike", "elune_grace"
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
@@ -38,7 +40,9 @@ func _initialize() -> void:
 		"gu_devour", "gu_venom_inject", "gu_venom_burst",
 		"gu_scorpion_venom_apply", "gu_king_venom_apply",
 		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
-		"gu_poison_tick_king", "gu_poison_burst"
+		"gu_poison_tick_king", "gu_poison_burst",
+		"moonblade", "tranquil_spring", "precision_shot", "full_moon_cover",
+		"meteor_aura", "meteor_strike", "claw_strike", "elune_grace"
 	])
 	_assert_routes(router, "source_rect", [
 		"body_beyond_body", "wanmo_ritual", "medical_practice",
@@ -50,14 +54,26 @@ func _initialize() -> void:
 		"gu_devour", "gu_venom_inject", "gu_venom_burst",
 		"gu_scorpion_venom_apply", "gu_king_venom_apply",
 		"gu_poison_tick_scorpion", "gu_poison_tick_snake",
-		"gu_poison_tick_king", "gu_poison_burst"
+		"gu_poison_tick_king", "gu_poison_burst",
+		"moonblade", "tranquil_spring", "precision_shot", "full_moon_cover",
+		"meteor_aura", "meteor_strike", "claw_strike"
 	])
 	_assert_routes(router, "multi_rect", [
 		"faith_light", "gu_venom_burst", "gu_poison_tick_scorpion",
 		"gu_poison_tick_snake", "gu_poison_tick_king", "gu_poison_burst",
-		"thin_burial_release", "thin_burial_break"
+		"thin_burial_release", "thin_burial_break", "meteor_strike"
 	])
-	_assert_routes(router, "board", ["chaos_corruption_burst", "kagune_release"])
+	_assert_routes(router, "board", [
+		"chaos_corruption_burst",
+		"kagune_release",
+		"night_elf_time_transition",
+		"night_elf_time_transition_sunrise",
+		"night_elf_time_transition_noon",
+		"night_elf_time_transition_dusk",
+		"night_elf_time_transition_moonrise",
+		"night_elf_time_transition_full_moon",
+		"night_elf_time_transition_moonset"
+	])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])
 

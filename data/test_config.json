@@ -18,8 +18,12 @@
     ],
     "night_elf_sentinels": [
       "tyrande",
+      "precision_shot",
+      "full_moon_cover",
+      "meteor_fall",
       "sentinel_huntress",
-      "hippogryph_rider"
+      "elite_moonblade_panther",
+      "moon_well"
     ]
   },
   "include_neutral_pool": false,

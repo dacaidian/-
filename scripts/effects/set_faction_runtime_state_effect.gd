@@ -14,6 +14,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if state_id == "":
 		return
 
+	var previous_state_id := player.faction_runtime_state_id
 	if not player.set_faction_runtime_state_by_id(state_id):
 		return
 
@@ -23,6 +24,15 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		game_manager.update_faction_time_panel_view()
 	if game_manager.has_method("refresh_debug_panel"):
 		game_manager.refresh_debug_panel()
+	if (
+		previous_state_id != player.faction_runtime_state_id
+		and player.faction_id == "night_elf_sentinels"
+		and game_manager.has_method("play_board_effect_animation")
+	):
+		var time_animation_key := "night_elf_time_transition"
+		if player.faction_runtime_state_id != "":
+			time_animation_key += "_%s" % player.faction_runtime_state_id
+		await game_manager.play_board_effect_animation(time_animation_key)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

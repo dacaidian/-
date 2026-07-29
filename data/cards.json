@@ -1648,7 +1648,8 @@
 							{
 								"action_id": "claw_strike",
 								"name": "爪击",
-								"amount": 1
+								"amount": 1,
+								"animation": "claw_strike"
 							}
 						]
 					}
@@ -1722,7 +1723,7 @@
 				"type": "spell",
 				"count": 3,
 				"level": 1,
-				"animation": "full_moon_cover",
+				"animation": "precision_shot",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
@@ -1755,7 +1756,7 @@
 				"type": "spell",
 				"count": 2,
 				"level": 2,
-				"animation": "arcane",
+				"animation": "full_moon_cover",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [

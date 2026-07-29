@@ -34,7 +34,8 @@ func play_card_attack_animation(
 	game_manager: GameManager,
 	attacker_state: CardState,
 	target_state: CardState,
-	is_melee_attack := true
+	is_melee_attack := true,
+	attack_animation_key := ""
 ) -> void:
 	if game_manager == null or attacker_state == null or target_state == null:
 		return
@@ -48,10 +49,11 @@ func play_card_attack_animation(
 	game_manager.play_sfx("attack_melee" if is_melee_attack else "attack_ranged")
 	await game_manager.card_animation_controller.play_card_attack(
 		game_manager,
-		game_manager.get_parent(),
+		get_overlay_animation_root(game_manager),
 		attacker_card,
 		target_card,
-		is_melee_attack
+		is_melee_attack,
+		attack_animation_key
 	)
 	game_manager.is_resolving_card_action = false
 

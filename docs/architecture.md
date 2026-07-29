@@ -273,7 +273,17 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 达拉然法术表现由 `DalaranAnimationProvider` 统一编排，以程序化 `DalaranSpellVisual` 复用“规则几何、学派配色、透明能量层、起手聚能、释放冲击、余韵消散”的学院派语言。奥术使用蓝紫符文环、同心法阵、网格折叠和定向法力流；冰霜使用冰蓝晶体、六边形屏障、霜纹与清晰范围边界；火焰使用符文蓄力、白热核心、燃烧尾迹和集中冲击；水元素使用奥术召唤阵约束半透明流体、水纹、雾气和法力核心。`DalaranFireAnimationPlayer` 专门负责火球术/炎爆术的蓄力、投射物飞行和命中恢复，炎爆术通过更长蓄力、更大白热核心和更强冲击与火球术分级；`DalaranSpaceSwapPlayer` 负责奥术空间的双锚点法阵、稳定连接和格子内容交换，规则层只传 `arcane_space_swap`，不创建表现节点。召唤水元素、巨水元素、学院召唤、冰霜护盾、奥术智慧、暴风雪分别使用专属 key，不再复用通用 `summon` / `shield` / `arcane`。
 
-达拉然持续表现按范围分层：辉煌光环是单位局部、可叠加状态，由 `CardStatusOverlay` 绘制反向旋转符文轨道、法力流和层数轨道，仅在状态存在时刷新；其回合产蓝效果通过 `gain_mana.source_animation` 配置 `arcane_aura_pulse`，公共 `GainManaEffect` 只负责按配置请求来源动画，不识别卡牌 id。极寒风暴覆盖 3x3，继续由 `BoardPersistentVisualController` 和 `ExtremeColdStormAreaVisual` 管理边界、冰纹、旋转风场和来源跟随；回合结算的坠冰冲击仍是一段一次性 provider 动画。调整达拉然表现后至少运行 `tools/test_animation_routing.gd`、`tools/test_dalaran_animation_provider.gd`、`tools/test_dalaran_council.gd` 和 `tools/test_board_persistent_visuals.gd`。
+达拉然持续表现按范围分层：辉煌光环是单位局部、可叠加状态，由 `CardStatusOverlay` 绘制反向旋转符文轨道、法力流和层数轨道，仅在状态存在时刷新；其回合产蓝效果通过 `gain_mana.source_animation` 配置 `arcane_aura_pulse`，公共 `GainManaEffect` 只负责按配置请求来源动画，不识别卡牌 id。产蓝脉冲的能量应在光环内部沿曲线回卷、汇入施法者并形成短促上升光点，不绘制缺乏真实 HUD 锚点的屏幕边缘硬直线。极寒风暴覆盖 3x3，继续由 `BoardPersistentVisualController` 和 `ExtremeColdStormAreaVisual` 管理边界、冰纹、旋转风场和来源跟随；回合结算的坠冰冲击仍是一段一次性 provider 动画。调整达拉然表现后至少运行 `tools/test_animation_routing.gd`、`tools/test_dalaran_animation_provider.gd`、`tools/test_dalaran_council.gd` 和 `tools/test_board_persistent_visuals.gd`。
+
+暗夜精灵哨兵的一次性表现由 `NightElfAnimationProvider` 编排，底层图元统一由 `NightElfVfxFactory` 创建。月体、新月和月束分别使用 `night_elf_moon_disc.gdshader`、`night_elf_crescent.gdshader`、`night_elf_moonbeam.gdshader` 的 SDF/半透明材质；轨迹、弓弦、水带和风压使用 `Line2D`，星屑、水滴与叶影使用有数量上限的 `CPUParticles2D`。Provider 只组合语义明确的图层、Tween 和生命周期，不再依赖一个包办所有技能的 `_draw()` 画布。统一色彩为月光银白、冰蓝、夜空靛蓝和低饱和森林青，不复用达拉然的复杂奥术法阵，也不复用白银之手的暖金圣光。
+
+技能语义保持独立：`moonblade` 是带双层银蓝尾迹的实体新月刃，按二次贝塞尔弧线飞行，在首次命中后短促转刃再反向弹射；命中使用新月切痕和银屑，不使用爆炸。`claw_strike` 使用三道带暗色切口、银蓝边缘和收窄末端的物理爪痕，并辅以低矮风压与少量叶片，不表现成远程月光波。`tranquil_spring` 先在月亮井聚水，再由双层弧形水带输送至目标，目标阶段分别播放冷白月束、水纹治疗和污浊碎片净化。`precision_shot` 使用绷紧弓弦、单一冷白瞄准线、箭头月光核心和小型艾露恩月痕，不使用通用增益圆环。
+
+`full_moon_cover` 使用 `at_rect` 路由让中间月相沿高空弧线连续掠过，最终闭合为完整月轮并降下克制的冷白月束。`meteor_strike` 同时支持单目标矩形和 `multi_rect`：落点月纹出现时流星已经从高空沿明确曲线下坠，冷白星核、银蓝外焰与淡紫长尾连续运动，命中通过月纹冲击和碎光完成，不在预警与下坠之间停顿或重启；群体流星共享一个根节点并轻量错峰，避免逐目标串行和全屏白闪。`meteor_aura` 的施加动画和持续状态分离，持续层只保留低亮残月、单条星轨和少量星体。
+
+时间变化使用状态专属 board key：`night_elf_time_transition_sunrise`、`_noon`、`_dusk`、`_moonrise`、`_full_moon`、`_moonset`，通用 `night_elf_time_transition` 仅作兼容回退。自动回合推进和法术直接跳转都在状态更新后发送当前状态对应的 key，因此日出、正午、黄昏、月升、满月和月落拥有不同的大型月相符号、环境滤镜与叶片/星尘运动。切换动画必须保留清晰的进入、停留和淡出阶段；六种滤镜分别使用晨曦暖玫、正午自然青、黄昏紫琥珀、月升靛蓝、满月冷蓝和月落灰紫，但透明度仍须保证棋盘与数值可读。规则层只决定状态，Provider 只解释表现。`precision_shot` 与 `meteor_aura` 的持续反馈仍由 `CardStatusOverlay` 读取真实状态并低频刷新；状态移除后必须停止处理。
+
+新增暗夜精灵技能时，先判断它属于目标局部、来源到目标、全战场、多目标或持续区域，再扩展 Provider 的语义 key。新月、月体、月束、星点、轨道、箭体、爪痕和粒子优先复用 `NightElfVfxFactory`；弧线投射和流体传输复用 Provider 的二次贝塞尔采样与双层渐变轨迹；持续跨格领域迁移到 `BoardPersistentVisualController`。一次性根节点必须在 Tween 结束后统一回收，规则层不得持有视觉节点。调整后运行 `tools/test_animation_routing.gd`、`tools/test_night_elf_animation_provider.gd` 和 `tools/test_board_persistent_visuals.gd`。
 
 手牌抽屉仍按法术、随从、升级、装备四个语义分区，并保留各自独立滚动，但不再固定四等分。生产节点树位于独立场景 `scenes/ui/hand_drawer_panel.tscn`，主场景和 UI 集成测试共用同一组件。`HandSectionLayoutPolicy` 是不依赖节点的纯布局策略：空分区收缩为仅标题的窄条；非空分区先取得一致的可操作最低高度，再按实际卡牌行数的平方根分配剩余空间，使拥挤区明确获得更多高度，同时避免卡牌数量极端悬殊时独占抽屉；某分区达到完整内容高度后停止增长，空间继续分给仍需滚动的分区。`HandDrawerController` 只统计卡牌数、计算每行容量并应用高度；焦点变化不参与高度计算，因此点击卡牌不会引发布局跳动。完整重建前捕获四区滚动偏移；旧滚动节点会先脱离父节点再延迟释放，避免与新节点同名；随后在新高度应用并完成容器重排后统一恢复偏移。窗口尺寸变化只重新运行布局策略，不重新构造卡牌节点。
 

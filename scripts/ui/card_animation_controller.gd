@@ -8,6 +8,7 @@ const FoxSpiritAnimationProviderScript := preload("res://scripts/ui/animation/fo
 const GenericSpellAnimationProviderScript := preload("res://scripts/ui/animation/generic_spell_animation_provider.gd")
 const MiaoAnimationProviderScript := preload("res://scripts/ui/animation/miao_animation_provider.gd")
 const MonkeyAnimationProviderScript := preload("res://scripts/ui/animation/monkey_animation_provider.gd")
+const NightElfAnimationProviderScript := preload("res://scripts/ui/animation/night_elf_animation_provider.gd")
 const SilverHandAnimationProviderScript := preload("res://scripts/ui/animation/silver_hand_animation_provider.gd")
 const ShadowmoonAnimationProviderScript := preload("res://scripts/ui/animation/shadowmoon_animation_provider.gd")
 const TokyoGhoulAnimationProviderScript := preload("res://scripts/ui/animation/tokyo_ghoul_animation_provider.gd")
@@ -48,6 +49,7 @@ var fox_spirit_animation_provider := FoxSpiritAnimationProviderScript.new()
 var generic_spell_animation_provider := GenericSpellAnimationProviderScript.new()
 var miao_animation_provider := MiaoAnimationProviderScript.new()
 var monkey_animation_provider := MonkeyAnimationProviderScript.new()
+var night_elf_animation_provider := NightElfAnimationProviderScript.new()
 var silver_hand_animation_provider := SilverHandAnimationProviderScript.new()
 var shadowmoon_animation_provider := ShadowmoonAnimationProviderScript.new()
 var tokyo_ghoul_animation_provider := TokyoGhoulAnimationProviderScript.new()
@@ -81,6 +83,8 @@ func setup(config: Dictionary) -> void:
 	miao_animation_provider.register_routes(spell_animation_router)
 	monkey_animation_provider.setup(spell_animation_duration)
 	monkey_animation_provider.register_routes(spell_animation_router)
+	night_elf_animation_provider.setup(spell_animation_duration)
+	night_elf_animation_provider.register_routes(spell_animation_router)
 	silver_hand_animation_provider.setup(spell_animation_duration)
 	silver_hand_animation_provider.register_routes(spell_animation_router)
 	shadowmoon_animation_provider.setup(spell_animation_duration)
@@ -147,11 +151,28 @@ func play_card_swap(
 	second_card.is_animating = false
 
 
-func play_card_attack(owner: Node, root: Node, attacker_card: Card, target_card: Card, is_melee_attack := true) -> void:
+func play_card_attack(
+	owner: Node,
+	root: Node,
+	attacker_card: Card,
+	target_card: Card,
+	is_melee_attack := true,
+	attack_animation_key := ""
+) -> void:
 	if is_melee_attack:
 		await play_melee_attack(owner, attacker_card, target_card)
 	else:
 		await play_ranged_attack(owner, root, attacker_card, target_card)
+
+	if attack_animation_key == "" or not root is Control:
+		return
+	await spell_animation_router.try_play_from_rect(
+		attack_animation_key,
+		owner,
+		root as Control,
+		attacker_card.get_global_rect(),
+		target_card
+	)
 
 
 func play_secondary_attack_impacts(owner: Node, target_cards: Array[Card]) -> void:
@@ -1266,120 +1287,13 @@ func play_dark_arrow_spell(owner: Node, effect_root: Control, caster_center: Vec
 func play_moonblade_spell(owner: Node, effect_root: Control, caster_card: Card, first_card: Card, second_card: Card) -> void:
 	if owner == null or effect_root == null or caster_card == null or first_card == null or second_card == null:
 		return
-
-	var caster_start_scale: Vector2 = caster_card.scale
-	var caster_start_z_index: int = caster_card.z_index
-	caster_card.is_animating = true
-	caster_card.z_index = 1180
-
-	var charge_tween := owner.create_tween()
-	charge_tween.set_parallel(true)
-	charge_tween.set_trans(Tween.TRANS_SINE)
-	charge_tween.set_ease(Tween.EASE_OUT)
-	charge_tween.tween_property(caster_card, "scale", caster_start_scale * 1.05, spell_animation_duration * 0.18)
-	await charge_tween.finished
-
-	await play_moonblade_projectile_chain(
+	await night_elf_animation_provider.play_moonblade(
 		owner,
 		effect_root,
-		caster_card.get_global_rect().get_center(),
+		caster_card,
 		first_card,
 		second_card
 	)
-
-	caster_card.scale = caster_start_scale
-	caster_card.z_index = caster_start_z_index
-	caster_card.is_animating = false
-
-
-func play_moonblade_projectile_chain(
-	owner: Node,
-	effect_root: Control,
-	start_point: Vector2,
-	first_card: Card,
-	second_card: Card
-) -> void:
-	if owner == null or effect_root == null or first_card == null or second_card == null:
-		return
-
-	var first_center: Vector2 = first_card.get_global_rect().get_center()
-	var second_center: Vector2 = second_card.get_global_rect().get_center()
-	var blade := create_moonblade_projectile()
-	effect_root.add_child(blade)
-	blade.global_position = start_point - blade.pivot_offset
-
-	var first_hit_direction := (first_center - start_point).normalized()
-	await fly_moonblade_segment(owner, blade, first_center, first_hit_direction, spell_animation_duration * 0.32)
-	await play_moonblade_impact(owner, first_card, first_hit_direction)
-
-	var second_hit_direction := (second_center - first_center).normalized()
-	await fly_moonblade_segment(owner, blade, second_center, second_hit_direction, spell_animation_duration * 0.28)
-	await play_moonblade_impact(owner, second_card, second_hit_direction)
-
-	var fade_tween := owner.create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.set_trans(Tween.TRANS_SINE)
-	fade_tween.set_ease(Tween.EASE_OUT)
-	fade_tween.tween_property(blade, "modulate:a", 0.0, spell_animation_duration * 0.18)
-	fade_tween.tween_property(blade, "scale", Vector2(0.40, 0.40), spell_animation_duration * 0.18)
-	await fade_tween.finished
-	blade.queue_free()
-
-
-func fly_moonblade_segment(owner: Node, blade: Panel, target_center: Vector2, direction: Vector2, duration: float) -> void:
-	if owner == null or blade == null:
-		return
-
-	var tween := owner.create_tween()
-	tween.set_parallel(true)
-	tween.set_trans(Tween.TRANS_CUBIC)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(blade, "global_position", target_center - blade.pivot_offset, duration)
-	tween.tween_property(blade, "rotation", blade.rotation + TAU * 2.4, duration)
-	tween.tween_property(blade, "scale", Vector2(1.20, 1.20), duration)
-	if direction.length() > 0.01:
-		tween.tween_property(blade, "self_modulate", Color(0.80, 0.94, 1.0, 1.0), duration * 0.5)
-	await tween.finished
-
-
-func play_moonblade_impact(owner: Node, target_card: Card, direction: Vector2) -> void:
-	if owner == null or target_card == null:
-		return
-
-	var start_position: Vector2 = target_card.position
-	var start_scale: Vector2 = target_card.scale
-	var start_modulate: Color = target_card.self_modulate
-	var start_z_index: int = target_card.z_index
-	var shake_offset := direction * attack_target_shake_distance
-	if shake_offset.length() <= 0.01:
-		shake_offset = Vector2(0, -attack_target_shake_distance)
-
-	target_card.is_animating = true
-	target_card.z_index = 1190
-
-	var tween := owner.create_tween()
-	tween.set_parallel(true)
-	tween.set_trans(Tween.TRANS_SINE)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(target_card, "position", start_position + shake_offset, spell_animation_duration * 0.08)
-	tween.tween_property(target_card, "scale", start_scale * 0.96, spell_animation_duration * 0.08)
-	tween.tween_property(target_card, "self_modulate", Color(0.72, 0.90, 1.0, 1.0), spell_animation_duration * 0.08)
-	await tween.finished
-
-	var recover := owner.create_tween()
-	recover.set_parallel(true)
-	recover.set_trans(Tween.TRANS_BACK)
-	recover.set_ease(Tween.EASE_OUT)
-	recover.tween_property(target_card, "position", start_position, spell_animation_duration * 0.14)
-	recover.tween_property(target_card, "scale", start_scale, spell_animation_duration * 0.14)
-	recover.tween_property(target_card, "self_modulate", start_modulate, spell_animation_duration * 0.14)
-	await recover.finished
-
-	target_card.position = start_position
-	target_card.scale = start_scale
-	target_card.self_modulate = start_modulate
-	target_card.z_index = start_z_index
-	target_card.is_animating = false
 
 
 func play_board_effect(owner: Node, effect_root: Control, animation_key: String) -> void:
@@ -1562,18 +1476,6 @@ func create_dark_arrow_projectile() -> Control:
 	return arrow
 
 
-func create_moonblade_projectile() -> Panel:
-	var projectile := Panel.new()
-	projectile.name = "MoonbladeProjectile"
-	projectile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	projectile.size = Vector2(34, 34)
-	projectile.pivot_offset = projectile.size * 0.5
-	projectile.modulate = Color(1.0, 1.0, 1.0, 0.96)
-	projectile.z_index = 2180
-	projectile.add_theme_stylebox_override("panel", create_moonblade_projectile_style())
-	return projectile
-
-
 func create_fireball_projectile_style(size_scale := 1.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fireball_projectile_color
@@ -1593,17 +1495,6 @@ func create_dark_arrow_shaft_style() -> StyleBoxFlat:
 	style.set_corner_radius_all(4)
 	style.shadow_color = dark_arrow_projectile_glow_color
 	style.shadow_size = 18
-	return style
-
-
-func create_moonblade_projectile_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.72, 0.88, 1.0, 0.86)
-	style.border_color = Color(1.0, 0.98, 0.72, 0.92)
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.48, 0.78, 1.0, 0.68)
-	style.shadow_size = 20
 	return style
 
 

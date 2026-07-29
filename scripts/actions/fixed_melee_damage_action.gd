@@ -4,6 +4,7 @@ class_name FixedMeleeDamageAction
 const ACTION_ID := "fixed_melee_damage"
 
 var damage := 1
+var animation_key := ""
 
 
 func setup(action_data: Dictionary) -> FixedMeleeDamageAction:
@@ -11,6 +12,7 @@ func setup(action_data: Dictionary) -> FixedMeleeDamageAction:
 	id = configured_id if configured_id != "" else ACTION_ID
 	display_name = str(action_data.get("name", "爪击"))
 	damage = maxi(EffectData.get_amount(action_data), 0)
+	animation_key = str(action_data.get("animation", ""))
 	action_group = CardState.ACTION_GROUP_SPECIAL
 	main_action_cost = 0
 	once_per_turn = true
@@ -59,6 +61,6 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not pay_action_cost(user):
 		return
 
-	await game_manager.play_card_attack_animation(user, target, true)
+	await game_manager.play_card_attack_animation(user, target, true, animation_key)
 	target.take_damage(damage)
 	await game_manager.resolve_dead_states([target], EffectData.DEATH_REASON_EFFECT, user)

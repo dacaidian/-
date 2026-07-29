@@ -89,9 +89,48 @@ func _draw_arcane_aura() -> void:
 				2.4,
 				true
 			)
-		var stream_start := center + Vector2(radius * 0.20, -radius * 0.12)
-		var stream_end := center + Vector2(radius * 1.42, -radius * 1.02)
-		_draw_energy_beam(stream_start, stream_end, Color(0.58, 0.80, 1.0, 0.88), 3.0)
+
+		# The mana gain resolves inside the aura. Curved streams fold back into
+		# the caster and rise as a short plume; no arbitrary beam points toward
+		# an unrelated screen edge.
+		for intake_index in range(6):
+			var intake_stream := PackedVector2Array()
+			for step in range(16):
+				var t := float(step) / 15.0
+				var angle := (
+					float(intake_index) * TAU / 6.0
+					+ phase * 0.28
+					+ t * 1.48
+				)
+				var stream_radius := radius * lerpf(1.04, 0.18, t)
+				intake_stream.append(
+					center
+					+ Vector2(cos(angle), sin(angle))
+					* stream_radius
+					* Vector2(1.0, 0.70)
+					- Vector2(0.0, radius * 0.12 * t)
+				)
+			draw_polyline(
+				intake_stream,
+				Color(0.58, 0.80, 1.0, 0.18 + pulse * 0.34),
+				2.2,
+				true
+			)
+
+		for mote_index in range(7):
+			var mote_phase := fmod(pulse + float(mote_index) / 7.0, 1.0)
+			var mote_angle := phase * 0.32 + TAU * float(mote_index) / 7.0
+			var mote_radius := radius * lerpf(0.82, 0.14, mote_phase)
+			var mote_point := (
+				center
+				+ Vector2.from_angle(mote_angle) * mote_radius * Vector2(1.0, 0.72)
+				- Vector2(0.0, radius * 0.28 * mote_phase)
+			)
+			draw_circle(
+				mote_point,
+				radius * (0.024 + float(mote_index % 3) * 0.006),
+				Color(0.80, 0.94, 1.0, sin(mote_phase * PI) * 0.76)
+			)
 
 
 func _draw_water_summon() -> void:
@@ -544,12 +583,6 @@ func _draw_ice_crystal(center: Vector2, angle: float, radius: float) -> void:
 	var tangent := Vector2(-direction.y, direction.x)
 	draw_line(center - direction * radius, center + direction * radius, ICE_EDGE, 1.8, true)
 	draw_line(center - tangent * radius * 0.56, center + tangent * radius * 0.56, ICE_EDGE, 1.4, true)
-
-
-func _draw_energy_beam(from: Vector2, to: Vector2, color: Color, width: float) -> void:
-	draw_line(from, to, Color(color.r, color.g, color.b, color.a * 0.10), width * 5.0, true)
-	draw_line(from, to, Color(color.r, color.g, color.b, color.a * 0.32), width * 2.4, true)
-	draw_line(from, to, color, width, true)
 
 
 func _draw_glow_circle(center: Vector2, radius: float, color: Color) -> void:

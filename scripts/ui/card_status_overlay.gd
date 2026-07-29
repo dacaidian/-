@@ -42,12 +42,12 @@ var devour_color := Color(0.10, 0.28, 0.12, 0.10)
 var devour_edge_color := Color(0.30, 0.62, 0.34, 0.68)
 var devour_chitin_color := Color(0.42, 0.66, 0.30, 0.72)
 var devour_royal_color := Color(0.50, 0.18, 0.58, 0.76)
-var precision_shot_color := Color(0.30, 0.78, 1.0, 0.16)
-var precision_shot_edge_color := Color(0.64, 0.94, 1.0, 0.86)
-var precision_shot_mark_color := Color(1.0, 0.96, 0.58, 0.90)
-var meteor_aura_color := Color(0.42, 0.16, 0.72, 0.18)
-var meteor_aura_edge_color := Color(0.92, 0.78, 1.0, 0.80)
-var meteor_aura_star_color := Color(1.0, 0.86, 0.42, 0.88)
+var precision_shot_color := Color(0.26, 0.68, 0.92, 0.13)
+var precision_shot_edge_color := Color(0.76, 0.92, 1.0, 0.88)
+var precision_shot_mark_color := Color(0.94, 0.98, 1.0, 0.94)
+var meteor_aura_color := Color(0.20, 0.28, 0.66, 0.14)
+var meteor_aura_edge_color := Color(0.70, 0.88, 1.0, 0.84)
+var meteor_aura_star_color := Color(0.94, 0.98, 1.0, 0.90)
 var soul_hook_color := Color(0.45, 0.04, 0.18, 0.20)
 var soul_hook_edge_color := Color(1.0, 0.24, 0.56, 0.74)
 var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
@@ -152,6 +152,8 @@ func has_animated_status_visual() -> bool:
 		or should_show_life_link()
 		or should_show_death_immunity()
 		or should_show_devour()
+		or should_show_precision_shot()
+		or should_show_meteor_aura()
 		or is_divine_shield_break_active()
 	)
 
@@ -586,22 +588,89 @@ func draw_arcane_aura() -> void:
 func draw_meteor_aura() -> void:
 	var aura_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.05)
 	var center := aura_rect.get_center()
-	var radius := minf(aura_rect.size.x, aura_rect.size.y) * 0.42
+	var radius := minf(aura_rect.size.x, aura_rect.size.y) * 0.40
 	var status := state.get_status(CardStatus.STATUS_METEOR_AURA) if state != null else null
 	var stack_count := status.stacks if status != null else 1
-	var ring_count: int = mini(maxi(stack_count, 1), 5)
+	var star_count: int = mini(maxi(stack_count + 2, 3), 5)
+	var pulse := 0.88 + 0.12 * sin(animation_time * 1.35)
+	var rotation := animation_time * 0.16
 
-	draw_circle(center, radius * 0.82, meteor_aura_color)
-	for index in range(ring_count):
-		var ring_radius := radius + float(index) * 4.5
-		var alpha := meteor_aura_edge_color.a * (1.0 - float(index) * 0.12)
-		draw_arc(center, ring_radius, -PI * 0.18, TAU - PI * 0.18, 80, Color(meteor_aura_edge_color.r, meteor_aura_edge_color.g, meteor_aura_edge_color.b, alpha), 2.2, true)
+	# The persistent aura is intentionally sparse: one moon, one celestial
+	# track, and a few stars. It communicates a waiting judgment without
+	# covering the unit portrait with generic circular glow.
+	draw_arc(
+		center + Vector2(-radius * 0.16, radius * 0.02),
+		radius * 0.74,
+		-PI * 0.94,
+		PI * 0.38,
+		64,
+		Color(0.90, 0.97, 1.0, 0.48 * pulse),
+		maxf(size.x * 0.030, 2.0),
+		true
+	)
+	draw_arc(
+		center + Vector2(-radius * 0.14, radius * 0.02),
+		radius * 0.61,
+		-PI * 0.86,
+		PI * 0.29,
+		56,
+		Color(0.36, 0.62, 0.88, 0.22 * pulse),
+		maxf(size.x * 0.014, 1.0),
+		true
+	)
+	draw_arc(
+		center,
+		radius * 0.96,
+		rotation - PI * 0.72,
+		rotation + PI * 0.84,
+		64,
+		Color(
+			meteor_aura_edge_color.r,
+			meteor_aura_edge_color.g,
+			meteor_aura_edge_color.b,
+			0.24 * pulse
+		),
+		maxf(size.x * 0.010, 0.9),
+		true
+	)
 
-	for index in range(6):
-		var angle := TAU * float(index) / 6.0 + 0.28
-		var pos := center + Vector2(cos(angle), sin(angle)) * radius * 0.78
-		draw_line(pos + Vector2(-4.0, 0.0), pos + Vector2(4.0, 0.0), meteor_aura_star_color, 1.8)
-		draw_line(pos + Vector2(0.0, -4.0), pos + Vector2(0.0, 4.0), meteor_aura_star_color, 1.8)
+	for index in range(star_count):
+		var angle := (
+			rotation
+			+ TAU * float(index) / float(star_count)
+			+ float(index % 2) * 0.16
+		)
+		var orbit_radius := radius * (0.86 + float(index % 2) * 0.09)
+		var star_position := (
+			center
+			+ Vector2.from_angle(angle) * orbit_radius * Vector2(1.0, 0.74)
+		)
+		var star_radius := maxf(size.x * (0.014 + float(index % 2) * 0.004), 1.4)
+		var star_color := Color(
+			meteor_aura_star_color.r,
+			meteor_aura_star_color.g,
+			meteor_aura_star_color.b,
+			meteor_aura_star_color.a * pulse * (0.46 + float(index % 2) * 0.10)
+		)
+		draw_line(
+			star_position - Vector2(star_radius, 0.0),
+			star_position + Vector2(star_radius, 0.0),
+			star_color,
+			1.5,
+			true
+		)
+		draw_line(
+			star_position - Vector2(0.0, star_radius),
+			star_position + Vector2(0.0, star_radius),
+			star_color,
+			1.5,
+			true
+		)
+		draw_circle(
+			star_position,
+			maxf(star_radius * 0.18, 0.7),
+			Color(0.96, 0.99, 1.0, 0.78)
+		)
 
 
 func draw_wanmo_charge_overlay() -> void:
@@ -1210,24 +1279,86 @@ func draw_freeze_overlay() -> void:
 func draw_precision_shot_overlay() -> void:
 	var aim_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
 	var center := aim_rect.get_center()
-	var radius := minf(aim_rect.size.x, aim_rect.size.y) * 0.28
-	var status := state.get_status(CardStatus.STATUS_PRECISION_SHOT) if state != null else null
-	var stack_count := status.stacks if status != null else 1
-	var ring_count: int = mini(maxi(stack_count, 1), 4)
+	var radius := minf(aim_rect.size.x, aim_rect.size.y) * 0.27
+	var pulse := 0.90 + 0.10 * sin(animation_time * 2.0)
+	var bow_center := center + Vector2(-radius * 0.18, 0.0)
+	var bow_radius := radius * 1.04
 
-	draw_rect(aim_rect, precision_shot_color, true)
-	for index in range(ring_count):
-		var ring_radius := radius + float(index) * 5.0
-		var alpha := precision_shot_edge_color.a * (1.0 - float(index) * 0.14)
-		draw_arc(center, ring_radius, 0.0, TAU, 72, Color(precision_shot_edge_color.r, precision_shot_edge_color.g, precision_shot_edge_color.b, alpha), 2.5, true)
+	# Precision is a taut bow and a single exact trajectory, not a stack of
+	# rotating buff rings.
+	var mark_color := Color(
+		precision_shot_mark_color.r,
+		precision_shot_mark_color.g,
+		precision_shot_mark_color.b,
+		precision_shot_mark_color.a * pulse
+	)
+	draw_arc(
+		bow_center,
+		bow_radius,
+		-PI * 0.46,
+		PI * 0.46,
+		48,
+		mark_color,
+		maxf(size.x * 0.022, 1.8),
+		true
+	)
+	var bow_top := bow_center + Vector2.from_angle(-PI * 0.46) * bow_radius
+	var bow_bottom := bow_center + Vector2.from_angle(PI * 0.46) * bow_radius
+	var string_anchor := bow_center - Vector2(radius * 0.42, 0.0)
+	draw_line(
+		bow_top,
+		string_anchor,
+		Color(0.72, 0.90, 1.0, 0.56 * pulse),
+		1.1,
+		true
+	)
+	draw_line(
+		string_anchor,
+		bow_bottom,
+		Color(0.72, 0.90, 1.0, 0.56 * pulse),
+		1.1,
+		true
+	)
 
-	var line_length := radius * 1.55
-	var gap := radius * 0.34
-	draw_line(center + Vector2(-line_length, 0), center + Vector2(-gap, 0), precision_shot_mark_color, 2.4)
-	draw_line(center + Vector2(gap, 0), center + Vector2(line_length, 0), precision_shot_mark_color, 2.4)
-	draw_line(center + Vector2(0, -line_length), center + Vector2(0, -gap), precision_shot_mark_color, 2.4)
-	draw_line(center + Vector2(0, gap), center + Vector2(0, line_length), precision_shot_mark_color, 2.4)
-	draw_circle(center, radius * 0.13, precision_shot_mark_color)
+	var arrow_end := center + Vector2(radius * 1.62, 0.0)
+	draw_line(
+		string_anchor,
+		arrow_end,
+		Color(0.92, 0.98, 1.0, 0.64 * pulse),
+		maxf(size.x * 0.012, 1.0),
+		true
+	)
+	draw_line(
+		arrow_end - Vector2(radius * 0.18, radius * 0.10),
+		arrow_end,
+		mark_color,
+		1.5,
+		true
+	)
+	draw_line(
+		arrow_end - Vector2(radius * 0.18, -radius * 0.10),
+		arrow_end,
+		mark_color,
+		1.5,
+		true
+	)
+
+	var elune_center := center + Vector2(0.0, -radius * 1.25)
+	draw_arc(
+		elune_center,
+		radius * 0.30,
+		-PI * 0.90,
+		PI * 0.42,
+		28,
+		Color(0.82, 0.94, 1.0, 0.54 * pulse),
+		maxf(size.x * 0.015, 1.2),
+		true
+	)
+	draw_circle(
+		elune_center + Vector2(radius * 0.08, -radius * 0.03),
+		maxf(size.x * 0.012, 1.2),
+		Color(0.96, 0.99, 1.0, 0.72 * pulse)
+	)
 
 
 func draw_soul_hook_overlay() -> void:

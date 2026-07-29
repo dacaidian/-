@@ -18,7 +18,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **白银之手**：圣光、治疗、护盾、复活、装备和阵线保护。
 - **达拉然议会**：法术工具箱、召唤、法术强度、奥术空间、吉安娜方向法术、巨水元素、极寒风暴光环和法师体系；奥术、冰霜、火焰、水元素使用统一学院派视觉语言与独立技能节奏。
 - **苗疆族**：毒、蛊、毒虫、陷阱、吞噬和毒爆；蛊术使用虫卵、菌丝、毒液、朱砂链接与草药烟气构成的统一有机视觉语言，并区分潜伏、成熟和结算阶段。
-- **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃。
+- **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃；特效使用独立 `NightElfAnimationProvider`、`NightElfVfxFactory` 与 SDF Shader，以实体银质新月、双层曲线轨迹、冷白月束、水流传输、物理爪痕、精准箭轨和连续坠落的月光流星构成统一的清冷视觉语言，六个时间阶段拥有各自的轻量过渡。
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
 - **猴妖仙**：孙悟空神通、瞬移、透视、隐身、护甲、分身协攻、变身和猴族副动作。
 - **野兽人**：同类斩杀进化、混沌腐蚀、兽径地形、兽王杀戮成长、鹰身女妖咆哮增益、萨满野性呼唤和万魔岩仪式。
@@ -99,6 +99,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_silver_hand_animation_provider.gd -SuccessMarker SILVER_HAND_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_dalaran_animation_provider.gd -SuccessMarker DALARAN_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_miao_animation_provider.gd -SuccessMarker MIAO_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
 修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
