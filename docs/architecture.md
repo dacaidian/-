@@ -259,7 +259,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 `BoardPersistentVisualController` 挂在全屏表现根节点下，扫描棋盘状态 payload 中的 `persistent_visuals` 描述，并通过 `visual_key` 注册表创建独立 renderer。`PersistentBoardAreaVisual` 负责来源状态生命周期、真实棋盘区域矩形计算、源单位移动跟随和逐帧刷新；具体主题 renderer 只负责绘制。区域大小复用 `area_rows` / `area_cols`，规则层不创建视觉节点。状态被移除、来源死亡或离场后，控制器自动回收表现。当前首个实现是 `ExtremeColdStormAreaVisual`，以后新增毒雾、火焰领域、空间扭曲或建筑光环时，应新增 renderer 并注册 key，而不是让卡牌节点越界绘制或在 `GameManager` 中写特效分支。
 
-`CardAnimationController` 是稳定动画门面，通用法术和种族主题特效通过 `SpellAnimationRouter` 注册 provider。路由按“卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域、多目标矩形组”七种表现上下文分别保存 animation key，不创建节点也不读取规则状态；provider 只接收表现上下文并拥有该主题的节点、Tween 和 StyleBox 实现。`multi_rect` 用于同一时点同步作用于多张可见卡牌的军阵治疗、群体祝福等表现：`GameAnimationResolver` 负责把状态集合解析为矩形集合，provider 负责同步节奏；若 key 未注册该上下文，效果层必须回退到原有逐目标反馈。普通种族成功开启施法回合后使用 `spell_turn_activation`，由 `GenericSpellAnimationProvider` 播放蓝金法阵、法力脉冲和粒子演出；东京喰种改走专属 `kagune_release`，不会重复播放通用效果。白银之手、猴妖仙、野兽人、苗疆族、狐妖仙、影月议会、东京喰种和达拉然主题均已迁移到独立 provider；兽径使用 path 路由，狐火使用 area 路由。达拉然“冰锥术”在 `DalaranAnimationProvider` 内按凝聚、定向飞行、命中碎裂、冻结反馈四阶段播放；魔免目标仍显示碰撞碎裂，但不显示冻结结晶。原有 key、默认回退和 `GameAnimationResolver` 门面保持兼容，新主题不得再追加回中央 `match`。
+`CardAnimationController` 是稳定动画门面，通用法术和种族主题特效通过 `SpellAnimationRouter` 注册 provider。路由按“卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域、多目标矩形组”七种表现上下文分别保存 animation key，不创建节点也不读取规则状态；provider 只接收表现上下文并拥有该主题的节点、Tween 和 StyleBox 实现。同一上下文中的同一 key 只能有一个权威处理器：重复注册不同 Callable 时保留首个注册并告警，禁止依靠 provider 加载顺序静默覆盖。`multi_rect` 用于同一时点同步作用于多张可见卡牌的军阵治疗、群体祝福等表现：`GameAnimationResolver` 负责把状态集合解析为矩形集合，provider 负责同步节奏；若 key 未注册该上下文，效果层必须回退到原有逐目标反馈。普通种族成功开启施法回合后使用 `spell_turn_activation`，由 `GenericSpellAnimationProvider` 播放蓝金法阵、法力脉冲和粒子演出；东京喰种改走专属 `kagune_release`，不会重复播放通用效果。白银之手、猴妖仙、野兽人、苗疆族、狐妖仙、影月议会、东京喰种和达拉然主题均已迁移到独立 provider；兽径使用 path 路由，狐火使用 area 路由。达拉然“冰锥术”在 `DalaranAnimationProvider` 内按凝聚、定向飞行、命中碎裂、冻结反馈四阶段播放；魔免目标仍显示碰撞碎裂，但不显示冻结结晶。原有 key、默认回退和 `GameAnimationResolver` 门面保持兼容，新主题不得再追加回中央 `match`，已由 provider 接管的 key 也不得在中央控制器保留第二套不可达实现。
 
 白银之手一次性法术由 `SilverHandAnimationProvider` 与程序化 `HolySpellVisual` 负责。统一视觉语言是有重量和军事秩序的白金圣光：温暖白色核心、象牙金中层、珍珠银防御面、金属金边缘、垂直降光、盾形结构、战锤印记、誓约圣印和受控光尘；禁止绿色治疗、普通红焰、廉价金色爆闪、羽翼装饰和无结构光圈。动画统一按“祈祷蓄势 → 圣光降临 → 庇护/治愈/裁决结算 → 祝福余辉”组织。
 
@@ -275,7 +275,9 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 达拉然持续表现按范围分层：辉煌光环是单位局部、可叠加状态，由 `CardStatusOverlay` 绘制反向旋转符文轨道、法力流和层数轨道，仅在状态存在时刷新；其回合产蓝效果通过 `gain_mana.source_animation` 配置 `arcane_aura_pulse`，公共 `GainManaEffect` 只负责按配置请求来源动画，不识别卡牌 id。产蓝脉冲的能量应在光环内部沿曲线回卷、汇入施法者并形成短促上升光点，不绘制缺乏真实 HUD 锚点的屏幕边缘硬直线。极寒风暴覆盖 3x3，继续由 `BoardPersistentVisualController` 和 `ExtremeColdStormAreaVisual` 管理边界、冰纹、旋转风场和来源跟随；回合结算的坠冰冲击仍是一段一次性 provider 动画。调整达拉然表现后至少运行 `tools/test_animation_routing.gd`、`tools/test_dalaran_animation_provider.gd`、`tools/test_dalaran_council.gd` 和 `tools/test_board_persistent_visuals.gd`。
 
-暗夜精灵哨兵的一次性表现由 `NightElfAnimationProvider` 编排，底层图元统一由 `NightElfVfxFactory` 创建。月体、新月和月束分别使用 `night_elf_moon_disc.gdshader`、`night_elf_crescent.gdshader`、`night_elf_moonbeam.gdshader` 的 SDF/半透明材质；轨迹、弓弦、水带和风压使用 `Line2D`，星屑、水滴与叶影使用有数量上限的 `CPUParticles2D`。Provider 只组合语义明确的图层、Tween 和生命周期，不再依赖一个包办所有技能的 `_draw()` 画布。统一色彩为月光银白、冰蓝、夜空靛蓝和低饱和森林青，不复用达拉然的复杂奥术法阵，也不复用白银之手的暖金圣光。
+暗夜精灵哨兵的一次性表现采用四层结构。`NightElfAnimationProvider` 是稳定路由门面，只校验表现上下文并把语义 key 分派给协作模块；`NightElfKineticVfx` 负责月刃与爪击，`NightElfSupportVfx` 负责静谧泉水、精准射击与艾露恩之优雅，`NightElfCelestialVfx` 负责满月之蔽、流星光环与流星坠落，`NightElfTimeVfx` 只负责六阶段全战场时间演出；`NightElfVfxRuntime` 统一时长缩放、根节点淡出回收、坐标换算与二次贝塞尔采样；`NightElfVfxFactory` 只创建 SDF 图元、轨迹和受控粒子。语义模块是 provider 私有实现，使用显式 preload 和依赖注入，不注册全局 `class_name`，规则层与中央动画控制器都不得直接调用。
+
+月体、新月和月束分别使用 `night_elf_moon_disc.gdshader`、`night_elf_crescent.gdshader`、`night_elf_moonbeam.gdshader` 的 SDF/半透明材质；轨迹、弓弦、水带和风压使用 `Line2D`，星屑、水滴与叶影使用有数量上限的 `CPUParticles2D`。语义模块只组合图层与 Tween，图元工厂不决定技能节奏，运行时不识别 animation key。统一色彩为月光银白、冰蓝、夜空靛蓝和低饱和森林青，不复用达拉然的复杂奥术法阵，也不复用白银之手的暖金圣光。
 
 技能语义保持独立：`moonblade` 是带双层银蓝尾迹的实体新月刃，按二次贝塞尔弧线飞行，在首次命中后短促转刃再反向弹射；命中使用新月切痕和银屑，不使用爆炸。`claw_strike` 使用三道带暗色切口、银蓝边缘和收窄末端的物理爪痕，并辅以低矮风压与少量叶片，不表现成远程月光波。`tranquil_spring` 先在月亮井聚水，再由双层弧形水带输送至目标，目标阶段分别播放冷白月束、水纹治疗和污浊碎片净化。`precision_shot` 使用绷紧弓弦、单一冷白瞄准线、箭头月光核心和小型艾露恩月痕，不使用通用增益圆环。
 
@@ -283,11 +285,11 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 时间变化使用状态专属 board key：`night_elf_time_transition_sunrise`、`_noon`、`_dusk`、`_moonrise`、`_full_moon`、`_moonset`，通用 `night_elf_time_transition` 仅作兼容回退。自动回合推进和法术直接跳转都在状态更新后发送当前状态对应的 key，因此日出、正午、黄昏、月升、满月和月落拥有不同的大型月相符号、环境滤镜与叶片/星尘运动。切换动画必须保留清晰的进入、停留和淡出阶段；六种滤镜分别使用晨曦暖玫、正午自然青、黄昏紫琥珀、月升靛蓝、满月冷蓝和月落灰紫，但透明度仍须保证棋盘与数值可读。规则层只决定状态，Provider 只解释表现。`precision_shot` 与 `meteor_aura` 的持续反馈仍由 `CardStatusOverlay` 读取真实状态并低频刷新；状态移除后必须停止处理。
 
-新增暗夜精灵技能时，先判断它属于目标局部、来源到目标、全战场、多目标或持续区域，再扩展 Provider 的语义 key。新月、月体、月束、星点、轨道、箭体、爪痕和粒子优先复用 `NightElfVfxFactory`；弧线投射和流体传输复用 Provider 的二次贝塞尔采样与双层渐变轨迹；持续跨格领域迁移到 `BoardPersistentVisualController`。一次性根节点必须在 Tween 结束后统一回收，规则层不得持有视觉节点。调整后运行 `tools/test_animation_routing.gd`、`tools/test_night_elf_animation_provider.gd` 和 `tools/test_board_persistent_visuals.gd`。
+新增暗夜精灵技能时，先判断它属于目标局部、来源到目标、全战场、多目标或持续区域，再由 Provider 声明语义 key，并把编排放进职责最接近的语义模块。只有形成新的独立变化轴时才新增模块，不按单张卡牌拆文件。新月、月体、月束、星点、轨道、箭体、爪痕和粒子优先复用 `NightElfVfxFactory`；弧线投射和流体传输复用 `NightElfVfxRuntime` 的二次贝塞尔采样；一次性根节点统一通过 Runtime 回收；持续跨格领域迁移到 `BoardPersistentVisualController`。调整后运行 `tools/test_night_elf_vfx_modules.gd`、`tools/test_animation_routing.gd`、`tools/test_night_elf_animation_provider.gd` 和 `tools/test_board_persistent_visuals.gd`。
 
 手牌抽屉仍按法术、随从、升级、装备四个语义分区，并保留各自独立滚动，但不再固定四等分。生产节点树位于独立场景 `scenes/ui/hand_drawer_panel.tscn`，主场景和 UI 集成测试共用同一组件。`HandSectionLayoutPolicy` 是不依赖节点的纯布局策略：空分区收缩为仅标题的窄条；非空分区先取得一致的可操作最低高度，再按实际卡牌行数的平方根分配剩余空间，使拥挤区明确获得更多高度，同时避免卡牌数量极端悬殊时独占抽屉；某分区达到完整内容高度后停止增长，空间继续分给仍需滚动的分区。`HandDrawerController` 只统计卡牌数、计算每行容量并应用高度；焦点变化不参与高度计算，因此点击卡牌不会引发布局跳动。完整重建前捕获四区滚动偏移；旧滚动节点会先脱离父节点再延迟释放，避免与新节点同名；随后在新高度应用并完成容器重排后统一恢复偏移。窗口尺寸变化只重新运行布局策略，不重新构造卡牌节点。
 
-当前结构优化优先级：新增 HUD 接入 `GameHudCoordinator`；新增种族主题特效直接实现 provider 并声明所需路由上下文；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。
+当前结构优化优先级：新增 HUD 接入 `GameHudCoordinator`；新增种族主题特效先实现稳定 provider 并声明所需路由上下文，单个 provider 同时承担路由、多个独立技能族、路径数学和生命周期时，再按“路由门面 → 语义编排 → 图元/运行时”拆分；`CardState` 后续按“快照/变身、状态容器、行动资源、战斗数值”拆出协作 resolver，但在每个调用方迁移完成前保留现有公开 API。禁止仅为了缩短文件而拆出仍然共同修改同一状态的薄包装类。
 
 野兽人的表现使用专属 animation key：`beastmen_evolution` 表示同系斩杀后的野性进化，`beastmen_slaughter` 表示卡扎克·独眼普通攻击击败友方非英雄随从后的杀戮成长，`savage_roar` 表示野蛮咆哮的红橙冲击波，`wild_call` 表示萨满召集兽群的荒野召唤，`wanmo_ritual` 表示万魔岩废灭仪式的深红裂隙，`beast_path` 表示兽径地道贯通。`chaos_corruption_burst` 属于全战场触发型特效，应通过 `GameManager.play_board_effect_animation()` / `GameAnimationResolver.play_board_effect_animation()` 进入 board 路由；多格路径特效通过 `play_path_effect_animation()` 进入 path 路由，不要挂到某一张目标卡上。规则层只触发 key，血色爪印、吞噬核心、腐蚀波、兽径土石和仪式碎片等视觉统一由 `BeastmenAnimationProvider` 生成。
 

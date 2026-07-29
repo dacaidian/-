@@ -2,10 +2,26 @@ extends SceneTree
 
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 
+class RouteProbe:
+	extends RefCounted
+
+	var calls: Array[String] = []
+
+	func play_first(_owner: Node, _effect_root: Control, _key: String) -> void:
+		calls.append("first")
+
+	func play_second(_owner: Node, _effect_root: Control, _key: String) -> void:
+		calls.append("second")
+
+
 var failed := false
 
 
 func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
 	var controller := CardAnimationControllerScript.new()
 	controller.setup({})
 	var router: SpellAnimationRouter = controller.spell_animation_router
@@ -76,6 +92,31 @@ func _initialize() -> void:
 	])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])
+
+	var collision_router := SpellAnimationRouter.new()
+	var route_probe := RouteProbe.new()
+	collision_router.register_board(
+		["collision_test"],
+		Callable(route_probe, "play_first")
+	)
+	collision_router.register_board(
+		["collision_test"],
+		Callable(route_probe, "play_second")
+	)
+	var route_context := Control.new()
+	root.add_child(route_context)
+	var collision_played := await collision_router.try_play_board(
+		"collision_test",
+		route_context,
+		route_context
+	)
+	route_context.queue_free()
+	if not collision_played or route_probe.calls != ["first"]:
+		push_error(
+			"duplicate animation route replaced its original handler: %s"
+			% [route_probe.calls]
+		)
+		failed = true
 
 	if router.has_targeted_route("missing_animation_key"):
 		push_error("unknown animation key unexpectedly has a route")

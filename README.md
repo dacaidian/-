@@ -18,7 +18,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **白银之手**：圣光、治疗、护盾、复活、装备和阵线保护。
 - **达拉然议会**：法术工具箱、召唤、法术强度、奥术空间、吉安娜方向法术、巨水元素、极寒风暴光环和法师体系；奥术、冰霜、火焰、水元素使用统一学院派视觉语言与独立技能节奏。
 - **苗疆族**：毒、蛊、毒虫、陷阱、吞噬和毒爆；蛊术使用虫卵、菌丝、毒液、朱砂链接与草药烟气构成的统一有机视觉语言，并区分潜伏、成熟和结算阶段。
-- **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃；特效使用独立 `NightElfAnimationProvider`、`NightElfVfxFactory` 与 SDF Shader，以实体银质新月、双层曲线轨迹、冷白月束、水流传输、物理爪痕、精准箭轨和连续坠落的月光流星构成统一的清冷视觉语言，六个时间阶段拥有各自的轻量过渡。
+- **暗夜精灵哨兵**：月相时间、远程、夜晚奖励、飞行、骑乘和月刃；特效采用“稳定 Provider 门面、战斗/辅助/天象/时间语义模块、共享 Runtime、图元 Factory”分层，以实体银质新月、双层曲线轨迹、冷白月束、水流传输、物理爪痕、精准箭轨和连续坠落的月光流星构成统一的清冷视觉语言。
 - **狐妖仙**：尾数、献祭、魅惑、控制、复生、变身与狐火区域法术。
 - **猴妖仙**：孙悟空神通、瞬移、透视、隐身、护甲、分身协攻、变身和猴族副动作。
 - **野兽人**：同类斩杀进化、混沌腐蚀、兽径地形、兽王杀戮成长、鹰身女妖咆哮增益、萨满野性呼唤和万魔岩仪式。
@@ -61,7 +61,7 @@ war-card/
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
 - **HUD 卡图统一预览**：种族状态牌与装备牌通过 `CardTexturePreviewController` 共享悬浮大图、视口内定位和显示生命周期。
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立滚动，空区自动收缩，非空区按卡牌行数共享可用高度，焦点切换不会改变布局或重置滚动位置。
-- **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径、范围区域和多目标矩形组七种表现上下文分派 animation key；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉。
+- **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径、范围区域和多目标矩形组七种表现上下文分派 animation key，并拒绝同一上下文的重复处理器；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉，复杂 provider 再按语义编排、图元工厂和生命周期运行时分层。
 - **白银之手圣光体系**：白金核心、珍珠银盾面、誓约圣印和垂直圣光构成统一的军事圣光语言；群体信仰治疗同步结算，圣盾格挡有独立破碎反馈，真言术·盾按实际状态层数持续展示。
 - **苗疆蛊术体系**：一次性蛊术、单位持续覆盖和单元格陷阱分层管理；毒持续阶段以总伤害数字为主，毒种结算、幼虫成熟、同命传导、薄葬断裂和吞噬继承拥有独立可读反馈。
 - **持续区域特效数据驱动**：状态通过 `persistent_visuals` 声明范围与视觉 key，`BoardPersistentVisualController` 负责 renderer 注册、源单位跟随、区域布局和生命周期；卡面局部标识仍由 `CardStatusOverlay` 负责。
@@ -99,10 +99,11 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_silver_hand_animation_provider.gd -SuccessMarker SILVER_HAND_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_dalaran_animation_provider.gd -SuccessMarker DALARAN_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_miao_animation_provider.gd -SuccessMarker MIAO_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_vfx_modules.gd -SuccessMarker NIGHT_ELF_VFX_MODULE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 Windows 下不要直接运行 `godot --headless --path . --check-only`：Godot 4.6 在项目模式下不会可靠退出，而 PowerShell 会提前返回，长期使用会累积隐藏的 `godot.exe` 并耗尽内存。统一使用 `tools/run_godot_validation.ps1`，它会等待真实退出、限制执行时间，并只清理本次启动的进程。
 

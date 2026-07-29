@@ -454,8 +454,6 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_heal_spell(owner, effect_root, target_card)
 		"immortal_peach":
 			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"tranquil_spring":
-			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"drive_spirit":
 			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"shield", "frost_shield":
@@ -468,12 +466,6 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
 			await play_arcane_aura_spell(owner, effect_root, target_card)
-		"meteor_aura":
-			await play_meteor_aura_at_rect(owner, effect_root, target_card.get_global_rect())
-		"meteor_strike":
-			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
-		"full_moon_cover":
-			await play_full_moon_cover_at_rect(owner, effect_root, target_card.get_global_rect())
 		"baptism":
 			await play_baptism_spell(owner, effect_root, target_card)
 		"fireball":
@@ -488,10 +480,6 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"bronze_head_iron_arms":
 			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"moonblade":
-			if caster_card == null or target_card == null:
-				return
-			await play_moonblade_spell(owner, effect_root, caster_card, target_card, target_card)
 		"immobilize":
 			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		_:
@@ -510,8 +498,6 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
 		"immortal_peach":
 			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
-		"tranquil_spring":
-			await play_tranquil_spring_at_rect(owner, effect_root, target_rect)
 		"drive_spirit":
 			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"shield", "frost_shield":
@@ -530,12 +516,6 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"arcane_aura":
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
-		"meteor_aura":
-			await play_meteor_aura_at_rect(owner, effect_root, target_rect)
-		"meteor_strike":
-			await play_meteor_strike_at_rect(owner, effect_root, target_rect)
-		"full_moon_cover":
-			await play_full_moon_cover_at_rect(owner, effect_root, target_rect)
 		"baptism":
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
 		"immobilize":
@@ -570,16 +550,10 @@ func play_spell_cast_from_rect_to_card(
 			await play_fireball_from_point(owner, effect_root, source_rect.get_center(), target_card, 1.65)
 		"dark_arrow":
 			await play_dark_arrow_spell(owner, effect_root, source_rect.get_center(), target_card)
-		"tranquil_spring":
-			await play_tranquil_spring_at_rect(owner, effect_root, target_card.get_global_rect())
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
-		"meteor_strike":
-			await play_meteor_strike_at_rect(owner, effect_root, target_card.get_global_rect())
 		"baptism":
 			await play_baptism_spell(owner, effect_root, target_card)
-		"full_moon_cover":
-			await play_full_moon_cover_at_rect(owner, effect_root, target_card.get_global_rect())
 		_:
 			await play_spell_cast(owner, effect_root, target_card, target_card, spell_data)
 
@@ -874,131 +848,6 @@ func play_arcane_aura_spell_at_rect(owner: Node, effect_root: Control, target_re
 	pulse_effect.queue_free()
 
 
-func play_meteor_aura_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var aura_effect := create_rect_spell_effect(target_rect, "MeteorAuraEffect", create_meteor_aura_effect_style(), 1.34)
-	var star_effect := create_rect_spell_effect(target_rect, "MeteorAuraStarEffect", create_meteor_star_effect_style(), 0.44)
-	effect_root.add_child(aura_effect)
-	effect_root.add_child(star_effect)
-
-	var gather_tween := owner.create_tween()
-	gather_tween.set_parallel(true)
-	gather_tween.set_trans(Tween.TRANS_SINE)
-	gather_tween.set_ease(Tween.EASE_OUT)
-	gather_tween.tween_property(aura_effect, "rotation", 0.52, spell_animation_duration * 0.48)
-	gather_tween.tween_property(aura_effect, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.48)
-	gather_tween.tween_property(aura_effect, "modulate:a", 0.92, spell_animation_duration * 0.48)
-	gather_tween.tween_property(star_effect, "scale", Vector2(1.36, 1.36), spell_animation_duration * 0.48)
-	gather_tween.tween_property(star_effect, "modulate:a", 0.94, spell_animation_duration * 0.48)
-	await gather_tween.finished
-
-	var fade_tween := owner.create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.set_trans(Tween.TRANS_CUBIC)
-	fade_tween.set_ease(Tween.EASE_OUT)
-	fade_tween.tween_property(aura_effect, "rotation", 1.12, spell_animation_duration * 0.68)
-	fade_tween.tween_property(aura_effect, "scale", Vector2(1.82, 1.82), spell_animation_duration * 0.68)
-	fade_tween.tween_property(aura_effect, "modulate:a", 0.0, spell_animation_duration * 0.68)
-	fade_tween.tween_property(star_effect, "scale", Vector2(0.82, 0.82), spell_animation_duration * 0.68)
-	fade_tween.tween_property(star_effect, "modulate:a", 0.0, spell_animation_duration * 0.68)
-	await fade_tween.finished
-
-	aura_effect.queue_free()
-	star_effect.queue_free()
-
-
-func play_meteor_strike_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var meteor := create_rect_spell_effect(target_rect, "MeteorStrikeMeteor", create_meteor_star_effect_style(), 0.34)
-	var impact := create_rect_spell_effect(target_rect, "MeteorStrikeImpact", create_meteor_impact_effect_style(), 0.92)
-	var target_center := target_rect.get_center()
-	meteor.global_position = target_center + Vector2(-target_rect.size.x * 0.82, -target_rect.size.y * 1.25) - meteor.pivot_offset
-	meteor.modulate.a = 0.98
-	effect_root.add_child(meteor)
-	effect_root.add_child(impact)
-
-	var fall_tween := owner.create_tween()
-	fall_tween.set_parallel(true)
-	fall_tween.set_trans(Tween.TRANS_CUBIC)
-	fall_tween.set_ease(Tween.EASE_IN)
-	fall_tween.tween_property(meteor, "global_position", target_center - meteor.pivot_offset, spell_animation_duration * 0.42)
-	fall_tween.tween_property(meteor, "scale", Vector2(1.28, 1.28), spell_animation_duration * 0.42)
-	await fall_tween.finished
-
-	var impact_tween := owner.create_tween()
-	impact_tween.set_parallel(true)
-	impact_tween.set_trans(Tween.TRANS_SINE)
-	impact_tween.set_ease(Tween.EASE_OUT)
-	impact_tween.tween_property(meteor, "modulate:a", 0.0, spell_animation_duration * 0.38)
-	impact_tween.tween_property(impact, "modulate:a", 0.88, spell_animation_duration * 0.16)
-	impact_tween.tween_property(impact, "scale", Vector2(1.55, 1.55), spell_animation_duration * 0.38)
-	impact_tween.tween_property(impact, "modulate:a", 0.0, spell_animation_duration * 0.38)
-	await impact_tween.finished
-
-	meteor.queue_free()
-	impact.queue_free()
-
-
-func play_full_moon_cover_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var moon_disc := create_rect_spell_effect(target_rect, "FullMoonCoverDisc", create_full_moon_disc_style(), 0.78)
-	var moon_halo := create_rect_spell_effect(target_rect, "FullMoonCoverHalo", create_full_moon_halo_style(), 1.10)
-	var eclipse_ring := create_rect_spell_effect(target_rect, "FullMoonCoverRing", create_full_moon_ring_style(), 1.28)
-	var motes: Array[Panel] = create_full_moon_motes_for_rect(target_rect)
-	effect_root.add_child(moon_halo)
-	effect_root.add_child(eclipse_ring)
-	effect_root.add_child(moon_disc)
-	for mote in motes:
-		effect_root.add_child(mote)
-
-	var gather_tween := owner.create_tween()
-	gather_tween.set_parallel(true)
-	gather_tween.set_trans(Tween.TRANS_SINE)
-	gather_tween.set_ease(Tween.EASE_OUT)
-	gather_tween.tween_property(moon_disc, "scale", Vector2(1.04, 1.04), spell_animation_duration * 0.38)
-	gather_tween.tween_property(moon_disc, "modulate:a", 0.96, spell_animation_duration * 0.38)
-	gather_tween.tween_property(moon_halo, "scale", Vector2(1.22, 1.22), spell_animation_duration * 0.38)
-	gather_tween.tween_property(moon_halo, "modulate:a", 0.78, spell_animation_duration * 0.38)
-	gather_tween.tween_property(eclipse_ring, "rotation", 0.28, spell_animation_duration * 0.38)
-	gather_tween.tween_property(eclipse_ring, "scale", Vector2(1.12, 1.12), spell_animation_duration * 0.38)
-	gather_tween.tween_property(eclipse_ring, "modulate:a", 0.86, spell_animation_duration * 0.38)
-	for mote in motes:
-		var offset: Vector2 = mote.get_meta("full_moon_offset", Vector2.ZERO)
-		gather_tween.tween_property(mote, "position", mote.position + offset * 0.30, spell_animation_duration * 0.38)
-		gather_tween.tween_property(mote, "modulate:a", 0.90, spell_animation_duration * 0.38)
-	await gather_tween.finished
-
-	var cover_tween := owner.create_tween()
-	cover_tween.set_parallel(true)
-	cover_tween.set_trans(Tween.TRANS_CUBIC)
-	cover_tween.set_ease(Tween.EASE_OUT)
-	cover_tween.tween_property(moon_disc, "scale", Vector2(1.46, 1.46), spell_animation_duration * 0.78)
-	cover_tween.tween_property(moon_disc, "modulate:a", 0.0, spell_animation_duration * 0.78)
-	cover_tween.tween_property(moon_halo, "scale", Vector2(2.10, 2.10), spell_animation_duration * 0.78)
-	cover_tween.tween_property(moon_halo, "modulate:a", 0.0, spell_animation_duration * 0.78)
-	cover_tween.tween_property(eclipse_ring, "rotation", 1.18, spell_animation_duration * 0.78)
-	cover_tween.tween_property(eclipse_ring, "scale", Vector2(1.72, 1.72), spell_animation_duration * 0.78)
-	cover_tween.tween_property(eclipse_ring, "modulate:a", 0.0, spell_animation_duration * 0.78)
-	for mote in motes:
-		var offset: Vector2 = mote.get_meta("full_moon_offset", Vector2.ZERO)
-		cover_tween.tween_property(mote, "position", mote.position + offset, spell_animation_duration * 0.78)
-		cover_tween.tween_property(mote, "scale", Vector2(0.28, 0.28), spell_animation_duration * 0.78)
-		cover_tween.tween_property(mote, "modulate:a", 0.0, spell_animation_duration * 0.78)
-	await cover_tween.finished
-
-	moon_disc.queue_free()
-	moon_halo.queue_free()
-	eclipse_ring.queue_free()
-	for mote in motes:
-		mote.queue_free()
-
-
 func play_baptism_spell(owner: Node, effect_root: Control, target_card: Card) -> void:
 	if owner == null or effect_root == null or target_card == null:
 		return
@@ -1042,39 +891,6 @@ func play_baptism_spell_at_rect(owner: Node, effect_root: Control, target_rect: 
 
 	heal_effect.queue_free()
 	wave_effect.queue_free()
-
-
-func play_tranquil_spring_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
-		return
-
-	var spring_effect := create_rect_spell_effect(target_rect, "TranquilSpringEffect", create_tranquil_spring_effect_style(), 1.34)
-	var cleanse_ring := create_rect_spell_effect(target_rect, "TranquilSpringCleanseRing", create_tranquil_spring_ring_style(), 1.08)
-	effect_root.add_child(spring_effect)
-	effect_root.add_child(cleanse_ring)
-
-	var rise_tween := owner.create_tween()
-	rise_tween.set_parallel(true)
-	rise_tween.set_trans(Tween.TRANS_SINE)
-	rise_tween.set_ease(Tween.EASE_OUT)
-	rise_tween.tween_property(spring_effect, "scale", Vector2(1.18, 1.18), spell_animation_duration * 0.42)
-	rise_tween.tween_property(spring_effect, "modulate:a", 0.92, spell_animation_duration * 0.42)
-	rise_tween.tween_property(cleanse_ring, "scale", Vector2(1.52, 1.52), spell_animation_duration * 0.42)
-	rise_tween.tween_property(cleanse_ring, "modulate:a", 0.82, spell_animation_duration * 0.42)
-	await rise_tween.finished
-
-	var fade_tween := owner.create_tween()
-	fade_tween.set_parallel(true)
-	fade_tween.set_trans(Tween.TRANS_CUBIC)
-	fade_tween.set_ease(Tween.EASE_OUT)
-	fade_tween.tween_property(spring_effect, "scale", Vector2(1.62, 1.62), spell_animation_duration * 0.64)
-	fade_tween.tween_property(spring_effect, "modulate:a", 0.0, spell_animation_duration * 0.64)
-	fade_tween.tween_property(cleanse_ring, "scale", Vector2(2.35, 2.35), spell_animation_duration * 0.64)
-	fade_tween.tween_property(cleanse_ring, "modulate:a", 0.0, spell_animation_duration * 0.64)
-	await fade_tween.finished
-
-	spring_effect.queue_free()
-	cleanse_ring.queue_free()
 
 
 func play_summon_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2) -> void:
@@ -1562,31 +1378,6 @@ func create_summon_droplets_for_rect(target_rect: Rect2) -> Array[Panel]:
 	return droplets
 
 
-func create_full_moon_motes_for_rect(target_rect: Rect2) -> Array[Panel]:
-	var motes: Array[Panel] = []
-	var center: Vector2 = target_rect.get_center()
-	var radius: float = minf(target_rect.size.x, target_rect.size.y) * 0.44
-	var mote_size := Vector2(9.0, 9.0)
-
-	for index in range(10):
-		var angle: float = TAU * float(index) / 10.0 - PI * 0.35
-		var start_offset := Vector2(cos(angle), sin(angle)) * radius * 0.18
-		var burst_offset := Vector2(cos(angle), sin(angle)) * radius * 0.96
-		var mote := Panel.new()
-		mote.name = "FullMoonMote_%d" % index
-		mote.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		mote.size = mote_size
-		mote.pivot_offset = mote_size * 0.5
-		mote.global_position = center + start_offset - mote.pivot_offset
-		mote.modulate = Color(1.0, 1.0, 1.0, 0.0)
-		mote.z_index = 2335
-		mote.set_meta("full_moon_offset", burst_offset)
-		mote.add_theme_stylebox_override("panel", create_full_moon_mote_style())
-		motes.append(mote)
-
-	return motes
-
-
 func create_baptism_wave_effect_for_rect(target_rect: Rect2) -> Panel:
 	return create_rect_spell_effect(target_rect, "BaptismWaveEffect", create_baptism_wave_effect_style(), 1.16)
 
@@ -1670,94 +1461,6 @@ func create_arcane_aura_effect_style() -> StyleBoxFlat:
 	return style
 
 
-func create_tranquil_spring_effect_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.38, 0.96, 0.88, 0.24)
-	style.border_color = Color(0.78, 1.0, 0.94, 0.88)
-	style.set_border_width_all(8)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.42, 0.92, 1.0, 0.58)
-	style.shadow_size = 38
-	return style
-
-
-func create_tranquil_spring_ring_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.74, 1.0, 0.88, 0.10)
-	style.border_color = Color(0.92, 1.0, 0.88, 0.82)
-	style.set_border_width_all(5)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.68, 1.0, 0.82, 0.48)
-	style.shadow_size = 26
-	return style
-
-
-func create_meteor_aura_effect_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.36, 0.14, 0.68, 0.22)
-	style.border_color = Color(0.92, 0.80, 1.0, 0.84)
-	style.set_border_width_all(8)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.68, 0.42, 1.0, 0.58)
-	style.shadow_size = 40
-	return style
-
-
-func create_meteor_star_effect_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(1.0, 0.78, 0.22, 0.78)
-	style.border_color = Color(1.0, 0.96, 0.64, 0.96)
-	style.set_border_width_all(5)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(1.0, 0.52, 0.12, 0.74)
-	style.shadow_size = 30
-	return style
-
-
-func create_meteor_impact_effect_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(1.0, 0.36, 0.16, 0.34)
-	style.border_color = Color(1.0, 0.82, 0.34, 0.90)
-	style.set_border_width_all(8)
-	style.set_corner_radius_all(16)
-	style.shadow_color = Color(1.0, 0.30, 0.08, 0.62)
-	style.shadow_size = 34
-	return style
-
-
-func create_full_moon_disc_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.86, 0.94, 1.0, 0.78)
-	style.border_color = Color(1.0, 0.98, 0.78, 0.92)
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.70, 0.88, 1.0, 0.70)
-	style.shadow_size = 34
-	return style
-
-
-func create_full_moon_halo_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.24, 0.44, 0.86, 0.16)
-	style.border_color = Color(0.68, 0.90, 1.0, 0.78)
-	style.set_border_width_all(7)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.42, 0.70, 1.0, 0.56)
-	style.shadow_size = 40
-	return style
-
-
-func create_full_moon_ring_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.02, 0.05, 0.18, 0.06)
-	style.border_color = Color(0.92, 0.96, 1.0, 0.84)
-	style.set_border_width_all(5)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.66, 0.82, 1.0, 0.52)
-	style.shadow_size = 28
-	return style
-
-
 func create_summon_spell_effect_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = summon_spell_effect_color
@@ -1787,17 +1490,6 @@ func create_summon_droplet_style() -> StyleBoxFlat:
 	style.set_border_width_all(3)
 	style.set_corner_radius_all(999)
 	style.shadow_color = Color(0.32, 0.80, 1.0, 0.54)
-	style.shadow_size = 14
-	return style
-
-
-func create_full_moon_mote_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.90, 0.96, 1.0, 0.94)
-	style.border_color = Color(1.0, 0.98, 0.78, 0.72)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(999)
-	style.shadow_color = Color(0.62, 0.82, 1.0, 0.64)
 	style.shadow_size = 14
 	return style
 
