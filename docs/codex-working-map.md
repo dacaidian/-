@@ -334,13 +334,13 @@
 
 常见规则：
 
-- 主菜单、种族选择、图鉴、结算页、手牌抽屉和 HUD 的大型外框统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`。`GameUiSkin` 同时拥有位图、九宫格切片和不可绕过的安全内容区；切片边距只保护图片，安全边距才隔离内容与装饰框。`ApplicationUiStyle` 负责应用页面语义；`RightSideHudStyle` 负责紧凑战斗 HUD。页面 controller 不得重新绘制同等级木框、古铜边框或按钮四态。
+- 全局结构性容器统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`，并按承载密度选择 `MAIN`（顶级页面）、`DRAWER`（大型抽屉/浮层）、`INSET`（中型弹窗/筛选区）、`SECTION`（小型动作区/选区提示）、`HUD`（右侧紧凑面板）。这套分级适用于主菜单、图鉴、结算页、手牌和所有代码生成的操作面板，不是手牌专用规则。`ApplicationUiStyle` 负责应用页面与全局操作面板语义；`RightSideHudStyle` 负责战斗 HUD。
 - UI 按钮必须同时配置普通、悬浮、按下和禁用状态；竖向手牌开关使用专属 `ButtonKind.TAB`，不要拉伸横向按钮。重建 `assets/img/ui_skin/` 后先运行 `tools/run_godot_validation.ps1 -ImportAssets`，再运行 `tools/test_ui_skin.gd`，并回归对应页面测试。
-- 装饰主框只用于顶级页面或大型详情区；筛选区、手牌分区和 HUD 使用压薄的 inset/HUD 纹理。`PanelContainer` 自动应用 StyleBox 安全区，普通 `Panel` 必须由 controller 显式内缩子内容；不要用 0–12px 的旧代码边距直接覆盖位图边框。
+- 装饰主框只用于顶级页面；大型浮层使用压边后的 `DRAWER`，筛选/统计使用 `INSET`，手牌分区、动作菜单和棋盘选择提示使用超薄 `SECTION`，右侧列使用 `HUD`。重复卡片、装备条目、状态徽记、资源刻度和 VFX 图元继续使用轻量平面样式，避免框中套框。`PanelContainer` 自动应用 StyleBox 安全区，普通 `Panel` 必须由 controller 显式内缩子内容；不要用旧代码边距覆盖位图边框。
 - 一次性特效从 `CardAnimationController` 进入；通用移动/攻击留在控制器，种族主题实现放在对应 animation provider。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如普通施法回合 `spell_turn_activation`、赫子解放 `kagune_release`、野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。普通施法回合表现位于 `scripts/ui/animation/generic_spell_animation_provider.gd`；种族专属表现应使用不同 key 覆盖调用分支，避免与通用效果重复播放。
-- 手牌四区布局优先读 `scenes/ui/hand_drawer_panel.tscn`、`scripts/ui/hand_drawer_controller.gd` 和 `scripts/ui/hand_section_layout_policy.gd`。分区高度只由可用高度、卡牌数量和每行容量决定：空区折叠，非空区按内容需求加权分配；不要重新给四个 section 设置 `EXPAND_FILL`，也不要让焦点卡牌或动作菜单参与高度权重。刷新时必须先捕获各区滚动偏移，立即移除旧滚动节点，并在自适应高度生效后恢复。修改算法后运行 `tools/test_hand_section_layout.gd` 和 `tools/test_hand_drawer_layout.gd`。
+- 手牌四区布局优先读 `scenes/ui/hand_drawer_panel.tscn`、`scripts/ui/hand_drawer_controller.gd` 和 `scripts/ui/hand_section_layout_policy.gd`。分区高度只由可用高度、卡牌数量和每行容量决定：空区折叠，非空区按内容需求加权分配；每区只允许纵向滚动，横向滚动必须禁用，卡牌流宽度从当前 `Sections` 真实宽度和 `SECTION` 安全区推导。不要重新给四个 section 设置 `EXPAND_FILL`，也不要让焦点卡牌或动作菜单参与高度权重。刷新时只捕获并恢复纵向偏移。修改算法后运行 `tools/test_hand_section_layout.gd` 和 `tools/test_hand_drawer_layout.gd`。
 - 多格路径特效（例如 `beast_path`）走 `GameManager.play_path_effect_animation()`，由 `GameAnimationResolver` 收集格子 rect 后交给 `SpellAnimationRouter` 的 path 路由；范围区域特效（例如 `foxfire`）声明 area 路由。
 - 猴妖仙法术/技能释放特效由 `MonkeyAnimationProvider` 按 animation key 生成金瞳、筋斗云、毫毛、金铁、蟠桃、敕令、定身、气雾、法象等符号化部件；新增猴妖仙技能时扩展 provider 的 key 和主题数据，不要回退到通用光圈。
 - 白银之手法术由 `SilverHandAnimationProvider` 和 `HolySpellVisual` 负责，使用 `divine_shield`、`baptism`、`holy_heal`、`power_word_shield`、`inner_fire`、`faith_light`、`healing_to_resolve`、`resurrection` 八个专属 key。视觉必须保持白金核心、象牙金中层、珍珠银防御面、盾形/战锤/誓约印记、垂直圣光和军事秩序，禁止重新使用绿色治疗、普通红焰或无结构通用光圈。信仰圣光使用 `multi_rect` 同步军阵反馈；有效治疗转攻击在治疗结算后播放 `healing_to_resolve`。圣盾施放属于 provider，持续盾面、真言术·盾叠层和圣盾破碎属于 `CardStatusOverlay`；破碎由 `CardState.damage_prevented` 事件驱动，规则层不得创建视觉节点。修改后运行 `tools/test_silver_hand_animation_provider.gd`。

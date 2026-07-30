@@ -60,11 +60,17 @@ func setup(root: Node, new_panel_size: Vector2) -> void:
 
 	var occupy_button := Button.new()
 	occupy_button.text = "占领"
+	ApplicationUiStyle.style_inline_button(
+		occupy_button,
+		ApplicationUiStyle.GOLD,
+		true
+	)
 	occupy_button.pressed.connect(func(): choice_made.emit(true))
 	button_box.add_child(occupy_button)
 
 	var stay_button := Button.new()
 	stay_button.text = "不占领"
+	ApplicationUiStyle.style_inline_button(stay_button, ApplicationUiStyle.BLUE)
 	stay_button.pressed.connect(func(): choice_made.emit(false))
 	button_box.add_child(stay_button)
 
@@ -97,12 +103,5 @@ func get_centered_panel_position(root: Node, size: Vector2) -> Vector2:
 	return (viewport_size - size) * 0.5
 
 
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.04, 0.96)
-	style.border_color = Color(1.0, 0.74, 0.28, 0.85)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	style.shadow_size = 12
-	return style
+func create_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_inset_panel_style(ApplicationUiStyle.GOLD)

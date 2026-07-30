@@ -47,6 +47,7 @@ func setup(parent: Node) -> void:
 
 	cancel_button = Button.new()
 	cancel_button.text = "取消"
+	ApplicationUiStyle.style_inline_button(cancel_button, ApplicationUiStyle.DANGER)
 	cancel_button.pressed.connect(func(): cancel_requested.emit())
 	button_box.add_child(cancel_button)
 
@@ -84,15 +85,8 @@ func hide() -> void:
 		menu.hide()
 
 
-func create_menu_style() -> StyleBoxFlat:
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.04, 0.92)
-	style.border_color = Color(1.0, 0.78, 0.32, 0.85)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0, 0, 0, 0.45)
-	style.shadow_size = 8
-	return style
+func create_menu_style() -> StyleBox:
+	return ApplicationUiStyle.create_section_panel_style(ApplicationUiStyle.GOLD)
 
 
 func rebuild_action_buttons(actions: Array[CardAction]) -> void:
@@ -105,6 +99,7 @@ func rebuild_action_buttons(actions: Array[CardAction]) -> void:
 	for action in actions:
 		var button: Button = Button.new()
 		button.text = action.display_name
+		ApplicationUiStyle.style_inline_button(button, ApplicationUiStyle.BLUE)
 		button.pressed.connect(_on_action_button_pressed.bind(action.id))
 		action_buttons.append(button)
 		button_box.add_child(button)

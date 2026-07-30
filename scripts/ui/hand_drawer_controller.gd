@@ -19,7 +19,8 @@ const CARD_TYPE_EQUIPMENT := "equipment"
 const DEFAULT_DRAWER_WIDTH := 720.0
 const DRAWER_VERTICAL_MARGIN := 18.0
 const MIN_DRAWER_HEIGHT := 520.0
-const DRAWER_BODY_EXTRA_INSETS := Vector4(6.0, 2.0, 16.0, 6.0)
+const DRAWER_BODY_EXTRA_INSETS := Vector4(0.0, 0.0, 14.0, 0.0)
+const DRAWER_INNER_PADDING := 14.0
 const TOGGLE_WIDTH := 48.0
 const TOGGLE_HEIGHT := 132.0
 const HAND_CARD_SIZE := Vector2(180, 252)
@@ -231,7 +232,7 @@ func apply_drawer_position(left: float) -> void:
 
 	if drawer_body != null:
 		var body_insets := GameUiSkinScript.get_panel_safe_insets(
-			GameUiSkinScript.PanelKind.MAIN
+			GameUiSkinScript.PanelKind.DRAWER
 		) + DRAWER_BODY_EXTRA_INSETS
 		drawer_body.offset_left = body_insets.x
 		drawer_body.offset_top = body_insets.y
@@ -321,6 +322,8 @@ func render_section(card_type: String, cards: Array) -> void:
 	scroll.name = "CardScroll"
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	card_list.add_child(scroll)
 
@@ -402,7 +405,7 @@ func capture_section_scroll_offsets() -> void:
 		if scroll == null:
 			continue
 
-		section_scroll_offsets[card_type] = Vector2i(scroll.scroll_horizontal, scroll.scroll_vertical)
+		section_scroll_offsets[card_type] = Vector2i(0, scroll.scroll_vertical)
 
 
 func get_section_scroll_container(card_type: String) -> ScrollContainer:
@@ -419,13 +422,33 @@ func restore_section_scroll_offset(card_type: String) -> void:
 		return
 
 	var offset := section_scroll_offsets.get(card_type, Vector2i.ZERO) as Vector2i
-	scroll.scroll_horizontal = offset.x
+	scroll.scroll_horizontal = 0
 	scroll.scroll_vertical = offset.y
 
 
 func get_card_flow_width() -> float:
-	var content_padding := float(HAND_CARD_GLOW_PADDING * 2)
-	return maxf(get_drawer_width() - TOGGLE_WIDTH - 56.0 - content_padding, HAND_CARD_SIZE.x)
+	var available_width := 0.0
+	if sections_container != null and sections_container.size.x > 0.0:
+		available_width = sections_container.size.x
+	else:
+		var drawer_insets := GameUiSkinScript.get_panel_safe_insets(
+			GameUiSkinScript.PanelKind.DRAWER
+		) + DRAWER_BODY_EXTRA_INSETS
+		available_width = (
+			get_drawer_width()
+			- drawer_insets.x
+			- drawer_insets.z
+			- DRAWER_INNER_PADDING * 2.0
+		)
+	var section_insets := GameUiSkinScript.get_panel_safe_insets(
+		GameUiSkinScript.PanelKind.SECTION
+	)
+	available_width -= (
+		section_insets.x
+		+ section_insets.z
+		+ float(HAND_CARD_GLOW_PADDING * 2)
+	)
+	return maxf(available_width, HAND_CARD_SIZE.x)
 
 
 func get_cards_per_row() -> int:
@@ -829,14 +852,14 @@ func refresh_drawer_layout() -> void:
 
 func create_panel_style() -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
-		GameUiSkinScript.PanelKind.MAIN,
+		GameUiSkinScript.PanelKind.DRAWER,
 		ApplicationUiStyle.GOLD
 	)
 
 
 func create_section_style() -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
-		GameUiSkinScript.PanelKind.INSET,
+		GameUiSkinScript.PanelKind.SECTION,
 		ApplicationUiStyle.BLUE
 	)
 

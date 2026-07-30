@@ -174,12 +174,7 @@ func cleanup() -> void:
 	_valid_second_states.clear()
 
 
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.025, 0.040, 0.070, 0.95)
-	style.border_color = Color(0.62, 0.82, 1.0, 0.82)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.58)
-	style.shadow_size = 12
-	return style
+func create_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_section_panel_style(
+		Color(0.62, 0.82, 1.0, 1.0)
+	)

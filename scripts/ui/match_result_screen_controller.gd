@@ -419,8 +419,8 @@ func _get_centered_position(root: Node, size: Vector2) -> Vector2:
 
 
 func _create_banner_style() -> StyleBox:
-	return ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)
+	return ApplicationUiStyle.create_drawer_panel_style(ApplicationUiStyle.GOLD)
 
 
 func _create_stats_panel_style() -> StyleBox:
-	return ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)
+	return ApplicationUiStyle.create_inset_panel_style(ApplicationUiStyle.GOLD)

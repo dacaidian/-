@@ -94,6 +94,11 @@ func setup_ui(parent: Node, title: String) -> void:
 
 	_finish_button = Button.new()
 	_finish_button.text = "完成"
+	ApplicationUiStyle.style_inline_button(
+		_finish_button,
+		ApplicationUiStyle.GOLD,
+		true
+	)
 	_finish_button.pressed.connect(func(): slot_selected.emit(-1))
 	box.add_child(_finish_button)
 
@@ -231,12 +236,7 @@ func cleanup() -> void:
 	_swap_animation_key = ""
 
 
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.055, 0.045, 0.075, 0.94)
-	style.border_color = Color(0.55, 0.45, 1.0, 0.82)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	style.shadow_size = 12
-	return style
+func create_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_section_panel_style(
+		Color(0.55, 0.45, 1.0, 1.0)
+	)

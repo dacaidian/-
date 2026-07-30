@@ -87,6 +87,7 @@ func setup_ui() -> void:
 	var cancel_button := Button.new()
 	cancel_button.text = "取消"
 	cancel_button.focus_mode = Control.FOCUS_NONE
+	ApplicationUiStyle.style_inline_button(cancel_button, ApplicationUiStyle.DANGER)
 	cancel_button.pressed.connect(handle_cancel_pressed)
 	row.add_child(cancel_button)
 
@@ -213,12 +214,7 @@ func cleanup() -> void:
 	_request = null
 
 
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.02, 0.05, 0.08, 0.88)
-	style.border_color = Color(0.32, 0.70, 1.0, 0.90)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
-	style.shadow_size = 12
-	return style
+func create_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_section_panel_style(
+		Color(0.32, 0.70, 1.0, 1.0)
+	)

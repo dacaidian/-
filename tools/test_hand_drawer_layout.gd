@@ -42,6 +42,10 @@ func run() -> void:
 
 	var old_scroll := controller.get_section_scroll_container("upgrade")
 	assert(old_scroll != null)
+	assert(controller.get_cards_per_row() >= 3)
+	assert(old_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
+	assert(not old_scroll.get_h_scroll_bar().visible)
+	assert(old_scroll.scroll_horizontal == 0)
 	old_scroll.scroll_vertical = 100
 	await process_frame
 	var expected_offset := old_scroll.scroll_vertical

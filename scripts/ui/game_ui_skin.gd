@@ -3,7 +3,9 @@ class_name GameUiSkin
 
 enum PanelKind {
 	MAIN,
+	DRAWER,
 	INSET,
+	SECTION,
 	HUD,
 }
 
@@ -22,8 +24,10 @@ enum ButtonState {
 }
 
 const PANEL_MAIN_TEXTURE := preload("res://assets/img/ui_skin/panel_main.png")
+const PANEL_DRAWER_TEXTURE := preload("res://assets/img/ui_skin/panel_drawer.png")
 const PANEL_HUD_TEXTURE := preload("res://assets/img/ui_skin/panel_hud.png")
 const PANEL_INSET_TEXTURE := preload("res://assets/img/ui_skin/panel_inset.png")
+const PANEL_SECTION_TEXTURE := preload("res://assets/img/ui_skin/panel_section.png")
 
 const PRIMARY_BUTTON_TEXTURES := {
 	ButtonState.NORMAL: preload("res://assets/img/ui_skin/button_primary_normal.png"),
@@ -49,16 +53,20 @@ const FIELD_FOCUS_TEXTURE := preload("res://assets/img/ui_skin/field_focus.png")
 
 const PANEL_TEXTURE_MARGINS := {
 	PanelKind.MAIN: Vector4(86.0, 78.0, 86.0, 78.0),
-	PanelKind.INSET: Vector4(44.0, 22.0, 44.0, 22.0),
-	PanelKind.HUD: Vector4(48.0, 32.0, 48.0, 32.0),
+	PanelKind.DRAWER: Vector4(34.0, 32.0, 34.0, 32.0),
+	PanelKind.INSET: Vector4(20.0, 12.0, 20.0, 12.0),
+	PanelKind.SECTION: Vector4(10.0, 7.0, 10.0, 7.0),
+	PanelKind.HUD: Vector4(30.0, 20.0, 30.0, 20.0),
 }
 
 # Texture slice margins protect the artwork. These separate safe insets keep
 # child controls clear of the visible wood, metal corners, and inner bevel.
 const PANEL_SAFE_INSETS := {
 	PanelKind.MAIN: Vector4(44.0, 44.0, 44.0, 44.0),
-	PanelKind.INSET: Vector4(30.0, 18.0, 30.0, 18.0),
-	PanelKind.HUD: Vector4(38.0, 20.0, 38.0, 20.0),
+	PanelKind.DRAWER: Vector4(32.0, 30.0, 32.0, 30.0),
+	PanelKind.INSET: Vector4(20.0, 12.0, 20.0, 12.0),
+	PanelKind.SECTION: Vector4(10.0, 8.0, 10.0, 8.0),
+	PanelKind.HUD: Vector4(22.0, 14.0, 22.0, 14.0),
 }
 
 
@@ -70,9 +78,15 @@ static func create_panel_style(
 	var texture: Texture2D = PANEL_MAIN_TEXTURE
 	var texture_margins: Vector4 = PANEL_TEXTURE_MARGINS[PanelKind.MAIN]
 	match kind:
+		PanelKind.DRAWER:
+			texture = PANEL_DRAWER_TEXTURE
+			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.DRAWER]
 		PanelKind.INSET:
 			texture = PANEL_INSET_TEXTURE
 			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.INSET]
+		PanelKind.SECTION:
+			texture = PANEL_SECTION_TEXTURE
+			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.SECTION]
 		PanelKind.HUD:
 			texture = PANEL_HUD_TEXTURE
 			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.HUD]

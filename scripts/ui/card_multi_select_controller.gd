@@ -94,6 +94,12 @@ func setup(root: Node) -> void:
 	_confirm_button.name = "ConfirmButton"
 	_confirm_button.text = "确认"
 	_confirm_button.disabled = true
+	ApplicationUiStyle.style_inline_button(
+		_confirm_button,
+		ApplicationUiStyle.GOLD,
+		true
+	)
+	_confirm_button.custom_minimum_size.x = 120.0
 	_confirm_button.pressed.connect(_on_confirm)
 	button_box.add_child(_confirm_button)
 
@@ -262,12 +268,5 @@ func _create_checkbox_hover_style() -> StyleBoxFlat:
 	return style
 
 
-func _create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.04, 0.96)
-	style.border_color = Color(1.0, 0.74, 0.28, 0.85)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	style.shadow_size = 12
-	return style
+func _create_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_drawer_panel_style(ApplicationUiStyle.GOLD)

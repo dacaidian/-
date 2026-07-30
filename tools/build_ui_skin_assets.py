@@ -120,6 +120,48 @@ def _resize_to_canvas(image: Image.Image, target_size: tuple[int, int]) -> Image
     return image.resize(target_size, Image.Resampling.LANCZOS)
 
 
+def _compress_frame_borders(
+    image: Image.Image,
+    source_insets: tuple[int, int, int, int],
+    target_insets: tuple[int, int, int, int],
+) -> Image.Image:
+    """Compress ornamental border bands while preserving the center surface."""
+    source = image.convert("RGBA")
+    width, height = source.size
+    source_left, source_top, source_right, source_bottom = source_insets
+    target_left, target_top, target_right, target_bottom = target_insets
+    source_x = (0, source_left, width - source_right, width)
+    source_y = (0, source_top, height - source_bottom, height)
+    target_x = (0, target_left, width - target_right, width)
+    target_y = (0, target_top, height - target_bottom, height)
+    result = Image.new("RGBA", source.size, (0, 0, 0, 0))
+
+    for row in range(3):
+        for column in range(3):
+            source_box = (
+                source_x[column],
+                source_y[row],
+                source_x[column + 1],
+                source_y[row + 1],
+            )
+            target_box = (
+                target_x[column],
+                target_y[row],
+                target_x[column + 1],
+                target_y[row + 1],
+            )
+            target_width = target_box[2] - target_box[0]
+            target_height = target_box[3] - target_box[1]
+            patch = source.crop(source_box)
+            if patch.size != (target_width, target_height):
+                patch = patch.resize(
+                    (target_width, target_height),
+                    Image.Resampling.LANCZOS,
+                )
+            result.alpha_composite(patch, (target_box[0], target_box[1]))
+    return result
+
+
 def _tint_visible_pixels(image: Image.Image, color: tuple[int, int, int], strength: float) -> Image.Image:
     tint = Image.new("RGBA", image.size, (*color, 255))
     mixed = Image.blend(image.convert("RGBA"), tint, strength)
@@ -186,6 +228,32 @@ def build_assets(source_dir: Path, output_dir: Path, sources: dict[str, str]) ->
         cleaned = _remove_baked_checkerboard(Image.open(source_path))
         built[asset_id] = _resize_to_canvas(cleaned, target_size)
         _save(built[asset_id], output_dir / output_name)
+
+    panel_inset_master = built["panel_inset"]
+    built["panel_inset"] = _compress_frame_borders(
+        panel_inset_master,
+        (36, 18, 36, 18),
+        (18, 10, 18, 10),
+    )
+    built["panel_hud"] = _compress_frame_borders(
+        built["panel_hud"],
+        (50, 32, 50, 32),
+        (28, 18, 28, 18),
+    )
+    panel_drawer = _compress_frame_borders(
+        built["panel_main"],
+        (68, 66, 68, 66),
+        (30, 28, 30, 28),
+    )
+    panel_section = _compress_frame_borders(
+        panel_inset_master,
+        (36, 18, 36, 18),
+        (8, 6, 8, 6),
+    )
+    _save(built["panel_inset"], output_dir / "panel_inset.png")
+    _save(built["panel_hud"], output_dir / "panel_hud.png")
+    _save(panel_drawer, output_dir / "panel_drawer.png")
+    _save(panel_section, output_dir / "panel_section.png")
 
     primary_states = {
         "normal": built["button_primary"],

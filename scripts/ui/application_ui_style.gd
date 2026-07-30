@@ -22,6 +22,22 @@ static func create_inset_panel_style(accent := BLUE, extra_content_padding := 0.
 	)
 
 
+static func create_drawer_panel_style(accent := GOLD, extra_content_padding := 0.0) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.DRAWER,
+		accent,
+		extra_content_padding
+	)
+
+
+static func create_section_panel_style(accent := BLUE, extra_content_padding := 0.0) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.SECTION,
+		accent,
+		extra_content_padding
+	)
+
+
 static func create_field_style(focused := false) -> StyleBox:
 	return GameUiSkinScript.create_field_style(focused)
 
@@ -82,6 +98,18 @@ static func style_compact_button(button: Button, accent := GOLD) -> void:
 	style_menu_button(button, accent, false)
 	button.custom_minimum_size = Vector2(174.0, 42.0)
 	button.add_theme_font_size_override("font_size", 16)
+
+
+static func style_inline_button(
+	button: Button,
+	accent := BLUE,
+	emphasized := false
+) -> void:
+	if button == null:
+		return
+	style_menu_button(button, accent, emphasized)
+	button.custom_minimum_size = Vector2(84.0, 34.0)
+	button.add_theme_font_size_override("font_size", 14)
 
 
 static func style_choice_button(button: Button) -> void:
