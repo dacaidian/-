@@ -61,17 +61,6 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.03137255, 0.023529412, 0.019607844, 0.21960784)
 
-[node name="BackButton" type="Button" parent="."]
-unique_name_in_owner = true
-z_index = 20
-custom_minimum_size = Vector2(174, 42)
-layout_mode = 1
-offset_left = 28.0
-offset_top = 24.0
-offset_right = 202.0
-offset_bottom = 66.0
-text = "返回主菜单"
-
 [node name="RootMargin" type="MarginContainer" parent="." unique_id=725258963]
 layout_mode = 1
 anchors_preset = 15
@@ -79,6 +68,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 78
 theme_override_constants/margin_top = 56
 theme_override_constants/margin_right = 78
@@ -173,3 +163,15 @@ theme_override_styles/pressed = SubResource("StyleBoxTexture_b6bd1")
 theme_override_styles/hover = SubResource("StyleBoxTexture_eum3g")
 theme_override_styles/disabled = SubResource("StyleBoxTexture_ceur5")
 text = "开始游戏"
+
+[node name="BackButton" type="Button" parent="."]
+unique_name_in_owner = true
+z_index = 20
+custom_minimum_size = Vector2(174, 42)
+layout_mode = 1
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 202.0
+offset_bottom = 66.0
+mouse_default_cursor_shape = 2
+text = "返回主菜单"

@@ -117,8 +117,7 @@ func test_shell_navigation() -> void:
 	assert(shell.current_screen.has_signal("back_requested"))
 	var back_button := shell.current_screen.get_node("%BackButton") as Button
 	assert(back_button != null)
-	back_button.pressed.emit()
-	await process_frame
+	await _click_control(back_button)
 	assert(shell.current_screen_id == "main_menu")
 
 	start_button = shell.current_screen.get_node("%StartGameButton") as Button
@@ -150,6 +149,31 @@ func test_shell_navigation() -> void:
 	await create_timer(0.25).timeout
 	shell.queue_free()
 	await process_frame
+	await process_frame
+
+
+func _click_control(control: Control) -> void:
+	var click_position := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = click_position
+	motion.global_position = click_position
+	control.get_viewport().push_input(motion, true)
+	await process_frame
+
+	var press := InputEventMouseButton.new()
+	press.position = click_position
+	press.global_position = click_position
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	control.get_viewport().push_input(press, true)
+	await process_frame
+
+	var release := InputEventMouseButton.new()
+	release.position = click_position
+	release.global_position = click_position
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	control.get_viewport().push_input(release, true)
 	await process_frame
 
 
