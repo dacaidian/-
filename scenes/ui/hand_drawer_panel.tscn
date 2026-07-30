@@ -15,10 +15,10 @@ mouse_filter = 0
 
 [node name="DrawerBody" type="Control" parent="."]
 layout_mode = 1
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 676.0
-offset_bottom = 830.0
+offset_left = 50.0
+offset_top = 46.0
+offset_right = 660.0
+offset_bottom = 790.0
 mouse_filter = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="DrawerBody"]

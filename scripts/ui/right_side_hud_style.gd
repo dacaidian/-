@@ -4,10 +4,10 @@ class_name RightSideHudStyle
 const HudSymbolIconScript := preload("res://scripts/ui/hud_symbol_icon.gd")
 const GameUiSkinScript := preload("res://scripts/ui/game_ui_skin.gd")
 
-const PANEL_WIDTH := 296.0
+const PANEL_WIDTH := 304.0
 const PANEL_MARGIN := 16.0
 const PANEL_GAP := 8.0
-const CONTENT_MARGIN := 10
+const CONTENT_MARGIN := 8
 const CONTENT_GAP := 8
 
 const BASE_BACKGROUND := Color(0.043, 0.047, 0.050, 0.96)

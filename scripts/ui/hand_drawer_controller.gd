@@ -19,7 +19,7 @@ const CARD_TYPE_EQUIPMENT := "equipment"
 const DEFAULT_DRAWER_WIDTH := 720.0
 const DRAWER_VERTICAL_MARGIN := 18.0
 const MIN_DRAWER_HEIGHT := 520.0
-const DRAWER_BODY_PADDING := 10.0
+const DRAWER_BODY_EXTRA_INSETS := Vector4(6.0, 2.0, 16.0, 6.0)
 const TOGGLE_WIDTH := 48.0
 const TOGGLE_HEIGHT := 132.0
 const HAND_CARD_SIZE := Vector2(180, 252)
@@ -230,10 +230,13 @@ func apply_drawer_position(left: float) -> void:
 	panel.custom_minimum_size = Vector2(get_drawer_width(), drawer_height)
 
 	if drawer_body != null:
-		drawer_body.offset_left = DRAWER_BODY_PADDING
-		drawer_body.offset_top = DRAWER_BODY_PADDING
-		drawer_body.offset_right = get_drawer_width() - TOGGLE_WIDTH + 4.0
-		drawer_body.offset_bottom = drawer_height - DRAWER_BODY_PADDING
+		var body_insets := GameUiSkinScript.get_panel_safe_insets(
+			GameUiSkinScript.PanelKind.MAIN
+		) + DRAWER_BODY_EXTRA_INSETS
+		drawer_body.offset_left = body_insets.x
+		drawer_body.offset_top = body_insets.y
+		drawer_body.offset_right = get_drawer_width() - body_insets.z
+		drawer_body.offset_bottom = drawer_height - body_insets.w
 
 	if toggle_button != null:
 		toggle_button.custom_minimum_size = Vector2(TOGGLE_WIDTH, TOGGLE_HEIGHT)
@@ -827,16 +830,14 @@ func refresh_drawer_layout() -> void:
 func create_panel_style() -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
 		GameUiSkinScript.PanelKind.MAIN,
-		ApplicationUiStyle.GOLD,
-		0.0
+		ApplicationUiStyle.GOLD
 	)
 
 
 func create_section_style() -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
 		GameUiSkinScript.PanelKind.INSET,
-		ApplicationUiStyle.BLUE,
-		8.0
+		ApplicationUiStyle.BLUE
 	)
 
 

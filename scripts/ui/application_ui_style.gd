@@ -11,14 +11,14 @@ const DANGER := Color(0.76, 0.25, 0.20, 1.0)
 
 
 static func create_panel_style(accent := GOLD) -> StyleBox:
-	return GameUiSkinScript.create_panel_style(GameUiSkinScript.PanelKind.MAIN, accent, 12.0)
+	return GameUiSkinScript.create_panel_style(GameUiSkinScript.PanelKind.MAIN, accent)
 
 
-static func create_inset_panel_style(accent := BLUE, content_margin := 10.0) -> StyleBox:
+static func create_inset_panel_style(accent := BLUE, extra_content_padding := 0.0) -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
 		GameUiSkinScript.PanelKind.INSET,
 		accent,
-		content_margin
+		extra_content_padding
 	)
 
 

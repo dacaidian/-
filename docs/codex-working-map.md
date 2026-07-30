@@ -334,8 +334,9 @@
 
 常见规则：
 
-- 主菜单、种族选择、图鉴、结算页、手牌抽屉和 HUD 的大型外框统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`。`GameUiSkin` 只拥有位图和九宫格契约；`ApplicationUiStyle` 负责应用页面语义；`RightSideHudStyle` 负责紧凑战斗 HUD。页面 controller 不得重新绘制同等级木框、古铜边框或按钮四态。
+- 主菜单、种族选择、图鉴、结算页、手牌抽屉和 HUD 的大型外框统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`。`GameUiSkin` 同时拥有位图、九宫格切片和不可绕过的安全内容区；切片边距只保护图片，安全边距才隔离内容与装饰框。`ApplicationUiStyle` 负责应用页面语义；`RightSideHudStyle` 负责紧凑战斗 HUD。页面 controller 不得重新绘制同等级木框、古铜边框或按钮四态。
 - UI 按钮必须同时配置普通、悬浮、按下和禁用状态；竖向手牌开关使用专属 `ButtonKind.TAB`，不要拉伸横向按钮。重建 `assets/img/ui_skin/` 后先运行 `tools/run_godot_validation.ps1 -ImportAssets`，再运行 `tools/test_ui_skin.gd`，并回归对应页面测试。
+- 装饰主框只用于顶级页面或大型详情区；筛选区、手牌分区和 HUD 使用压薄的 inset/HUD 纹理。`PanelContainer` 自动应用 StyleBox 安全区，普通 `Panel` 必须由 controller 显式内缩子内容；不要用 0–12px 的旧代码边距直接覆盖位图边框。
 - 一次性特效从 `CardAnimationController` 进入；通用移动/攻击留在控制器，种族主题实现放在对应 animation provider。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如普通施法回合 `spell_turn_activation`、赫子解放 `kagune_release`、野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。普通施法回合表现位于 `scripts/ui/animation/generic_spell_animation_provider.gd`；种族专属表现应使用不同 key 覆盖调用分支，避免与通用效果重复播放。

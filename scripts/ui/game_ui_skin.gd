@@ -47,29 +47,54 @@ const TAB_BUTTON_TEXTURES := {
 const FIELD_NORMAL_TEXTURE := preload("res://assets/img/ui_skin/field_normal.png")
 const FIELD_FOCUS_TEXTURE := preload("res://assets/img/ui_skin/field_focus.png")
 
+const PANEL_TEXTURE_MARGINS := {
+	PanelKind.MAIN: Vector4(86.0, 78.0, 86.0, 78.0),
+	PanelKind.INSET: Vector4(44.0, 22.0, 44.0, 22.0),
+	PanelKind.HUD: Vector4(48.0, 32.0, 48.0, 32.0),
+}
+
+# Texture slice margins protect the artwork. These separate safe insets keep
+# child controls clear of the visible wood, metal corners, and inner bevel.
+const PANEL_SAFE_INSETS := {
+	PanelKind.MAIN: Vector4(44.0, 44.0, 44.0, 44.0),
+	PanelKind.INSET: Vector4(30.0, 18.0, 30.0, 18.0),
+	PanelKind.HUD: Vector4(38.0, 20.0, 38.0, 20.0),
+}
+
 
 static func create_panel_style(
 	kind := PanelKind.MAIN,
 	accent := Color.WHITE,
-	content_margin := 12.0
+	extra_content_padding := 0.0
 ) -> StyleBoxTexture:
 	var texture: Texture2D = PANEL_MAIN_TEXTURE
-	var texture_margins := Vector4(86.0, 78.0, 86.0, 78.0)
+	var texture_margins: Vector4 = PANEL_TEXTURE_MARGINS[PanelKind.MAIN]
 	match kind:
 		PanelKind.INSET:
 			texture = PANEL_INSET_TEXTURE
-			texture_margins = Vector4(64.0, 44.0, 64.0, 44.0)
+			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.INSET]
 		PanelKind.HUD:
 			texture = PANEL_HUD_TEXTURE
-			texture_margins = Vector4(58.0, 44.0, 58.0, 44.0)
+			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.HUD]
 
+	var safe_insets := get_panel_safe_insets(kind)
+	var extra_padding := Vector4(
+		extra_content_padding,
+		extra_content_padding,
+		extra_content_padding,
+		extra_content_padding
+	)
 	var style := _create_texture_style(
 		texture,
 		texture_margins,
-		Vector4(content_margin, content_margin, content_margin, content_margin)
+		safe_insets + extra_padding
 	)
 	style.modulate_color = _create_subtle_accent_modulate(accent)
 	return style
+
+
+static func get_panel_safe_insets(kind := PanelKind.MAIN) -> Vector4:
+	return PANEL_SAFE_INSETS.get(kind, PANEL_SAFE_INSETS[PanelKind.MAIN])
 
 
 static func create_button_style(
@@ -83,16 +108,16 @@ static func create_button_style(
 	elif kind == ButtonKind.TAB:
 		textures = TAB_BUTTON_TEXTURES
 	var texture := textures.get(state, textures[ButtonState.NORMAL]) as Texture2D
-	var top_margin := 12.0
-	var bottom_margin := 12.0
+	var top_margin := 9.0
+	var bottom_margin := 9.0
 	if state == ButtonState.PRESSED:
-		top_margin = 14.0
-		bottom_margin = 10.0
+		top_margin = 11.0
+		bottom_margin = 7.0
 
-	var texture_margins := Vector4(92.0, 14.0, 92.0, 14.0)
-	var content_margins := Vector4(22.0, top_margin, 22.0, bottom_margin)
+	var texture_margins := Vector4(42.0, 14.0, 42.0, 14.0)
+	var content_margins := Vector4(20.0, top_margin, 20.0, bottom_margin)
 	if kind == ButtonKind.TAB:
-		texture_margins = Vector4(20.0, 48.0, 20.0, 48.0)
+		texture_margins = Vector4(14.0, 18.0, 14.0, 18.0)
 		content_margins = Vector4(6.0, top_margin, 6.0, bottom_margin)
 	var style := _create_texture_style(texture, texture_margins, content_margins)
 	if kind == ButtonKind.DANGER:
@@ -106,8 +131,8 @@ static func create_field_style(focused := false) -> StyleBoxTexture:
 	var texture: Texture2D = FIELD_FOCUS_TEXTURE if focused else FIELD_NORMAL_TEXTURE
 	return _create_texture_style(
 		texture,
-		Vector4(54.0, 18.0, 54.0, 18.0),
-		Vector4(13.0, 9.0, 13.0, 9.0)
+		Vector4(54.0, 10.0, 54.0, 10.0),
+		Vector4(13.0, 7.0, 13.0, 7.0)
 	)
 
 

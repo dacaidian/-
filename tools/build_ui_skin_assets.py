@@ -9,11 +9,14 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 ASSET_SPECS = {
     "panel_main": ("panel_main.png", (768, 920)),
-    "panel_hud": ("panel_hud.png", (768, 284)),
-    "panel_inset": ("panel_inset.png", (1024, 320)),
-    "button_primary": ("button_primary_normal.png", (768, 144)),
-    "button_secondary": ("button_secondary_normal.png", (768, 144)),
-    "field": ("field_normal.png", (768, 96)),
+    # Compact surfaces deliberately use shallower runtime canvases. Their
+    # generated masters have broad ornamental borders intended for large art;
+    # keeping that height would leave no readable content area in 32-180px UI.
+    "panel_hud": ("panel_hud.png", (768, 176)),
+    "panel_inset": ("panel_inset.png", (1024, 160)),
+    "button_primary": ("button_primary_normal.png", (512, 72)),
+    "button_secondary": ("button_secondary_normal.png", (512, 72)),
+    "field": ("field_normal.png", (768, 72)),
 }
 
 
@@ -166,7 +169,7 @@ def _make_field_focus(image: Image.Image) -> Image.Image:
 
 def _make_vertical_tab(image: Image.Image) -> Image.Image:
     rotated = image.rotate(90, expand=True)
-    return rotated.resize((144, 384), Image.Resampling.LANCZOS)
+    return rotated.resize((72, 192), Image.Resampling.LANCZOS)
 
 
 def _save(image: Image.Image, path: Path) -> None:

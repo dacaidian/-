@@ -73,7 +73,7 @@ func run() -> void:
 		previous_bottom = panel.position.y + panel.size.y
 
 	assert(previous_bottom <= 720.0 - RightSideHudStyleScript.PANEL_MARGIN + 0.01)
-	assert(equipment_controller.panel.size.y < 150.0)
+	assert(equipment_controller.panel.size.y < 166.0)
 
 	print("RIGHT_SIDE_HUD_TESTS_OK")
 	scene.queue_free()
