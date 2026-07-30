@@ -471,15 +471,15 @@ func _load_faction_logo(faction_id: String) -> Texture2D:
 func _apply_styles() -> void:
 	faction_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_panel_style(Color(0.42, 0.48, 0.50, 1.0))
+		ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)
 	)
 	filter_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_panel_style(ApplicationUiStyle.BLUE)
+		ApplicationUiStyle.create_inset_panel_style(ApplicationUiStyle.BLUE)
 	)
 	results_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_panel_style(Color(0.37, 0.43, 0.44, 1.0))
+		ApplicationUiStyle.create_inset_panel_style(Color(0.37, 0.43, 0.44, 1.0))
 	)
 	details_panel.add_theme_stylebox_override(
 		"panel",
@@ -500,31 +500,28 @@ func _apply_styles() -> void:
 
 
 func _style_faction_button(button: Button) -> void:
-	button.add_theme_color_override("font_color", Color(0.78, 0.77, 0.73, 1.0))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.92, 0.76, 1.0))
-	button.add_theme_stylebox_override("normal", _create_faction_button_style(false, false))
-	button.add_theme_stylebox_override("hover", _create_faction_button_style(true, false))
-	button.add_theme_stylebox_override("pressed", _create_faction_button_style(true, true))
-	button.add_theme_stylebox_override("focus", _create_focus_style(ApplicationUiStyle.BLUE))
+	ApplicationUiStyle.style_choice_button(button)
 
 
 func _style_line_edit(line_edit: LineEdit) -> void:
 	line_edit.add_theme_color_override("font_color", ApplicationUiStyle.PRIMARY_TEXT)
 	line_edit.add_theme_color_override("font_placeholder_color", Color(0.51, 0.50, 0.47, 1.0))
 	line_edit.add_theme_font_size_override("font_size", 16)
-	line_edit.add_theme_stylebox_override("normal", _create_field_style(false))
-	line_edit.add_theme_stylebox_override("focus", _create_field_style(true))
+	line_edit.add_theme_stylebox_override("normal", ApplicationUiStyle.create_field_style(false))
+	line_edit.add_theme_stylebox_override("focus", ApplicationUiStyle.create_field_style(true))
 
 
 func _style_option_button(option_button: OptionButton) -> void:
 	option_button.add_theme_color_override("font_color", ApplicationUiStyle.PRIMARY_TEXT)
 	option_button.add_theme_color_override("font_hover_color", Color.WHITE)
 	option_button.add_theme_font_size_override("font_size", 14)
-	option_button.add_theme_stylebox_override("normal", _create_field_style(false))
-	option_button.add_theme_stylebox_override("hover", _create_field_style(true))
-	option_button.add_theme_stylebox_override("pressed", _create_field_style(true))
-	option_button.add_theme_stylebox_override("focus", _create_focus_style(ApplicationUiStyle.BLUE))
+	option_button.add_theme_stylebox_override("normal", ApplicationUiStyle.create_field_style(false))
+	option_button.add_theme_stylebox_override("hover", ApplicationUiStyle.create_field_style(true))
+	option_button.add_theme_stylebox_override("pressed", ApplicationUiStyle.create_field_style(true))
+	option_button.add_theme_stylebox_override(
+		"focus",
+		ApplicationUiStyle.create_focus_style(ApplicationUiStyle.BLUE)
+	)
 
 
 func _style_details_category(category: String) -> void:
@@ -546,42 +543,6 @@ func _style_details_category(category: String) -> void:
 	style.content_margin_top = 4.0
 	style.content_margin_bottom = 4.0
 	details_category_label.add_theme_stylebox_override("normal", style)
-
-
-func _create_field_style(focused: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.035, 0.038, 0.039, 0.94)
-	style.border_color = Color(0.32, 0.62, 0.82, 0.90 if focused else 0.38)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 12.0
-	style.content_margin_right = 12.0
-	style.content_margin_top = 9.0
-	style.content_margin_bottom = 9.0
-	return style
-
-
-func _create_faction_button_style(hovered: bool, pressed: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	var accent := ApplicationUiStyle.GOLD if pressed else ApplicationUiStyle.BLUE
-	style.bg_color = Color(accent.r, accent.g, accent.b, 0.20 if pressed else (0.11 if hovered else 0.035))
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.82 if pressed else (0.48 if hovered else 0.16))
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 10.0
-	style.content_margin_right = 10.0
-	style.content_margin_top = 8.0
-	style.content_margin_bottom = 8.0
-	return style
-
-
-func _create_focus_style(accent: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color.TRANSPARENT
-	style.border_color = accent
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(5)
-	return style
 
 
 func _create_tag_style() -> StyleBoxFlat:

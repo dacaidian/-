@@ -131,15 +131,14 @@ func _build_ui(
 	_return_button.name = "ReturnButton"
 	_return_button.text = "正在生成战报..."
 	_return_button.disabled = true
-	_return_button.custom_minimum_size = Vector2(280, 52)
 	_return_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ApplicationUiStyle.style_menu_button(
+		_return_button,
+		ApplicationUiStyle.GOLD,
+		true
+	)
+	_return_button.custom_minimum_size = Vector2(280, 52)
 	_return_button.add_theme_font_size_override("font_size", 22)
-	_return_button.add_theme_color_override("font_color", Color(0.16, 0.10, 0.04, 1.0))
-	_return_button.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.42, 1.0))
-	_return_button.add_theme_stylebox_override("normal", _create_button_style(false))
-	_return_button.add_theme_stylebox_override("hover", _create_button_style(true))
-	_return_button.add_theme_stylebox_override("pressed", _create_button_style(true))
-	_return_button.add_theme_stylebox_override("disabled", _create_button_disabled_style())
 	_layer.add_child(_return_button)
 
 	var stats_bottom: float = _stats_panel.position.y + stats_size.y
@@ -419,62 +418,9 @@ func _get_centered_position(root: Node, size: Vector2) -> Vector2:
 	return (viewport_size - size) * 0.5
 
 
-func _create_banner_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.04, 0.03, 0.02, 0.92)
-	style.border_width_left = 3
-	style.border_width_right = 3
-	style.border_width_top = 3
-	style.border_width_bottom = 3
-	style.border_color = Color(0.93, 0.68, 0.30, 0.9)
-	style.set_corner_radius_all(12)
-	style.shadow_size = 18
-	style.shadow_offset = Vector2(0, 6)
-	style.shadow_color = Color(0, 0, 0, 0.58)
-	return style
+func _create_banner_style() -> StyleBox:
+	return ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)
 
 
-func _create_stats_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.04, 0.94)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.93, 0.68, 0.30, 0.82)
-	style.set_corner_radius_all(10)
-	style.shadow_size = 16
-	style.shadow_offset = Vector2(0, 6)
-	style.shadow_color = Color(0, 0, 0, 0.52)
-	return style
-
-
-func _create_button_style(is_hover: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	if is_hover:
-		style.bg_color = Color(1.0, 0.82, 0.42, 1.0)
-		style.border_color = Color(1.0, 0.94, 0.68, 1.0)
-	else:
-		style.bg_color = Color(0.95, 0.72, 0.30, 1.0)
-		style.border_color = Color(1.0, 0.92, 0.66, 1.0)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.set_corner_radius_all(8)
-	style.shadow_size = 10
-	style.shadow_offset = Vector2(0, 4)
-	style.shadow_color = Color(0, 0, 0, 0.45)
-	return style
-
-
-func _create_button_disabled_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.25, 0.23, 0.20, 0.8)
-	style.border_color = Color(0.42, 0.38, 0.32, 0.7)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.set_corner_radius_all(8)
-	return style
+func _create_stats_panel_style() -> StyleBox:
+	return ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)

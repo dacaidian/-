@@ -2,6 +2,7 @@ extends RefCounted
 class_name RightSideHudStyle
 
 const HudSymbolIconScript := preload("res://scripts/ui/hud_symbol_icon.gd")
+const GameUiSkinScript := preload("res://scripts/ui/game_ui_skin.gd")
 
 const PANEL_WIDTH := 296.0
 const PANEL_MARGIN := 16.0
@@ -30,20 +31,12 @@ static func create_icon(
 	return HudSymbolIconScript.new().setup(symbol_id, color, icon_size, hint)
 
 
-static func create_panel_style(accent: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = BASE_BACKGROUND
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.68)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.content_margin_left = 1
-	style.content_margin_top = 1
-	style.content_margin_right = 1
-	style.content_margin_bottom = 1
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.52)
-	style.shadow_size = 12
-	style.shadow_offset = Vector2(0, 4)
-	return style
+static func create_panel_style(accent: Color) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.HUD,
+		accent,
+		0.0
+	)
 
 
 static func create_inner_style(accent: Color, accent_alpha := 0.24) -> StyleBoxFlat:
@@ -178,27 +171,25 @@ static func create_progress_meter(current_value: int, max_value: int, accent: Co
 	return progress
 
 
-static func create_button_style(accent: Color, is_hover := false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	var intensity := 0.16 if not is_hover else 0.25
-	style.bg_color = Color(
-		BASE_BACKGROUND.r + accent.r * intensity,
-		BASE_BACKGROUND.g + accent.g * intensity,
-		BASE_BACKGROUND.b + accent.b * intensity,
-		0.98
+static func create_button_style(
+	accent: Color,
+	is_hover := false,
+	is_pressed := false
+) -> StyleBox:
+	var state := GameUiSkinScript.ButtonState.NORMAL
+	if is_pressed:
+		state = GameUiSkinScript.ButtonState.PRESSED
+	elif is_hover:
+		state = GameUiSkinScript.ButtonState.HOVER
+	return GameUiSkinScript.create_button_style(
+		GameUiSkinScript.ButtonKind.SECONDARY,
+		state,
+		accent
 	)
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.66 if not is_hover else 0.92)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.12 if not is_hover else 0.22)
-	style.shadow_size = 3 if not is_hover else 7
-	return style
 
 
-static func create_disabled_button_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.075, 0.078, 0.08, 0.90)
-	style.border_color = Color(0.25, 0.26, 0.27, 0.72)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	return style
+static func create_disabled_button_style() -> StyleBox:
+	return GameUiSkinScript.create_button_style(
+		GameUiSkinScript.ButtonKind.SECONDARY,
+		GameUiSkinScript.ButtonState.DISABLED
+	)

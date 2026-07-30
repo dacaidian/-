@@ -184,7 +184,11 @@ func create_skill_row(
 	)
 	button.add_theme_stylebox_override(
 		"pressed",
-		RightSideHudStyleScript.create_button_style(RightSideHudStyleScript.ACCENT_SKILL, true)
+		RightSideHudStyleScript.create_button_style(
+			RightSideHudStyleScript.ACCENT_SKILL,
+			false,
+			true
+		)
 	)
 	button.add_theme_stylebox_override(
 		"disabled",

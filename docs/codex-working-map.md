@@ -323,13 +323,19 @@
 - `scenes/card/scripts/card.gd`
 - `scripts/ui/hand_drawer_controller.gd`
 - `scripts/game/game_hud_coordinator.gd`
+- `scripts/ui/game_ui_skin.gd`
+- `scripts/ui/application_ui_style.gd`
 - `scripts/ui/right_side_hud_layout_controller.gd`
 - `scripts/ui/right_side_hud_style.gd`
 - `scripts/ui/hud_symbol_icon.gd`
+- `assets/img/ui_skin/`
+- `tools/build_ui_skin_assets.py`
 - 相关 panel controller
 
 常见规则：
 
+- 主菜单、种族选择、图鉴、结算页、手牌抽屉和 HUD 的大型外框统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`。`GameUiSkin` 只拥有位图和九宫格契约；`ApplicationUiStyle` 负责应用页面语义；`RightSideHudStyle` 负责紧凑战斗 HUD。页面 controller 不得重新绘制同等级木框、古铜边框或按钮四态。
+- UI 按钮必须同时配置普通、悬浮、按下和禁用状态；竖向手牌开关使用专属 `ButtonKind.TAB`，不要拉伸横向按钮。重建 `assets/img/ui_skin/` 后先运行 `tools/run_godot_validation.ps1 -ImportAssets`，再运行 `tools/test_ui_skin.gd`，并回归对应页面测试。
 - 一次性特效从 `CardAnimationController` 进入；通用移动/攻击留在控制器，种族主题实现放在对应 animation provider。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如普通施法回合 `spell_turn_activation`、赫子解放 `kagune_release`、野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。普通施法回合表现位于 `scripts/ui/animation/generic_spell_animation_provider.gd`；种族专属表现应使用不同 key 覆盖调用分支，避免与通用效果重复播放。

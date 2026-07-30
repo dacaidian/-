@@ -3,13 +3,17 @@ param(
     [string]$ScriptPath = "",
     [string]$SuccessMarker = "",
     [int]$TimeoutSeconds = 120,
-    [string]$LogFile = ""
+    [string]$LogFile = "",
+    [switch]$ImportAssets
 )
 
 $ErrorActionPreference = "Stop"
 
 if ($TimeoutSeconds -le 0) {
     throw "TimeoutSeconds must be greater than zero."
+}
+if ($ImportAssets -and -not [string]::IsNullOrWhiteSpace($ScriptPath)) {
+    throw "ImportAssets and ScriptPath cannot be used together."
 }
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -22,7 +26,9 @@ if ([string]::IsNullOrWhiteSpace($godotOverride)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($LogFile)) {
-    $logName = if ([string]::IsNullOrWhiteSpace($ScriptPath)) {
+    $logName = if ($ImportAssets) {
+        "safe_asset_import.log"
+    } elseif ([string]::IsNullOrWhiteSpace($ScriptPath)) {
         "safe_project_check.log"
     } else {
         "safe_$([IO.Path]::GetFileNameWithoutExtension($ScriptPath)).log"
@@ -45,7 +51,9 @@ $godotArguments = @(
     "--path", $projectRoot,
     "--log-file", $LogFile
 )
-if ([string]::IsNullOrWhiteSpace($ScriptPath)) {
+if ($ImportAssets) {
+    $godotArguments += @("--import")
+} elseif ([string]::IsNullOrWhiteSpace($ScriptPath)) {
     # Project-mode --check-only does not terminate reliably on Windows.
     $godotArguments += @("--quit-after", "1")
 } else {

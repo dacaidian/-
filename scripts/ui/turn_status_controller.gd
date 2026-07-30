@@ -92,7 +92,11 @@ func build_content() -> void:
 	)
 	spell_turn_button.add_theme_stylebox_override(
 		"pressed",
-		RightSideHudStyleScript.create_button_style(RightSideHudStyleScript.ACCENT_TIME, true)
+		RightSideHudStyleScript.create_button_style(
+			RightSideHudStyleScript.ACCENT_TIME,
+			false,
+			true
+		)
 	)
 	spell_turn_button.add_theme_stylebox_override(
 		"disabled",

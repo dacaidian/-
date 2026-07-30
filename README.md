@@ -13,7 +13,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **行动系统**：移动、攻击、施法是主行动组；副动作、骑乘攻击、固定方向移动、瞬移、飞行、移动攻击等由通用行动资源系统处理。
 - **状态系统**：支持圣盾、毒、火焰伤害、定身、隐身、魅惑、复生、护甲、生命上限修正、变身等可扩展状态。
 - **地图/中立设计储备**：当前中立牌池是未来地图系统原型；长期方向是不同地图拥有不同中立牌包和环境规则。
-- **表现层**：包含卡牌动画、全战场触发特效、跟随单位的持续区域 VFX、持续状态覆盖、数值图标、战场种族 logo、统一右侧战斗 HUD、装备面板、种族面板、暗夜时间面板、背景音乐和音效门面。
+- **表现层**：包含卡牌动画、全战场触发特效、跟随单位的持续区域 VFX、持续状态覆盖、数值图标、战场种族 logo、统一位图 UI 皮肤、右侧战斗 HUD、装备面板、种族面板、暗夜时间面板、背景音乐和音效门面。主菜单、图鉴、手牌抽屉和 HUD 共用木质、黑铁、古铜与深蓝皮革视觉语言，按钮具备普通、悬浮、按下和禁用四态。
 
 ## 已接入种族
 
@@ -49,9 +49,10 @@ war-card/
 │   ├── game/                   # 对局编排、目标、死亡、触发、棋盘 resolver
 │   └── ui/                     # 动画门面、主题 provider、面板、手牌、状态覆盖
 ├── assets/
-│   ├── img/                    # 卡面、图标、UI 图片
+│   ├── img/                    # 卡面、图标、UI 图片；ui_skin/ 为统一界面皮肤
 │   └── music/                  # 背景音乐
 ├── tools/
+│   ├── build_ui_skin_assets.py # 从母版构建 UI 九宫格与交互状态
 │   └── validate_cards.py       # 卡牌数据校验
 ├── main.tscn
 └── project.godot
@@ -65,6 +66,7 @@ war-card/
 - **结算契约统一**：资源胜利和投降都生成 `MatchResult`，由同一结算页面展示；未来牌局历史只消费结果快照，不读取已销毁的 `GameManager`。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
 - **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
+- **UI 皮肤集中管理**：`GameUiSkin` 只管理位图、九宫格边距和控件状态；`ApplicationUiStyle` 负责主菜单、图鉴等应用页面的语义样式；`RightSideHudStyle` 负责战斗 HUD 的强调色和紧凑控件。页面 controller 只选择语义变体，不自行复制大型代码绘制外框。
 - **HUD 卡图统一预览**：种族状态牌与装备牌通过 `CardTexturePreviewController` 共享悬浮大图、视口内定位和显示生命周期。
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立滚动，空区自动收缩，非空区按卡牌行数共享可用高度，焦点切换不会改变布局或重置滚动位置。
 - **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径、范围区域和多目标矩形组七种表现上下文分派 animation key，并拒绝同一上下文的重复处理器；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉，复杂 provider 再按语义编排、图元工厂和生命周期运行时分层。
@@ -90,7 +92,9 @@ war-card/
 
 ```powershell
 python tools/validate_cards.py
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ImportAssets -TimeoutSeconds 180
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_ui_skin.gd -SuccessMarker UI_SKIN_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_application_flow.gd -SuccessMarker APPLICATION_FLOW_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_collection.gd -SuccessMarker CARD_COLLECTION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_data_lazy_textures.gd -SuccessMarker CARD_DATA_LAZY_TEXTURES_TEST_OK
@@ -111,7 +115,9 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+
+`tools/build_ui_skin_assets.py` 依赖 Pillow，仅在使用新的美术母版重建皮肤资源时需要运行；日常启动游戏不依赖 Python 图像库。
 
 Windows 下不要直接运行 `godot --headless --path . --check-only`：Godot 4.6 在项目模式下不会可靠退出，而 PowerShell 会提前返回，长期使用会累积隐藏的 `godot.exe` 并耗尽内存。统一使用 `tools/run_godot_validation.ps1`，它会等待真实退出、限制执行时间，并只清理本次启动的进程。
 

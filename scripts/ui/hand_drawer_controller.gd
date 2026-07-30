@@ -1,6 +1,8 @@
 extends RefCounted
 class_name HandDrawerController
 
+const GameUiSkinScript := preload("res://scripts/ui/game_ui_skin.gd")
+
 const HandSectionLayoutPolicyScript := preload("res://scripts/ui/hand_section_layout_policy.gd")
 
 signal hand_card_clicked(card_entry: Variant, source_control: Control, hand_index: int)
@@ -110,9 +112,18 @@ func setup(root: Node, panel_path: NodePath) -> void:
 		toggle_button.move_to_front.call_deferred()
 		if not toggle_button.pressed.is_connected(Callable(self, "toggle")):
 			toggle_button.pressed.connect(Callable(self, "toggle"))
-		toggle_button.add_theme_stylebox_override("normal", create_toggle_style(false))
-		toggle_button.add_theme_stylebox_override("hover", create_toggle_style(true))
-		toggle_button.add_theme_stylebox_override("pressed", create_toggle_style(true))
+		toggle_button.add_theme_stylebox_override(
+			"normal",
+			create_toggle_style(GameUiSkinScript.ButtonState.NORMAL)
+		)
+		toggle_button.add_theme_stylebox_override(
+			"hover",
+			create_toggle_style(GameUiSkinScript.ButtonState.HOVER)
+		)
+		toggle_button.add_theme_stylebox_override(
+			"pressed",
+			create_toggle_style(GameUiSkinScript.ButtonState.PRESSED)
+		)
 		toggle_button.add_theme_color_override("font_color", Color(1.0, 0.9, 0.66, 1.0))
 		toggle_button.add_theme_font_size_override("font_size", 15)
 
@@ -813,29 +824,20 @@ func refresh_drawer_layout() -> void:
 	request_adaptive_section_layout()
 
 
-func create_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.055, 0.045, 0.035, 0.94)
-	style.border_color = Color(0.86, 0.62, 0.30, 0.82)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(5)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
-	style.shadow_size = 20
-	style.shadow_offset = Vector2(4, 6)
-	return style
+func create_panel_style() -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.MAIN,
+		ApplicationUiStyle.GOLD,
+		0.0
+	)
 
 
-func create_section_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.11, 0.085, 0.058, 0.74)
-	style.border_color = Color(0.72, 0.50, 0.24, 0.52)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.content_margin_left = 10
-	style.content_margin_top = 8
-	style.content_margin_right = 10
-	style.content_margin_bottom = 8
-	return style
+func create_section_style() -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.INSET,
+		ApplicationUiStyle.BLUE,
+		8.0
+	)
 
 
 func create_cooldown_badge_style() -> StyleBoxFlat:
@@ -887,12 +889,9 @@ func create_hand_card_style(card_entry: Variant = null) -> StyleBoxFlat:
 	return style
 
 
-func create_toggle_style(is_hover := false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.08, 0.045, 0.96) if not is_hover else Color(0.18, 0.12, 0.065, 0.98)
-	style.border_color = Color(1.0, 0.74, 0.34, 0.84)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.shadow_color = Color(1.0, 0.72, 0.28, 0.18)
-	style.shadow_size = 8 if is_hover else 4
-	return style
+func create_toggle_style(state := GameUiSkinScript.ButtonState.NORMAL) -> StyleBox:
+	return GameUiSkinScript.create_button_style(
+		GameUiSkinScript.ButtonKind.TAB,
+		state,
+		ApplicationUiStyle.GOLD
+	)

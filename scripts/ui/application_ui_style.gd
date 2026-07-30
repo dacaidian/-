@@ -1,6 +1,8 @@
 extends RefCounted
 class_name ApplicationUiStyle
 
+const GameUiSkinScript := preload("res://scripts/ui/game_ui_skin.gd")
+
 const PRIMARY_TEXT := Color(0.96, 0.91, 0.82, 1.0)
 const SECONDARY_TEXT := Color(0.72, 0.69, 0.64, 1.0)
 const GOLD := Color(0.86, 0.62, 0.28, 1.0)
@@ -8,15 +10,24 @@ const BLUE := Color(0.30, 0.58, 0.82, 1.0)
 const DANGER := Color(0.76, 0.25, 0.20, 1.0)
 
 
-static func create_panel_style(accent := GOLD) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.055, 0.047, 0.040, 0.94)
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.68)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	style.shadow_size = 12
-	return style
+static func create_panel_style(accent := GOLD) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(GameUiSkinScript.PanelKind.MAIN, accent, 12.0)
+
+
+static func create_inset_panel_style(accent := BLUE, content_margin := 10.0) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.INSET,
+		accent,
+		content_margin
+	)
+
+
+static func create_field_style(focused := false) -> StyleBox:
+	return GameUiSkinScript.create_field_style(focused)
+
+
+static func create_focus_style(accent := BLUE, radius := 5) -> StyleBox:
+	return GameUiSkinScript.create_focus_style(accent, radius)
 
 
 static func style_menu_button(button: Button, accent := GOLD, emphasized := false) -> void:
@@ -29,10 +40,40 @@ static func style_menu_button(button: Button, accent := GOLD, emphasized := fals
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)
 	button.add_theme_color_override("font_disabled_color", Color(0.44, 0.42, 0.39, 1.0))
-	button.add_theme_stylebox_override("normal", _create_button_style(accent, emphasized, false))
-	button.add_theme_stylebox_override("hover", _create_button_style(accent, true, false))
-	button.add_theme_stylebox_override("pressed", _create_button_style(accent, true, true))
-	button.add_theme_stylebox_override("disabled", _create_disabled_button_style())
+	var button_kind := _resolve_button_kind(accent, emphasized)
+	button.add_theme_stylebox_override(
+		"normal",
+		GameUiSkinScript.create_button_style(
+			button_kind,
+			GameUiSkinScript.ButtonState.NORMAL,
+			accent
+		)
+	)
+	button.add_theme_stylebox_override(
+		"hover",
+		GameUiSkinScript.create_button_style(
+			button_kind,
+			GameUiSkinScript.ButtonState.HOVER,
+			accent
+		)
+	)
+	button.add_theme_stylebox_override(
+		"pressed",
+		GameUiSkinScript.create_button_style(
+			button_kind,
+			GameUiSkinScript.ButtonState.PRESSED,
+			accent
+		)
+	)
+	button.add_theme_stylebox_override(
+		"disabled",
+		GameUiSkinScript.create_button_style(
+			button_kind,
+			GameUiSkinScript.ButtonState.DISABLED,
+			accent
+		)
+	)
+	button.add_theme_stylebox_override("focus", GameUiSkinScript.create_focus_style(accent))
 
 
 static func style_compact_button(button: Button, accent := GOLD) -> void:
@@ -43,32 +84,44 @@ static func style_compact_button(button: Button, accent := GOLD) -> void:
 	button.add_theme_font_size_override("font_size", 16)
 
 
-static func _create_button_style(accent: Color, emphasized: bool, pressed: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	var base_alpha := 0.24 if emphasized else 0.12
-	style.bg_color = Color(accent.r, accent.g, accent.b, base_alpha)
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.95 if emphasized else 0.58)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 12.0
-	style.content_margin_bottom = 12.0
-	if pressed:
-		style.bg_color = Color(accent.r, accent.g, accent.b, 0.34)
-		style.content_margin_top = 14.0
-		style.content_margin_bottom = 10.0
-	return style
+static func style_choice_button(button: Button) -> void:
+	if button == null:
+		return
+	button.custom_minimum_size = Vector2(0.0, 40.0)
+	button.add_theme_font_size_override("font_size", 14)
+	button.add_theme_color_override("font_color", Color(0.78, 0.77, 0.73, 1.0))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.92, 0.76, 1.0))
+	button.add_theme_stylebox_override(
+		"normal",
+		GameUiSkinScript.create_button_style(
+			GameUiSkinScript.ButtonKind.SECONDARY,
+			GameUiSkinScript.ButtonState.NORMAL,
+			BLUE
+		)
+	)
+	button.add_theme_stylebox_override(
+		"hover",
+		GameUiSkinScript.create_button_style(
+			GameUiSkinScript.ButtonKind.SECONDARY,
+			GameUiSkinScript.ButtonState.HOVER,
+			BLUE
+		)
+	)
+	button.add_theme_stylebox_override(
+		"pressed",
+		GameUiSkinScript.create_button_style(
+			GameUiSkinScript.ButtonKind.PRIMARY,
+			GameUiSkinScript.ButtonState.PRESSED,
+			GOLD
+		)
+	)
+	button.add_theme_stylebox_override("focus", GameUiSkinScript.create_focus_style(BLUE))
 
 
-static func _create_disabled_button_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.11, 0.10, 0.70)
-	style.border_color = Color(0.28, 0.27, 0.25, 0.70)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(5)
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 12.0
-	style.content_margin_bottom = 12.0
-	return style
+static func _resolve_button_kind(accent: Color, emphasized: bool) -> int:
+	if accent.is_equal_approx(DANGER):
+		return GameUiSkinScript.ButtonKind.DANGER
+	if emphasized or accent.is_equal_approx(GOLD):
+		return GameUiSkinScript.ButtonKind.PRIMARY
+	return GameUiSkinScript.ButtonKind.SECONDARY
