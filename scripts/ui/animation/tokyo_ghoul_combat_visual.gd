@@ -54,7 +54,7 @@ func _draw() -> void:
 			_draw_bikaku(clampf(release * 0.94, 0.0, 1.0), impact, alpha * 0.86)
 			_draw_koukaku(clampf(release * 0.88, 0.0, 1.0), impact, alpha * 0.72)
 		"centipede":
-			_draw_centipede(release, impact, alpha)
+			_draw_centipede(release, alpha)
 		"dragon":
 			_draw_dragon(release, impact, alpha)
 		"saint_sword":
@@ -184,7 +184,7 @@ func _draw_bikaku(release: float, impact: float, alpha: float) -> void:
 		draw_polyline(_closed(barb), Color(COLD.r, COLD.g, COLD.b, alpha * 0.62), 1.2, true)
 
 
-func _draw_centipede(release: float, impact: float, alpha: float) -> void:
+func _draw_centipede(release: float, alpha: float) -> void:
 	var direction := (target_point - source_point).normalized()
 	var normal := direction.orthogonal()
 	var previous := source_point
