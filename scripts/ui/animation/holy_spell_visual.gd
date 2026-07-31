@@ -444,7 +444,7 @@ func _draw_naaru(center: Vector2, radius: float, phase: float) -> void:
 func _draw_holy_seal(
 	center: Vector2,
 	radius: float,
-	rotation: float,
+	seal_rotation: float,
 	alpha: float
 ) -> void:
 	if radius <= 0.1:
@@ -457,7 +457,7 @@ func _draw_holy_seal(
 	var shield := _shield_points(center, radius * 0.42)
 	draw_polyline(shield, Color(HOLY_IVORY.r, HOLY_IVORY.g, HOLY_IVORY.b, alpha * 0.62), 1.5, true)
 	for mark_index in range(8):
-		var angle := rotation + TAU * float(mark_index) / 8.0
+		var angle := seal_rotation + TAU * float(mark_index) / 8.0
 		var radial := Vector2.from_angle(angle)
 		var tangent := radial.orthogonal()
 		var mark_center := center + radial * radius * 0.86
