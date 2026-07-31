@@ -603,12 +603,12 @@ func _regular_polygon(
 	center: Vector2,
 	radius: float,
 	point_count: int,
-	rotation: float,
+	angle_offset: float,
 	closed: bool
 ) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for point_index in range(point_count):
-		var angle := rotation + TAU * float(point_index) / float(maxi(point_count, 1))
+		var angle := angle_offset + TAU * float(point_index) / float(maxi(point_count, 1))
 		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
 	if closed and not points.is_empty():
 		points.append(points[0])
