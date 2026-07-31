@@ -23,6 +23,9 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	source_state.max_health = maxi(reference_state.max_health, 0)
 	source_state.damage_taken = mini(source_state.damage_taken, source_state.max_health)
 	source_state.state_changed.emit(source_state)
+	var animation_key := str(effect_data.get(EffectData.KEY_ANIMATION, ""))
+	if animation_key != "" and game_manager.has_method("play_status_apply_animation"):
+		await game_manager.play_status_apply_animation(source_state, animation_key)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

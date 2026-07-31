@@ -36,6 +36,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not can_target(user, target, game_manager):
 		return
 
+	var movement_animation_key := get_movement_animation_key(user)
 	if user.is_flying():
 		if not can_start(user, game_manager):
 			return
@@ -43,7 +44,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 			return
 		if not user.spend_movement():
 			return
-		await game_manager.move_flying_card_to_slot(user, target.slot_index)
+		await game_manager.move_flying_card_to_slot(user, target.slot_index, movement_animation_key)
 		return
 
 	if is_beast_path_move_target(user, target, game_manager):
@@ -59,7 +60,15 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not user.spend_movement():
 		return
 
-	await game_manager.swap_board_slot_contents(user, target)
+	await game_manager.swap_board_slot_contents(user, target, movement_animation_key)
+
+
+func get_movement_animation_key(user: CardState) -> String:
+	if user == null or user.data == null:
+		return ""
+	if user.data.faction_id == "monkey_spirit" and user.has_keyword(CardData.KEYWORD_TELEPORT):
+		return "monkey_somersault_move"
+	return ""
 
 
 func can_target(user: CardState, target: CardState, game_manager: GameManager) -> bool:

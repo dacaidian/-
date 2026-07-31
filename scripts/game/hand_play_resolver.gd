@@ -148,7 +148,7 @@ func execute_selected_hand_card(game_manager: GameManager, target_state: CardSta
 		HAND_PLACE_ACTION_ID:
 			await execute_hand_minion_placement(game_manager, player, card_data, hand_index, target_state)
 		HAND_EQUIP_ACTION_ID:
-			execute_hand_equipment(game_manager, player, card_data, hand_index)
+			await execute_hand_equipment(game_manager, player, card_data, hand_index)
 		_:
 			await execute_hand_card(game_manager, player, card_data, hand_index, target_state)
 
@@ -362,6 +362,18 @@ func execute_hand_equipment(
 
 	if not can_play_hand_card_at(player, hand_index, game_manager):
 		return
+	if card_data.animation != "":
+		var equipment_target: CardState = null
+		if card_data.owner_hero_card_id != "":
+			equipment_target = game_manager.find_face_up_board_state(
+				player.id,
+				card_data.owner_hero_card_id
+			)
+		await game_manager.play_hand_spell_card_animation(
+			card_data,
+			equipment_target,
+			card_data.animation
+		)
 
 	if not player.remove_from_hand_at(hand_index, card_data):
 		return

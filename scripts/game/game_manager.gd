@@ -1609,12 +1609,12 @@ func play_hand_spell_card_animation(card_data: CardData, target_state: CardState
 func get_overlay_animation_root() -> Control:
 	return game_animation_resolver.get_overlay_animation_root(self)
 
-func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState) -> void:
-	await board_movement_resolver.move_card_content_to_empty_slot(self, from_state, to_state)
+func move_card_content_to_empty_slot(from_state: CardState, to_state: CardState, animation_key := "") -> void:
+	await board_movement_resolver.move_card_content_to_empty_slot(self, from_state, to_state, animation_key)
 
 
-func move_flying_card_to_slot(from_state: CardState, to_slot_index: int) -> void:
-	await board_movement_resolver.move_flying_card_to_slot(self, from_state, to_slot_index)
+func move_flying_card_to_slot(from_state: CardState, to_slot_index: int, animation_key := "") -> void:
+	await board_movement_resolver.move_flying_card_to_slot(self, from_state, to_slot_index, animation_key)
 
 
 func promote_ground_flying_to_aerial(source_state: CardState) -> CardState:

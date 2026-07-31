@@ -60,11 +60,12 @@ func execute(user: CardState, _target: CardState, game_manager: GameManager) -> 
 	if destination == null:
 		return
 
+	var movement_animation_key := str(action_data.get(EffectData.KEY_ANIMATION, ""))
 	if user.is_flying():
-		await game_manager.move_flying_card_to_slot(user, destination.slot_index)
+		await game_manager.move_flying_card_to_slot(user, destination.slot_index, movement_animation_key)
 		return
 
-	await game_manager.swap_board_slot_contents(user, destination)
+	await game_manager.swap_board_slot_contents(user, destination, movement_animation_key)
 
 
 func get_destination_state(user: CardState, game_manager: GameManager) -> CardState:

@@ -104,6 +104,18 @@ func play_card_swap(
 ) -> void:
 	if owner == null or first_card == null or second_card == null:
 		return
+	if (
+		effect_root != null
+		and monkey_animation_provider.is_movement_key(animation_key)
+	):
+		monkey_animation_provider.spawn_movement_path(
+			owner,
+			effect_root,
+			Rect2(first_slot_position, first_card.size),
+			Rect2(second_slot_position, second_card.size),
+			animation_key,
+			move_animation_duration
+		)
 
 	if (
 		animation_key == DalaranAnimationProviderScript.SWAP_ANIMATION_KEY
@@ -254,9 +266,27 @@ func play_secondary_attack_impacts(owner: Node, target_cards: Array[Card]) -> vo
 		target_card.is_animating = false
 
 
-func play_card_to_empty_slot(owner: Node, from_card: Card, to_card: Card) -> void:
+func play_card_to_empty_slot(
+	owner: Node,
+	from_card: Card,
+	to_card: Card,
+	effect_root: Control = null,
+	animation_key := ""
+) -> void:
 	if owner == null or from_card == null or to_card == null:
 		return
+	if (
+		effect_root != null
+		and monkey_animation_provider.is_movement_key(animation_key)
+	):
+		monkey_animation_provider.spawn_movement_path(
+			owner,
+			effect_root,
+			from_card.get_global_rect(),
+			to_card.get_global_rect(),
+			animation_key,
+			move_animation_duration
+		)
 
 	from_card.is_animating = true
 	var from_local_position: Vector2 = from_card.position
@@ -466,16 +496,10 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell(owner, effect_root, target_card)
-		"immortal_peach":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"drive_spirit":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"shield", "frost_shield":
 			await play_shield_spell(owner, effect_root, target_card)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_card.get_global_rect())
-		"fiery_eyes_golden_gaze":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell(owner, effect_root, target_card)
 		"arcane_aura":
@@ -490,12 +514,6 @@ func play_spell_cast(owner: Node, effect_root: Control, caster_card: Card, targe
 			if caster_card == null or target_card == null:
 				return
 			await play_dark_arrow_spell(owner, effect_root, caster_card.get_global_rect().get_center(), target_card)
-		"somersault_cloud", "body_beyond_body", "gather_scatter_qi", "heavenly_form":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"bronze_head_iron_arms":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
-		"immobilize":
-			await play_monkey_spell_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
 		_:
 			await play_default_spell(owner, target_card)
 
@@ -510,30 +528,18 @@ func play_spell_cast_at_rect(owner: Node, effect_root: Control, target_rect: Rec
 	match animation_key:
 		"heal", "healing_spell":
 			await play_heal_spell_at_rect(owner, effect_root, target_rect)
-		"immortal_peach":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
-		"drive_spirit":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"shield", "frost_shield":
 			await play_shield_spell_at_rect(owner, effect_root, target_rect)
 		"power_word_shield":
 			await play_power_word_shield_at_rect(owner, effect_root, target_rect)
-		"fiery_eyes_golden_gaze":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"arcane", "arcane_wisdom":
 			await play_arcane_spell_at_rect(owner, effect_root, target_rect)
 		"summon":
 			await play_summon_spell_at_rect(owner, effect_root, target_rect)
-		"somersault_cloud", "body_beyond_body", "gather_scatter_qi", "heavenly_form":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
-		"bronze_head_iron_arms":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		"arcane_aura":
 			await play_arcane_aura_spell_at_rect(owner, effect_root, target_rect)
 		"baptism":
 			await play_baptism_spell_at_rect(owner, effect_root, target_rect)
-		"immobilize":
-			await play_monkey_spell_at_rect(owner, effect_root, target_rect, animation_key)
 		_:
 			await play_default_spell_at_rect(owner, effect_root, target_rect)
 
@@ -954,10 +960,6 @@ func play_summon_spell_at_rect(owner: Node, effect_root: Control, target_rect: R
 	wave_effect.queue_free()
 	for droplet in droplets:
 		droplet.queue_free()
-
-
-func play_monkey_spell_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
-	await monkey_animation_provider.play_at_rect(owner, effect_root, target_rect, animation_key)
 
 
 func play_fireball_spell(owner: Node, effect_root: Control, caster_card: Card, target_card: Card, size_scale := 1.0) -> void:

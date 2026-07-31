@@ -27,7 +27,10 @@ func _run() -> void:
 	var router: SpellAnimationRouter = controller.spell_animation_router
 
 	_assert_routes(router, "targeted", [
-		"fiery_eyes_golden_gaze", "beastmen_evolution", "gu_infusion",
+		"fiery_eyes_golden_gaze", "immortal_peach", "drive_spirit",
+		"drive_spirit_battlefield", "bronze_head_iron_arms_reflect",
+		"dragon_palace_treasure", "hair_clone_enter", "monkey_hair_clone_assist",
+		"beastmen_evolution", "gu_infusion",
 		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
 		"centipede_form", "dragon_form", "saint_sword_form",
 		"rc_forced_feeding", "bikaku_volley", "free_meal", "kakuja_form",
@@ -48,7 +51,9 @@ func _run() -> void:
 		"meteor_aura", "meteor_strike", "claw_strike", "elune_grace"
 	])
 	_assert_routes(router, "rect", [
-		"somersault_cloud", "wild_call", "gu_summon", "charm",
+		"somersault_cloud", "body_beyond_body", "bronze_head_iron_arms",
+		"immobilize", "gather_scatter_qi", "heavenly_form",
+		"dragon_palace_treasure", "wild_call", "gu_summon", "charm",
 		"dark_portal", "centipede_form", "dragon_form", "saint_sword_form",
 		"bikaku_volley", "extreme_cold_storm_cast",
 		"divine_shield", "baptism", "holy_heal", "power_word_shield",
@@ -66,7 +71,9 @@ func _run() -> void:
 		"meteor_aura", "meteor_strike", "claw_strike", "elune_grace"
 	])
 	_assert_routes(router, "source_rect", [
-		"body_beyond_body", "wanmo_ritual", "medical_practice",
+		"body_beyond_body", "monkey_somersault_move", "monkey_westward_move",
+		"monkey_hair_clone_assist", "bronze_head_iron_arms_reflect",
+		"wanmo_ritual", "medical_practice",
 		"soul_hook", "life_drain", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "healing_to_resolve", "fireball",
 		"pyroblast", "frost_shield", "gu_herb_poison",
@@ -92,6 +99,7 @@ func _run() -> void:
 		"tokyo_furuta_attack", "kagune_lifesteal", "koukaku_reflect"
 	])
 	_assert_routes(router, "board", [
+		"fiery_eyes_golden_gaze", "drive_spirit_battlefield",
 		"chaos_corruption_burst",
 		"kagune_release",
 		"rc_rise_medium", "rc_rise_high", "rc_fall_medium", "rc_fall_low",

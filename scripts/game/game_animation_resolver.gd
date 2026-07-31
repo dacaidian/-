@@ -63,6 +63,11 @@ func play_card_attack_animation(
 func resolve_attack_animation_key(attacker_state: CardState) -> String:
 	if attacker_state == null or attacker_state.data == null:
 		return ""
+	if (
+		attacker_state.data.faction_id == "monkey_spirit"
+		and attacker_state.card_id == "hair_clone"
+	):
+		return "monkey_hair_clone_assist"
 	if attacker_state.data.faction_id != "tokyo_ghoul":
 		return ""
 

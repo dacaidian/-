@@ -5,6 +5,7 @@ class_name CardStatusOverlay
 # It is purely presentational: CardState remains the single source of truth.
 
 const DIVINE_SHIELD_BREAK_DURATION := 0.52
+const ROOTED_BREAK_DURATION := 0.38
 
 var state: CardState
 var beast_path_color := Color(0.30, 0.16, 0.04, 0.28)
@@ -72,6 +73,12 @@ var rooted_seal_shadow_color := Color(0.32, 0.16, 0.02, 0.72)
 var stealth_color := Color(0.52, 0.72, 0.92, 0.12)
 var stealth_edge_color := Color(0.76, 0.92, 1.0, 0.62)
 var stealth_mist_color := Color(0.86, 0.96, 1.0, 0.34)
+var fiery_eyes_color := Color(1.0, 0.72, 0.12, 0.86)
+var fiery_eyes_core_color := Color(1.0, 0.96, 0.58, 0.96)
+var somersault_cloud_color := Color(0.88, 0.98, 1.0, 0.58)
+var somersault_cloud_edge_color := Color(0.48, 0.82, 0.90, 0.58)
+var heavenly_avatar_color := Color(1.0, 0.68, 0.10, 0.22)
+var heavenly_avatar_edge_color := Color(1.0, 0.88, 0.30, 0.78)
 var wanmo_charge_color := Color(0.46, 0.02, 0.02, 0.24)
 var wanmo_charge_edge_color := Color(1.0, 0.24, 0.08, 0.78)
 var wanmo_charge_core_color := Color(1.0, 0.46, 0.12, 0.92)
@@ -111,6 +118,8 @@ var kagune_cold_edge_color := Color(0.98, 0.82, 0.88, 0.76)
 var animation_time := 0.0
 var redraw_accumulator := 0.0
 var divine_shield_break_progress := -1.0
+var rooted_break_progress := -1.0
+var was_showing_rooted := false
 
 
 func _ready() -> void:
@@ -125,6 +134,11 @@ func _process(delta: float) -> void:
 		if divine_shield_break_progress >= 1.0:
 			divine_shield_break_progress = -1.0
 			refresh()
+	if is_rooted_break_active():
+		rooted_break_progress += delta / ROOTED_BREAK_DURATION
+		if rooted_break_progress >= 1.0:
+			rooted_break_progress = -1.0
+			refresh()
 
 	redraw_accumulator += delta
 	if redraw_accumulator >= 1.0 / 30.0:
@@ -135,12 +149,18 @@ func _process(delta: float) -> void:
 func set_state(new_state: CardState) -> void:
 	if state != new_state:
 		divine_shield_break_progress = -1.0
+		rooted_break_progress = -1.0
+		was_showing_rooted = false
 	state = new_state
 	refresh()
 
 
 func refresh() -> void:
-	visible = has_visible_status() or is_divine_shield_break_active()
+	var rooted_visible := should_show_rooted()
+	if was_showing_rooted and not rooted_visible:
+		rooted_break_progress = 0.0
+	was_showing_rooted = rooted_visible
+	visible = has_visible_status() or is_divine_shield_break_active() or is_rooted_break_active()
 	set_process(visible and has_animated_status_visual())
 	if visible:
 		queue_redraw()
@@ -152,6 +172,13 @@ func has_animated_status_visual() -> bool:
 		or should_show_tokyo_ghoul_form()
 		or should_show_divine_shield()
 		or should_show_power_word_shield()
+		or should_show_bronze_head_iron_arms()
+		or should_show_immortal_peach()
+		or should_show_rooted()
+		or should_show_stealth()
+		or should_show_fiery_eyes_vision()
+		or should_show_somersault_cloud()
+		or should_show_heavenly_avatar()
 		or should_show_arcane_aura()
 		or should_show_encourage_gu()
 		or should_show_snake_venom()
@@ -162,11 +189,12 @@ func has_animated_status_visual() -> bool:
 		or should_show_precision_shot()
 		or should_show_meteor_aura()
 		or is_divine_shield_break_active()
+		or is_rooted_break_active()
 	)
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_heavenly_avatar() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -214,6 +242,10 @@ func is_divine_shield_break_active() -> bool:
 	return divine_shield_break_progress >= 0.0 and divine_shield_break_progress < 1.0
 
 
+func is_rooted_break_active() -> bool:
+	return rooted_break_progress >= 0.0 and rooted_break_progress < 1.0
+
+
 func play_divine_shield_break() -> void:
 	divine_shield_break_progress = 0.0
 	visible = true
@@ -254,6 +286,29 @@ func should_show_stealth() -> bool:
 		return false
 
 	return state.is_face_up and state.is_unit() and state.has_status_with_tag(CardStatus.TAG_STEALTH)
+
+
+func should_show_fiery_eyes_vision() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_FIERY_EYES_VISION)
+
+
+func should_show_somersault_cloud() -> bool:
+	if state == null or state.data == null:
+		return false
+
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_SOMERSAULT_CLOUD)
+
+
+func should_show_heavenly_avatar() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.card_id == "heavenly_avatar"
+	)
 
 
 func should_show_arcane_aura() -> bool:
@@ -441,8 +496,16 @@ func _draw() -> void:
 		draw_immortal_peach_overlay()
 	if should_show_rooted():
 		draw_rooted_overlay()
+	if is_rooted_break_active():
+		draw_rooted_break_overlay()
 	if should_show_stealth():
 		draw_stealth_overlay()
+	if should_show_fiery_eyes_vision():
+		draw_fiery_eyes_vision_overlay()
+	if should_show_somersault_cloud():
+		draw_somersault_cloud_overlay()
+	if should_show_heavenly_avatar():
+		draw_heavenly_avatar_overlay()
 	if should_show_power_word_shield():
 		draw_power_word_shield_overlay()
 	if should_show_divine_shield():
@@ -1382,33 +1445,31 @@ func draw_bronze_head_iron_arms() -> void:
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 5)
 	var edge_width := maxf(size.x * 0.023, 2.0)
+	var pulse := 0.90 + 0.10 * sin(animation_time * 2.2)
+	var armor_radius := minf(armor_rect.size.x, armor_rect.size.y) * 0.42
 
-	draw_rect(armor_rect, bronze_iron_color, true)
+	draw_rect(armor_rect, Color(bronze_iron_color.r, bronze_iron_color.g, bronze_iron_color.b, bronze_iron_color.a * 0.62), true)
 	for index in range(ring_count):
-		var grow := float(index) * 3.8
+		var grow := float(index) * 3.2
 		var alpha := bronze_iron_edge_color.a * (1.0 - float(index) * 0.12)
-		draw_rect(
-			armor_rect.grow(grow),
-			Color(bronze_iron_edge_color.r, bronze_iron_edge_color.g, bronze_iron_edge_color.b, alpha),
-			false,
-			edge_width,
-			true
-		)
+		var ring_radius := armor_radius + grow
+		var ring_phase := animation_time * (0.18 if index % 2 == 0 else -0.14) + float(index) * 0.52
+		draw_arc(center, ring_radius, ring_phase, ring_phase + PI * 1.24, 46, Color(bronze_iron_edge_color.r, bronze_iron_edge_color.g, bronze_iron_edge_color.b, alpha * pulse), edge_width, true)
+		draw_arc(center, ring_radius, ring_phase + PI * 1.42, ring_phase + PI * 1.82, 18, Color(bronze_iron_plate_color.r, bronze_iron_plate_color.g, bronze_iron_plate_color.b, alpha * 0.72), edge_width * 0.72, true)
 
-	var plate_height := armor_rect.size.y * 0.18
-	for index in range(3):
-		var y := armor_rect.position.y + armor_rect.size.y * (0.28 + float(index) * 0.16)
-		var left := armor_rect.position.x + armor_rect.size.x * 0.22
-		var right := armor_rect.position.x + armor_rect.size.x * 0.78
-		draw_line(Vector2(left, y), Vector2(right, y + plate_height * 0.18), bronze_iron_plate_color, maxf(size.x * 0.035, 3.0))
+	# Copper plates read as a hardened body rather than a magical shield.
+	for plate_index in range(6):
+		var angle := TAU * float(plate_index) / 6.0 + animation_time * 0.08
+		var radial := Vector2.from_angle(angle)
+		var tangent := radial.orthogonal()
+		var plate_center := center + radial * armor_radius * 0.64
+		draw_line(plate_center - tangent * armor_radius * 0.10, plate_center + tangent * armor_radius * 0.10, bronze_iron_plate_color, maxf(size.x * 0.026, 2.2), true)
 
 	var rivet_count := mini(maxi(stack_count + 1, 2), 6)
 	for index in range(rivet_count):
-		var angle := TAU * float(index) / float(rivet_count) - PI * 0.5
-		var point := center + Vector2(cos(angle), sin(angle)) * minf(armor_rect.size.x, armor_rect.size.y) * 0.34
-		draw_circle(point, maxf(size.x * 0.014, 2.2), bronze_iron_rivet_color)
-
-	draw_arc(center, minf(armor_rect.size.x, armor_rect.size.y) * 0.40, -PI * 0.18, TAU - PI * 0.18, 72, bronze_iron_edge_color, 2.2, true)
+		var angle := TAU * float(index) / float(rivet_count) - PI * 0.5 + animation_time * 0.12
+		var rivet_point := center + Vector2(cos(angle), sin(angle)) * armor_radius * 0.78
+		draw_circle(rivet_point, maxf(size.x * 0.014, 2.2), Color(bronze_iron_rivet_color.r, bronze_iron_rivet_color.g, bronze_iron_rivet_color.b, bronze_iron_rivet_color.a * pulse))
 
 
 func draw_immortal_peach_overlay() -> void:
@@ -1418,19 +1479,22 @@ func draw_immortal_peach_overlay() -> void:
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 5)
 	var radius := minf(peach_rect.size.x, peach_rect.size.y) * 0.34
+	var pulse := 0.88 + 0.12 * sin(animation_time * 1.8)
 
-	draw_circle(center, radius * 1.02, immortal_peach_color)
+	draw_circle(center, radius * 1.02, Color(immortal_peach_color.r, immortal_peach_color.g, immortal_peach_color.b, immortal_peach_color.a * pulse))
 	for index in range(ring_count):
 		var ring_radius := radius + float(index) * 4.4
 		var alpha := immortal_peach_edge_color.a * (1.0 - float(index) * 0.13)
-		draw_arc(center, ring_radius, -PI * 0.35, TAU - PI * 0.35, 80, Color(immortal_peach_edge_color.r, immortal_peach_edge_color.g, immortal_peach_edge_color.b, alpha), 2.2, true)
+		var ring_phase := -PI * 0.35 + animation_time * (0.12 + float(index) * 0.018)
+		draw_arc(center, ring_radius, ring_phase, ring_phase + PI * 1.46, 54, Color(immortal_peach_edge_color.r, immortal_peach_edge_color.g, immortal_peach_edge_color.b, alpha * pulse), 2.2, true)
+		draw_arc(center, ring_radius, ring_phase + PI * 1.62, ring_phase + PI * 1.90, 16, Color(immortal_peach_leaf_color.r, immortal_peach_leaf_color.g, immortal_peach_leaf_color.b, alpha * 0.68), 1.5, true)
 
 	var fruit_count := mini(maxi(stack_count, 1), 6)
 	for index in range(fruit_count):
-		var angle := TAU * float(index) / float(fruit_count) - PI * 0.5
+		var angle := TAU * float(index) / float(fruit_count) - PI * 0.5 + animation_time * 0.14
 		var fruit_center := center + Vector2(cos(angle), sin(angle)) * radius * 0.82
 		var fruit_radius := maxf(size.x * 0.018, 2.4)
-		draw_circle(fruit_center, fruit_radius, immortal_peach_core_color)
+		draw_circle(fruit_center, fruit_radius * pulse, immortal_peach_core_color)
 		draw_circle(fruit_center + Vector2(fruit_radius * 0.42, -fruit_radius * 0.25), fruit_radius * 0.46, Color(1.0, 0.50, 0.64, 0.74))
 		draw_line(fruit_center + Vector2(0.0, -fruit_radius * 0.92), fruit_center + Vector2(fruit_radius * 0.78, -fruit_radius * 1.55), immortal_peach_leaf_color, 1.5)
 
@@ -1444,19 +1508,27 @@ func draw_rooted_overlay() -> void:
 	var root_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
 	var center := root_rect.get_center()
 	var edge_width := maxf(size.x * 0.023, 2.0)
+	var pulse := 0.86 + 0.14 * sin(animation_time * 2.0)
 
-	draw_rect(root_rect, rooted_color, true)
-	draw_rect(root_rect, rooted_edge_color, false, edge_width, true)
+	draw_rect(root_rect, Color(rooted_color.r, rooted_color.g, rooted_color.b, rooted_color.a * 0.72), true)
+	draw_rect(root_rect, Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, rooted_edge_color.a * pulse), false, edge_width, true)
 
 	var glow_radius := minf(root_rect.size.x, root_rect.size.y) * 0.44
 	for index in range(3):
 		var alpha := 0.15 - float(index) * 0.035
-		draw_circle(center, glow_radius * (1.0 + float(index) * 0.18), Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, alpha))
+		draw_arc(center, glow_radius * (0.82 + float(index) * 0.15), animation_time * (0.12 + float(index) * 0.03), animation_time * (0.12 + float(index) * 0.03) + PI * 1.52, 48, Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, alpha * pulse), 1.7, true)
 
 	var seal_rect := Rect2(Vector2.ZERO, Vector2(root_rect.size.x * 0.52, root_rect.size.x * 0.52))
 	seal_rect.position = center - seal_rect.size * 0.5
-	draw_rect(seal_rect, Color(0.48, 0.22, 0.02, 0.30), true)
+	draw_rect(seal_rect, Color(0.48, 0.22, 0.02, 0.22), true)
 	draw_rect(seal_rect, rooted_seal_color, false, maxf(size.x * 0.018, 1.8), true)
+	for corner_index in range(4):
+		var corner := Vector2(
+			seal_rect.position.x if corner_index % 2 == 0 else seal_rect.end.x,
+			seal_rect.position.y if corner_index < 2 else seal_rect.end.y
+		)
+		var inward := (center - corner).normalized()
+		draw_line(corner, corner + inward * glow_radius * 0.22, rooted_seal_color, maxf(size.x * 0.024, 2.0), true)
 
 	draw_rooted_seal_text(center)
 
@@ -1476,26 +1548,157 @@ func draw_rooted_seal_text(center: Vector2) -> void:
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, rooted_seal_color)
 
 
+func draw_rooted_break_overlay() -> void:
+	var break_phase := clampf(rooted_break_progress, 0.0, 1.0)
+	var eased_break := 1.0 - pow(1.0 - break_phase, 3.0)
+	var fade := 1.0 - break_phase
+	var center := size * 0.5
+	var radius := minf(size.x, size.y) * 0.34
+
+	for crack_index in range(8):
+		var angle := -PI * 0.92 + float(crack_index) * TAU / 8.0
+		var direction := Vector2.from_angle(angle)
+		var tangent := direction.orthogonal()
+		var crack_start := center + direction * radius * 0.10
+		var crack_mid := center + direction * radius * (0.34 + eased_break * 0.16) + tangent * radius * (0.06 if crack_index % 2 == 0 else -0.05)
+		var crack_end := center + direction * radius * (0.54 + eased_break * 0.52)
+		draw_line(crack_start, crack_mid, Color(rooted_seal_color.r, rooted_seal_color.g, rooted_seal_color.b, fade * 0.92), maxf(size.x * 0.020, 1.7), true)
+		draw_line(crack_mid, crack_end, Color(rooted_edge_color.r, rooted_edge_color.g, rooted_edge_color.b, fade * 0.72), maxf(size.x * 0.014, 1.2), true)
+		draw_circle(crack_end, maxf(size.x * 0.012, 1.4), Color(1.0, 0.92, 0.52, fade * 0.72))
+
+	for fragment_index in range(4):
+		var fragment_direction := Vector2(
+			-1.0 if fragment_index % 2 == 0 else 1.0,
+			-1.0 if fragment_index < 2 else 1.0
+		).normalized()
+		var fragment_center := center + fragment_direction * radius * (0.48 + eased_break * 0.72)
+		var fragment_size := Vector2(radius * 0.16, radius * 0.11) * fade
+		draw_rect(
+			Rect2(fragment_center - fragment_size * 0.5, fragment_size),
+			Color(rooted_seal_color.r, rooted_seal_color.g, rooted_seal_color.b, fade * 0.78),
+			false,
+			maxf(size.x * 0.012, 1.2),
+			true
+		)
+
+
 func draw_stealth_overlay() -> void:
 	var stealth_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
 	var center := stealth_rect.get_center()
 	var edge_width := maxf(size.x * 0.018, 1.8)
+	var is_monkey_qi := state != null and state.has_status(CardStatus.STATUS_GATHER_SCATTER_QI)
+	var pulse := 0.84 + 0.16 * sin(animation_time * 1.7)
+	var veil_color := Color(0.92, 0.98, 1.0, 0.10) if is_monkey_qi else stealth_color
+	var veil_edge := Color(1.0, 0.82, 0.24, 0.62) if is_monkey_qi else stealth_edge_color
+	var mist_color := Color(0.78, 0.92, 0.94, 0.40) if is_monkey_qi else stealth_mist_color
 
-	draw_rect(stealth_rect, stealth_color, true)
-	draw_rect(stealth_rect, stealth_edge_color, false, edge_width, true)
+	draw_rect(stealth_rect, veil_color, true)
+	draw_rect(stealth_rect, Color(veil_edge.r, veil_edge.g, veil_edge.b, veil_edge.a * pulse), false, edge_width, true)
 
 	for index in range(7):
 		var t := float(index) / 6.0
-		var x := lerpf(stealth_rect.position.x + stealth_rect.size.x * 0.12, stealth_rect.position.x + stealth_rect.size.x * 0.88, t)
-		var mist_top := Vector2(x - stealth_rect.size.x * 0.10, stealth_rect.position.y + stealth_rect.size.y * 0.18)
-		var mist_bottom := Vector2(x + stealth_rect.size.x * 0.10, stealth_rect.position.y + stealth_rect.size.y * 0.82)
-		var alpha := stealth_mist_color.a * (0.42 + 0.38 * sin(t * PI))
-		draw_line(mist_top, mist_bottom, Color(stealth_mist_color.r, stealth_mist_color.g, stealth_mist_color.b, alpha), maxf(size.x * 0.016, 1.5))
+		var phase := fmod(t + animation_time * 0.045, 1.0)
+		var x := lerpf(stealth_rect.position.x + stealth_rect.size.x * 0.08, stealth_rect.position.x + stealth_rect.size.x * 0.92, phase)
+		var mist_top := Vector2(x - stealth_rect.size.x * 0.13, stealth_rect.position.y + stealth_rect.size.y * 0.74)
+		var mist_bottom := Vector2(x + stealth_rect.size.x * 0.12, stealth_rect.position.y + stealth_rect.size.y * 0.30)
+		var alpha := mist_color.a * (0.40 + 0.36 * sin(phase * PI))
+		draw_line(mist_top, mist_bottom, Color(mist_color.r, mist_color.g, mist_color.b, alpha), maxf(size.x * 0.016, 1.5), true)
 
 	for index in range(3):
 		var radius := minf(stealth_rect.size.x, stealth_rect.size.y) * (0.24 + float(index) * 0.09)
-		var alpha := stealth_edge_color.a * (0.42 - float(index) * 0.08)
-		draw_arc(center, radius, -PI * 0.18, TAU - PI * 0.18, 72, Color(stealth_edge_color.r, stealth_edge_color.g, stealth_edge_color.b, alpha), 1.8, true)
+		var alpha := veil_edge.a * (0.42 - float(index) * 0.08)
+		var ring_phase := -PI * 0.18 + animation_time * (0.10 + float(index) * 0.025)
+		draw_arc(center, radius, ring_phase, ring_phase + PI * 1.48, 54, Color(veil_edge.r, veil_edge.g, veil_edge.b, alpha * pulse), 1.8, true)
+
+
+func draw_fiery_eyes_vision_overlay() -> void:
+	var pulse := 0.82 + 0.18 * sin(animation_time * 2.4)
+	var eye_center := Vector2(size.x * 0.78, size.y * 0.18)
+	var eye_radius := minf(size.x, size.y) * 0.115
+	var upper := PackedVector2Array()
+	var lower := PackedVector2Array()
+	for point_index in range(19):
+		var t := float(point_index) / 18.0
+		var x := lerpf(eye_center.x - eye_radius, eye_center.x + eye_radius, t)
+		var curve_height := sin(t * PI) * eye_radius * 0.48
+		upper.append(Vector2(x, eye_center.y - curve_height))
+		lower.append(Vector2(x, eye_center.y + curve_height))
+	draw_polyline(upper, Color(fiery_eyes_color.r, fiery_eyes_color.g, fiery_eyes_color.b, fiery_eyes_color.a * pulse), maxf(size.x * 0.018, 1.6), true)
+	draw_polyline(lower, Color(0.94, 0.18, 0.06, fiery_eyes_color.a * pulse * 0.76), maxf(size.x * 0.015, 1.3), true)
+	draw_circle(eye_center, eye_radius * 0.22 * pulse, fiery_eyes_core_color)
+	draw_circle(eye_center, eye_radius * 0.085, Color(0.86, 0.10, 0.03, 0.94))
+
+	var scan_phase := fmod(animation_time * 0.36, 1.0)
+	var scan_x := lerpf(size.x * 0.12, size.x * 0.88, scan_phase)
+	draw_line(
+		Vector2(scan_x, size.y * 0.08),
+		Vector2(scan_x, size.y * 0.92),
+		Color(fiery_eyes_color.r, fiery_eyes_color.g, fiery_eyes_color.b, sin(scan_phase * PI) * 0.16),
+		1.1,
+		true
+	)
+
+
+func draw_somersault_cloud_overlay() -> void:
+	var pulse := 0.88 + 0.12 * sin(animation_time * 1.9)
+	var cloud_center := Vector2(size.x * 0.50, size.y * 0.78)
+	var cloud_radius := minf(size.x, size.y) * 0.13
+	for curl_index in range(5):
+		var angle := TAU * float(curl_index) / 5.0 + animation_time * 0.20
+		var curl_center := cloud_center + Vector2(cos(angle), sin(angle) * 0.42) * cloud_radius * 0.54
+		var curl_radius := cloud_radius * (0.38 + float(curl_index % 2) * 0.08)
+		draw_circle(curl_center, curl_radius, Color(somersault_cloud_color.r, somersault_cloud_color.g, somersault_cloud_color.b, somersault_cloud_color.a * 0.16 * pulse))
+		draw_arc(curl_center, curl_radius, angle - PI * 0.74, angle + PI * 0.62, 20, Color(somersault_cloud_color.r, somersault_cloud_color.g, somersault_cloud_color.b, somersault_cloud_color.a * pulse), 1.7, true)
+		draw_arc(curl_center, curl_radius * 0.72, angle - PI * 0.58, angle + PI * 0.38, 16, somersault_cloud_edge_color, 1.1, true)
+
+	# A compact cloud-boot silhouette distinguishes teleport readiness from
+	# generic mist and remains readable at board-card scale.
+	var boot := PackedVector2Array([
+		cloud_center + Vector2(-cloud_radius * 0.42, -cloud_radius * 0.82),
+		cloud_center + Vector2(cloud_radius * 0.05, -cloud_radius * 0.62),
+		cloud_center + Vector2(cloud_radius * 0.08, cloud_radius * 0.12),
+		cloud_center + Vector2(cloud_radius * 0.70, cloud_radius * 0.25),
+		cloud_center + Vector2(cloud_radius * 0.50, cloud_radius * 0.60),
+		cloud_center + Vector2(-cloud_radius * 0.36, cloud_radius * 0.44),
+		cloud_center + Vector2(-cloud_radius * 0.42, -cloud_radius * 0.82),
+	])
+	draw_polyline(boot, Color(1.0, 0.84, 0.30, 0.72 * pulse), 1.7, true)
+
+
+func draw_heavenly_avatar_overlay() -> void:
+	var pulse := 0.88 + 0.12 * sin(animation_time * 1.45)
+	var card_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
+	var center := card_rect.get_center()
+	var radius := minf(card_rect.size.x, card_rect.size.y) * 0.42
+	draw_rect(card_rect, heavenly_avatar_color, true)
+	draw_rect(card_rect, Color(heavenly_avatar_edge_color.r, heavenly_avatar_edge_color.g, heavenly_avatar_edge_color.b, heavenly_avatar_edge_color.a * pulse), false, maxf(size.x * 0.028, 2.4), true)
+
+	var head_center := center + Vector2(0.0, -radius * 0.48)
+	draw_circle(head_center, radius * 0.14, Color(1.0, 0.72, 0.12, 0.12 * pulse))
+	draw_arc(head_center, radius * 0.16, 0.0, TAU, 28, Color(1.0, 0.90, 0.42, 0.52 * pulse), 1.8, true)
+	var shoulders := PackedVector2Array([
+		center + Vector2(-radius * 0.72, -radius * 0.12),
+		center + Vector2(-radius * 0.30, -radius * 0.34),
+		center + Vector2(0.0, -radius * 0.26),
+		center + Vector2(radius * 0.30, -radius * 0.34),
+		center + Vector2(radius * 0.72, -radius * 0.12),
+	])
+	draw_polyline(shoulders, Color(1.0, 0.82, 0.24, 0.48 * pulse), maxf(size.x * 0.032, 2.8), true)
+	draw_line(
+		center + Vector2(-radius * 0.78, radius * 0.56),
+		center + Vector2(radius * 0.76, -radius * 0.60),
+		Color(1.0, 0.66, 0.08, 0.58 * pulse),
+		maxf(size.x * 0.030, 2.6),
+		true
+	)
+	# A single top notch is the compact one-turn form timer.
+	draw_line(
+		Vector2(center.x - radius * 0.18, card_rect.position.y + size.y * 0.035),
+		Vector2(center.x + radius * 0.18, card_rect.position.y + size.y * 0.035),
+		Color(1.0, 0.94, 0.62, 0.86 * pulse),
+		maxf(size.x * 0.032, 2.8),
+		true
+	)
 
 
 func draw_shield_glow(points: PackedVector2Array, steps: int, spacing: float, color: Color) -> void:

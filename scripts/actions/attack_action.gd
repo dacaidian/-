@@ -99,13 +99,13 @@ func resolve_attack_reflection(
 	var reflect_animation := get_status_animation(
 		defender,
 		EffectData.KEY_REFLECT_ANIMATION,
-		"bronze_head_iron_arms"
+		"bronze_head_iron_arms_reflect"
 	)
 	if not defender.trigger_attack_reflection():
 		return false
 
 	if game_manager.has_method("play_status_apply_animation"):
-		if reflect_animation == "koukaku_reflect":
+		if reflect_animation in ["koukaku_reflect", "bronze_head_iron_arms_reflect"]:
 			await game_manager.play_spell_cast_animation(
 				defender,
 				attacker,

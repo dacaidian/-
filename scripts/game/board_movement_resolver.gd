@@ -9,7 +9,8 @@ class_name BoardMovementResolver
 func move_card_content_to_empty_slot(
 	game_manager: GameManager,
 	from_state: CardState,
-	to_state: CardState
+	to_state: CardState,
+	animation_key := ""
 ) -> void:
 	if game_manager == null or from_state == null or to_state == null:
 		return
@@ -25,7 +26,13 @@ func move_card_content_to_empty_slot(
 		return
 
 	game_manager.is_resolving_card_action = true
-	await game_manager.card_animation_controller.play_card_to_empty_slot(game_manager, from_card, to_card)
+	await game_manager.card_animation_controller.play_card_to_empty_slot(
+		game_manager,
+		from_card,
+		to_card,
+		game_manager.game_animation_resolver.get_overlay_animation_root(game_manager),
+		animation_key
+	)
 	to_state.apply_card_snapshot(moving_snapshot)
 	from_state.clear_card()
 	await game_manager.resolve_slot_unit_entered(to_state)
@@ -36,7 +43,8 @@ func move_card_content_to_empty_slot(
 func move_flying_card_to_slot(
 	game_manager: GameManager,
 	from_state: CardState,
-	to_slot_index: int
+	to_slot_index: int,
+	animation_key := ""
 ) -> void:
 	if game_manager == null or from_state == null or from_state.is_empty() or not from_state.is_flying():
 		return
@@ -60,7 +68,13 @@ func move_flying_card_to_slot(
 		return
 
 	game_manager.is_resolving_card_action = true
-	await game_manager.card_animation_controller.play_card_to_empty_slot(game_manager, from_card, to_card)
+	await game_manager.card_animation_controller.play_card_to_empty_slot(
+		game_manager,
+		from_card,
+		to_card,
+		game_manager.game_animation_resolver.get_overlay_animation_root(game_manager),
+		animation_key
+	)
 	to_state.apply_card_snapshot(moving_snapshot)
 	from_state.clear_card()
 	if source_was_ground_state:

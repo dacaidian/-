@@ -1,19 +1,36 @@
 extends RefCounted
 class_name MonkeyAnimationProvider
 
+const MonkeySpellVisualScript := preload(
+	"res://scripts/ui/animation/monkey_spell_visual.gd"
+)
+
 const TARGETED_KEYS: Array[String] = [
 	"fiery_eyes_golden_gaze",
 	"somersault_cloud",
 	"body_beyond_body",
 	"bronze_head_iron_arms",
+	"bronze_head_iron_arms_reflect",
 	"immortal_peach",
 	"drive_spirit",
+	"drive_spirit_battlefield",
 	"immobilize",
 	"gather_scatter_qi",
+	"dragon_palace_treasure",
 	"heavenly_form",
+	"hair_clone_enter",
+	"monkey_hair_clone_assist",
 ]
 const RECT_KEYS: Array[String] = TARGETED_KEYS
 const SOURCE_RECT_KEYS: Array[String] = TARGETED_KEYS
+const BOARD_KEYS: Array[String] = [
+	"fiery_eyes_golden_gaze",
+	"drive_spirit_battlefield",
+]
+const MOVEMENT_KEYS: Array[String] = [
+	"monkey_somersault_move",
+	"monkey_westward_move",
+]
 
 var spell_animation_duration := 0.32
 
@@ -22,298 +39,330 @@ func setup(duration: float) -> void:
 	spell_animation_duration = duration
 
 
+func is_movement_key(animation_key: String) -> bool:
+	return MOVEMENT_KEYS.has(animation_key)
+
+
 func register_routes(router: SpellAnimationRouter) -> void:
 	if router == null:
 		return
 	router.register_targeted(TARGETED_KEYS, play_targeted)
 	router.register_at_rect(RECT_KEYS, play_at_rect)
 	router.register_from_rect(SOURCE_RECT_KEYS, play_from_rect)
+	router.register_board(BOARD_KEYS, play_board)
+	router.register_from_rect(MOVEMENT_KEYS, play_from_rect)
 
 
 func play_targeted(
-	owner: Node,
+	owner_node: Node,
 	effect_root: Control,
-	_caster_card: Card,
+	caster_card: Card,
 	target_card: Card,
 	animation_key: String
 ) -> void:
 	if target_card == null:
 		return
-	await play_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+	var target_rect := target_card.get_global_rect()
+	var source_rect := caster_card.get_global_rect() if caster_card != null else target_rect
+	await _play_between_rects(
+		owner_node,
+		effect_root,
+		source_rect,
+		target_rect,
+		animation_key
+	)
 
 
 func play_from_rect(
-	owner: Node,
+	owner_node: Node,
 	effect_root: Control,
-	_source_rect: Rect2,
+	source_rect: Rect2,
 	target_card: Card,
 	animation_key: String
 ) -> void:
 	if target_card == null:
 		return
-	await play_at_rect(owner, effect_root, target_card.get_global_rect(), animation_key)
+	await _play_between_rects(
+		owner_node,
+		effect_root,
+		source_rect,
+		target_card.get_global_rect(),
+		animation_key
+	)
 
 
-func play_at_rect(owner: Node, effect_root: Control, target_rect: Rect2, animation_key: String) -> void:
-	if owner == null or effect_root == null or target_rect.size == Vector2.ZERO:
+func play_at_rect(
+	owner_node: Node,
+	effect_root: Control,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	if owner_node == null or effect_root == null or target_rect.size == Vector2.ZERO:
+		return
+	var canvas_rect := _single_effect_rect(target_rect, animation_key)
+	if animation_key in BOARD_KEYS:
+		canvas_rect = _root_effect_rect(effect_root, canvas_rect)
+	await _play_visual(
+		owner_node,
+		effect_root,
+		canvas_rect,
+		target_rect.get_center(),
+		target_rect.get_center(),
+		animation_key
+	)
+
+
+func play_board(
+	owner_node: Node,
+	effect_root: Control,
+	animation_key: String
+) -> void:
+	if owner_node == null or effect_root == null:
+		return
+	var canvas_rect := _root_effect_rect(
+		effect_root,
+		Rect2(effect_root.global_position, effect_root.size)
+	)
+	await _play_visual(
+		owner_node,
+		effect_root,
+		canvas_rect,
+		canvas_rect.get_center(),
+		canvas_rect.get_center(),
+		animation_key
+	)
+
+
+func spawn_movement_path(
+	owner_node: Node,
+	effect_root: Control,
+	from_rect: Rect2,
+	to_rect: Rect2,
+	animation_key: String,
+	duration: float
+) -> void:
+	if (
+		owner_node == null
+		or effect_root == null
+		or not MOVEMENT_KEYS.has(animation_key)
+		or from_rect.size == Vector2.ZERO
+		or to_rect.size == Vector2.ZERO
+	):
+		return
+	var canvas_rect := _merged_effect_rect(from_rect, to_rect, 0.58)
+	var visual := _create_visual(
+		effect_root,
+		canvas_rect,
+		from_rect.get_center(),
+		to_rect.get_center(),
+		animation_key
+	)
+	if visual == null:
+		return
+	var total_duration := maxf(duration, 0.18)
+	var fade_in_duration := minf(total_duration * 0.20, 0.06)
+	var fade_out_duration := total_duration * 0.28
+	var hold_duration := maxf(total_duration - fade_in_duration - fade_out_duration, 0.0)
+
+	var progress_tween := owner_node.create_tween()
+	progress_tween.set_trans(Tween.TRANS_SINE)
+	progress_tween.set_ease(Tween.EASE_IN_OUT)
+	progress_tween.tween_property(visual, "progress", 1.0, total_duration)
+
+	var presentation_tween := owner_node.create_tween()
+	presentation_tween.set_trans(Tween.TRANS_QUART)
+	presentation_tween.set_ease(Tween.EASE_OUT)
+	presentation_tween.tween_property(visual, "modulate:a", 1.0, fade_in_duration)
+	if hold_duration > 0.0:
+		presentation_tween.tween_interval(hold_duration)
+	presentation_tween.set_trans(Tween.TRANS_SINE)
+	presentation_tween.set_ease(Tween.EASE_IN)
+	presentation_tween.tween_property(visual, "modulate:a", 0.0, fade_out_duration)
+	presentation_tween.finished.connect(visual.queue_free)
+
+
+func _play_between_rects(
+	owner_node: Node,
+	effect_root: Control,
+	source_rect: Rect2,
+	target_rect: Rect2,
+	animation_key: String
+) -> void:
+	if (
+		owner_node == null
+		or effect_root == null
+		or source_rect.size == Vector2.ZERO
+		or target_rect.size == Vector2.ZERO
+	):
+		return
+	var canvas_rect := _merged_effect_rect(
+		source_rect,
+		target_rect,
+		get_margin_scale(animation_key)
+	)
+	if animation_key in BOARD_KEYS and source_rect == target_rect:
+		canvas_rect = _root_effect_rect(effect_root, canvas_rect)
+	await _play_visual(
+		owner_node,
+		effect_root,
+		canvas_rect,
+		source_rect.get_center(),
+		target_rect.get_center(),
+		animation_key
+	)
+
+
+func _play_visual(
+	owner_node: Node,
+	effect_root: Control,
+	canvas_rect: Rect2,
+	global_source: Vector2,
+	global_target: Vector2,
+	animation_key: String
+) -> void:
+	var visual := _create_visual(
+		effect_root,
+		canvas_rect,
+		global_source,
+		global_target,
+		animation_key
+	)
+	if visual == null:
 		return
 
-	var palette := get_palette(animation_key)
-	var aura := create_panel(
-		target_rect,
-		"MonkeySpellAura",
-		create_style(palette.aura_fill, palette.aura_border, 7, palette.corner_radius, palette.glow, 34),
-		1.22,
-		2300
+	var total_duration := maxf(
+		spell_animation_duration * get_duration_scale(animation_key),
+		get_minimum_duration(animation_key)
 	)
-	var core := create_panel(
-		target_rect,
-		"MonkeySpellCore",
-		create_style(palette.core_fill, palette.core_border, 4, palette.corner_radius, palette.glow, 24),
-		get_core_size(animation_key),
-		2310
+	var rise_duration := total_duration * 0.18
+	var hold_duration := total_duration * 0.60
+	var fade_duration := total_duration - rise_duration - hold_duration
+
+	var progress_tween := owner_node.create_tween()
+	progress_tween.set_trans(Tween.TRANS_SINE)
+	progress_tween.set_ease(Tween.EASE_IN_OUT)
+	progress_tween.tween_property(visual, "progress", 1.0, total_duration)
+
+	var presentation_tween := owner_node.create_tween()
+	presentation_tween.set_trans(Tween.TRANS_QUART)
+	presentation_tween.set_ease(Tween.EASE_OUT)
+	presentation_tween.tween_property(visual, "modulate:a", 1.0, rise_duration)
+	presentation_tween.tween_interval(hold_duration)
+	presentation_tween.set_trans(Tween.TRANS_SINE)
+	presentation_tween.set_ease(Tween.EASE_IN)
+	presentation_tween.tween_property(visual, "modulate:a", 0.0, fade_duration)
+	await presentation_tween.finished
+	if is_instance_valid(visual):
+		visual.queue_free()
+
+
+func _create_visual(
+	effect_root: Control,
+	canvas_rect: Rect2,
+	global_source: Vector2,
+	global_target: Vector2,
+	animation_key: String
+) -> MonkeySpellVisual:
+	if effect_root == null or canvas_rect.size == Vector2.ZERO:
+		return null
+	var visual := MonkeySpellVisualScript.new() as MonkeySpellVisual
+	visual.name = "Monkey_%s" % animation_key
+	visual.size = canvas_rect.size
+	visual.global_position = canvas_rect.position
+	visual.z_index = 2490
+	visual.modulate.a = 0.0
+	# Normal alpha blending preserves copper, cinnabar, ink shadows, and cloud
+	# translucency. Individual helpers draw their own controlled glow layers.
+	var visual_material := CanvasItemMaterial.new()
+	visual_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
+	visual.material = visual_material
+	visual.configure(
+		animation_key,
+		global_source - canvas_rect.position,
+		global_target - canvas_rect.position,
+		get_strength(animation_key)
 	)
-	var symbol := create_symbol(target_rect, animation_key, palette)
-	var accents := create_accents(target_rect, animation_key, palette)
-	effect_root.add_child(aura)
-	effect_root.add_child(core)
-	effect_root.add_child(symbol)
-	for accent in accents:
-		effect_root.add_child(accent)
-
-	var rise := owner.create_tween()
-	rise.set_parallel(true)
-	rise.set_trans(Tween.TRANS_SINE)
-	rise.set_ease(Tween.EASE_OUT)
-	rise.tween_property(aura, "scale", Vector2(1.16, 1.16), spell_animation_duration * 0.38)
-	rise.tween_property(aura, "modulate:a", 0.86, spell_animation_duration * 0.38)
-	rise.tween_property(aura, "rotation", get_rotation(animation_key) * 0.35, spell_animation_duration * 0.38)
-	rise.tween_property(core, "scale", Vector2(1.10, 1.10), spell_animation_duration * 0.38)
-	rise.tween_property(core, "modulate:a", 0.94, spell_animation_duration * 0.38)
-	rise.tween_property(symbol, "scale", Vector2(1.14, 1.14), spell_animation_duration * 0.38)
-	rise.tween_property(symbol, "modulate:a", 0.98, spell_animation_duration * 0.38)
-	for accent in accents:
-		rise.tween_property(accent, "modulate:a", 0.88, spell_animation_duration * 0.38)
-		rise.tween_property(accent, "scale", Vector2(1.08, 1.08), spell_animation_duration * 0.38)
-	await rise.finished
-
-	var fade := owner.create_tween()
-	fade.set_parallel(true)
-	fade.set_trans(Tween.TRANS_SINE)
-	fade.set_ease(Tween.EASE_IN)
-	fade.tween_property(aura, "scale", Vector2(1.78, 1.78), spell_animation_duration * 0.72)
-	fade.tween_property(aura, "rotation", get_rotation(animation_key), spell_animation_duration * 0.72)
-	fade.tween_property(aura, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	fade.tween_property(core, "scale", get_core_fade_scale(animation_key), spell_animation_duration * 0.72)
-	fade.tween_property(core, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	fade.tween_property(symbol, "position", symbol.position + get_symbol_drift(target_rect, animation_key), spell_animation_duration * 0.72)
-	fade.tween_property(symbol, "scale", get_symbol_fade_scale(animation_key), spell_animation_duration * 0.72)
-	fade.tween_property(symbol, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	for index in range(accents.size()):
-		var accent := accents[index]
-		fade.tween_property(accent, "position", accent.position + get_accent_drift(target_rect, animation_key, index), spell_animation_duration * 0.72)
-		fade.tween_property(accent, "scale", get_accent_fade_scale(animation_key, index), spell_animation_duration * 0.72)
-		fade.tween_property(accent, "modulate:a", 0.0, spell_animation_duration * 0.72)
-	await fade.finished
-
-	aura.queue_free()
-	core.queue_free()
-	symbol.queue_free()
-	for accent in accents:
-		accent.queue_free()
+	effect_root.add_child(visual)
+	return visual
 
 
-func create_symbol(target_rect: Rect2, animation_key: String, palette: Dictionary) -> Label:
-	var label := Label.new()
-	label.name = "MonkeySpellSymbol"
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = get_symbol(animation_key)
-	var size_multiplier := 0.92 if animation_key == "heavenly_form" else (0.66 if animation_key == "immobilize" else 0.58)
-	label.size = target_rect.size * size_multiplier
-	label.pivot_offset = label.size * 0.5
-	label.global_position = target_rect.get_center() - label.pivot_offset
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	label.z_index = 2350
-	var font_scale := 0.56 if animation_key == "heavenly_form" else (0.42 if animation_key == "immobilize" else 0.36)
-	label.add_theme_font_size_override("font_size", maxi(int(target_rect.size.x * font_scale), 20))
-	label.add_theme_color_override("font_color", palette.symbol)
-	label.add_theme_color_override("font_shadow_color", palette.shadow)
-	label.add_theme_constant_override("shadow_offset_x", 2)
-	label.add_theme_constant_override("shadow_offset_y", 2)
-	return label
+func _single_effect_rect(target_rect: Rect2, animation_key: String) -> Rect2:
+	var scale_multiplier := get_size_scale(animation_key)
+	var effect_size := target_rect.size * scale_multiplier
+	return Rect2(target_rect.get_center() - effect_size * 0.5, effect_size)
 
 
-func create_accents(target_rect: Rect2, animation_key: String, palette: Dictionary) -> Array[Control]:
-	var accents: Array[Control] = []
-	var count := get_accent_count(animation_key)
-	for index in range(count):
-		var angle := TAU * float(index) / float(maxi(count, 1)) - PI * 0.5
-		var radial_offset := Vector2(cos(angle), sin(angle)) * target_rect.size.x * get_accent_radius(animation_key)
-		var size_multiplier := get_accent_size(animation_key, index)
-		var accent := create_panel(
-			target_rect,
-			"MonkeyAccent_%d" % index,
-			create_style(palette.accent_fill, palette.accent_border, 2, 999, palette.glow, 14),
-			1.0,
-			2340
-		)
-		accent.size = Vector2(target_rect.size.x * size_multiplier.x, target_rect.size.y * size_multiplier.y)
-		accent.pivot_offset = accent.size * 0.5
-		accent.global_position = target_rect.get_center() + radial_offset - accent.pivot_offset
-		accent.rotation = angle + PI * 0.5
-		accents.append(accent)
-	return accents
+func _merged_effect_rect(first_rect: Rect2, second_rect: Rect2, margin_scale: float) -> Rect2:
+	var left := minf(first_rect.position.x, second_rect.position.x)
+	var top := minf(first_rect.position.y, second_rect.position.y)
+	var right := maxf(first_rect.end.x, second_rect.end.x)
+	var bottom := maxf(first_rect.end.y, second_rect.end.y)
+	var margin := maxf(
+		maxf(first_rect.size.x, second_rect.size.x) * margin_scale,
+		18.0
+	)
+	return Rect2(
+		Vector2(left - margin, top - margin),
+		Vector2(right - left + margin * 2.0, bottom - top + margin * 2.0)
+	)
 
 
-func create_panel(
-	target_rect: Rect2,
-	panel_name: String,
-	style: StyleBoxFlat,
-	size_multiplier: float,
-	z_index: int
-) -> Panel:
-	var panel := Panel.new()
-	panel.name = panel_name
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.size = target_rect.size * size_multiplier
-	panel.pivot_offset = panel.size * 0.5
-	panel.global_position = target_rect.get_center() - panel.pivot_offset
-	panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	panel.z_index = z_index
-	panel.add_theme_stylebox_override("panel", style)
-	return panel
+func _root_effect_rect(effect_root: Control, fallback: Rect2) -> Rect2:
+	if effect_root == null:
+		return fallback
+	var root_rect := effect_root.get_global_rect()
+	if root_rect.size.x <= 1.0 or root_rect.size.y <= 1.0:
+		return fallback
+	return root_rect
 
 
-func create_style(
-	bg_color: Color,
-	border_color: Color,
-	border_width: int,
-	corner_radius: int,
-	shadow_color: Color,
-	shadow_size: int
-) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg_color
-	style.border_color = border_color
-	style.set_border_width_all(border_width)
-	style.set_corner_radius_all(corner_radius)
-	style.shadow_color = shadow_color
-	style.shadow_size = shadow_size
-	return style
-
-
-func get_palette(animation_key: String) -> Dictionary:
+func get_size_scale(animation_key: String) -> float:
 	match animation_key:
-		"somersault_cloud", "gather_scatter_qi":
-			return create_palette(Color(0.62, 0.86, 1.0, 0.18), Color(1.0, 0.96, 0.70, 0.76), Color(0.90, 0.98, 1.0, 0.70), Color(0.92, 0.98, 1.0, 0.96), Color(0.05, 0.18, 0.28, 0.86))
-		"immortal_peach":
-			return create_palette(Color(1.0, 0.36, 0.54, 0.16), Color(1.0, 0.84, 0.54, 0.84), Color(1.0, 0.50, 0.66, 0.70), Color(1.0, 0.84, 0.58, 0.98), Color(0.28, 0.04, 0.12, 0.84))
-		"drive_spirit":
-			return create_palette(Color(0.34, 0.74, 0.68, 0.14), Color(1.0, 0.92, 0.42, 0.82), Color(0.98, 0.86, 0.34, 0.42), Color(1.0, 0.94, 0.52, 0.98), Color(0.14, 0.06, 0.02, 0.88))
-		"bronze_head_iron_arms":
-			return create_palette(Color(0.50, 0.28, 0.12, 0.20), Color(1.0, 0.72, 0.30, 0.86), Color(0.78, 0.48, 0.20, 0.48), Color(1.0, 0.76, 0.34, 0.98), Color(0.24, 0.08, 0.02, 0.88))
-		"immobilize":
-			return create_palette(Color(0.76, 0.34, 0.02, 0.20), Color(1.0, 0.84, 0.22, 0.92), Color(1.0, 0.64, 0.06, 0.46), Color(1.0, 0.88, 0.30, 0.98), Color(0.24, 0.08, 0.02, 0.88))
+		"heavenly_form":
+			return 2.65
+		"body_beyond_body", "dragon_palace_treasure":
+			return 2.05
+		"gather_scatter_qi", "somersault_cloud":
+			return 1.82
+		"bronze_head_iron_arms", "bronze_head_iron_arms_reflect":
+			return 1.68
 		_:
-			return create_palette(Color(1.0, 0.58, 0.08, 0.16), Color(1.0, 0.90, 0.34, 0.92), Color(1.0, 0.68, 0.14, 0.42), Color(1.0, 0.88, 0.30, 0.98), Color(0.24, 0.08, 0.02, 0.88))
+			return 1.58
 
 
-func create_palette(aura_fill: Color, aura_border: Color, core_fill: Color, symbol: Color, shadow: Color) -> Dictionary:
-	return {
-		"aura_fill": aura_fill,
-		"aura_border": aura_border,
-		"core_fill": core_fill,
-		"core_border": aura_border.lightened(0.18),
-		"accent_fill": core_fill,
-		"accent_border": aura_border,
-		"symbol": symbol,
-		"shadow": shadow,
-		"glow": aura_border.darkened(0.12),
-		"corner_radius": 12 if aura_fill.r > 0.9 else 999,
-	}
+func get_margin_scale(animation_key: String) -> float:
+	if animation_key in ["body_beyond_body", "heavenly_form"]:
+		return 0.82
+	if animation_key in ["somersault_cloud", "drive_spirit", "bronze_head_iron_arms_reflect"]:
+		return 0.60
+	return 0.44
 
 
-func get_symbol(animation_key: String) -> String:
+func get_duration_scale(animation_key: String) -> float:
 	match animation_key:
-		"fiery_eyes_golden_gaze": return "眼"
-		"somersault_cloud": return "云"
-		"body_beyond_body": return "毫"
-		"bronze_head_iron_arms": return "铁"
-		"immortal_peach": return "桃"
-		"drive_spirit": return "敕"
-		"immobilize": return "定"
-		"gather_scatter_qi": return "气"
-		"heavenly_form": return "法"
-		_: return "猿"
+		"heavenly_form":
+			return 3.35
+		"fiery_eyes_golden_gaze", "dragon_palace_treasure":
+			return 2.65
+		"body_beyond_body", "gather_scatter_qi":
+			return 2.35
+		"drive_spirit_battlefield":
+			return 2.55
+		_:
+			return 1.95
 
 
-func get_core_size(animation_key: String) -> float:
-	if animation_key == "heavenly_form": return 0.82
-	if animation_key in ["bronze_head_iron_arms", "immobilize"]: return 0.66
-	if animation_key == "somersault_cloud": return 0.74
-	return 0.54
+func get_minimum_duration(animation_key: String) -> float:
+	if animation_key == "heavenly_form":
+		return 1.10
+	if animation_key in ["fiery_eyes_golden_gaze", "dragon_palace_treasure"]:
+		return 0.86
+	return 0.62
 
 
-func get_rotation(animation_key: String) -> float:
-	match animation_key:
-		"somersault_cloud": return 0.58
-		"body_beyond_body": return -0.82
-		"gather_scatter_qi": return 0.72
-		"heavenly_form": return 0.12
-		_: return 0.36
-
-
-func get_accent_count(animation_key: String) -> int:
-	match animation_key:
-		"body_beyond_body": return 7
-		"bronze_head_iron_arms": return 8
-		"gather_scatter_qi": return 6
-		"heavenly_form": return 4
-		_: return 5
-
-
-func get_accent_radius(animation_key: String) -> float:
-	return 0.34 if animation_key in ["heavenly_form", "bronze_head_iron_arms"] else 0.28
-
-
-func get_accent_size(animation_key: String, index: int) -> Vector2:
-	if animation_key == "body_beyond_body": return Vector2(0.035, 0.18)
-	if animation_key == "heavenly_form": return Vector2(0.055, 0.72)
-	if animation_key == "immobilize": return Vector2(0.58, 0.035)
-	return Vector2(0.12 + float(index % 3) * 0.025, 0.045)
-
-
-func get_core_fade_scale(animation_key: String) -> Vector2:
-	if animation_key == "gather_scatter_qi": return Vector2(0.34, 0.34)
-	if animation_key == "heavenly_form": return Vector2(1.46, 1.46)
-	return Vector2(1.36, 1.36)
-
-
-func get_symbol_fade_scale(animation_key: String) -> Vector2:
-	if animation_key in ["gather_scatter_qi", "body_beyond_body"]: return Vector2(0.45, 0.45)
-	if animation_key == "heavenly_form": return Vector2(1.34, 1.34)
-	return Vector2(0.74, 0.74)
-
-
-func get_symbol_drift(target_rect: Rect2, animation_key: String) -> Vector2:
-	if animation_key == "somersault_cloud": return Vector2(target_rect.size.x * 0.24, -target_rect.size.y * 0.16)
-	if animation_key == "gather_scatter_qi": return Vector2(0.0, -target_rect.size.y * 0.24)
-	if animation_key == "heavenly_form": return Vector2(0.0, -target_rect.size.y * 0.08)
-	return Vector2.ZERO
-
-
-func get_accent_drift(target_rect: Rect2, animation_key: String, index: int) -> Vector2:
-	var count := get_accent_count(animation_key)
-	var angle := TAU * float(index) / float(maxi(count, 1)) - PI * 0.5
-	if animation_key == "gather_scatter_qi": return Vector2(0.0, -target_rect.size.y * 0.28)
-	if animation_key == "somersault_cloud": return Vector2(target_rect.size.x * 0.22, -target_rect.size.y * 0.14)
-	return Vector2(cos(angle), sin(angle)) * target_rect.size.x * 0.16
-
-
-func get_accent_fade_scale(animation_key: String, index: int) -> Vector2:
-	if animation_key in ["gather_scatter_qi", "body_beyond_body"]: return Vector2(0.28, 0.28)
-	if animation_key == "heavenly_form": return Vector2(1.24 + float(index) * 0.08, 1.24 + float(index) * 0.08)
-	if animation_key == "immobilize": return Vector2(1.36, 1.08)
-	return Vector2(1.42, 1.42)
+func get_strength(animation_key: String) -> float:
+	if animation_key == "heavenly_form":
+		return 1.18
+	if animation_key in ["drive_spirit_battlefield", "fiery_eyes_golden_gaze"]:
+		return 1.08
+	return 1.0

@@ -2461,6 +2461,20 @@
 							{
 								"id": "grant_board_vision",
 								"scope": "global"
+							},
+							{
+								"id": "apply_status",
+								"target": "self",
+								"status_id": "fiery_eyes_vision",
+								"status_name": "火眼金睛",
+								"status_description": "本回合拥有全局透视。",
+								"status_tags": [
+									"uncleanseable"
+								],
+								"duration_turns": 1,
+								"duration_scope": "source_owner",
+								"expires_on_trigger": "after_turn_end",
+								"stack_policy": "refresh"
 							}
 						]
 					},
@@ -2601,6 +2615,7 @@
 					{
 						"action_id": "westward",
 						"name": "西行",
+						"animation": "monkey_westward_move",
 						"direction": "left",
 						"main_action_cost": 0,
 						"action_group": "special",
@@ -2626,6 +2641,7 @@
 					{
 						"action_id": "westward",
 						"name": "西行",
+						"animation": "monkey_westward_move",
 						"direction": "left",
 						"main_action_cost": 0,
 						"action_group": "special",
@@ -2652,6 +2668,7 @@
 					{
 						"id": "sync_stats_from_owner_card",
 						"trigger": "on_enter_board",
+						"animation": "hair_clone_enter",
 						"target_card_id": "sun_wukong"
 					},
 					{
@@ -2710,7 +2727,7 @@
 					{
 						"id": "drive_spirit_battlefield",
 						"name": "驱神",
-						"animation": "drive_spirit",
+						"animation": "drive_spirit_battlefield",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -2801,6 +2818,7 @@
 						"id": "apply_status",
 						"target": "owner_card_by_id",
 						"target_card_id": "sun_wukong",
+						"presentation_target": "effect_target",
 						"status_id": "gather_scatter_qi",
 						"status_name": "聚散成气",
 						"status_description": "隐身并获得瞬移；下次普通攻击或施法后解除，破隐一击造成暴击。",
@@ -2829,6 +2847,7 @@
 				"equipment_type": "suit",
 				"count": 1,
 				"level": 2,
+				"animation": "dragon_palace_treasure",
 				"keywords": [],
 				"effects": [
 					{
@@ -2887,6 +2906,7 @@
 						"id": "transform_unit",
 						"target": "owner_card_by_id",
 						"target_card_id": "sun_wukong",
+						"presentation_target": "effect_target",
 						"card_id": "heavenly_avatar",
 						"transform_mode": "evolution",
 						"status_name": "法天象地",
