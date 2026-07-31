@@ -1259,11 +1259,11 @@ func resolve_after_attack_triggers(attacker_state: CardState, attacked_state: Ca
 	}
 	trigger_resolver.queue_trigger(attacker_state, EventContext.TRIGGER_AFTER_ATTACK, context)
 	await trigger_resolver.resolve_queued(self)
-	await resolve_after_friendly_attack_triggers(attacker_state, attacked_state, context)
+	await resolve_after_friendly_attack_triggers(attacker_state, context)
 	await equipment_trigger_resolver.resolve_after_attack(self, attacker_state, attacked_state)
 
 
-func resolve_after_friendly_attack_triggers(attacker_state: CardState, attacked_state: CardState, context: Dictionary) -> void:
+func resolve_after_friendly_attack_triggers(attacker_state: CardState, context: Dictionary) -> void:
 	if attacker_state == null or attacker_state.owner_id == "":
 		return
 
@@ -1297,8 +1297,8 @@ func sync_board_slot_effect_visual(slot_index: int) -> void:
 		var slot_effect: Variant = effect_value
 		if slot_effect == null or str(slot_effect.persistent_animation) == "":
 			continue
-		var owner := get_player_by_id(str(slot_effect.owner_id)) as PlayerState
-		if owner != null and owner.is_ai:
+		var effect_owner := get_player_by_id(str(slot_effect.owner_id)) as PlayerState
+		if effect_owner != null and effect_owner.is_ai:
 			continue
 		visual_key = str(slot_effect.persistent_animation)
 		break
