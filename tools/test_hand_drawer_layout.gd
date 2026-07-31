@@ -71,6 +71,7 @@ func run() -> void:
 	await process_frame
 
 	await test_constrained_viewport_layout()
+	await test_runtime_resize_layout()
 	print("HAND_DRAWER_LAYOUT_TESTS_OK")
 	quit()
 
@@ -133,6 +134,86 @@ func test_constrained_viewport_layout() -> void:
 	await process_frame
 
 
+func test_runtime_resize_layout() -> void:
+	var viewport := SubViewport.new()
+	viewport.name = "ResizableHandDrawerViewport"
+	viewport.size = Vector2i(1024, 720)
+	root.add_child(viewport)
+
+	var scene := create_hand_drawer_scene()
+	viewport.add_child(scene)
+	await process_frame
+	await process_frame
+
+	var controller := HandDrawerController.new()
+	controller.setup(scene, NodePath("HandDrawerPanel"))
+	var player := PlayerState.new()
+	player.setup("resize_layout_test", "缩放布局测试")
+	player.set_faction("layout_test", "布局测试种族")
+	for card_type in controller.SECTION_TYPES:
+		append_cards(player, card_type, 12)
+	controller.update(player)
+	await wait_for_layout()
+
+	var initial_flow_width := controller.get_card_flow_width()
+	assert(controller.get_cards_per_row() >= 3)
+	assert_all_card_flows_match_width(controller, initial_flow_width)
+	var upgrade_scroll := controller.get_section_scroll_container(CardData.TYPE_UPGRADE)
+	assert(upgrade_scroll != null)
+	upgrade_scroll.scroll_vertical = 120
+	await process_frame
+	var expected_scroll_offset := upgrade_scroll.scroll_vertical
+	assert(expected_scroll_offset > 0)
+
+	controller.set_open(false)
+	await wait_for_drawer_tween()
+	viewport.size = Vector2i(560, 520)
+	await wait_for_layout()
+
+	var panel := scene.get_node("HandDrawerPanel") as Panel
+	var toggle := panel.get_node("ToggleButton") as Button
+	var toggle_rect := toggle.get_global_rect()
+	assert(toggle_rect.position.x >= -0.01)
+	assert(toggle_rect.end.x <= float(viewport.size.x) + 0.01)
+	assert(panel.get_global_rect().end.x <= float(viewport.size.x) + 0.01)
+
+	var resized_flow_width := controller.get_card_flow_width()
+	assert(resized_flow_width < initial_flow_width)
+	assert(controller.get_cards_per_row() == 2)
+	assert_all_card_flows_match_width(controller, resized_flow_width)
+	assert(abs(upgrade_scroll.scroll_vertical - expected_scroll_offset) <= 1)
+
+	controller.set_open(true)
+	await wait_for_drawer_tween()
+	assert(panel.get_global_rect().position.x >= -0.01)
+	assert(panel.get_global_rect().end.x <= float(viewport.size.x) + 0.01)
+	assert(panel.get_global_rect().end.y <= float(viewport.size.y) + 0.01)
+
+	viewport.queue_free()
+	await process_frame
+	controller = null
+	player = null
+	await process_frame
+
+
+func assert_all_card_flows_match_width(controller: HandDrawerController, expected_width: float) -> void:
+	for card_type in controller.SECTION_TYPES:
+		var scroll := controller.get_section_scroll_container(card_type)
+		assert(scroll != null)
+		var flow := scroll.get_node("GlowPadding/CardFlow") as HFlowContainer
+		assert(flow != null)
+		assert(
+			is_equal_approx(flow.custom_minimum_size.x, expected_width),
+			"Card flow kept stale width: type=%s actual=%s expected=%s" % [
+				card_type,
+				flow.custom_minimum_size.x,
+				expected_width
+			]
+		)
+		assert(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
+		assert(not scroll.get_h_scroll_bar().visible)
+
+
 func append_cards(player: PlayerState, card_type: String, amount: int) -> void:
 	for index in range(amount):
 		var card_data := CardData.new()
@@ -157,4 +238,9 @@ func create_hand_drawer_scene() -> Control:
 func wait_for_layout() -> void:
 	await process_frame
 	await process_frame
+	await process_frame
+
+
+func wait_for_drawer_tween() -> void:
+	await create_timer(0.24).timeout
 	await process_frame

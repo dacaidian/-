@@ -25,6 +25,7 @@ const TOGGLE_WIDTH := 48.0
 const TOGGLE_HEIGHT := 132.0
 const HAND_CARD_SIZE := Vector2(180, 252)
 const HAND_CARD_GLOW_PADDING := 8
+const HAND_CARD_HORIZONTAL_SEPARATION := 12.0
 const HAND_CARD_FLIGHT_DURATION := 0.34
 const PREVIEW_SIZE := Vector2(360, 504)
 const PREVIEW_GAP := 16.0
@@ -223,12 +224,13 @@ func apply_drawer_position(left: float) -> void:
 	if panel == null:
 		return
 
+	var drawer_width := get_drawer_width()
 	var drawer_height := get_drawer_height()
 	panel.offset_left = left
-	panel.offset_right = left + get_drawer_width()
+	panel.offset_right = left + drawer_width
 	panel.offset_top = DRAWER_VERTICAL_MARGIN
 	panel.offset_bottom = DRAWER_VERTICAL_MARGIN + drawer_height
-	panel.custom_minimum_size = Vector2(get_drawer_width(), drawer_height)
+	panel.custom_minimum_size = Vector2(drawer_width, drawer_height)
 
 	if drawer_body != null:
 		var body_insets := GameUiSkinScript.get_panel_safe_insets(
@@ -236,13 +238,13 @@ func apply_drawer_position(left: float) -> void:
 		) + DRAWER_BODY_EXTRA_INSETS
 		drawer_body.offset_left = body_insets.x
 		drawer_body.offset_top = body_insets.y
-		drawer_body.offset_right = get_drawer_width() - body_insets.z
+		drawer_body.offset_right = drawer_width - body_insets.z
 		drawer_body.offset_bottom = drawer_height - body_insets.w
 
 	if toggle_button != null:
 		toggle_button.custom_minimum_size = Vector2(TOGGLE_WIDTH, TOGGLE_HEIGHT)
-		toggle_button.offset_left = get_drawer_width() - TOGGLE_WIDTH
-		toggle_button.offset_right = get_drawer_width()
+		toggle_button.offset_left = drawer_width - TOGGLE_WIDTH
+		toggle_button.offset_right = drawer_width
 		toggle_button.offset_top = (drawer_height - TOGGLE_HEIGHT) * 0.5
 		toggle_button.offset_bottom = toggle_button.offset_top + TOGGLE_HEIGHT
 
@@ -279,10 +281,7 @@ func get_drawer_height() -> float:
 
 
 func get_closed_x() -> float:
-	if toggle_button == null:
-		return -(get_drawer_width() - 48.0)
-
-	return -toggle_button.offset_left
+	return -(get_drawer_width() - TOGGLE_WIDTH)
 
 
 func get_toggle_text() -> String:
@@ -345,7 +344,7 @@ func render_section(card_type: String, cards: Array) -> void:
 	flow.name = "CardFlow"
 	flow.custom_minimum_size.x = get_card_flow_width()
 	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	flow.add_theme_constant_override("h_separation", 12)
+	flow.add_theme_constant_override("h_separation", int(HAND_CARD_HORIZONTAL_SEPARATION))
 	flow.add_theme_constant_override("v_separation", 12)
 	glow_margin.add_child(flow)
 
@@ -369,6 +368,7 @@ func request_adaptive_section_layout() -> void:
 func apply_adaptive_section_layout(generation: int) -> void:
 	if generation != section_layout_generation or sections_container == null:
 		return
+	update_card_flow_widths()
 	var available_height := get_sections_height_budget()
 	if available_height <= 0.0:
 		return
@@ -459,19 +459,15 @@ func restore_section_scroll_offset(card_type: String) -> void:
 
 
 func get_card_flow_width() -> float:
-	var available_width := 0.0
-	if sections_container != null and sections_container.size.x > 0.0:
-		available_width = sections_container.size.x
-	else:
-		var drawer_insets := GameUiSkinScript.get_panel_safe_insets(
-			GameUiSkinScript.PanelKind.DRAWER
-		) + DRAWER_BODY_EXTRA_INSETS
-		available_width = (
-			get_drawer_width()
-			- drawer_insets.x
-			- drawer_insets.z
-			- DRAWER_INNER_PADDING * 2.0
-		)
+	var drawer_insets := GameUiSkinScript.get_panel_safe_insets(
+		GameUiSkinScript.PanelKind.DRAWER
+	) + DRAWER_BODY_EXTRA_INSETS
+	var available_width := (
+		get_drawer_width()
+		- drawer_insets.x
+		- drawer_insets.z
+		- DRAWER_INNER_PADDING * 2.0
+	)
 	var section_insets := GameUiSkinScript.get_panel_safe_insets(
 		GameUiSkinScript.PanelKind.SECTION
 	)
@@ -483,10 +479,23 @@ func get_card_flow_width() -> float:
 	return maxf(available_width, HAND_CARD_SIZE.x)
 
 
+func update_card_flow_widths() -> void:
+	var target_width := get_card_flow_width()
+	for card_type in SECTION_TYPES:
+		var scroll := get_section_scroll_container(card_type)
+		if scroll == null:
+			continue
+		var flow := scroll.get_node_or_null("GlowPadding/CardFlow") as HFlowContainer
+		if flow != null:
+			flow.custom_minimum_size.x = target_width
+
+
 func get_cards_per_row() -> int:
-	var horizontal_separation := 12.0
 	return maxi(
-		int(floor((get_card_flow_width() + horizontal_separation) / (HAND_CARD_SIZE.x + horizontal_separation))),
+		int(floor(
+			(get_card_flow_width() + HAND_CARD_HORIZONTAL_SEPARATION)
+			/ (HAND_CARD_SIZE.x + HAND_CARD_HORIZONTAL_SEPARATION)
+		)),
 		1
 	)
 
@@ -878,7 +887,13 @@ func refresh_drawer_layout() -> void:
 	if panel == null:
 		return
 
-	apply_drawer_position(panel.offset_left)
+	capture_section_scroll_offsets()
+	if drawer_tween != null and drawer_tween.is_valid():
+		drawer_tween.kill()
+	drawer_tween = null
+	var target_left := DRAWER_OPEN_X if is_open else get_closed_x()
+	apply_drawer_position(target_left)
+	update_card_flow_widths()
 	request_adaptive_section_layout()
 
 
