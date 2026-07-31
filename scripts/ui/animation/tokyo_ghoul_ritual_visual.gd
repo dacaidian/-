@@ -208,6 +208,7 @@ func _draw_restore(
 	settle: float,
 	alpha: float
 ) -> void:
+	_draw_rc_veins(center, radius * 0.90, gather, alpha)
 	var contraction := 1.0 - settle
 	for strand_index in range(12):
 		var angle := TAU * float(strand_index) / 12.0 + progress * 0.7
