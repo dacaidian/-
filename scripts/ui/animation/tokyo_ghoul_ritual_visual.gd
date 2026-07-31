@@ -62,7 +62,7 @@ func _draw() -> void:
 		"free_meal":
 			_draw_free_meal(target_point, radius, gather, emerge, settle, alpha)
 		"special_blend":
-			_draw_special_blend(target_point, radius, gather, emerge, settle, alpha)
+			_draw_special_blend(target_point, radius, emerge, settle, alpha)
 		"sugar_cube_coffee":
 			_draw_sugar_coffee(source_point, target_point, radius, gather, emerge, settle, alpha)
 
@@ -228,6 +228,7 @@ func _draw_forced_feeding(
 	settle: float,
 	alpha: float
 ) -> void:
+	_draw_rc_veins(center, radius * 1.08, gather, alpha)
 	var close_amount := clampf(emerge + settle * 0.35, 0.0, 1.0)
 	for jaw_index in range(10):
 		var angle := TAU * float(jaw_index) / 10.0
@@ -286,7 +287,6 @@ func _draw_free_meal(
 func _draw_special_blend(
 	center: Vector2,
 	radius: float,
-	gather: float,
 	emerge: float,
 	settle: float,
 	alpha: float
