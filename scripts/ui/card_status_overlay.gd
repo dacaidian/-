@@ -804,7 +804,7 @@ func draw_arcane_aura() -> void:
 	var stack_count := status.stacks if status != null else 1
 	var ring_count: int = mini(maxi(stack_count, 1), 4)
 	var pulse := 0.5 + 0.5 * sin(animation_time * 2.3)
-	var rotation := animation_time * 0.42
+	var aura_rotation := animation_time * 0.42
 
 	draw_circle(
 		center,
@@ -815,7 +815,7 @@ func draw_arcane_aura() -> void:
 	for index in range(ring_count):
 		var ring_radius := radius + float(index) * 4.2
 		var direction := 1.0 if index % 2 == 0 else -1.0
-		var ring_rotation := rotation * direction + float(index) * 0.34
+		var ring_rotation := aura_rotation * direction + float(index) * 0.34
 		var alpha := arcane_aura_edge_color.a * (1.0 - float(index) * 0.12)
 		var ring_color := Color(
 			arcane_aura_edge_color.r,
@@ -837,7 +837,7 @@ func draw_arcane_aura() -> void:
 
 	for stream_index in range(7):
 		var phase := fmod(animation_time * (0.24 + float(stream_index) * 0.015) + float(stream_index) * 0.137, 1.0)
-		var angle := TAU * float(stream_index) / 7.0 - rotation * 0.35
+		var angle := TAU * float(stream_index) / 7.0 - aura_rotation * 0.35
 		var radial := Vector2.from_angle(angle)
 		var stream_radius := radius * (0.30 + phase * 0.66)
 		var stream_point := center + radial * stream_radius + Vector2(0.0, -8.0 * sin(phase * PI))
@@ -849,7 +849,7 @@ func draw_arcane_aura() -> void:
 		)
 
 	for orbit_index in range(3):
-		var orbit_angle := -rotation * 1.8 + TAU * float(orbit_index) / 3.0
+		var orbit_angle := -aura_rotation * 1.8 + TAU * float(orbit_index) / 3.0
 		var orbit_point := center + Vector2.from_angle(orbit_angle) * radius * 0.84
 		draw_circle(orbit_point, 2.5 + pulse, Color(0.76, 0.90, 1.0, 0.70))
 		draw_circle(orbit_point, 1.1 + pulse * 0.35, Color(0.94, 0.98, 1.0, 0.96))
@@ -863,7 +863,7 @@ func draw_meteor_aura() -> void:
 	var stack_count := status.stacks if status != null else 1
 	var star_count: int = mini(maxi(stack_count + 2, 3), 5)
 	var pulse := 0.88 + 0.12 * sin(animation_time * 1.35)
-	var rotation := animation_time * 0.16
+	var celestial_rotation := animation_time * 0.16
 
 	# The persistent aura is intentionally sparse: one moon, one celestial
 	# track, and a few stars. It communicates a waiting judgment without
@@ -891,8 +891,8 @@ func draw_meteor_aura() -> void:
 	draw_arc(
 		center,
 		radius * 0.96,
-		rotation - PI * 0.72,
-		rotation + PI * 0.84,
+		celestial_rotation - PI * 0.72,
+		celestial_rotation + PI * 0.84,
 		64,
 		Color(
 			meteor_aura_edge_color.r,
@@ -906,7 +906,7 @@ func draw_meteor_aura() -> void:
 
 	for index in range(star_count):
 		var angle := (
-			rotation
+			celestial_rotation
 			+ TAU * float(index) / float(star_count)
 			+ float(index % 2) * 0.16
 		)
