@@ -6,7 +6,7 @@ enum EndReason {
 	SURRENDER,
 }
 
-var end_reason := EndReason.RESOURCE_VICTORY
+var end_reason: EndReason = EndReason.RESOURCE_VICTORY
 var winner_player_id := ""
 var loser_player_id := ""
 var surrendered_player_id := ""
@@ -17,7 +17,7 @@ var player_summaries: Array[Dictionary] = []
 
 
 static func create(
-	reason: int,
+	reason: EndReason,
 	winner: PlayerState,
 	all_players: Array[PlayerState],
 	current_turn_number: int,
