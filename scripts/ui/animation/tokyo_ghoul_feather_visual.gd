@@ -36,19 +36,19 @@ func _draw() -> void:
 	var impact := _stage(0.64, 0.90)
 	var fade := 1.0 - _stage(0.86, 1.0)
 
-	_draw_source_fan(direction, normal, distance, gather, fade)
+	_draw_source_fan(direction, distance, gather, fade)
 	for shard_index in range(5):
 		var delay := float(shard_index) * 0.035
 		var shard_progress := clampf((flight - delay) / maxf(1.0 - delay, 0.01), 0.0, 1.0)
 		var offset := normal * float(shard_index - 2) * 6.0
 		var curve := sin(shard_progress * PI) * float(shard_index - 2) * 3.2
-		var position := source_point.lerp(target_point, shard_progress) + offset + normal * curve
+		var shard_position := source_point.lerp(target_point, shard_progress) + offset + normal * curve
 		var shard_length := clampf(distance * 0.045, 11.0, 25.0)
-		_draw_shard(position, direction, normal, shard_length, 2.8 + float(shard_index % 2), fade)
-		var trail_start := position - direction * shard_length * (1.8 + flight)
+		_draw_shard(shard_position, direction, normal, shard_length, 2.8 + float(shard_index % 2), fade)
+		var trail_start := shard_position - direction * shard_length * (1.8 + flight)
 		draw_line(
 			trail_start,
-			position - direction * shard_length * 0.36,
+			shard_position - direction * shard_length * 0.36,
 			Color(BLOOD_EDGE.r, BLOOD_EDGE.g, BLOOD_EDGE.b, 0.22 * fade * flight),
 			1.1,
 			true
@@ -60,7 +60,6 @@ func _draw() -> void:
 
 func _draw_source_fan(
 	direction: Vector2,
-	normal: Vector2,
 	distance: float,
 	gather: float,
 	alpha: float
