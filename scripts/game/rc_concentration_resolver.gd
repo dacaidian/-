@@ -7,6 +7,8 @@ const STATE_LOW := "rc_low"
 const STATE_MEDIUM := "rc_medium"
 const STATE_HIGH := "rc_high"
 const FORCED_FEEDING_REASON := "rc_forced_feeding"
+const RISE_ANIMATION_PREFIX := "rc_rise_"
+const FALL_ANIMATION_PREFIX := "rc_fall_"
 
 
 func handles(player: PlayerState) -> bool:
@@ -18,11 +20,12 @@ func handles(player: PlayerState) -> bool:
 
 
 func resolve_after_death_event(
+	game_manager: GameManager,
 	player: PlayerState,
 	ledger: TurnEventLedger,
 	death_record: Dictionary
 ) -> bool:
-	if player == null or ledger == null or not handles(player):
+	if game_manager == null or player == null or ledger == null or not handles(player):
 		return false
 	if not ledger.is_enemy_minion_kill(death_record, player.id):
 		return false
@@ -30,7 +33,10 @@ func resolve_after_death_event(
 	var next_state_id := get_increased_state_id(player.faction_runtime_state_id)
 	if next_state_id == player.faction_runtime_state_id:
 		return false
-	return player.set_faction_runtime_state_by_id(next_state_id)
+	var did_change := player.set_faction_runtime_state_by_id(next_state_id)
+	if did_change and game_manager.has_method("play_board_effect_animation"):
+		await game_manager.play_board_effect_animation(RISE_ANIMATION_PREFIX + next_state_id.trim_prefix("rc_"))
+	return did_change
 
 
 func resolve_after_turn_end(
@@ -48,6 +54,8 @@ func resolve_after_turn_end(
 	var did_change := false
 	if next_state_id != player.faction_runtime_state_id:
 		did_change = player.set_faction_runtime_state_by_id(next_state_id)
+		if did_change and game_manager.has_method("play_board_effect_animation"):
+			await game_manager.play_board_effect_animation(FALL_ANIMATION_PREFIX + next_state_id.trim_prefix("rc_"))
 
 	if current_state_id == STATE_LOW:
 		await resolve_forced_feeding(game_manager, player)

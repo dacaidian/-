@@ -159,6 +159,20 @@ func play_card_attack(
 	is_melee_attack := true,
 	attack_animation_key := ""
 ) -> void:
+	if (
+		attack_animation_key != ""
+		and root is Control
+		and tokyo_ghoul_animation_provider.is_replacement_attack_key(attack_animation_key)
+	):
+		await spell_animation_router.try_play_from_rect(
+			attack_animation_key,
+			owner,
+			root as Control,
+			attacker_card.get_global_rect(),
+			target_card
+		)
+		return
+
 	if is_melee_attack:
 		await play_melee_attack(owner, attacker_card, target_card)
 	else:

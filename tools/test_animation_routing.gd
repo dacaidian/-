@@ -29,6 +29,10 @@ func _run() -> void:
 	_assert_routes(router, "targeted", [
 		"fiery_eyes_golden_gaze", "beastmen_evolution", "gu_infusion",
 		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
+		"centipede_form", "dragon_form", "saint_sword_form",
+		"rc_forced_feeding", "bikaku_volley", "free_meal", "kakuja_form",
+		"restore_form", "special_blend", "sugar_cube_coffee",
+		"kagune_lifesteal", "koukaku_reflect",
 		"extreme_cold_storm", "extreme_cold_storm_pulse",
 		"extreme_cold_storm_summon", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "fireball",
@@ -45,7 +49,8 @@ func _run() -> void:
 	])
 	_assert_routes(router, "rect", [
 		"somersault_cloud", "wild_call", "gu_summon", "charm",
-		"dark_portal", "centipede_form", "extreme_cold_storm_cast",
+		"dark_portal", "centipede_form", "dragon_form", "saint_sword_form",
+		"bikaku_volley", "extreme_cold_storm_cast",
 		"divine_shield", "baptism", "holy_heal", "power_word_shield",
 		"inner_fire", "healing_to_resolve", "faith_light", "resurrection", "water_summon",
 		"giant_water_summon", "academy_summon", "arcane_aura_prepare",
@@ -79,9 +84,18 @@ func _run() -> void:
 		"gu_poison_tick_snake", "gu_poison_tick_king", "gu_poison_burst",
 		"thin_burial_release", "thin_burial_break", "meteor_strike"
 	])
+	_assert_routes(router, "source_rect", [
+		"centipede_form", "dragon_form", "saint_sword_form",
+		"tokyo_bikaku_attack", "tokyo_rinkaku_attack", "tokyo_koukaku_attack",
+		"tokyo_ukaku_attack", "tokyo_chimera_attack", "tokyo_centipede_attack",
+		"tokyo_dragon_attack", "tokyo_saint_sword_attack", "tokyo_owl_attack",
+		"tokyo_furuta_attack", "kagune_lifesteal", "koukaku_reflect"
+	])
 	_assert_routes(router, "board", [
 		"chaos_corruption_burst",
 		"kagune_release",
+		"rc_rise_medium", "rc_rise_high", "rc_fall_medium", "rc_fall_low",
+		"s_rank_intelligence", "sss_rank_intelligence",
 		"night_elf_time_transition",
 		"night_elf_time_transition_sunrise",
 		"night_elf_time_transition_noon",

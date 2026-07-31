@@ -258,7 +258,7 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 		if state == null or state.is_empty():
 			continue
 
-		game_manager.record_turn_death_event(death_event)
+		await game_manager.record_turn_death_event(death_event)
 
 		if is_interaction_related_to_state(game_manager, state):
 			should_cancel_interaction = true

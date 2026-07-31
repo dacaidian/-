@@ -52,7 +52,7 @@ func advance_owner_turn(player: PlayerState, game_manager: GameManager) -> void:
 
 		if cooldown_remaining <= 0:
 			var deficit := maxi(capacity - active_count, 0)
-			draw_from_reserve(player, game_manager, runtime, deficit)
+			draw_from_reserve(player, game_manager, runtime, deficit, config)
 			active_count = count_active_reserve_cards(player, game_manager, config)
 			remaining_pool = runtime.get("remaining_pool", [])
 			cooldown_remaining = (
@@ -117,11 +117,11 @@ func reconcile_reserve(
 	var previous_capacity := int(runtime.get("last_capacity", capacity))
 	var active_count := count_active_reserve_cards(player, game_manager, config)
 	if is_new_runtime:
-		draw_from_reserve(player, game_manager, runtime, maxi(capacity - active_count, 0))
+		draw_from_reserve(player, game_manager, runtime, maxi(capacity - active_count, 0), config)
 	elif capacity > previous_capacity:
 		var capacity_gain := capacity - previous_capacity
 		var deficit := maxi(capacity - active_count, 0)
-		draw_from_reserve(player, game_manager, runtime, mini(capacity_gain, deficit))
+		draw_from_reserve(player, game_manager, runtime, mini(capacity_gain, deficit), config)
 
 	runtime["last_capacity"] = capacity
 	active_count = count_active_reserve_cards(player, game_manager, config)
@@ -216,7 +216,8 @@ func draw_from_reserve(
 	player: PlayerState,
 	game_manager: GameManager,
 	runtime: Dictionary,
-	amount: int
+	amount: int,
+	config: Dictionary = {}
 ) -> int:
 	var remaining_pool: Array = runtime.get("remaining_pool", [])
 	var granted := 0
@@ -232,6 +233,9 @@ func draw_from_reserve(
 		granted += 1
 
 	runtime["remaining_pool"] = remaining_pool
+	var animation_key := str(config.get(EffectData.KEY_ANIMATION, ""))
+	if granted > 0 and animation_key != "" and game_manager.has_method("play_board_effect_animation"):
+		game_manager.call_deferred("play_board_effect_animation", animation_key)
 	return granted
 
 

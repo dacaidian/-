@@ -175,7 +175,10 @@ func execute_hand_card(
 		directional_spell["animation"] = resolved_animation
 		await game_manager.play_spell_cast_animation(direction_source, target_state, directional_spell)
 	else:
-		await game_manager.play_hand_spell_card_animation(card_data, target_state, resolved_animation)
+		var animation_target := target_state
+		if animation_target == null:
+			animation_target = resolve_implicit_animation_target(resolved_spell, player, game_manager)
+		await game_manager.play_hand_spell_card_animation(card_data, animation_target, resolved_animation)
 
 	for effect_data in get_resolved_effects(resolved_spell):
 		var runtime_effect_data := effect_data.duplicate(true)
@@ -192,6 +195,29 @@ func execute_hand_card(
 	player.remove_from_hand_at(hand_index, card_data)
 	game_manager.update_hand_drawer_view()
 	game_manager.refresh_debug_panel()
+
+
+func resolve_implicit_animation_target(
+	resolved_spell: Dictionary,
+	player: PlayerState,
+	game_manager: GameManager
+) -> CardState:
+	if player == null or game_manager == null:
+		return null
+
+	var target_resolver := CardEffect.new()
+	for effect_data in get_resolved_effects(resolved_spell):
+		if str(effect_data.get(EffectData.KEY_PRESENTATION_TARGET, "")) != EffectData.PRESENTATION_TARGET_EFFECT_TARGET:
+			continue
+		if EffectData.get_target(effect_data, "") != EffectData.TARGET_OWNER_CARD_BY_ID:
+			continue
+		var runtime_effect_data := effect_data.duplicate(true)
+		EffectData.mark_effect_owner(runtime_effect_data, player.id)
+		var targets := target_resolver.get_target_states(null, runtime_effect_data, game_manager)
+		if targets.size() == 1:
+			return targets[0]
+
+	return null
 
 
 func get_resolved_effects(resolved_spell: Dictionary) -> Array[Dictionary]:

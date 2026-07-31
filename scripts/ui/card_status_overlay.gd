@@ -149,6 +149,7 @@ func refresh() -> void:
 func has_animated_status_visual() -> bool:
 	return (
 		should_show_kagune_release()
+		or should_show_tokyo_ghoul_form()
 		or should_show_divine_shield()
 		or should_show_power_word_shield()
 		or should_show_arcane_aura()
@@ -165,7 +166,7 @@ func has_animated_status_visual() -> bool:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
@@ -181,6 +182,18 @@ func should_show_taunt() -> bool:
 
 func should_show_kagune_release() -> bool:
 	return state != null and state.is_face_up and state.has_status_with_tag(KagunePowerResolver.STATUS_TAG)
+
+
+func should_show_tokyo_ghoul_form() -> bool:
+	if state == null or state.data == null or not state.is_face_up:
+		return false
+	return state.card_id in [
+		"kaneki_centipede_form",
+		"kaneki_dragon_form",
+		"kaneki_saint_sword_form",
+		"non_killing_owl",
+		"one_eyed_owl",
+	]
 
 
 func should_show_divine_shield() -> bool:
@@ -384,6 +397,8 @@ func _draw() -> void:
 		draw_taunt_overlay()
 	if should_show_kagune_release():
 		draw_kagune_release_overlay()
+	if should_show_tokyo_ghoul_form():
+		draw_tokyo_ghoul_form_overlay()
 	if should_show_arcane_aura():
 		draw_arcane_aura()
 	if should_show_meteor_aura():
@@ -569,8 +584,9 @@ func draw_kagune_release_overlay() -> void:
 	if kagune_types.is_empty():
 		draw_arc(center, radius * 0.72, 0.0, TAU, 40, kagune_release_edge_color, 2.0, true)
 
-	for mote_index in range(5):
-		var mote_phase := fmod(animation_time * 0.18 + float(mote_index) / 5.0, 1.0)
+	var mote_count := 9 if is_high else 5
+	for mote_index in range(mote_count):
+		var mote_phase := fmod(animation_time * (0.24 if is_high else 0.18) + float(mote_index) / float(mote_count), 1.0)
 		var mote_angle := float(mote_index) * 2.399963 + animation_time * 0.10
 		var mote := center + Vector2.from_angle(mote_angle) * radius * (0.30 + mote_phase * 0.62)
 		draw_circle(
@@ -592,10 +608,11 @@ func get_kagune_release_status() -> CardStatus:
 func draw_kagune_ukaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
 	var origin := center + Vector2(-radius * 0.16, -radius * 0.18)
 	for shard_index in range(5):
-		var angle := lerpf(-PI * 0.94, -PI * 0.30, float(shard_index) / 4.0)
+		var wingbeat := sin(animation_time * 4.6 + float(shard_index) * 0.72)
+		var angle := lerpf(-PI * 0.94, -PI * 0.30, float(shard_index) / 4.0) + wingbeat * 0.055
 		var direction := Vector2.from_angle(angle)
 		var tangent := direction.orthogonal()
-		var length := radius * (0.48 + float(shard_index % 2) * 0.12) * intensity
+		var length := radius * (0.48 + float(shard_index % 2) * 0.12 + wingbeat * 0.035) * intensity
 		var half_width := radius * 0.055
 		var tip := origin + direction * length
 		var shard := PackedVector2Array([
@@ -611,7 +628,8 @@ func draw_kagune_ukaku(center: Vector2, radius: float, intensity: float, heartbe
 
 func draw_kagune_koukaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
 	for plate_index in range(3):
-		var plate_center := center + Vector2(-radius * (0.28 + float(plate_index) * 0.11), radius * (0.10 + float(plate_index) * 0.14))
+		var lock_pulse := sin(animation_time * 2.1 + float(plate_index) * 0.82)
+		var plate_center := center + Vector2(-radius * (0.28 + float(plate_index) * 0.11 + lock_pulse * 0.018), radius * (0.10 + float(plate_index) * 0.14))
 		var plate_width := radius * (0.42 - float(plate_index) * 0.055) * intensity
 		var plate_height := radius * (0.30 + float(plate_index) * 0.025) * intensity
 		var plate := PackedVector2Array([
@@ -629,8 +647,9 @@ func draw_kagune_koukaku(center: Vector2, radius: float, intensity: float, heart
 func draw_kagune_rinkaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
 	var origin := center + Vector2(radius * 0.10, radius * 0.08)
 	for tendril_index in range(4):
-		var end := center + Vector2(radius * (0.74 + float(tendril_index % 2) * 0.13), radius * lerpf(-0.62, 0.62, float(tendril_index) / 3.0)) * intensity
-		var control := origin + Vector2(radius * 0.46, radius * sin(float(tendril_index) * 2.0) * 0.42)
+		var sway := sin(animation_time * 3.0 + float(tendril_index) * 1.24)
+		var end := center + Vector2(radius * (0.74 + float(tendril_index % 2) * 0.13 + sway * 0.035), radius * (lerpf(-0.62, 0.62, float(tendril_index) / 3.0) + sway * 0.09)) * intensity
+		var control := origin + Vector2(radius * 0.46, radius * (sin(float(tendril_index) * 2.0) * 0.42 + sway * 0.12))
 		var curve := sample_kagune_curve(origin, control, end, 12)
 		draw_kagune_tapered_curve(
 			curve,
@@ -643,9 +662,10 @@ func draw_kagune_rinkaku(center: Vector2, radius: float, intensity: float, heart
 
 
 func draw_kagune_bikaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
+	var tail_sway := sin(animation_time * 2.8)
 	var origin := center + Vector2(0.0, radius * 0.24)
-	var control := center + Vector2(radius * 0.10, radius * 0.92)
-	var end := center + Vector2(radius * 0.82, radius * 0.68) * intensity
+	var control := center + Vector2(radius * (0.10 + tail_sway * 0.16), radius * 0.92)
+	var end := center + Vector2(radius * (0.82 + tail_sway * 0.035), radius * (0.68 - tail_sway * 0.08)) * intensity
 	var curve := sample_kagune_curve(origin, control, end, 15)
 	draw_kagune_tapered_curve(
 		curve,
@@ -693,6 +713,87 @@ func close_kagune_polygon(points: PackedVector2Array) -> PackedVector2Array:
 	if not closed_points.is_empty():
 		closed_points.append(closed_points[0])
 	return closed_points
+
+
+func draw_tokyo_ghoul_form_overlay() -> void:
+	if state == null:
+		return
+	var card_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.026)
+	var center := card_rect.get_center()
+	var radius := minf(card_rect.size.x, card_rect.size.y) * 0.46
+	var heartbeat := 0.5 + 0.5 * sin(animation_time * 2.7)
+	var edge_alpha := 0.24 + heartbeat * 0.18
+	draw_rect(card_rect, Color(0.18, 0.006, 0.035, 0.045 + heartbeat * 0.025), true)
+
+	match state.card_id:
+		"kaneki_centipede_form":
+			for segment_index in range(9):
+				var t := float(segment_index) / 8.0
+				var side := -1.0 if segment_index % 2 == 0 else 1.0
+				var point := Vector2(
+					center.x + side * radius * (0.80 + sin(animation_time * 3.4 + float(segment_index)) * 0.05),
+					lerpf(card_rect.position.y + radius * 0.18, card_rect.end.y - radius * 0.18, t)
+				)
+				draw_circle(point, maxf(radius * (0.055 - t * 0.018), 1.4), Color(kagune_rinkaku_color.r, kagune_rinkaku_color.g, kagune_rinkaku_color.b, edge_alpha + 0.18))
+				draw_line(point, point + Vector2(side * radius * 0.16, sin(t * 11.0) * radius * 0.06), Color(kagune_cold_edge_color.r, 0.24, 0.32, edge_alpha), 1.0, true)
+		"kaneki_saint_sword_form":
+			var sweep := fmod(animation_time * 0.28, 1.0)
+			var blade_x := lerpf(card_rect.position.x, card_rect.end.x, sweep)
+			draw_line(Vector2(blade_x - radius * 0.28, card_rect.end.y), Vector2(blade_x + radius * 0.28, card_rect.position.y), Color(kagune_release_core_color.r, kagune_release_core_color.g, kagune_release_core_color.b, edge_alpha * 0.46), 7.0, true)
+			draw_line(Vector2(blade_x - radius * 0.22, card_rect.end.y), Vector2(blade_x + radius * 0.22, card_rect.position.y), Color(1.0, 0.86, 0.91, edge_alpha + 0.26), 2.0, true)
+		"kaneki_dragon_form":
+			var jaw_origin := center + Vector2(0.0, radius * 0.12)
+			for jaw_index in range(6):
+				var jaw_angle := lerpf(-PI * 0.92, -PI * 0.08, float(jaw_index) / 5.0)
+				jaw_angle += sin(animation_time * 2.2 + float(jaw_index) * 0.74) * 0.055
+				var jaw_direction := Vector2.from_angle(jaw_angle)
+				var jaw_tangent := jaw_direction.orthogonal()
+				var jaw_tip := jaw_origin + jaw_direction * radius * (0.76 + heartbeat * 0.10)
+				var jaw_plate := PackedVector2Array([
+					jaw_origin + jaw_tangent * radius * 0.085,
+					jaw_tip,
+					jaw_origin - jaw_tangent * radius * 0.085,
+				])
+				draw_colored_polygon(jaw_plate, Color(0.24, 0.005, 0.045, edge_alpha + 0.12))
+				draw_polyline(close_kagune_polygon(jaw_plate), Color(kagune_cold_edge_color.r, 0.20, 0.30, edge_alpha), 1.2, true)
+			draw_arc(center, radius * (0.62 + heartbeat * 0.05), -PI * 0.96, -PI * 0.04, 36, Color(kagune_rinkaku_color.r, kagune_rinkaku_color.g, kagune_rinkaku_color.b, edge_alpha * 0.62), 2.0, true)
+		"non_killing_owl", "one_eyed_owl":
+			var feather_count := 10 if state.card_id == "one_eyed_owl" else 7
+			var feather_origin := center + Vector2(0.0, radius * 0.28)
+			for feather_index in range(feather_count):
+				var feather_t := float(feather_index) / float(feather_count - 1)
+				var feather_angle := lerpf(-PI * 0.94, -PI * 0.06, feather_t)
+				var flutter := sin(animation_time * 3.2 + float(feather_index) * 0.63)
+				var feather_direction := Vector2.from_angle(feather_angle)
+				var feather_tangent := feather_direction.orthogonal()
+				var feather_length := radius * (0.72 + sin(feather_t * PI) * 0.26 + flutter * 0.035)
+				var feather_tip := feather_origin + feather_direction * feather_length
+				var feather := PackedVector2Array([
+					feather_origin + feather_tangent * radius * 0.045,
+					feather_tip,
+					feather_origin - feather_tangent * radius * 0.045,
+				])
+				draw_colored_polygon(feather, Color(0.34, 0.008, 0.075, edge_alpha + 0.08))
+				draw_polyline(close_kagune_polygon(feather), Color(kagune_cold_edge_color.r, 0.26, 0.36, edge_alpha), 1.0, true)
+		_:
+			for plate_index in range(6):
+				var angle := TAU * float(plate_index) / 6.0 + animation_time * 0.11
+				var direction := Vector2.from_angle(angle)
+				var tangent := direction.orthogonal()
+				var anchor := center + direction * radius * (0.70 + heartbeat * 0.04)
+				var tip := center + direction * radius * 0.97
+				var plate := PackedVector2Array([
+					anchor + tangent * radius * 0.10,
+					tip,
+					anchor - tangent * radius * 0.10,
+				])
+				draw_colored_polygon(plate, Color(0.31, 0.008, 0.055, edge_alpha + 0.10))
+				draw_polyline(close_kagune_polygon(plate), Color(kagune_cold_edge_color.r, 0.24, 0.33, edge_alpha), 1.0, true)
+
+	for mote_index in range(4):
+		var phase := fmod(animation_time * 0.20 + float(mote_index) * 0.23, 1.0)
+		var point := center + Vector2.from_angle(float(mote_index) * 2.399963) * radius * (0.34 + phase * 0.62)
+		draw_circle(point, maxf(size.x * 0.008, 1.0), Color(kagune_release_core_color.r, kagune_release_core_color.g, kagune_release_core_color.b, sin(phase * PI) * edge_alpha))
 
 
 func draw_arcane_aura() -> void:

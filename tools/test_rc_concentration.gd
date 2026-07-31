@@ -19,14 +19,15 @@ func run_test() -> void:
 	assert(player.faction_runtime_state_id == "rc_high")
 
 	var resolver := RcConcentrationResolverScript.new()
+	var game_manager := GameManager.new()
 	var ledger := TurnEventLedgerScript.new()
 	ledger.begin_turn(player.id)
 	player.set_faction_runtime_state_by_id("rc_low")
 	var first_record := ledger.record_death(create_minion("enemy_1", "player_2"), player.id, "attack")
-	assert(resolver.resolve_after_death_event(player, ledger, first_record))
+	assert(await resolver.resolve_after_death_event(game_manager, player, ledger, first_record))
 	assert(player.faction_runtime_state_id == "rc_medium")
 	var second_record := ledger.record_death(create_minion("enemy_2", "player_2"), player.id, "attack")
-	assert(resolver.resolve_after_death_event(player, ledger, second_record))
+	assert(await resolver.resolve_after_death_event(game_manager, player, ledger, second_record))
 	assert(player.faction_runtime_state_id == "rc_high")
 
 	var friendly_record := ledger.record_death(create_minion("friendly", player.id), player.id, "attack")
@@ -36,7 +37,6 @@ func run_test() -> void:
 	assert(resolver.get_decreased_state_id("rc_medium") == "rc_low")
 	assert(resolver.get_decreased_state_id("rc_low") == "rc_low")
 
-	var game_manager := GameManager.new()
 	ledger.begin_turn(player.id)
 	player.set_faction_runtime_state_by_id("rc_high")
 	assert(await resolver.resolve_after_turn_end(game_manager, player, ledger))

@@ -64,7 +64,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var actual_life_damage := 0
 	if not was_reflected:
 		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
-		await resolve_lifesteal(user, actual_life_damage, game_manager)
+		await resolve_lifesteal(user, target, actual_life_damage, game_manager)
 		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager, is_melee_attack)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
@@ -96,11 +96,23 @@ func resolve_attack_reflection(
 		return false
 	if damage <= 0:
 		return false
+	var reflect_animation := get_status_animation(
+		defender,
+		EffectData.KEY_REFLECT_ANIMATION,
+		"bronze_head_iron_arms"
+	)
 	if not defender.trigger_attack_reflection():
 		return false
 
 	if game_manager.has_method("play_status_apply_animation"):
-		await game_manager.play_status_apply_animation(defender, "bronze_head_iron_arms")
+		if reflect_animation == "koukaku_reflect":
+			await game_manager.play_spell_cast_animation(
+				defender,
+				attacker,
+				{EffectData.KEY_ANIMATION: reflect_animation}
+			)
+		else:
+			await game_manager.play_status_apply_animation(defender, reflect_animation)
 	attacker.take_damage(damage)
 	await game_manager.resolve_dead_states([attacker], EffectData.DEATH_REASON_EFFECT, defender)
 	return true
@@ -235,7 +247,12 @@ func deal_attack_damage_to_target(target: CardState, damage: int) -> int:
 	return maxi(previous_health - target.current_health, 0)
 
 
-func resolve_lifesteal(user: CardState, actual_life_damage: int, game_manager: GameManager) -> void:
+func resolve_lifesteal(
+	user: CardState,
+	target: CardState,
+	actual_life_damage: int,
+	game_manager: GameManager
+) -> void:
 	if user == null or game_manager == null:
 		return
 	if actual_life_damage <= 0:
@@ -247,7 +264,18 @@ func resolve_lifesteal(user: CardState, actual_life_damage: int, game_manager: G
 	if healed_amount <= 0:
 		return
 
-	if game_manager.has_method("play_effect_heal_animation"):
+	var lifesteal_animation := get_status_animation(
+		user,
+		EffectData.KEY_LIFESTEAL_ANIMATION,
+		""
+	)
+	if lifesteal_animation != "" and target != null:
+		await game_manager.play_spell_cast_animation(
+			target,
+			user,
+			{EffectData.KEY_ANIMATION: lifesteal_animation}
+		)
+	elif game_manager.has_method("play_effect_heal_animation"):
 		await game_manager.play_effect_heal_animation(user)
 
 	if game_manager.has_method("queue_card_trigger"):
@@ -257,6 +285,18 @@ func resolve_lifesteal(user: CardState, actual_life_damage: int, game_manager: G
 		})
 	if game_manager.has_method("resolve_queued_triggers"):
 		await game_manager.resolve_queued_triggers()
+
+
+func get_status_animation(state: CardState, payload_key: String, fallback: String) -> String:
+	if state == null or payload_key == "":
+		return fallback
+	for status in state.statuses:
+		if status == null:
+			continue
+		var animation_key := str(status.payload.get(payload_key, ""))
+		if animation_key != "":
+			return animation_key
+	return fallback
 
 
 func get_giant_splash_slots(attacker_slot: int, target_slot: int, board_columns: int, board_size: int) -> Array[int]:

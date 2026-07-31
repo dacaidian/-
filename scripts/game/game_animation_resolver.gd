@@ -39,6 +39,8 @@ func play_card_attack_animation(
 ) -> void:
 	if game_manager == null or attacker_state == null or target_state == null:
 		return
+	if attack_animation_key == "":
+		attack_animation_key = resolve_attack_animation_key(attacker_state)
 
 	var attacker_card: Card = game_manager.get_card_for_state(attacker_state)
 	var target_card: Card = game_manager.get_card_for_state(target_state)
@@ -56,6 +58,50 @@ func play_card_attack_animation(
 		attack_animation_key
 	)
 	game_manager.is_resolving_card_action = false
+
+
+func resolve_attack_animation_key(attacker_state: CardState) -> String:
+	if attacker_state == null or attacker_state.data == null:
+		return ""
+	if attacker_state.data.faction_id != "tokyo_ghoul":
+		return ""
+
+	match attacker_state.card_id:
+		"kaneki_centipede_form":
+			return "tokyo_centipede_attack"
+		"kaneki_dragon_form":
+			return "tokyo_dragon_attack"
+		"kaneki_saint_sword_form":
+			return "tokyo_saint_sword_attack"
+		"kuzen_yoshimura", "eto_yoshimura", "non_killing_owl", "one_eyed_owl":
+			return "tokyo_owl_attack"
+		"nimura_furuta":
+			return "tokyo_furuta_attack"
+
+	var kagune_types: Array[String] = []
+	for kagune_type in [
+		CardData.KEYWORD_KAGUNE_BIKAKU,
+		CardData.KEYWORD_KAGUNE_RINKAKU,
+		CardData.KEYWORD_KAGUNE_KOUKAKU,
+		CardData.KEYWORD_KAGUNE_UKAKU,
+	]:
+		if attacker_state.has_keyword(kagune_type):
+			kagune_types.append(kagune_type)
+	if kagune_types.size() > 1:
+		return "tokyo_chimera_attack"
+	if kagune_types.is_empty():
+		return ""
+
+	match kagune_types[0]:
+		CardData.KEYWORD_KAGUNE_UKAKU:
+			return "tokyo_ukaku_attack"
+		CardData.KEYWORD_KAGUNE_KOUKAKU:
+			return "tokyo_koukaku_attack"
+		CardData.KEYWORD_KAGUNE_RINKAKU:
+			return "tokyo_rinkaku_attack"
+		CardData.KEYWORD_KAGUNE_BIKAKU:
+			return "tokyo_bikaku_attack"
+	return ""
 
 
 func play_secondary_attack_impact_animation(

@@ -7,15 +7,21 @@ var rc_concentration_resolver := RcConcentrationResolverScript.new()
 
 
 func resolve_after_death_event(
+	game_manager: GameManager,
 	player: PlayerState,
 	ledger: TurnEventLedger,
 	death_record: Dictionary
 ) -> bool:
-	if player == null or ledger == null or death_record.is_empty():
+	if game_manager == null or player == null or ledger == null or death_record.is_empty():
 		return false
 
 	if rc_concentration_resolver.handles(player):
-		return rc_concentration_resolver.resolve_after_death_event(player, ledger, death_record)
+		return await rc_concentration_resolver.resolve_after_death_event(
+			game_manager,
+			player,
+			ledger,
+			death_record
+		)
 
 	return false
 

@@ -865,7 +865,8 @@ func record_turn_death_event(death_event: Dictionary) -> void:
 		str(death_metadata.get("source_owner_id", "")),
 		str(death_event.get("reason", ""))
 	)
-	if faction_runtime_state_resolver.resolve_after_death_event(
+	if await faction_runtime_state_resolver.resolve_after_death_event(
+		self,
 		current_player,
 		turn_event_ledger,
 		death_record

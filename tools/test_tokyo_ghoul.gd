@@ -9,7 +9,11 @@ const DeathResolverScript := preload("res://scripts/game/death_resolver.gd")
 const HandPlayResolverScript := preload("res://scripts/game/hand_play_resolver.gd")
 
 
-func _init() -> void:
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
 	test_rc_transitions()
 	test_turn_event_ledger()
 	test_card_definitions()
@@ -27,6 +31,11 @@ func _init() -> void:
 	test_frontal_width_and_ranged_immunity()
 	await test_frontal_width_execute_flow()
 	print("TOKYO_GHOUL_TESTS_OK")
+	call_deferred("_finish_success")
+
+
+func _finish_success() -> void:
+	await process_frame
 	quit()
 
 
@@ -254,6 +263,7 @@ func test_kagune_payloads() -> void:
 	assert(int(high_rinkaku.get(EffectData.KEY_ATTACK_BONUS, 0)) == 2)
 	assert(EffectData.get_keywords(high_rinkaku).has(CardData.KEYWORD_LIFESTEAL))
 	assert(EffectData.get_keywords(high_rinkaku).has(CardData.KEYWORD_MOBILE_ASSAULT))
+	assert(str(high_rinkaku.get(EffectData.KEY_LIFESTEAL_ANIMATION, "")) == "kagune_lifesteal")
 	var normal_rinkaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_RINKAKU], false)
 	assert(int(normal_rinkaku.get(EffectData.KEY_ATTACK_BONUS, 0)) == 1)
 	assert(EffectData.get_keywords(normal_rinkaku).has(CardData.KEYWORD_MOBILE_ASSAULT))
@@ -262,6 +272,7 @@ func test_kagune_payloads() -> void:
 	var high_koukaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_KOUKAKU], true)
 	assert(int(high_koukaku.get(EffectData.KEY_ARMOR_BONUS, 0)) == 2)
 	assert(EffectData.get_keywords(high_koukaku).has(CardData.KEYWORD_REFLECT))
+	assert(str(high_koukaku.get(EffectData.KEY_REFLECT_ANIMATION, "")) == "koukaku_reflect")
 
 	var high_ukaku := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_UKAKU], true)
 	var actions := EffectData.get_actions(high_ukaku)
@@ -318,6 +329,7 @@ func test_kagune_release_lifecycle() -> void:
 	assert(unit.get_status(resolver.STATUS_ID) == null)
 	assert(unit.armor == 0)
 	assert(not unit.has_keyword(CardData.KEYWORD_REFLECT))
+	game_manager.audio_manager.free()
 	game_manager.free()
 
 
@@ -343,6 +355,7 @@ func test_cafe_revive_cooldown_passive() -> void:
 	cafe.is_face_up = true
 	cafe.damage_taken = cafe.max_health
 	assert(resolver.get_active_hero_revive_cooldown_modifier(game_manager, player, "kaneki_ken") == 0)
+	game_manager.audio_manager.free()
 	game_manager.free()
 
 
@@ -484,6 +497,8 @@ func test_saint_sword_splash_crosses_board_layers() -> void:
 	assert(main_target.current_health == 10)
 	assert(same_slot_aerial.current_health == 10)
 	assert(distant_enemy.current_health == 10)
+	game_manager.audio_manager.free()
+	game_manager.free()
 
 
 func test_sss_ghoul_definitions() -> void:

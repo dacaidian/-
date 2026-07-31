@@ -118,10 +118,12 @@ func create_kagune_payload(kagune_types: Array[String], is_high_concentration: b
 				append_unique_keyword(keywords, CardData.KEYWORD_MOBILE_ASSAULT)
 				if is_high_concentration:
 					append_unique_keyword(keywords, CardData.KEYWORD_LIFESTEAL)
+					payload[EffectData.KEY_LIFESTEAL_ANIMATION] = "kagune_lifesteal"
 			CardData.KEYWORD_KAGUNE_KOUKAKU:
 				armor_bonus += 2 if is_high_concentration else 1
 				if is_high_concentration:
 					append_unique_keyword(keywords, CardData.KEYWORD_REFLECT)
+					payload[EffectData.KEY_REFLECT_ANIMATION] = "koukaku_reflect"
 			CardData.KEYWORD_KAGUNE_UKAKU:
 				actions.append(create_feather_needle_action(3 if is_high_concentration else 1))
 
