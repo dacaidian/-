@@ -100,9 +100,14 @@ var taunt_color := Color(0.42, 0.22, 0.08, 0.08)
 var taunt_edge_color := Color(0.95, 0.60, 0.18, 0.50)
 var taunt_plate_color := Color(0.34, 0.16, 0.06, 0.26)
 var taunt_rivet_color := Color(0.98, 0.72, 0.28, 0.56)
-var kagune_release_color := Color(0.34, 0.015, 0.08, 0.11)
-var kagune_release_edge_color := Color(0.88, 0.12, 0.30, 0.62)
-var kagune_release_core_color := Color(1.0, 0.34, 0.48, 0.76)
+var kagune_release_color := Color(0.16, 0.008, 0.04, 0.08)
+var kagune_release_edge_color := Color(0.70, 0.06, 0.18, 0.56)
+var kagune_release_core_color := Color(0.98, 0.30, 0.40, 0.82)
+var kagune_ukaku_color := Color(0.82, 0.16, 0.32, 0.82)
+var kagune_koukaku_color := Color(0.48, 0.035, 0.11, 0.86)
+var kagune_rinkaku_color := Color(0.70, 0.05, 0.18, 0.86)
+var kagune_bikaku_color := Color(0.56, 0.025, 0.12, 0.90)
+var kagune_cold_edge_color := Color(0.98, 0.82, 0.88, 0.76)
 var animation_time := 0.0
 var redraw_accumulator := 0.0
 var divine_shield_break_progress := -1.0
@@ -143,7 +148,8 @@ func refresh() -> void:
 
 func has_animated_status_visual() -> bool:
 	return (
-		should_show_divine_shield()
+		should_show_kagune_release()
+		or should_show_divine_shield()
 		or should_show_power_word_shield()
 		or should_show_arcane_aura()
 		or should_show_encourage_gu()
@@ -506,24 +512,187 @@ func draw_taunt_overlay() -> void:
 
 
 func draw_kagune_release_overlay() -> void:
-	var card_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
+	var card_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.028)
 	var center := card_rect.get_center()
-	draw_rect(card_rect, kagune_release_color, true)
-	draw_rect(card_rect, kagune_release_edge_color, false, maxf(size.x * 0.018, 2.0))
+	var radius := minf(card_rect.size.x, card_rect.size.y) * 0.43
+	var status := get_kagune_release_status()
+	if status == null:
+		return
 
-	for index in range(4):
-		var side := -1.0 if index < 2 else 1.0
-		var vertical := float(index % 2)
-		var start := center + Vector2(side * card_rect.size.x * 0.12, card_rect.size.y * (-0.18 + vertical * 0.36))
-		var middle := center + Vector2(side * card_rect.size.x * 0.30, card_rect.size.y * (-0.28 + vertical * 0.56))
-		var tip := center + Vector2(side * card_rect.size.x * 0.46, card_rect.size.y * (-0.40 + vertical * 0.80))
-		draw_polyline(
-			PackedVector2Array([start, middle, tip]),
-			kagune_release_edge_color,
-			maxf(size.x * 0.026, 2.5),
+	var kagune_types: Array = status.payload.get(KagunePowerResolver.PAYLOAD_KAGUNE_TYPES, [])
+	var is_high := bool(status.payload.get(KagunePowerResolver.PAYLOAD_IS_HIGH_CONCENTRATION, false))
+	var intensity := 1.18 if is_high else 1.0
+	var heartbeat := 0.5 + 0.5 * sin(animation_time * (3.8 if is_high else 2.8))
+	var breathing_alpha := 0.74 + heartbeat * 0.22
+
+	draw_rect(card_rect, kagune_release_color, true)
+	draw_rect(
+		card_rect,
+		Color(
+			kagune_release_edge_color.r,
+			kagune_release_edge_color.g,
+			kagune_release_edge_color.b,
+			kagune_release_edge_color.a * breathing_alpha
+		),
+		false,
+		maxf(size.x * 0.014 * intensity, 1.5),
+		true
+	)
+
+	for pulse_index in range(2):
+		var phase := fmod(animation_time * 0.34 + float(pulse_index) * 0.48, 1.0)
+		draw_arc(
+			center,
+			radius * (0.18 + phase * 0.76),
+			animation_time * 0.22 + float(pulse_index),
+			animation_time * 0.22 + float(pulse_index) + PI * 1.58,
+			32,
+			Color(
+				kagune_release_core_color.r,
+				kagune_release_core_color.g,
+				kagune_release_core_color.b,
+				(1.0 - phase) * 0.20 * intensity
+			),
+			1.2,
 			true
 		)
-		draw_circle(tip, maxf(size.x * 0.014, 1.8), kagune_release_core_color)
+
+	if kagune_types.has(CardData.KEYWORD_KAGUNE_UKAKU):
+		draw_kagune_ukaku(center, radius, intensity, heartbeat)
+	if kagune_types.has(CardData.KEYWORD_KAGUNE_KOUKAKU):
+		draw_kagune_koukaku(center, radius, intensity, heartbeat)
+	if kagune_types.has(CardData.KEYWORD_KAGUNE_RINKAKU):
+		draw_kagune_rinkaku(center, radius, intensity, heartbeat)
+	if kagune_types.has(CardData.KEYWORD_KAGUNE_BIKAKU):
+		draw_kagune_bikaku(center, radius, intensity, heartbeat)
+
+	if kagune_types.is_empty():
+		draw_arc(center, radius * 0.72, 0.0, TAU, 40, kagune_release_edge_color, 2.0, true)
+
+	for mote_index in range(5):
+		var mote_phase := fmod(animation_time * 0.18 + float(mote_index) / 5.0, 1.0)
+		var mote_angle := float(mote_index) * 2.399963 + animation_time * 0.10
+		var mote := center + Vector2.from_angle(mote_angle) * radius * (0.30 + mote_phase * 0.62)
+		draw_circle(
+			mote,
+			maxf(size.x * (0.006 + float(mote_index % 2) * 0.003), 1.0),
+			Color(kagune_release_core_color.r, kagune_release_core_color.g, kagune_release_core_color.b, sin(mote_phase * PI) * 0.42)
+		)
+
+
+func get_kagune_release_status() -> CardStatus:
+	if state == null:
+		return null
+	for status in state.statuses:
+		if status != null and status.tags.has(KagunePowerResolver.STATUS_TAG):
+			return status
+	return null
+
+
+func draw_kagune_ukaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
+	var origin := center + Vector2(-radius * 0.16, -radius * 0.18)
+	for shard_index in range(5):
+		var angle := lerpf(-PI * 0.94, -PI * 0.30, float(shard_index) / 4.0)
+		var direction := Vector2.from_angle(angle)
+		var tangent := direction.orthogonal()
+		var length := radius * (0.48 + float(shard_index % 2) * 0.12) * intensity
+		var half_width := radius * 0.055
+		var tip := origin + direction * length
+		var shard := PackedVector2Array([
+			origin - tangent * half_width * 0.30,
+			origin + direction * length * 0.42 - tangent * half_width,
+			tip,
+			origin + direction * length * 0.42 + tangent * half_width,
+			origin + tangent * half_width * 0.30
+		])
+		draw_colored_polygon(shard, Color(kagune_ukaku_color.r, kagune_ukaku_color.g, kagune_ukaku_color.b, kagune_ukaku_color.a * (0.68 + heartbeat * 0.20)))
+		draw_polyline(close_kagune_polygon(shard), Color(kagune_cold_edge_color.r, kagune_cold_edge_color.g, kagune_cold_edge_color.b, 0.46), 1.0, true)
+
+
+func draw_kagune_koukaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
+	for plate_index in range(3):
+		var plate_center := center + Vector2(-radius * (0.28 + float(plate_index) * 0.11), radius * (0.10 + float(plate_index) * 0.14))
+		var plate_width := radius * (0.42 - float(plate_index) * 0.055) * intensity
+		var plate_height := radius * (0.30 + float(plate_index) * 0.025) * intensity
+		var plate := PackedVector2Array([
+			plate_center + Vector2(-plate_width * 0.52, -plate_height * 0.10),
+			plate_center + Vector2(-plate_width * 0.12, -plate_height * 0.54),
+			plate_center + Vector2(plate_width * 0.50, -plate_height * 0.26),
+			plate_center + Vector2(plate_width * 0.58, plate_height * 0.28),
+			plate_center + Vector2(-plate_width * 0.08, plate_height * 0.58),
+			plate_center + Vector2(-plate_width * 0.50, plate_height * 0.32)
+		])
+		draw_colored_polygon(plate, Color(kagune_koukaku_color.r, kagune_koukaku_color.g, kagune_koukaku_color.b, 0.60 + heartbeat * 0.12))
+		draw_polyline(close_kagune_polygon(plate), Color(kagune_cold_edge_color.r, 0.34, 0.42, 0.50 + heartbeat * 0.12), 1.3 + float(plate_index) * 0.2, true)
+
+
+func draw_kagune_rinkaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
+	var origin := center + Vector2(radius * 0.10, radius * 0.08)
+	for tendril_index in range(4):
+		var end := center + Vector2(radius * (0.74 + float(tendril_index % 2) * 0.13), radius * lerpf(-0.62, 0.62, float(tendril_index) / 3.0)) * intensity
+		var control := origin + Vector2(radius * 0.46, radius * sin(float(tendril_index) * 2.0) * 0.42)
+		var curve := sample_kagune_curve(origin, control, end, 12)
+		draw_kagune_tapered_curve(
+			curve,
+			radius * 0.075 * intensity,
+			Color(kagune_rinkaku_color.r, kagune_rinkaku_color.g, kagune_rinkaku_color.b, 0.70 + heartbeat * 0.15)
+		)
+		for joint_index in range(2):
+			var joint := quadratic_kagune_point(origin, control, end, (float(joint_index) + 1.0) / 3.0)
+			draw_circle(joint, maxf(radius * 0.026, 1.4), Color(kagune_release_core_color.r, kagune_release_core_color.g, kagune_release_core_color.b, 0.62))
+
+
+func draw_kagune_bikaku(center: Vector2, radius: float, intensity: float, heartbeat: float) -> void:
+	var origin := center + Vector2(0.0, radius * 0.24)
+	var control := center + Vector2(radius * 0.10, radius * 0.92)
+	var end := center + Vector2(radius * 0.82, radius * 0.68) * intensity
+	var curve := sample_kagune_curve(origin, control, end, 15)
+	draw_kagune_tapered_curve(
+		curve,
+		radius * 0.105 * intensity,
+		Color(kagune_bikaku_color.r, kagune_bikaku_color.g, kagune_bikaku_color.b, 0.76 + heartbeat * 0.12)
+	)
+	if curve.size() >= 2:
+		var tip := curve[curve.size() - 1]
+		var direction := (tip - curve[curve.size() - 2]).normalized()
+		var tangent := direction.orthogonal()
+		var barb := PackedVector2Array([
+			tip + direction * radius * 0.16,
+			tip - direction * radius * 0.05 + tangent * radius * 0.07,
+			tip - direction * radius * 0.02,
+			tip - direction * radius * 0.05 - tangent * radius * 0.07
+		])
+		draw_colored_polygon(barb, Color(kagune_bikaku_color.r, kagune_bikaku_color.g, kagune_bikaku_color.b, 0.86))
+		draw_polyline(close_kagune_polygon(barb), kagune_cold_edge_color, 1.0, true)
+
+
+func draw_kagune_tapered_curve(points: PackedVector2Array, base_width: float, color: Color) -> void:
+	if points.size() < 2:
+		return
+	for index in range(points.size() - 1):
+		var t := float(index) / float(points.size() - 1)
+		var width := maxf(base_width * (1.0 - t * 0.72), 1.2)
+		draw_line(points[index], points[index + 1], color, width, true)
+		draw_line(points[index], points[index + 1], Color(kagune_cold_edge_color.r, 0.26, 0.36, color.a * 0.70), maxf(width * 0.18, 1.0), true)
+
+
+func sample_kagune_curve(start: Vector2, control: Vector2, end: Vector2, segments: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for index in range(segments + 1):
+		points.append(quadratic_kagune_point(start, control, end, float(index) / float(segments)))
+	return points
+
+
+func quadratic_kagune_point(start: Vector2, control: Vector2, end: Vector2, t: float) -> Vector2:
+	var inverse := 1.0 - t
+	return start * inverse * inverse + control * 2.0 * inverse * t + end * t * t
+
+
+func close_kagune_polygon(points: PackedVector2Array) -> PackedVector2Array:
+	var closed_points := points.duplicate()
+	if not closed_points.is_empty():
+		closed_points.append(closed_points[0])
+	return closed_points
 
 
 func draw_arcane_aura() -> void:

@@ -240,10 +240,13 @@ func test_kagune_payloads() -> void:
 	var resolver := KagunePowerResolverScript.new()
 	assert(resolver.RELEASE_ANIMATION_KEY == "kagune_release")
 	var normal_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], false)
+	assert(not bool(normal_tail.get(KagunePowerResolver.PAYLOAD_IS_HIGH_CONCENTRATION, true)))
+	assert(normal_tail.get(KagunePowerResolver.PAYLOAD_KAGUNE_TYPES, []) == [CardData.KEYWORD_KAGUNE_BIKAKU])
 	assert(int(normal_tail.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0)) == 1)
 	assert(not EffectData.get_keywords(normal_tail).has(CardData.KEYWORD_MOBILE_ASSAULT))
 	assert(not normal_tail.has(EffectData.KEY_MOVEMENT_BONUS))
 	var high_tail := resolver.create_kagune_payload([CardData.KEYWORD_KAGUNE_BIKAKU], true)
+	assert(bool(high_tail.get(KagunePowerResolver.PAYLOAD_IS_HIGH_CONCENTRATION, false)))
 	assert(int(high_tail.get(EffectData.KEY_ATTACK_SPEED_BONUS, 0)) == 1)
 	assert(not high_tail.has(EffectData.KEY_MOVEMENT_BONUS))
 

@@ -9,6 +9,8 @@ const STATUS_TAG := CardStatus.TAG_KAGUNE_POWER
 const FEATHER_NEEDLE_ACTION_ID := "feather_needle"
 const RELEASE_ANIMATION_KEY := "kagune_release"
 const RELEASE_DURATION_TURNS := 1
+const PAYLOAD_KAGUNE_TYPES := "kagune_types"
+const PAYLOAD_IS_HIGH_CONCENTRATION := "is_high_concentration"
 
 
 func handles(player: PlayerState) -> bool:
@@ -97,7 +99,10 @@ func configure_status_lifecycle(status: CardStatus, owner_id: String) -> void:
 
 
 func create_kagune_payload(kagune_types: Array[String], is_high_concentration: bool) -> Dictionary:
-	var payload := {"kagune_types": kagune_types.duplicate()}
+	var payload := {
+		PAYLOAD_KAGUNE_TYPES: kagune_types.duplicate(),
+		PAYLOAD_IS_HIGH_CONCENTRATION: is_high_concentration
+	}
 	var keywords: Array[String] = []
 	var actions: Array[Dictionary] = []
 	var attack_bonus := 0
