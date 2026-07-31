@@ -12,6 +12,7 @@ offset_right = 738.0
 offset_bottom = 858.0
 grow_vertical = 2
 mouse_filter = 0
+clip_contents = true
 
 [node name="DrawerBody" type="Control" parent="."]
 layout_mode = 1
@@ -20,6 +21,7 @@ offset_top = 30.0
 offset_right = 674.0
 offset_bottom = 810.0
 mouse_filter = 1
+clip_contents = true
 
 [node name="MarginContainer" type="MarginContainer" parent="DrawerBody"]
 layout_mode = 1
@@ -53,6 +55,7 @@ text = "Player"
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
+clip_contents = true
 
 [node name="SpellSection" type="PanelContainer" parent="DrawerBody/MarginContainer/VBoxContainer/Sections"]
 layout_mode = 2

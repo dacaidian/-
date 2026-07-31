@@ -257,10 +257,14 @@ func configure_responsive_layout() -> void:
 
 
 func get_drawer_width() -> float:
-	if panel == null:
+	var viewport_size := get_viewport_size()
+	if viewport_size == Vector2.ZERO:
 		return DEFAULT_DRAWER_WIDTH
 
-	return maxf(panel.custom_minimum_size.x, DEFAULT_DRAWER_WIDTH)
+	return minf(
+		DEFAULT_DRAWER_WIDTH,
+		maxf(viewport_size.x - DRAWER_OPEN_X * 2.0, TOGGLE_WIDTH)
+	)
 
 
 func get_drawer_height() -> float:
@@ -271,7 +275,7 @@ func get_drawer_height() -> float:
 	if viewport_size == Vector2.ZERO:
 		return maxf(panel.custom_minimum_size.y, MIN_DRAWER_HEIGHT)
 
-	return maxf(viewport_size.y - DRAWER_VERTICAL_MARGIN * 2.0, MIN_DRAWER_HEIGHT)
+	return maxf(viewport_size.y - DRAWER_VERTICAL_MARGIN * 2.0, 1.0)
 
 
 func get_closed_x() -> float:
@@ -365,7 +369,7 @@ func request_adaptive_section_layout() -> void:
 func apply_adaptive_section_layout(generation: int) -> void:
 	if generation != section_layout_generation or sections_container == null:
 		return
-	var available_height := sections_container.size.y
+	var available_height := get_sections_height_budget()
 	if available_height <= 0.0:
 		return
 
@@ -385,6 +389,34 @@ func apply_adaptive_section_layout(generation: int) -> void:
 		section.custom_minimum_size.y = float(allocations.get(card_type, 0.0))
 
 	restore_all_section_scroll_offsets.call_deferred(generation)
+
+
+func get_sections_height_budget() -> float:
+	if panel == null or drawer_body == null or sections_container == null:
+		return 0.0
+
+	var body_insets := GameUiSkinScript.get_panel_safe_insets(
+		GameUiSkinScript.PanelKind.DRAWER
+	) + DRAWER_BODY_EXTRA_INSETS
+	var body_height := maxf(get_drawer_height() - body_insets.y - body_insets.w, 0.0)
+	var content_height := maxf(body_height - DRAWER_INNER_PADDING * 2.0, 0.0)
+	var content_column := sections_container.get_parent() as VBoxContainer
+	if content_column == null:
+		return content_height
+
+	var reserved_height := 0.0
+	var visible_child_count := 0
+	for child in content_column.get_children():
+		var control := child as Control
+		if control == null or not control.visible:
+			continue
+		visible_child_count += 1
+		if control != sections_container:
+			reserved_height += control.get_combined_minimum_size().y
+
+	var separation := float(content_column.get_theme_constant("separation"))
+	reserved_height += separation * float(maxi(visible_child_count - 1, 0))
+	return maxf(content_height - reserved_height, 0.0)
 
 
 func restore_all_section_scroll_offsets(generation: int) -> void:

@@ -38,7 +38,10 @@ func run() -> void:
 	var used_height := float(sections.get_theme_constant("separation")) * 3.0
 	for section in [spell_section, minion_section, upgrade_section, equipment_section]:
 		used_height += section.size.y
-	assert(used_height <= sections.size.y + 1.0)
+	assert(
+		used_height <= sections.size.y + 1.0,
+		"Hand sections overflowed: used=%s available=%s" % [used_height, sections.size.y]
+	)
 
 	var old_scroll := controller.get_section_scroll_container("upgrade")
 	assert(old_scroll != null)
@@ -61,13 +64,73 @@ func run() -> void:
 	assert(new_scroll != null)
 	assert(abs(new_scroll.scroll_vertical - expected_offset) <= 1)
 
-	print("HAND_DRAWER_LAYOUT_TESTS_OK")
 	scene.queue_free()
 	await process_frame
 	controller = null
 	player = null
 	await process_frame
+
+	await test_constrained_viewport_layout()
+	print("HAND_DRAWER_LAYOUT_TESTS_OK")
 	quit()
+
+
+func test_constrained_viewport_layout() -> void:
+	var viewport := SubViewport.new()
+	viewport.name = "ConstrainedHandDrawerViewport"
+	viewport.size = Vector2i(640, 640)
+	root.add_child(viewport)
+
+	var scene := create_hand_drawer_scene()
+	viewport.add_child(scene)
+	await process_frame
+	await process_frame
+
+	var controller := HandDrawerController.new()
+	controller.setup(scene, NodePath("HandDrawerPanel"))
+	var player := PlayerState.new()
+	player.setup("constrained_layout_test", "窄屏布局测试")
+	player.set_faction("layout_test", "布局测试种族")
+	for card_type in [
+		CardData.TYPE_SPELL,
+		CardData.TYPE_MINION,
+		CardData.TYPE_UPGRADE,
+		CardData.TYPE_EQUIPMENT
+	]:
+		append_cards(player, card_type, 8)
+	controller.update(player)
+	await wait_for_layout()
+
+	var panel := scene.get_node("HandDrawerPanel") as Panel
+	var sections := panel.get_node("DrawerBody/MarginContainer/VBoxContainer/Sections") as VBoxContainer
+	assert(panel.position.x >= -0.01)
+	assert(panel.position.y >= -0.01)
+	assert(panel.position.x + panel.size.x <= float(viewport.size.x) + 0.01)
+	assert(panel.position.y + panel.size.y <= float(viewport.size.y) + 0.01)
+
+	var used_height := float(sections.get_theme_constant("separation")) * 3.0
+	for card_type in controller.SECTION_TYPES:
+		var section := controller.section_panels.get(card_type) as PanelContainer
+		assert(section != null and section.visible)
+		assert(section.size.y > 0.0)
+		used_height += section.size.y
+		var scroll := controller.get_section_scroll_container(card_type)
+		assert(scroll != null)
+		assert(scroll.size.y > 0.0)
+	assert(used_height <= sections.size.y + 1.0)
+	assert(sections.size.y <= controller.get_sections_height_budget() + 1.0)
+
+	var equipment_section := controller.section_panels.get(CardData.TYPE_EQUIPMENT) as PanelContainer
+	assert(
+		equipment_section.get_global_rect().end.y <= panel.get_global_rect().end.y + 0.01,
+		"Equipment section ended below the drawer viewport"
+	)
+
+	viewport.queue_free()
+	await process_frame
+	controller = null
+	player = null
+	await process_frame
 
 
 func append_cards(player: PlayerState, card_type: String, amount: int) -> void:
