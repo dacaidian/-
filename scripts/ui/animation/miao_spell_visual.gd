@@ -277,13 +277,13 @@ func _draw_life_link_seal(is_death: bool) -> void:
 func _draw_thin_burial(is_release: bool, is_break: bool) -> void:
 	var center := size * 0.5
 	var radius := minf(size.x, size.y) * 0.38
-	var wrap := _ease_out(progress, 0.0, 0.46)
+	var binding_progress := _ease_out(progress, 0.0, 0.46)
 	var release := _ease_out(progress, 0.40, 1.0) if is_release else 0.0
 	var phase := progress * TAU
 
 	for talisman_index in range(5):
 		var angle := -PI * 0.86 + float(talisman_index) * PI * 0.43 + phase * 0.05
-		var orbit := radius * lerpf(1.08, 0.66, wrap)
+		var orbit := radius * lerpf(1.08, 0.66, binding_progress)
 		var paper_center := center + Vector2(cos(angle), sin(angle)) * orbit
 		var paper_size := Vector2(radius * 0.18, radius * 0.42)
 		var paper_rect := Rect2(paper_center - paper_size * 0.5, paper_size)
@@ -304,8 +304,8 @@ func _draw_thin_burial(is_release: bool, is_break: bool) -> void:
 		center + Vector2(-radius * 0.28, radius * 0.68),
 		center + Vector2(-radius * 0.34, -radius * 0.34)
 	])
-	draw_colored_polygon(shroud, Color(0.42, 0.46, 0.38, 0.12 * wrap * (1.0 - release)))
-	draw_polyline(shroud, Color(0.70, 0.76, 0.64, 0.72 * wrap * (1.0 - release)), 2.2, true)
+	draw_colored_polygon(shroud, Color(0.42, 0.46, 0.38, 0.12 * binding_progress * (1.0 - release)))
+	draw_polyline(shroud, Color(0.70, 0.76, 0.64, 0.72 * binding_progress * (1.0 - release)), 2.2, true)
 	for stitch_index in range(7):
 		var t := float(stitch_index) / 6.0
 		var x := lerpf(center.x - radius * 0.28, center.x + radius * 0.28, t)
@@ -314,7 +314,7 @@ func _draw_thin_burial(is_release: bool, is_break: bool) -> void:
 		draw_line(
 			Vector2(x, y - radius * 0.20 * stress),
 			Vector2(x, y + radius * 0.20 * stress),
-			Color(0.05, 0.04, 0.04, 0.70 * wrap * (1.0 - release * 0.36)),
+			Color(0.05, 0.04, 0.04, 0.70 * binding_progress * (1.0 - release * 0.36)),
 			1.7,
 			true
 		)
