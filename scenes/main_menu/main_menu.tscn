@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
 [ext_resource type="Texture2D" path="res://assets/img/startPanel/back.png" id="2_background"]
-[ext_resource type="Texture2D" path="res://assets/img/startPanel/title.png" id="3_title"]
+[ext_resource type="Texture2D" path="res://assets/img/ui_skin/warcard_title.png" id="3_title"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -58,9 +58,10 @@ alignment = 1
 theme_override_constants/separation = 12
 
 [node name="TitleTexture" type="TextureRect" parent="RootMargin/Layout/BrandArea"]
-custom_minimum_size = Vector2(690, 230)
+custom_minimum_size = Vector2(760, 220)
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 texture = ExtResource("3_title")
 expand_mode = 1
 stretch_mode = 5

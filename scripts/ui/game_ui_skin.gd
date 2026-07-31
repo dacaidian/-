@@ -2,11 +2,12 @@ extends RefCounted
 class_name GameUiSkin
 
 enum PanelKind {
-	MAIN,
-	DRAWER,
-	INSET,
-	SECTION,
-	HUD,
+	MAIN = 0,
+	DRAWER = 1,
+	INSET = 2,
+	SECTION = 3,
+	HUD = 4,
+	SIDEBAR = 5,
 }
 
 enum ButtonKind {
@@ -25,6 +26,7 @@ enum ButtonState {
 
 const PANEL_MAIN_TEXTURE := preload("res://assets/img/ui_skin/panel_main.png")
 const PANEL_DRAWER_TEXTURE := preload("res://assets/img/ui_skin/panel_drawer.png")
+const PANEL_SIDEBAR_TEXTURE := preload("res://assets/img/ui_skin/panel_sidebar.png")
 const PANEL_HUD_TEXTURE := preload("res://assets/img/ui_skin/panel_hud.png")
 const PANEL_INSET_TEXTURE := preload("res://assets/img/ui_skin/panel_inset.png")
 const PANEL_SECTION_TEXTURE := preload("res://assets/img/ui_skin/panel_section.png")
@@ -54,6 +56,7 @@ const FIELD_FOCUS_TEXTURE := preload("res://assets/img/ui_skin/field_focus.png")
 const PANEL_TEXTURE_MARGINS := {
 	PanelKind.MAIN: Vector4(86.0, 78.0, 86.0, 78.0),
 	PanelKind.DRAWER: Vector4(34.0, 32.0, 34.0, 32.0),
+	PanelKind.SIDEBAR: Vector4(22.0, 26.0, 22.0, 26.0),
 	PanelKind.INSET: Vector4(20.0, 12.0, 20.0, 12.0),
 	PanelKind.SECTION: Vector4(10.0, 7.0, 10.0, 7.0),
 	PanelKind.HUD: Vector4(30.0, 20.0, 30.0, 20.0),
@@ -64,6 +67,7 @@ const PANEL_TEXTURE_MARGINS := {
 const PANEL_SAFE_INSETS := {
 	PanelKind.MAIN: Vector4(44.0, 44.0, 44.0, 44.0),
 	PanelKind.DRAWER: Vector4(32.0, 30.0, 32.0, 30.0),
+	PanelKind.SIDEBAR: Vector4(22.0, 26.0, 22.0, 26.0),
 	PanelKind.INSET: Vector4(20.0, 12.0, 20.0, 12.0),
 	PanelKind.SECTION: Vector4(10.0, 8.0, 10.0, 8.0),
 	PanelKind.HUD: Vector4(22.0, 14.0, 22.0, 14.0),
@@ -81,6 +85,9 @@ static func create_panel_style(
 		PanelKind.DRAWER:
 			texture = PANEL_DRAWER_TEXTURE
 			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.DRAWER]
+		PanelKind.SIDEBAR:
+			texture = PANEL_SIDEBAR_TEXTURE
+			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.SIDEBAR]
 		PanelKind.INSET:
 			texture = PANEL_INSET_TEXTURE
 			texture_margins = PANEL_TEXTURE_MARGINS[PanelKind.INSET]

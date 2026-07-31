@@ -245,6 +245,11 @@ def build_assets(source_dir: Path, output_dir: Path, sources: dict[str, str]) ->
         (68, 66, 68, 66),
         (30, 28, 30, 28),
     )
+    panel_sidebar = _compress_frame_borders(
+        built["panel_main"],
+        (68, 66, 68, 66),
+        (20, 24, 20, 24),
+    )
     panel_section = _compress_frame_borders(
         panel_inset_master,
         (36, 18, 36, 18),
@@ -253,6 +258,7 @@ def build_assets(source_dir: Path, output_dir: Path, sources: dict[str, str]) ->
     _save(built["panel_inset"], output_dir / "panel_inset.png")
     _save(built["panel_hud"], output_dir / "panel_hud.png")
     _save(panel_drawer, output_dir / "panel_drawer.png")
+    _save(panel_sidebar, output_dir / "panel_sidebar.png")
     _save(panel_section, output_dir / "panel_section.png")
 
     primary_states = {

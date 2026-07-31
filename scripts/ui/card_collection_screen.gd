@@ -471,7 +471,7 @@ func _load_faction_logo(faction_id: String) -> Texture2D:
 func _apply_styles() -> void:
 	faction_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_inset_panel_style(ApplicationUiStyle.GOLD)
+		ApplicationUiStyle.create_sidebar_panel_style(ApplicationUiStyle.GOLD)
 	)
 	filter_panel.add_theme_stylebox_override(
 		"panel",
@@ -479,11 +479,11 @@ func _apply_styles() -> void:
 	)
 	results_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_inset_panel_style(Color(0.37, 0.43, 0.44, 1.0))
+		ApplicationUiStyle.create_drawer_panel_style(Color(0.37, 0.43, 0.44, 1.0))
 	)
 	details_panel.add_theme_stylebox_override(
 		"panel",
-		ApplicationUiStyle.create_panel_style(ApplicationUiStyle.GOLD)
+		ApplicationUiStyle.create_sidebar_panel_style(ApplicationUiStyle.GOLD)
 	)
 
 	ApplicationUiStyle.style_compact_button(back_button, ApplicationUiStyle.GOLD)

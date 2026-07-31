@@ -58,6 +58,10 @@ func _test_skin_factory() -> void:
 		GameUiSkinScript.PanelKind.DRAWER,
 		ApplicationUiStyle.GOLD
 	)
+	var sidebar_panel := GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.SIDEBAR,
+		ApplicationUiStyle.GOLD
+	)
 	var section_panel := GameUiSkinScript.create_panel_style(
 		GameUiSkinScript.PanelKind.SECTION,
 		ApplicationUiStyle.BLUE
@@ -68,16 +72,21 @@ func _test_skin_factory() -> void:
 	)
 	assert(main_panel is StyleBoxTexture)
 	assert(drawer_panel is StyleBoxTexture)
+	assert(sidebar_panel is StyleBoxTexture)
 	assert(inset_panel is StyleBoxTexture)
 	assert(section_panel is StyleBoxTexture)
 	assert(hud_panel is StyleBoxTexture)
 	assert(main_panel.texture != null)
 	assert(drawer_panel.texture != null)
+	assert(sidebar_panel.texture != null)
 	assert(inset_panel.texture != null)
 	assert(section_panel.texture != null)
 	assert(hud_panel.texture != null)
+	assert(sidebar_panel.texture.get_height() > sidebar_panel.texture.get_width())
+	assert(inset_panel.texture.get_width() > inset_panel.texture.get_height() * 4)
 	assert(main_panel.get_texture_margin(SIDE_LEFT) > 0.0)
 	assert(drawer_panel.get_texture_margin(SIDE_LEFT) > 0.0)
+	assert(sidebar_panel.get_texture_margin(SIDE_TOP) > 0.0)
 	assert(inset_panel.get_texture_margin(SIDE_TOP) > 0.0)
 	assert(section_panel.get_texture_margin(SIDE_TOP) > 0.0)
 	assert(hud_panel.get_texture_margin(SIDE_RIGHT) > 0.0)
@@ -85,6 +94,8 @@ func _test_skin_factory() -> void:
 	assert(main_panel.content_margin_top >= 42.0)
 	assert(drawer_panel.content_margin_left >= 30.0)
 	assert(drawer_panel.content_margin_top >= 28.0)
+	assert(sidebar_panel.content_margin_left >= 20.0)
+	assert(sidebar_panel.content_margin_top >= 24.0)
 	assert(inset_panel.content_margin_left >= 18.0)
 	assert(inset_panel.content_margin_top >= 10.0)
 	assert(section_panel.content_margin_left <= 12.0)
@@ -131,10 +142,12 @@ func _test_skin_factory() -> void:
 func _test_global_surface_tiers() -> void:
 	var main_style := ApplicationUiStyle.create_panel_style() as StyleBoxTexture
 	var drawer_style := ApplicationUiStyle.create_drawer_panel_style() as StyleBoxTexture
+	var sidebar_style := ApplicationUiStyle.create_sidebar_panel_style() as StyleBoxTexture
 	var inset_style := ApplicationUiStyle.create_inset_panel_style() as StyleBoxTexture
 	var section_style := ApplicationUiStyle.create_section_panel_style() as StyleBoxTexture
 	assert(main_style.texture == GameUiSkinScript.PANEL_MAIN_TEXTURE)
 	assert(drawer_style.texture == GameUiSkinScript.PANEL_DRAWER_TEXTURE)
+	assert(sidebar_style.texture == GameUiSkinScript.PANEL_SIDEBAR_TEXTURE)
 	assert(inset_style.texture == GameUiSkinScript.PANEL_INSET_TEXTURE)
 	assert(section_style.texture == GameUiSkinScript.PANEL_SECTION_TEXTURE)
 
@@ -203,6 +216,9 @@ func _test_main_menu_skin() -> void:
 
 	var panel := screen.get_node("%MenuPanel") as PanelContainer
 	var panel_margin := panel.get_node("Margin") as MarginContainer
+	var title_texture := screen.get_node(
+		"RootMargin/Layout/BrandArea/TitleTexture"
+	) as TextureRect
 	var start_button := screen.get_node("%StartGameButton") as Button
 	assert(panel.get_theme_stylebox("panel") is StyleBoxTexture)
 	assert(panel_margin.position.x >= 42.0)
@@ -210,6 +226,13 @@ func _test_main_menu_skin() -> void:
 	assert(start_button.get_theme_stylebox("normal") is StyleBoxTexture)
 	assert(start_button.get_theme_stylebox("hover") is StyleBoxTexture)
 	assert(start_button.get_theme_stylebox("pressed") is StyleBoxTexture)
+	assert(title_texture.texture != null)
+	assert(
+		title_texture.texture.resource_path
+		== "res://assets/img/ui_skin/warcard_title.png"
+	)
+	assert(title_texture.custom_minimum_size.x >= 700.0)
+	assert(title_texture.texture.get_width() > title_texture.texture.get_height() * 3)
 
 	screen.queue_free()
 	await process_frame
@@ -225,13 +248,41 @@ func _test_collection_skin() -> void:
 
 	var faction_panel := screen.get_node("%FactionPanel") as PanelContainer
 	var filter_panel := screen.get_node("%FilterPanel") as PanelContainer
+	var results_panel := screen.get_node("%ResultsPanel") as PanelContainer
+	var details_panel := screen.get_node("%DetailsPanel") as PanelContainer
 	var faction_margin := faction_panel.get_node("FactionMargin") as MarginContainer
 	var filter_margin := filter_panel.get_node("FilterMargin") as MarginContainer
+	var collection_emblem := screen.get_node("%CollectionEmblem") as TextureRect
+	var options_row := screen.get_node(
+		"RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/"
+		+ "FilterLayout/OptionsRow"
+	) as HFlowContainer
 	var search_input := screen.get_node("%SearchInput") as LineEdit
-	assert(faction_panel.get_theme_stylebox("panel") is StyleBoxTexture)
-	assert(filter_panel.get_theme_stylebox("panel") is StyleBoxTexture)
-	assert(faction_margin.position.x >= 18.0)
+	var faction_style := faction_panel.get_theme_stylebox("panel") as StyleBoxTexture
+	var filter_style := filter_panel.get_theme_stylebox("panel") as StyleBoxTexture
+	var results_style := results_panel.get_theme_stylebox("panel") as StyleBoxTexture
+	var details_style := details_panel.get_theme_stylebox("panel") as StyleBoxTexture
+	assert(faction_style.texture == GameUiSkinScript.PANEL_SIDEBAR_TEXTURE)
+	assert(filter_style.texture == GameUiSkinScript.PANEL_INSET_TEXTURE)
+	assert(results_style.texture == GameUiSkinScript.PANEL_DRAWER_TEXTURE)
+	assert(details_style.texture == GameUiSkinScript.PANEL_SIDEBAR_TEXTURE)
+	assert(faction_margin.position.x >= 20.0)
 	assert(filter_margin.position.x >= 18.0)
+	_assert_panel_has_center(faction_panel, faction_style)
+	_assert_panel_has_center(filter_panel, filter_style)
+	_assert_panel_has_center(results_panel, results_style)
+	_assert_panel_has_center(details_panel, details_style)
+	assert(collection_emblem.texture != null)
+	assert(options_row != null)
+	var emblem_ratio := (
+		float(collection_emblem.texture.get_width())
+		/ float(collection_emblem.texture.get_height())
+	)
+	assert(emblem_ratio > 0.8 and emblem_ratio < 1.2)
+	assert(
+		collection_emblem.texture.resource_path
+		== "res://assets/img/ui_skin/card_collection_emblem.png"
+	)
 	assert(search_input.get_theme_stylebox("normal") is StyleBoxTexture)
 	assert(search_input.get_theme_stylebox("focus") is StyleBoxTexture)
 
@@ -278,6 +329,22 @@ func _test_hand_drawer_skin() -> void:
 
 	host.queue_free()
 	await process_frame
+
+
+func _assert_panel_has_center(
+	panel: Control,
+	style: StyleBoxTexture
+) -> void:
+	assert(panel.size.x > (
+		style.get_texture_margin(SIDE_LEFT)
+		+ style.get_texture_margin(SIDE_RIGHT)
+		+ 8.0
+	))
+	assert(panel.size.y > (
+		style.get_texture_margin(SIDE_TOP)
+		+ style.get_texture_margin(SIDE_BOTTOM)
+		+ 8.0
+	))
 
 
 func _test_hud_skin() -> void:

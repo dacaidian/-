@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/card_collection_screen.gd" id="1_screen"]
 [ext_resource type="Texture2D" path="res://assets/img/startPanel/back.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://assets/img/ui_skin/card_collection_emblem.png" id="3_emblem"]
 
 [node name="CardCollectionScreen" type="Control"]
 layout_mode = 3
@@ -51,14 +52,23 @@ layout_mode = 2
 theme_override_constants/separation = 16
 
 [node name="Header" type="HBoxContainer" parent="RootMargin/RootLayout"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 
 [node name="BackButton" type="Button" parent="RootMargin/RootLayout/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "返回主菜单"
+
+[node name="CollectionEmblem" type="TextureRect" parent="RootMargin/RootLayout/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3_emblem")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PageTitle" type="Label" parent="RootMargin/RootLayout/Header"]
 layout_mode = 2
@@ -83,15 +93,15 @@ theme_override_constants/separation = 14
 
 [node name="FactionPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(216, 0)
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 
 [node name="FactionMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/FactionPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 12
 
 [node name="FactionLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/FactionPanel/FactionMargin"]
 layout_mode = 2
@@ -154,9 +164,10 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "重置"
 
-[node name="OptionsRow" type="HBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout"]
+[node name="OptionsRow" type="HFlowContainer" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="TypeOption" type="OptionButton" parent="RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/FilterLayout/OptionsRow"]
 unique_name_in_owner = true
@@ -189,10 +200,10 @@ size_flags_vertical = 3
 
 [node name="ResultsMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ResultsLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/CenterColumn/ResultsPanel/ResultsMargin"]
 layout_mode = 2
@@ -269,7 +280,7 @@ text = "下一页"
 
 [node name="DetailsPanel" type="PanelContainer" parent="RootMargin/RootLayout/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(342, 0)
+custom_minimum_size = Vector2(376, 0)
 layout_mode = 2
 
 [node name="DetailsScroll" type="ScrollContainer" parent="RootMargin/RootLayout/Body/DetailsPanel"]
@@ -277,13 +288,12 @@ layout_mode = 2
 horizontal_scroll_mode = 0
 
 [node name="DetailsMargin" type="MarginContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll"]
-custom_minimum_size = Vector2(326, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="DetailsLayout" type="VBoxContainer" parent="RootMargin/RootLayout/Body/DetailsPanel/DetailsScroll/DetailsMargin"]
 layout_mode = 2

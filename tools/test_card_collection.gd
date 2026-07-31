@@ -128,9 +128,44 @@ func test_screen_interactions(expected_total: int) -> void:
 
 	var body := screen.get_node("RootMargin/RootLayout/Body") as Control
 	var details_panel := screen.get_node("%DetailsPanel") as Control
+	var faction_panel := screen.get_node("%FactionPanel") as PanelContainer
+	var filter_panel := screen.get_node("%FilterPanel") as PanelContainer
+	var results_panel := screen.get_node("%ResultsPanel") as PanelContainer
+	var options_row := screen.get_node(
+		"RootMargin/RootLayout/Body/CenterColumn/FilterPanel/FilterMargin/"
+		+ "FilterLayout/OptionsRow"
+	) as HFlowContainer
+	assert(options_row != null)
 	assert(body.size.x > 0.0 and body.size.y > 0.0)
 	assert(details_panel.get_global_rect().end.x <= screen.size.x + 0.5)
 	assert(details_panel.get_global_rect().end.y <= screen.size.y + 0.5)
+	assert_panel_frame_is_valid(faction_panel)
+	assert_panel_frame_is_valid(filter_panel)
+	assert_panel_frame_is_valid(results_panel)
+	assert_panel_frame_is_valid(details_panel as PanelContainer)
+	var horizontal_scrolls: Array[ScrollContainer] = [
+		screen.get_node(
+			"RootMargin/RootLayout/Body/FactionPanel/FactionMargin/"
+			+ "FactionLayout/FactionScroll"
+		) as ScrollContainer,
+		screen.get_node("%CardGridScroll") as ScrollContainer,
+		details_panel.get_node("DetailsScroll") as ScrollContainer,
+	]
+	for scroll in horizontal_scrolls:
+		assert(scroll != null)
+		assert(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED)
+		assert(not scroll.get_h_scroll_bar().visible)
+
+	root.size = Vector2i(1280, 720)
+	await process_frame
+	await process_frame
+	assert(body.get_global_rect().end.x <= screen.size.x + 0.5)
+	assert(details_panel.get_global_rect().end.x <= screen.size.x + 0.5)
+	for option_control in options_row.get_children():
+		var option_rect := (option_control as Control).get_global_rect()
+		assert(option_rect.end.x <= options_row.get_global_rect().end.x + 0.5)
+	for scroll in horizontal_scrolls:
+		assert(not scroll.get_h_scroll_bar().visible)
 
 	var back_requested := [false]
 	screen.back_requested.connect(func(): back_requested[0] = true)
@@ -141,6 +176,22 @@ func test_screen_interactions(expected_total: int) -> void:
 	screen.queue_free()
 	await process_frame
 	await process_frame
+
+
+func assert_panel_frame_is_valid(panel: PanelContainer) -> void:
+	assert(panel != null)
+	var style := panel.get_theme_stylebox("panel") as StyleBoxTexture
+	assert(style != null)
+	assert(panel.size.x > (
+		style.get_texture_margin(SIDE_LEFT)
+		+ style.get_texture_margin(SIDE_RIGHT)
+		+ 8.0
+	))
+	assert(panel.size.y > (
+		style.get_texture_margin(SIDE_TOP)
+		+ style.get_texture_margin(SIDE_BOTTOM)
+		+ 8.0
+	))
 
 
 func _find_entry(entries: Array, card_id: String):

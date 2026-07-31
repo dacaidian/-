@@ -334,9 +334,9 @@
 
 常见规则：
 
-- 全局结构性容器统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`，并按承载密度选择 `MAIN`（顶级页面）、`DRAWER`（大型抽屉/浮层）、`INSET`（中型弹窗/筛选区）、`SECTION`（小型动作区/选区提示）、`HUD`（右侧紧凑面板）。这套分级适用于主菜单、图鉴、结算页、手牌和所有代码生成的操作面板，不是手牌专用规则。`ApplicationUiStyle` 负责应用页面与全局操作面板语义；`RightSideHudStyle` 负责战斗 HUD。
+- 全局结构性容器统一使用 `GameUiSkin` 生成的 `StyleBoxTexture`，并按承载密度与方向选择 `MAIN`（顶级页面）、`DRAWER`（大型抽屉/浮层）、`SIDEBAR`（高窄侧栏）、`INSET`（中型弹窗/横向筛选区）、`SECTION`（小型动作区/选区提示）、`HUD`（右侧紧凑面板）。这套分级适用于主菜单、图鉴、结算页、手牌和所有代码生成的操作面板，不是手牌专用规则。`ApplicationUiStyle` 负责应用页面与全局操作面板语义；`RightSideHudStyle` 负责战斗 HUD。
 - UI 按钮必须同时配置普通、悬浮、按下和禁用状态；竖向手牌开关使用专属 `ButtonKind.TAB`，不要拉伸横向按钮。重建 `assets/img/ui_skin/` 后先运行 `tools/run_godot_validation.ps1 -ImportAssets`，再运行 `tools/test_ui_skin.gd`，并回归对应页面测试。
-- 装饰主框只用于顶级页面；大型浮层使用压边后的 `DRAWER`，筛选/统计使用 `INSET`，手牌分区、动作菜单和棋盘选择提示使用超薄 `SECTION`，右侧列使用 `HUD`。重复卡片、装备条目、状态徽记、资源刻度和 VFX 图元继续使用轻量平面样式，避免框中套框。`PanelContainer` 自动应用 StyleBox 安全区，普通 `Panel` 必须由 controller 显式内缩子内容；不要用旧代码边距覆盖位图边框。
+- 装饰主框只用于顶级页面；大型浮层使用压边后的 `DRAWER`，高窄导航/详情列使用 `SIDEBAR`，筛选/统计使用 `INSET`，手牌分区、动作菜单和棋盘选择提示使用超薄 `SECTION`，右侧列使用 `HUD`。重复卡片、装备条目、状态徽记、资源刻度和 VFX 图元继续使用轻量平面样式，避免框中套框。`PanelContainer` 自动应用 StyleBox 安全区，普通 `Panel` 必须由 controller 显式内缩子内容；不要用旧代码边距覆盖位图边框。透明标题和徽记使用保持比例的 `TextureRect`，不得当成九宫格背景拉伸。
 - 一次性特效从 `CardAnimationController` 进入；通用移动/攻击留在控制器，种族主题实现放在对应 animation provider。
 - 需要从 `CardState`、手牌锚点、牌池面板解析 UI 节点并发起动画时，放在 `GameAnimationResolver`；`GameManager.play_*` 只做门面。
 - 全战场触发型特效（例如普通施法回合 `spell_turn_activation`、赫子解放 `kagune_release`、野兽人 `chaos_corruption_burst`）走 `GameManager.play_board_effect_animation()`，不要伪造某个目标单位来播放。普通施法回合表现位于 `scripts/ui/animation/generic_spell_animation_provider.gd`；种族专属表现应使用不同 key 覆盖调用分支，避免与通用效果重复播放。
@@ -378,6 +378,7 @@
 - 英雄作为独立类型展示；普通“随从牌”筛选排除英雄。英雄附属牌通过 `owner_hero_card_id` 展示专属关系。
 - 搜索与排序属于 `CardCollectionCatalog`，页面只组合筛选条件。新增可搜索字段时扩展条目的 `search_text`，不要在各控件回调里复制搜索逻辑。
 - 图鉴使用卡牌原始 `front_texture`，不用棋盘专用 `table_texture`。卡墙保持分页按需加载，换页和退出时释放不再显示的正面纹理缓存。
+- 图鉴框体固定按 `SIDEBAR`（种族导航）、`INSET`（筛选）、`DRAWER`（卡墙）、`SIDEBAR`（详情）选择方向匹配的皮肤；标题徽记保持原始比例。筛选选项使用 `HFlowContainer`，每个滚动区都禁用横向滚动，避免窄窗口拉坏边框或产生计划外横向滚动条。
 - 修改图鉴、衍生牌索引或应用入口后运行 `tools/test_card_collection.gd`、`tools/test_application_flow.gd` 和安全项目检查。
 
 ## 应用导航与对局生命周期

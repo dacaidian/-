@@ -30,6 +30,14 @@ static func create_drawer_panel_style(accent := GOLD, extra_content_padding := 0
 	)
 
 
+static func create_sidebar_panel_style(accent := GOLD, extra_content_padding := 0.0) -> StyleBox:
+	return GameUiSkinScript.create_panel_style(
+		GameUiSkinScript.PanelKind.SIDEBAR,
+		accent,
+		extra_content_padding
+	)
+
+
 static func create_section_panel_style(accent := BLUE, extra_content_padding := 0.0) -> StyleBox:
 	return GameUiSkinScript.create_panel_style(
 		GameUiSkinScript.PanelKind.SECTION,
