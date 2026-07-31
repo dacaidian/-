@@ -585,9 +585,9 @@ func _draw_rising_motes(
 		var travel := fmod(progress * 1.7 + float(mote_index) / float(maxi(count, 1)), 1.0)
 		var angle := phase * 0.18 + float(mote_index) * 2.399
 		var horizontal := sin(angle) * radius * (0.18 + float(mote_index % 4) * 0.07)
-		var position := center + Vector2(horizontal, radius * 0.52 - travel * radius * 1.38)
+		var mote_position := center + Vector2(horizontal, radius * 0.52 - travel * radius * 1.38)
 		var alpha := color.a * sin(travel * PI)
-		draw_circle(position, 1.5 + float(mote_index % 3), Color(color.r, color.g, color.b, alpha))
+		draw_circle(mote_position, 1.5 + float(mote_index % 3), Color(color.r, color.g, color.b, alpha))
 
 
 func _draw_polyline_glow(points: PackedVector2Array, color: Color, width: float, closed: bool) -> void:
