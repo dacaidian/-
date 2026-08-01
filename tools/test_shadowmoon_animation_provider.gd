@@ -84,6 +84,8 @@ func _run() -> void:
 		return
 	if not await _test_presentation_contracts():
 		return
+	if not _test_once_per_turn_trigger_groups():
+		return
 	if not _test_card_configuration():
 		return
 
@@ -135,6 +137,47 @@ func _test_visual_frames(effect_root: Control) -> bool:
 		await process_frame
 		if effect_root.get_child_count() != 0:
 			return _fail("Shadowmoon ritual visual leaked nodes after %s" % animation_key)
+	return true
+
+
+func _test_once_per_turn_trigger_groups() -> bool:
+	var ledger := TurnEventLedger.new()
+	var resolver := SpellCastTriggerResolver.new()
+	var grouped_effects: Array[Dictionary] = [
+		{EffectData.KEY_ONCE_PER_TURN_GROUP: "shadowmoon_fel_madness"},
+		{EffectData.KEY_ONCE_PER_TURN_GROUP: "shadowmoon_fel_madness"},
+	]
+	ledger.begin_turn("player_one")
+	var first_permissions := resolver.claim_once_per_turn_groups(
+		ledger,
+		"player_one",
+		grouped_effects
+	)
+	if not bool(first_permissions.get("shadowmoon_fel_madness", false)):
+		return _fail("Fel Madness did not activate on the first fel cast")
+	var repeated_permissions := resolver.claim_once_per_turn_groups(
+		ledger,
+		"player_one",
+		grouped_effects
+	)
+	if bool(repeated_permissions.get("shadowmoon_fel_madness", false)):
+		return _fail("Fel Madness activated more than once in the same turn")
+	var other_owner_permissions := resolver.claim_once_per_turn_groups(
+		ledger,
+		"player_two",
+		grouped_effects
+	)
+	if not bool(other_owner_permissions.get("shadowmoon_fel_madness", false)):
+		return _fail("Once-per-turn trigger groups are not isolated by owner")
+
+	ledger.begin_turn("player_two")
+	var next_turn_permissions := resolver.claim_once_per_turn_groups(
+		ledger,
+		"player_one",
+		grouped_effects
+	)
+	if not bool(next_turn_permissions.get("shadowmoon_fel_madness", false)):
+		return _fail("Fel Madness did not reset when a new turn began")
 	return true
 
 
@@ -320,8 +363,12 @@ func _test_card_configuration() -> bool:
 		return _fail("Fel Madness battlefield broadcast is missing")
 	var response_keys: Array[String] = []
 	var unique_response_keys: Dictionary = {}
-	for effect_index in range(1, madness_effects.size()):
+	for effect_index in range(madness_effects.size()):
 		var response: Dictionary = madness_effects[effect_index]
+		if EffectData.get_once_per_turn_group(response) != "shadowmoon_fel_madness":
+			return _fail("Fel Madness effects do not share one once-per-turn trigger group")
+		if effect_index == 0:
+			continue
 		if EffectData.get_presentation_scope(response) != EffectData.PRESENTATION_SCOPE_MULTI:
 			return _fail("A Fel Madness unit response is not grouped as one multi-target visual")
 		var response_key := str(response.get("apply_animation", ""))

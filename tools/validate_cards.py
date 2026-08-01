@@ -618,6 +618,13 @@ class CardValidator:
             self.reporter.error(f"{path}.filter_owner", "must be one of self, any")
         if "target_faction_id" in effect and not isinstance(effect["target_faction_id"], str):
             self.reporter.error(f"{path}.target_faction_id", "must be a string")
+        if "once_per_turn_group" in effect:
+            self.require_string(effect, "once_per_turn_group", path)
+            if str(effect.get("trigger", "")) != "after_spell_cast":
+                self.reporter.error(
+                    f"{path}.once_per_turn_group",
+                    "is currently supported only for after_spell_cast effects",
+                )
 
         self.validate_status_fields(effect, path)
         self.validate_card_references(effect, path)

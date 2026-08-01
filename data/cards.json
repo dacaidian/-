@@ -3502,7 +3502,7 @@
 			{
 				"id": "fel_madness",
 				"name": "邪能狂乱",
-				"description": "升级牌，默认入手。每当你释放带有邪能标签的法术牌或施法动作，本回合友方混乱兽人攻击力+1，友方地狱犬获得副动作：法力燃烧，友方魅魔获得吸血，友方术士的诅咒会额外造成伤害，友方混乱狼骑兵获得副动作：撕咬，友方末日守卫获得巨兽。",
+				"description": "升级牌，默认入手。每个回合中，你第一次释放带有邪能标签的法术牌或施法动作时，使友方随从进入邪能狂乱直到回合结束：混乱兽人攻击力+1，地狱犬获得副动作：法力燃烧，魅魔获得吸血，术士的诅咒会额外造成伤害，混乱狼骑兵获得副动作：撕咬，末日守卫获得巨兽。",
 				"url": "res://assets/img/影月议会/邪能狂乱.png",
 				"type": "upgrade",
 				"count": 0,
@@ -3517,6 +3517,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"animation": "fel_madness_broadcast",
 						"presentation_scope": "board"
 					},
@@ -3527,6 +3528,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"chaos_orc"
@@ -3553,6 +3555,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"hellhound"
@@ -3593,6 +3596,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"succubus"
@@ -3618,6 +3622,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"chaos_wolf_rider"
@@ -3664,6 +3669,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"doomguard"
@@ -3689,6 +3695,7 @@
 						"required_spell_tags": [
 							"fel"
 						],
+						"once_per_turn_group": "shadowmoon_fel_madness",
 						"target": "friendly_minions_by_card_ids",
 						"card_ids": [
 							"warlock"

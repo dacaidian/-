@@ -6,11 +6,26 @@ class_name TurnEventLedger
 
 var turn_player_id := ""
 var death_records: Array[Dictionary] = []
+var claimed_once_per_turn_groups_by_owner: Dictionary = {}
 
 
 func begin_turn(player_id: String) -> void:
 	turn_player_id = player_id
 	death_records.clear()
+	claimed_once_per_turn_groups_by_owner.clear()
+
+
+func claim_once_per_turn_group(owner_id: String, group_id: String) -> bool:
+	if owner_id == "" or group_id == "":
+		return false
+
+	var owner_groups: Dictionary = claimed_once_per_turn_groups_by_owner.get(owner_id, {})
+	if owner_groups.has(group_id):
+		return false
+
+	owner_groups[group_id] = true
+	claimed_once_per_turn_groups_by_owner[owner_id] = owner_groups
+	return true
 
 
 func record_death(victim: CardState, source_owner_id: String, reason: String) -> Dictionary:

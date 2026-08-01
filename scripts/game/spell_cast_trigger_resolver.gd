@@ -24,14 +24,45 @@ func resolve_after_spell_cast(
 		if card_data == null or not card_data.is_upgrade():
 			continue
 
+		var matching_effects: Array[Dictionary] = []
 		for effect_data in card_data.effects:
 			if not is_after_spell_cast_hand_effect(effect_data, caster_state, spell_data):
+				continue
+			matching_effects.append(effect_data)
+
+		var group_permissions := claim_once_per_turn_groups(
+			game_manager.turn_event_ledger,
+			owner_id,
+			matching_effects
+		)
+		for effect_data in matching_effects:
+			var group_id := EffectData.get_once_per_turn_group(effect_data)
+			if group_id != "" and not bool(group_permissions.get(group_id, false)):
 				continue
 
 			var runtime_effect_data := effect_data.duplicate(true)
 			EffectData.mark_effect_owner(runtime_effect_data, owner_id)
 			EffectData.ensure_death_reason(runtime_effect_data, EffectData.DEATH_REASON_EFFECT)
 			await game_manager.effect_registry.execute_effect(caster_state, runtime_effect_data, game_manager)
+
+
+func claim_once_per_turn_groups(
+	turn_event_ledger: TurnEventLedger,
+	owner_id: String,
+	effects: Array[Dictionary]
+) -> Dictionary:
+	var permissions: Dictionary = {}
+	for effect_data in effects:
+		var group_id := EffectData.get_once_per_turn_group(effect_data)
+		if group_id == "" or permissions.has(group_id):
+			continue
+
+		permissions[group_id] = (
+			turn_event_ledger != null
+			and turn_event_ledger.claim_once_per_turn_group(owner_id, group_id)
+		)
+
+	return permissions
 
 
 func is_after_spell_cast_hand_effect(effect_data: Dictionary, caster_state: CardState, spell_data: Dictionary) -> bool:

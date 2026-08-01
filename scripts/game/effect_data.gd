@@ -12,6 +12,7 @@ const KEY_SOURCE_CARD_IDS := "source_card_ids"
 const KEY_SPELL_IDS := "spell_ids"
 const KEY_SPELL_TAGS := "spell_tags"
 const KEY_REQUIRED_SPELL_TAGS := "required_spell_tags"
+const KEY_ONCE_PER_TURN_GROUP := "once_per_turn_group"
 const KEY_SPELL_ACTIONS := "spell_actions"
 const KEY_SPELL_MODIFIERS := "spell_modifiers"
 const KEY_ACTIONS := "actions"
@@ -418,6 +419,10 @@ static func get_required_spell_tags(effect_data: Dictionary) -> Array[String]:
 				spell_tags.append(normalized_spell_tag)
 
 	return spell_tags
+
+
+static func get_once_per_turn_group(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_ONCE_PER_TURN_GROUP, "")).strip_edges()
 
 
 static func get_runtime_state_ids(effect_data: Dictionary) -> Array[String]:
