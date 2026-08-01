@@ -3254,7 +3254,7 @@
 										"payload": {
 											"attack_bonus": 1
 										},
-										"apply_animation": "savage_roar"
+										"apply_animation": "savage_roar_buff"
 									}
 								]
 							}

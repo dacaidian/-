@@ -8,9 +8,10 @@ const DIVINE_SHIELD_BREAK_DURATION := 0.52
 const ROOTED_BREAK_DURATION := 0.38
 
 var state: CardState
-var beast_path_color := Color(0.30, 0.16, 0.04, 0.28)
-var beast_path_edge_color := Color(0.86, 0.58, 0.20, 0.88)
-var beast_path_glow_color := Color(0.28, 0.70, 0.16, 0.42)
+var beast_path_color := Color(0.11, 0.065, 0.028, 0.54)
+var beast_path_edge_color := Color(0.54, 0.34, 0.14, 0.86)
+var beast_path_glow_color := Color(0.72, 0.52, 0.25, 0.44)
+var beast_path_bone_color := Color(0.88, 0.80, 0.62, 0.76)
 var divine_shield_color := Color(1.0, 0.96, 0.82, 0.18)
 var divine_shield_edge_color := Color(1.0, 0.88, 0.42, 0.76)
 var divine_shield_glow_color := Color(1.0, 0.76, 0.24, 0.22)
@@ -77,16 +78,18 @@ var fiery_eyes_color := Color(1.0, 0.72, 0.12, 0.86)
 var fiery_eyes_core_color := Color(1.0, 0.96, 0.58, 0.96)
 var somersault_cloud_color := Color(0.88, 0.98, 1.0, 0.58)
 var somersault_cloud_edge_color := Color(0.48, 0.82, 0.90, 0.58)
-var wanmo_charge_color := Color(0.46, 0.02, 0.02, 0.24)
-var wanmo_charge_edge_color := Color(1.0, 0.24, 0.08, 0.78)
-var wanmo_charge_core_color := Color(1.0, 0.46, 0.12, 0.92)
-var wanmo_charge_text_color := Color(1.0, 0.90, 0.58, 0.98)
+var wanmo_charge_color := Color(0.12, 0.055, 0.028, 0.76)
+var wanmo_charge_edge_color := Color(0.64, 0.28, 0.08, 0.86)
+var wanmo_charge_core_color := Color(1.0, 0.42, 0.08, 0.92)
+var wanmo_charge_text_color := Color(1.0, 0.88, 0.58, 0.98)
 var wanmo_charge_shadow_color := Color(0.12, 0.0, 0.0, 0.96)
-var chaos_corruption_color := Color(0.22, 0.02, 0.30, 0.20)
-var chaos_corruption_edge_color := Color(0.86, 0.18, 1.0, 0.78)
-var chaos_corruption_core_color := Color(0.92, 0.20, 0.34, 0.88)
-var chaos_corruption_text_color := Color(1.0, 0.78, 0.98, 0.98)
+var chaos_corruption_color := Color(0.16, 0.025, 0.16, 0.50)
+var chaos_corruption_edge_color := Color(0.46, 0.54, 0.10, 0.80)
+var chaos_corruption_core_color := Color(0.68, 0.16, 0.12, 0.90)
+var chaos_corruption_text_color := Color(0.94, 0.86, 0.60, 0.98)
 var chaos_corruption_shadow_color := Color(0.08, 0.0, 0.10, 0.96)
+var savage_roar_color := Color(0.52, 0.065, 0.025, 0.84)
+var savage_roar_edge_color := Color(0.96, 0.34, 0.07, 0.88)
 var fel_infusion_color := Color(0.10, 0.82, 0.28, 0.18)
 var fel_infusion_edge_color := Color(0.44, 1.0, 0.26, 0.82)
 var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
@@ -166,7 +169,11 @@ func refresh() -> void:
 
 func has_animated_status_visual() -> bool:
 	return (
-		should_show_kagune_release()
+		should_show_beast_path()
+		or should_show_wanmo_charge()
+		or should_show_chaos_corruption()
+		or should_show_savage_roar()
+		or should_show_kagune_release()
 		or should_show_tokyo_ghoul_form()
 		or should_show_divine_shield()
 		or should_show_power_word_shield()
@@ -193,11 +200,20 @@ func has_animated_status_visual() -> bool:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
 
 
 func should_show_beast_path() -> bool:
 	return state != null and state.has_beast_path
+
+
+func should_show_savage_roar() -> bool:
+	return (
+		state != null
+		and state.is_face_up
+		and state.is_minion()
+		and state.has_status("savage_roar_attack")
+	)
 
 
 func should_show_taunt() -> bool:
@@ -438,6 +454,8 @@ func should_show_damage_amplify() -> bool:
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
+	if should_show_savage_roar():
+		draw_savage_roar_overlay()
 	if should_show_taunt():
 		draw_taunt_overlay()
 	if should_show_kagune_release():
@@ -506,25 +524,68 @@ func _draw() -> void:
 
 func draw_beast_path_overlay() -> void:
 	var card_rect := Rect2(Vector2.ZERO, size)
-	var inset := maxf(minf(size.x, size.y) * 0.035, 2.0)
+	var inset := maxf(minf(size.x, size.y) * 0.028, 2.0)
 	var path_rect := card_rect.grow(-inset)
 	var center := card_rect.get_center()
-	var tunnel_width := maxf(minf(size.x, size.y) * 0.22, 12.0)
+	var tunnel_width := maxf(minf(size.x, size.y) * 0.15, 9.0)
+	var pulse := 0.78 + sin(animation_time * 1.65) * 0.10
 
-	draw_rect(path_rect, beast_path_color, true)
-	draw_rect(path_rect, beast_path_edge_color, false, 6)
+	# A recessed earthen frame belongs to the cell, leaving card text and stats clear.
+	draw_rect(path_rect, beast_path_color, false, maxf(size.x * 0.045, 4.0), true)
+	draw_rect(path_rect.grow(-size.x * 0.018), beast_path_edge_color, false, maxf(size.x * 0.014, 1.4), true)
 
-	draw_line(
-		Vector2(inset, center.y),
-		Vector2(size.x - inset, center.y),
-		beast_path_glow_color,
-		tunnel_width
-	)
-	draw_line(
-		Vector2(center.x, inset),
-		Vector2(center.x, size.y - inset),
-		Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.78),
-		tunnel_width * 0.72
+	for direction in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+		var entrance: Vector2 = center + direction * Vector2(size.x * 0.48, size.y * 0.48)
+		var inner: Vector2 = center + direction * Vector2(size.x * 0.31, size.y * 0.31)
+		draw_line(entrance, inner, Color(0.055, 0.035, 0.02, 0.82), tunnel_width, true)
+		draw_line(
+			entrance,
+			inner,
+			Color(beast_path_glow_color.r, beast_path_glow_color.g, beast_path_glow_color.b, beast_path_glow_color.a * 0.46 * pulse),
+			maxf(tunnel_width * 0.18, 1.2),
+			true
+		)
+
+	var print_center := center + Vector2(size.x * 0.17, -size.y * 0.25)
+	for print_index in range(2):
+		var local_center := print_center + Vector2(-float(print_index) * size.x * 0.19, float(print_index) * size.y * 0.23)
+		for hoof_sign in [-1.0, 1.0]:
+			draw_arc(
+				local_center + Vector2(hoof_sign * size.x * 0.018, 0.0),
+				maxf(size.x * 0.025, 2.2),
+				PI * 0.18,
+				PI * 1.82,
+				10,
+				Color(beast_path_bone_color.r, beast_path_bone_color.g, beast_path_bone_color.b, beast_path_bone_color.a * pulse),
+				maxf(size.x * 0.008, 1.0),
+				true
+			)
+
+
+func draw_savage_roar_overlay() -> void:
+	var attack_anchor := Vector2(size.x * 0.20, size.y * 0.76)
+	var pulse := 0.82 + sin(animation_time * 4.2) * 0.12
+	for slash_index in range(3):
+		var shift := Vector2(float(slash_index) * size.x * 0.034, float(slash_index - 1) * size.y * 0.018)
+		var start_point := attack_anchor + shift + Vector2(-size.x * 0.085, size.y * 0.075)
+		var end_point := attack_anchor + shift + Vector2(size.x * 0.105, -size.y * 0.085)
+		draw_line(start_point, end_point, Color(0.055, 0.025, 0.015, 0.78), maxf(size.x * 0.032, 2.6), true)
+		draw_line(
+			start_point,
+			end_point,
+			Color(savage_roar_edge_color.r, savage_roar_edge_color.g, savage_roar_edge_color.b, savage_roar_edge_color.a * pulse),
+			maxf(size.x * 0.010, 1.1),
+			true
+		)
+	draw_arc(
+		attack_anchor,
+		maxf(size.x * 0.15, 10.0),
+		PI * 0.72,
+		PI * 1.78,
+		22,
+		Color(savage_roar_color.r, savage_roar_color.g, savage_roar_color.b, savage_roar_color.a * 0.48 * pulse),
+		maxf(size.x * 0.010, 1.0),
+		true
 	)
 
 
@@ -1000,28 +1061,43 @@ func draw_wanmo_charge_overlay() -> void:
 		return
 
 	var charge_count := status.get_wanmo_charge()
-	var charge_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.08)
-	var center := charge_rect.get_center()
-	var radius := minf(charge_rect.size.x, charge_rect.size.y) * 0.34
+	var center := Vector2(size.x * 0.78, size.y * 0.18)
+	var radius := maxf(size.x * 0.105, 9.0)
+	var pulse := 0.80 + sin(animation_time * 3.1) * 0.14
 
-	draw_circle(center, radius * 1.08, wanmo_charge_color)
-	for index in range(mini(maxi(charge_count, 1), 6)):
-		var ring_radius := radius + float(index) * 4.0
-		var alpha := wanmo_charge_edge_color.a * (1.0 - float(index) * 0.12)
-		draw_arc(center, ring_radius, -PI * 0.22, TAU - PI * 0.22, 80, Color(wanmo_charge_edge_color.r, wanmo_charge_edge_color.g, wanmo_charge_edge_color.b, alpha), 2.4, true)
+	# Compact carved-stone medallion: the numeric resource remains readable while
+	# the glowing cracks communicate stored ritual pressure.
+	var rock := PackedVector2Array([
+		center + Vector2(-radius * 0.82, radius * 0.70),
+		center + Vector2(-radius, -radius * 0.24),
+		center + Vector2(-radius * 0.38, -radius),
+		center + Vector2(radius * 0.66, -radius * 0.82),
+		center + Vector2(radius, radius * 0.56),
+		center + Vector2(radius * 0.28, radius),
+	])
+	draw_colored_polygon(rock, wanmo_charge_color)
+	var rock_outline := rock.duplicate()
+	rock_outline.append(rock[0])
+	draw_polyline(rock_outline, wanmo_charge_edge_color, maxf(size.x * 0.012, 1.2), true)
 
-	for index in range(6):
-		var angle := TAU * float(index) / 6.0 + 0.16
-		var inner_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.45
-		var outer_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.88
-		draw_line(inner_point, outer_point, wanmo_charge_core_color, 2.0)
+	for crack_index in range(mini(maxi(charge_count, 1), 6)):
+		var angle := TAU * float(crack_index) / 6.0 - PI * 0.5
+		var direction := Vector2(cos(angle), sin(angle))
+		draw_line(
+			center + direction * radius * 0.26,
+			center + direction * radius * 0.78,
+			Color(wanmo_charge_core_color.r, wanmo_charge_core_color.g, wanmo_charge_core_color.b, wanmo_charge_core_color.a * pulse),
+			maxf(size.x * 0.010, 1.0),
+			true
+		)
+	draw_circle(center, radius * 0.22, Color(wanmo_charge_core_color.r, wanmo_charge_core_color.g, wanmo_charge_core_color.b, 0.74 * pulse))
 
 	var font := get_theme_default_font()
-	var font_size := maxi(int(size.x * 0.22), 22)
+	var font_size := maxi(int(size.x * 0.105), 12)
 	var text := str(charge_count)
 	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size)
 	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
-	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_shadow_color)
+	draw_string(font, text_position + Vector2(1.0, 1.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_shadow_color)
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, wanmo_charge_text_color)
 
 
@@ -1030,49 +1106,44 @@ func draw_chaos_corruption_overlay() -> void:
 	if corruption_value <= 0:
 		return
 
-	var corruption_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.055)
-	var center := corruption_rect.get_center()
-	var radius := minf(corruption_rect.size.x, corruption_rect.size.y) * 0.35
+	var center := Vector2(size.x * 0.84, size.y * 0.38)
+	var radius := maxf(size.x * 0.075, 7.0)
 	var ring_count: int = mini(corruption_value, 9)
+	var pulse := 0.80 + sin(animation_time * (2.2 + float(mini(corruption_value, 6)) * 0.16)) * 0.14
 
-	draw_circle(center, radius * 0.96, chaos_corruption_color)
-	for index in range(ring_count):
-		var ring_radius := radius + float(index) * 3.2
-		var alpha := chaos_corruption_edge_color.a * (1.0 - float(index) * 0.075)
-		var start_angle := -PI * 0.35 + float(index) * 0.19
+	draw_circle(center, radius * 1.22, chaos_corruption_color)
+	for ring_index in range(ring_count):
+		var ring_radius := radius * (0.82 + float(ring_index) * 0.12)
+		var start_angle := -PI * 0.42 + float(ring_index) * 0.44 + animation_time * 0.10 * (1.0 if ring_index % 2 == 0 else -1.0)
 		draw_arc(
 			center,
 			ring_radius,
 			start_angle,
-			start_angle + TAU * 0.82,
-			78,
-			Color(chaos_corruption_edge_color.r, chaos_corruption_edge_color.g, chaos_corruption_edge_color.b, alpha),
-			2.1,
+			start_angle + TAU * 0.58,
+			24,
+			Color(chaos_corruption_edge_color.r, chaos_corruption_edge_color.g, chaos_corruption_edge_color.b, chaos_corruption_edge_color.a * pulse * (1.0 - float(ring_index) * 0.055)),
+			maxf(size.x * 0.008, 1.0),
 			true
 		)
 
-	for index in range(6):
-		var angle := TAU * float(index) / 6.0 + PI * 0.10
-		var inner_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.30
-		var outer_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.86
-		draw_line(
-			inner_point,
-			outer_point,
-			Color(chaos_corruption_core_color.r, chaos_corruption_core_color.g, chaos_corruption_core_color.b, 0.40),
-			1.8
-		)
+	for vein_index in range(5):
+		var angle := TAU * float(vein_index) / 5.0 + 0.16
+		var direction := Vector2(cos(angle), sin(angle))
+		var end_point := center + direction * radius * (1.25 + float(vein_index % 2) * 0.35)
+		draw_line(center + direction * radius * 0.20, end_point, Color(chaos_corruption_core_color.r, chaos_corruption_core_color.g, chaos_corruption_core_color.b, 0.56 * pulse), maxf(size.x * 0.008, 1.0), true)
 
-	for index in range(mini(corruption_value, 12)):
-		var angle := TAU * float(index) / float(mini(corruption_value, 12)) - PI * 0.5
-		var point := center + Vector2(cos(angle), sin(angle)) * radius * 0.72
-		draw_circle(point, maxf(size.x * 0.010, 1.8), Color(chaos_corruption_core_color.r, chaos_corruption_core_color.g, chaos_corruption_core_color.b, 0.58))
+	# A few short peripheral veins sell organic corruption without covering art.
+	for edge_index in range(mini(corruption_value, 4)):
+		var start_point := Vector2(size.x * (0.90 - float(edge_index) * 0.025), size.y * (0.48 + float(edge_index) * 0.10))
+		var end_point := start_point + Vector2(-size.x * (0.10 + float(edge_index) * 0.02), size.y * 0.045)
+		draw_line(start_point, end_point, Color(chaos_corruption_edge_color.r, chaos_corruption_edge_color.g, chaos_corruption_edge_color.b, 0.34 * pulse), maxf(size.x * 0.007, 1.0), true)
 
 	var font := get_theme_default_font()
-	var font_size := maxi(int(size.x * 0.20), 20)
+	var font_size := maxi(int(size.x * 0.095), 11)
 	var text := str(corruption_value)
 	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size)
 	var text_position := center - text_size * 0.5 + Vector2(0.0, text_size.y * 0.78)
-	draw_string(font, text_position + Vector2(2.0, 2.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, chaos_corruption_shadow_color)
+	draw_string(font, text_position + Vector2(1.0, 1.0), text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, chaos_corruption_shadow_color)
 	draw_string(font, text_position, text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size, chaos_corruption_text_color)
 
 
