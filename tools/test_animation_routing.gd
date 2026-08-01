@@ -2,6 +2,24 @@ extends SceneTree
 
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 
+const SHADOWMOON_TARGET_KEYS: Array[String] = [
+	"fel_sacrifice", "fel_sacrifice_heavy", "fel_infusion", "fel_infusion_transfer",
+	"fel_infusion_settle", "fel_overload", "fel_overload_transfer", "fel_overload_settle",
+	"fel_overload_detonate", "fel_burst", "fel_burst_impact", "mana_burn", "fel_bite",
+	"life_drain", "life_drain_receive", "curse", "curse_cast", "curse_mark",
+	"curse_impact", "fel_madness", "fel_madness_chaos_orc",
+	"fel_madness_hellhound", "fel_madness_succubus", "fel_madness_wolf_rider",
+	"fel_madness_doomguard", "fel_madness_warlock", "kiljaeden_whisper",
+	"kiljaeden_whisper_mark", "immolation_mark", "immolation_tick", "fire",
+	"demon_summon", "dark_portal", "immolation", "immolation_cast",
+]
+const SHADOWMOON_MULTI_KEYS: Array[String] = [
+	"fel_madness", "fel_madness_chaos_orc", "fel_madness_hellhound",
+	"fel_madness_succubus", "fel_madness_wolf_rider", "fel_madness_doomguard",
+	"fel_madness_warlock", "kiljaeden_whisper", "kiljaeden_whisper_mark",
+	"immolation_mark", "fel_burst_impact",
+]
+
 class RouteProbe:
 	extends RefCounted
 
@@ -125,6 +143,11 @@ func _run() -> void:
 	])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])
+	_assert_routes(router, "targeted", SHADOWMOON_TARGET_KEYS)
+	_assert_routes(router, "rect", SHADOWMOON_TARGET_KEYS)
+	_assert_routes(router, "source_rect", SHADOWMOON_TARGET_KEYS)
+	_assert_routes(router, "multi_rect", SHADOWMOON_MULTI_KEYS)
+	_assert_routes(router, "board", ["fel_madness_broadcast"])
 
 	var collision_router := SpellAnimationRouter.new()
 	var route_probe := RouteProbe.new()

@@ -23,8 +23,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		damaged_targets.append(target_state)
 		for recipient in recipients:
 			recipient.gain_temporary_health(drained_amount)
-			if game_manager != null and game_manager.has_method("play_effect_heal_animation"):
-				await game_manager.play_effect_heal_animation(recipient)
+			await play_recipient_animation(recipient, effect_data, game_manager)
 
 	if not damaged_targets.is_empty() and game_manager != null and game_manager.has_method("resolve_dead_states"):
 		var death_reason := EffectData.get_death_reason(effect_data)
@@ -34,6 +33,20 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 			source_state,
 			EffectData.get_effect_owner_id(effect_data)
 		)
+
+
+func play_recipient_animation(
+	recipient: CardState,
+	effect_data: Dictionary,
+	game_manager: Node
+) -> void:
+	if recipient == null or game_manager == null:
+		return
+	var animation_key := str(effect_data.get(EffectData.KEY_RECIPIENT_ANIMATION, ""))
+	if animation_key != "" and game_manager.has_method("play_status_apply_animation"):
+		await game_manager.play_status_apply_animation(recipient, animation_key)
+	elif game_manager.has_method("play_effect_heal_animation"):
+		await game_manager.play_effect_heal_animation(recipient)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> bool:

@@ -4,6 +4,7 @@ class_name DamageEffect
 # Generic damage effect. Target resolution and spell immunity stay in CardEffect.
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var amount := get_spell_scaled_amount(source_state, effect_data, game_manager)
+	var target_states := get_target_states(source_state, effect_data, game_manager)
 	var damaged_targets: Array[CardState] = []
 	var animation_key := str(effect_data.get(EffectData.KEY_ANIMATION, ""))
 	var source_animation_key := str(effect_data.get(EffectData.KEY_SOURCE_ANIMATION, ""))
@@ -16,9 +17,21 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	):
 		await game_manager.play_status_apply_animation(source_state, source_animation_key)
 
-	for target_state in get_target_states(source_state, effect_data, game_manager):
+	var played_multi := false
+	if (
+		animation_key != ""
+		and EffectData.get_presentation_scope(effect_data) == EffectData.PRESENTATION_SCOPE_MULTI
+		and game_manager != null
+		and game_manager.has_method("play_multi_target_effect_animation")
+	):
+		played_multi = bool(
+			await game_manager.play_multi_target_effect_animation(target_states, animation_key)
+		)
+
+	for target_state in target_states:
 		if (
 			animation_key != ""
+			and not played_multi
 			and game_manager != null
 			and game_manager.has_method("play_status_apply_animation")
 		):

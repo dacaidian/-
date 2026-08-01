@@ -137,6 +137,8 @@ const KEY_SOURCE_ANIMATION := "source_animation"
 const KEY_REFLECT_ANIMATION := "reflect_animation"
 const KEY_LIFESTEAL_ANIMATION := "lifesteal_animation"
 const KEY_PRESENTATION_TARGET := "presentation_target"
+const KEY_PRESENTATION_SCOPE := "presentation_scope"
+const KEY_RECIPIENT_ANIMATION := "recipient_animation"
 const KEY_PERSISTENT_VISUALS := "persistent_visuals"
 const KEY_VISUAL_KEY := "visual_key"
 const KEY_VISUAL_Z_INDEX := "visual_z_index"
@@ -144,6 +146,10 @@ const KEY_VISUAL_Z_INDEX := "visual_z_index"
 const ACTIVE_ZONE_HAND := "hand"
 const TARGET_ZONE_HAND := "hand"
 const PRESENTATION_TARGET_EFFECT_TARGET := "effect_target"
+const PRESENTATION_SCOPE_TARGET := "target"
+const PRESENTATION_SCOPE_BOARD := "board"
+const PRESENTATION_SCOPE_MULTI := "multi"
+const PRESENTATION_SCOPE_SOURCE_TO_TARGET := "source_to_target"
 
 const EFFECT_GRANT_SPELL_ACTIONS := "grant_spell_actions"
 const EFFECT_GRANT_ACTIONS := "grant_actions"
@@ -199,6 +205,7 @@ const EFFECT_PERIODIC_TRIGGER := "periodic_trigger"
 const EFFECT_MAINTAIN_CARD_RESERVE := "maintain_card_reserve"
 const EFFECT_MODIFY_CARD_RESERVE_CAPACITY := "modify_card_reserve_capacity"
 const EFFECT_CLAIM_DEATH_SLOT := "claim_death_slot"
+const EFFECT_PLAY_ANIMATION := "play_animation"
 
 const AMOUNT_SOURCE_EFFECTIVE_HEAL := "effective_heal"
 const AMOUNT_SOURCE_MISSING_HEALTH := "missing_health"
@@ -273,6 +280,10 @@ const DEATH_REASON_FIRE := "fire"
 const DEATH_REASON_TRAP := "trap"
 const DEATH_REASON_LINKED := "linked_death"
 const DEATH_REASON_STATUS_EXPIRED := "status_expired"
+
+
+static func get_presentation_scope(effect_data: Dictionary) -> String:
+	return str(effect_data.get(KEY_PRESENTATION_SCOPE, PRESENTATION_SCOPE_TARGET))
 
 
 static func get_id(effect_data: Dictionary) -> String:

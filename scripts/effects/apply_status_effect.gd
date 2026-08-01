@@ -14,6 +14,7 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		push_warning("apply_status 缺少 status_id")
 		return
 
+	var applied_targets: Array[CardState] = []
 	for target_state in get_target_states(source_state, runtime_effect_data, game_manager):
 		if target_state == null or not target_state.is_unit():
 			continue
@@ -22,9 +23,33 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		var status := CardStatus.from_effect_data(runtime_effect_data, target_state, source_state)
 		target_state.add_status(status)
 		refresh_owner_dependent_passives_if_needed(previous_owner_id, target_state.owner_id, game_manager)
-		var apply_animation := str(runtime_effect_data.get("apply_animation", ""))
-		if apply_animation != "" and game_manager != null and game_manager.has_method("play_status_apply_animation"):
-			await game_manager.play_status_apply_animation(target_state, apply_animation)
+		applied_targets.append(target_state)
+
+	await play_apply_animation(applied_targets, runtime_effect_data, game_manager)
+
+
+func play_apply_animation(
+	targets: Array[CardState],
+	effect_data: Dictionary,
+	game_manager: Node
+) -> void:
+	var apply_animation := str(effect_data.get("apply_animation", ""))
+	if apply_animation == "" or targets.is_empty() or game_manager == null:
+		return
+
+	var played_multi := false
+	if (
+		EffectData.get_presentation_scope(effect_data) == EffectData.PRESENTATION_SCOPE_MULTI
+		and game_manager.has_method("play_multi_target_effect_animation")
+	):
+		played_multi = bool(
+			await game_manager.play_multi_target_effect_animation(targets, apply_animation)
+		)
+	if played_multi or not game_manager.has_method("play_status_apply_animation"):
+		return
+
+	for target_state in targets:
+		await game_manager.play_status_apply_animation(target_state, apply_animation)
 
 
 func refresh_owner_dependent_passives_if_needed(previous_owner_id: String, next_owner_id: String, game_manager: Node) -> void:

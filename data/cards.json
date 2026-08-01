@@ -3458,7 +3458,8 @@
 					{
 						"id": "fel_infusion",
 						"name": "邪能灌注",
-						"animation": "fel_infusion",
+						"animation": "fel_infusion_transfer",
+						"effect_handles_animation": true,
 						"target_rule": "friendly_non_hero_minions",
 						"spell_tags": [
 							"fel"
@@ -3468,7 +3469,14 @@
 								"id": "damage",
 								"target": "self",
 								"amount": 2,
-								"spell_power_scaling": false
+								"spell_power_scaling": false,
+								"source_animation": "fel_sacrifice"
+							},
+							{
+								"id": "play_animation",
+								"target": "selected",
+								"animation": "fel_infusion_transfer",
+								"presentation_scope": "source_to_target"
 							},
 							{
 								"id": "apply_status",
@@ -3485,7 +3493,7 @@
 								"payload": {
 									"attack_bonus": 3
 								},
-								"apply_animation": "fel_infusion"
+								"apply_animation": "fel_infusion_settle"
 							}
 						]
 					}
@@ -3502,6 +3510,16 @@
 				"start_in_hand": true,
 				"keywords": [],
 				"effects": [
+					{
+						"id": "play_animation",
+						"trigger": "after_spell_cast",
+						"active_zone": "hand",
+						"required_spell_tags": [
+							"fel"
+						],
+						"animation": "fel_madness_broadcast",
+						"presentation_scope": "board"
+					},
 					{
 						"id": "apply_status",
 						"trigger": "after_spell_cast",
@@ -3525,7 +3543,8 @@
 						"payload": {
 							"attack_bonus": 1
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_chaos_orc",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "apply_status",
@@ -3564,7 +3583,8 @@
 								}
 							]
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_hellhound",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "apply_status",
@@ -3588,7 +3608,8 @@
 								"lifesteal"
 							]
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_succubus",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "apply_status",
@@ -3633,7 +3654,8 @@
 								}
 							]
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_wolf_rider",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "apply_status",
@@ -3657,7 +3679,8 @@
 								"giant"
 							]
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_doomguard",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "apply_status",
@@ -3689,13 +3712,14 @@
 											"target": "selected",
 											"amount": 1,
 											"spell_power_scaling": false,
-											"animation": "curse"
+											"animation": "curse_impact"
 										}
 									]
 								}
 							]
 						},
-						"apply_animation": "fel_madness"
+						"apply_animation": "fel_madness_warlock",
+						"presentation_scope": "multi"
 					}
 				]
 			},
@@ -3718,7 +3742,8 @@
 						"id": "life_drain",
 						"target": "selected",
 						"target_card_id": "guldan",
-						"amount": 3
+						"amount": 3,
+						"recipient_animation": "life_drain_receive"
 					}
 				]
 			},
@@ -3768,7 +3793,7 @@
 					{
 						"id": "curse",
 						"name": "诅咒",
-						"animation": "curse",
+						"animation": "curse_cast",
 						"target_rule": "non_hero_minions",
 						"effects": [
 							{
@@ -3788,7 +3813,7 @@
 									"attack_bonus": -2,
 									"damage_amplify": 2
 								},
-								"apply_animation": "curse"
+								"apply_animation": "curse_mark"
 							}
 						]
 					}
@@ -3827,7 +3852,8 @@
 							"attack_bonus": 2,
 							"damage_amplify": 2
 						},
-						"apply_animation": "kiljaeden_whisper"
+						"apply_animation": "kiljaeden_whisper_mark",
+						"presentation_scope": "multi"
 					},
 					{
 						"id": "periodic_status_aura",
@@ -3853,7 +3879,8 @@
 							"attack_bonus": 2,
 							"damage_amplify": 2
 						},
-						"apply_animation": "kiljaeden_whisper"
+						"apply_animation": "kiljaeden_whisper_mark",
+						"presentation_scope": "multi"
 					}
 				]
 			},
@@ -3902,7 +3929,7 @@
 					{
 						"id": "immolation",
 						"name": "献祭",
-						"animation": "immolation",
+						"animation": "immolation_cast",
 						"target_rule": "none",
 						"effects": [
 							{
@@ -3918,9 +3945,11 @@
 								"expires_on_trigger": "after_turn_end",
 								"status_valence": "negative",
 								"payload": {
-									"fire_damage": 3
+									"fire_damage": 3,
+									"tick_animation": "immolation_tick"
 								},
-								"apply_animation": "immolation"
+								"apply_animation": "immolation_mark",
+								"presentation_scope": "multi"
 							}
 						]
 					}
@@ -4010,7 +4039,14 @@
 								"id": "damage",
 								"target": "self",
 								"amount": 4,
-								"spell_power_scaling": false
+								"spell_power_scaling": false,
+								"source_animation": "fel_sacrifice_heavy"
+							},
+							{
+								"id": "play_animation",
+								"target": "selected",
+								"animation": "fel_overload_transfer",
+								"presentation_scope": "source_to_target"
 							},
 							{
 								"id": "apply_status",
@@ -4035,7 +4071,9 @@
 											"trigger_player": "source_owner",
 											"target": "adjacent_minions",
 											"amount": 2,
-											"animation": "fel_burst",
+											"source_animation": "fel_overload_detonate",
+											"animation": "fel_burst_impact",
+											"presentation_scope": "multi",
 											"death_reason": "effect",
 											"spell_power_scaling": false
 										},
@@ -4044,12 +4082,11 @@
 											"trigger": "after_turn_end",
 											"trigger_player": "source_owner",
 											"target": "self",
-											"animation": "fel_burst",
 											"death_reason": "effect"
 										}
 									]
 								},
-								"apply_animation": "fel_overload"
+								"apply_animation": "fel_overload_settle"
 							}
 						]
 					}

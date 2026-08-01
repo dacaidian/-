@@ -88,6 +88,7 @@ func resolve_poison_damage(game_manager: GameManager, trigger: String, turn_play
 
 
 func resolve_fire_damage(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:
+	var animation_groups: Dictionary = {}
 	var damaged_states: Array[CardState] = []
 	for state in game_manager.get_all_board_states():
 		if not BoardQuery.is_face_up_unit(state):
@@ -101,8 +102,17 @@ func resolve_fire_damage(game_manager: GameManager, trigger: String, turn_player
 		if fire_damage <= 0:
 			continue
 
-		state.take_damage(fire_damage)
 		damaged_states.append(state)
+		var animation_key := str(fire.payload.get(EffectData.KEY_TICK_ANIMATION, ""))
+		if animation_key != "":
+			queue_grouped_status_animation(animation_groups, animation_key, state)
+
+	await play_grouped_status_animations(game_manager, animation_groups)
+
+	for state in damaged_states:
+		var fire := state.get_status(CardStatus.STATUS_FIRE)
+		if fire != null:
+			state.take_damage(fire.get_fire_damage())
 
 	if not damaged_states.is_empty():
 		await game_manager.resolve_dead_states(damaged_states, EffectData.DEATH_REASON_FIRE, null)

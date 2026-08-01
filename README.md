@@ -115,11 +115,12 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_miao_animation_provider.gd -SuccessMarker MIAO_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_beastmen_animation_provider.gd -SuccessMarker BEASTMEN_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_fox_spirit_animation_provider.gd -SuccessMarker FOX_SPIRIT_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_shadowmoon_animation_provider.gd -SuccessMarker SHADOWMOON_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_vfx_modules.gd -SuccessMarker NIGHT_ELF_VFX_MODULE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改影月议会邪能顺序、疯狂响应、恶魔仪式或持续状态表现后运行影月专项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 `tools/build_ui_skin_assets.py` 依赖 Pillow，仅在使用新的美术母版重建皮肤资源时需要运行；日常启动游戏不依赖 Python 图像库。
 

@@ -90,20 +90,26 @@ var chaos_corruption_text_color := Color(0.94, 0.86, 0.60, 0.98)
 var chaos_corruption_shadow_color := Color(0.08, 0.0, 0.10, 0.96)
 var savage_roar_color := Color(0.52, 0.065, 0.025, 0.84)
 var savage_roar_edge_color := Color(0.96, 0.34, 0.07, 0.88)
-var fel_infusion_color := Color(0.10, 0.82, 0.28, 0.18)
-var fel_infusion_edge_color := Color(0.44, 1.0, 0.26, 0.82)
-var fel_infusion_flame_color := Color(0.12, 1.0, 0.42, 0.74)
-var fel_overload_color := Color(0.06, 0.48, 0.12, 0.24)
-var fel_overload_edge_color := Color(0.68, 1.0, 0.20, 0.90)
-var fel_overload_crack_color := Color(0.10, 1.0, 0.34, 0.82)
-var fel_madness_color := Color(0.18, 0.04, 0.22, 0.22)
-var fel_madness_edge_color := Color(0.64, 0.96, 0.16, 0.64)
-var fel_madness_rune_color := Color(0.72, 0.06, 0.10, 0.72)
-var damage_amplify_color := Color(0.34, 0.02, 0.42, 0.22)
-var damage_amplify_edge_color := Color(0.96, 0.20, 1.0, 0.78)
-var damage_amplify_crack_color := Color(0.20, 1.0, 0.34, 0.72)
+var fel_infusion_color := Color(0.025, 0.16, 0.055, 0.11)
+var fel_infusion_edge_color := Color(0.42, 0.96, 0.12, 0.72)
+var fel_infusion_flame_color := Color(0.68, 1.0, 0.16, 0.84)
+var fel_overload_color := Color(0.035, 0.02, 0.055, 0.18)
+var fel_overload_edge_color := Color(0.62, 1.0, 0.12, 0.86)
+var fel_overload_crack_color := Color(0.82, 1.0, 0.30, 0.92)
+var fel_madness_color := Color(0.12, 0.018, 0.16, 0.12)
+var fel_madness_edge_color := Color(0.40, 0.82, 0.10, 0.54)
+var fel_madness_rune_color := Color(0.66, 0.045, 0.14, 0.80)
+var damage_amplify_color := Color(0.18, 0.012, 0.26, 0.14)
+var damage_amplify_edge_color := Color(0.56, 0.18, 0.78, 0.72)
+var damage_amplify_crack_color := Color(0.48, 0.92, 0.18, 0.72)
 var damage_amplify_text_color := Color(1.0, 0.80, 1.0, 0.96)
 var damage_amplify_shadow_color := Color(0.08, 0.0, 0.12, 0.96)
+var kiljaeden_whisper_color := Color(0.18, 0.018, 0.12, 0.12)
+var kiljaeden_whisper_edge_color := Color(0.62, 0.06, 0.18, 0.66)
+var kiljaeden_whisper_eye_color := Color(0.56, 0.96, 0.14, 0.76)
+var infernal_fire_color := Color(0.18, 0.26, 0.025, 0.16)
+var infernal_fire_edge_color := Color(0.58, 0.94, 0.10, 0.72)
+var infernal_fire_ember_color := Color(0.96, 0.34, 0.04, 0.82)
 var taunt_color := Color(0.42, 0.22, 0.08, 0.08)
 var taunt_edge_color := Color(0.95, 0.60, 0.18, 0.50)
 var taunt_plate_color := Color(0.34, 0.16, 0.06, 0.26)
@@ -194,13 +200,19 @@ func has_animated_status_visual() -> bool:
 		or should_show_meteor_aura()
 		or should_show_soul_hook()
 		or should_show_charm()
+		or should_show_fel_infusion()
+		or should_show_fel_overload()
+		or should_show_fel_madness()
+		or should_show_damage_amplify()
+		or should_show_kiljaeden_whisper()
+		or should_show_infernal_fire()
 		or is_divine_shield_break_active()
 		or is_rooted_break_active()
 	)
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify()
+	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify() or should_show_kiljaeden_whisper() or should_show_infernal_fire()
 
 
 func should_show_beast_path() -> bool:
@@ -448,7 +460,20 @@ func should_show_damage_amplify() -> bool:
 	if state == null or state.data == null:
 		return false
 
-	return state.is_face_up and state.is_unit() and state.get_damage_amplify_bonus() > 0
+	return state.is_face_up and state.is_unit() and get_damage_amplify_status() != null
+
+
+func should_show_kiljaeden_whisper() -> bool:
+	if state == null or state.data == null:
+		return false
+	return state.is_face_up and state.is_unit() and state.has_status(CardStatus.STATUS_KILJAEDEN_WHISPER)
+
+
+func should_show_infernal_fire() -> bool:
+	if state == null or state.data == null or not state.is_face_up or not state.is_unit():
+		return false
+	var fire := state.get_status(CardStatus.STATUS_FIRE)
+	return fire != null and fire.source_card_id == "infernal" and fire.get_fire_damage() > 0
 
 
 func _draw() -> void:
@@ -484,8 +509,12 @@ func _draw() -> void:
 		draw_fel_overload_overlay()
 	if should_show_fel_madness():
 		draw_fel_madness_overlay()
+	if should_show_kiljaeden_whisper():
+		draw_kiljaeden_whisper_overlay()
 	if should_show_damage_amplify():
 		draw_damage_amplify_overlay()
+	if should_show_infernal_fire():
+		draw_infernal_fire_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -1149,36 +1178,36 @@ func draw_chaos_corruption_overlay() -> void:
 
 func draw_fel_infusion_overlay() -> void:
 	var fel_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
-	var center := fel_rect.get_center()
-	var radius := minf(fel_rect.size.x, fel_rect.size.y) * 0.42
+	var pulse := 0.5 + 0.5 * sin(animation_time * 4.2)
+	var attack_anchor := Vector2(size.x * 0.20, size.y * 0.80)
+	var radius := minf(fel_rect.size.x, fel_rect.size.y) * 0.38
 	var status := state.get_status(CardStatus.STATUS_FEL_INFUSION) if state != null else null
 	var stack_count := status.stacks if status != null else 1
-	var ring_count: int = mini(maxi(stack_count, 1), 4)
 
-	draw_rect(fel_rect, fel_infusion_color, true)
-	for index in range(ring_count):
-		var ring_radius := radius + float(index) * 4.2
-		var alpha := fel_infusion_edge_color.a * (1.0 - float(index) * 0.13)
-		draw_arc(center, ring_radius, -PI * 0.12, TAU - PI * 0.12, 84, Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, alpha), 2.5, true)
+	draw_rect(fel_rect, Color(fel_infusion_color.r, fel_infusion_color.g, fel_infusion_color.b, fel_infusion_color.a + pulse * 0.025), true)
+	for vein_index in range(7):
+		var ratio := float(vein_index) / 6.0
+		var edge_point := Vector2(lerpf(fel_rect.position.x, fel_rect.end.x, ratio), fel_rect.position.y if vein_index % 2 == 0 else fel_rect.end.y)
+		var middle := edge_point.lerp(attack_anchor, 0.56) + Vector2(sin(float(vein_index) * 2.1 + animation_time) * size.x * 0.045, 0.0)
+		draw_line(edge_point, middle, Color(0.01, 0.02, 0.01, 0.62), maxf(size.x * 0.018, 1.8), true)
+		draw_line(middle, attack_anchor, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.38 + pulse * 0.18), maxf(size.x * 0.008, 1.0), true)
 
-	for index in range(7):
-		var angle := -PI * 0.85 + float(index) * PI * 1.70 / 6.0
-		var from_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.20
-		var bend_point := center + Vector2(cos(angle), sin(angle)) * radius * 0.66 + Vector2(-sin(angle), cos(angle)) * sin(float(index) * 1.9) * 7.0
-		var to_point := center + Vector2(cos(angle), sin(angle)) * radius * 1.02
-		draw_line(from_point, bend_point, fel_infusion_flame_color, 2.4)
-		draw_line(bend_point, to_point, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.48), 1.8)
+	for ring_index in range(mini(maxi(stack_count, 1), 4)):
+		var ring_radius := radius * (0.15 + float(ring_index) * 0.075 + pulse * 0.018)
+		draw_arc(attack_anchor, ring_radius, -PI * 0.22, PI * 1.54, 32, Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, 0.58 - float(ring_index) * 0.09), 1.8, true)
+	draw_circle(attack_anchor, radius * (0.035 + pulse * 0.012), Color(0.82, 1.0, 0.28, 0.78))
 
 
 func draw_fel_overload_overlay() -> void:
 	var overload_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.035)
 	var center := overload_rect.get_center()
 	var radius := minf(overload_rect.size.x, overload_rect.size.y) * 0.42
+	var pressure := 0.5 + 0.5 * sin(animation_time * 7.4)
 
-	draw_rect(overload_rect, fel_overload_color, true)
-	for index in range(4):
-		var alpha := fel_overload_edge_color.a * (1.0 - float(index) * 0.16)
-		draw_arc(center, radius + float(index) * 3.8, PI * 0.08, TAU + PI * 0.08, 90, Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, alpha), 2.4, true)
+	draw_rect(overload_rect, Color(fel_overload_color.r, fel_overload_color.g, fel_overload_color.b, fel_overload_color.a + pressure * 0.035), true)
+	for arc_index in range(5):
+		var start_angle := -PI * 0.34 + float(arc_index) * TAU / 5.0 + animation_time * (0.08 if arc_index % 2 == 0 else -0.06)
+		draw_arc(center, radius * (0.86 + float(arc_index % 2) * 0.11), start_angle, start_angle + PI * 0.56, 24, Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, 0.50 + pressure * 0.18), 2.5, true)
 
 	var crack_points := [
 		[Vector2(0.50, 0.12), Vector2(0.44, 0.34), Vector2(0.55, 0.50), Vector2(0.48, 0.78)],
@@ -1192,7 +1221,9 @@ func draw_fel_overload_overlay() -> void:
 			draw_line(from_point, to_point, fel_overload_crack_color, 2.6)
 			draw_line(from_point, to_point, Color(0.0, 0.10, 0.0, 0.52), 1.0)
 
-	draw_circle(center, radius * 0.18, Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.44))
+	draw_circle(center, radius * (0.20 + pressure * 0.045), Color(0.02, 0.0, 0.03, 0.72))
+	draw_circle(center, radius * (0.12 + pressure * 0.025), Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.46 + pressure * 0.24))
+	draw_circle(center - Vector2(radius * 0.035, radius * 0.045), radius * 0.035, Color(0.92, 1.0, 0.56, 0.86))
 
 
 func draw_fel_madness_overlay() -> void:
@@ -1200,34 +1231,108 @@ func draw_fel_madness_overlay() -> void:
 	var center := madness_rect.get_center()
 	var radius := minf(madness_rect.size.x, madness_rect.size.y) * 0.34
 	var status := get_fel_madness_status()
-	var stack_count := status.stacks if status != null else 1
-	var claw_count: int = mini(maxi(stack_count + 2, 3), 6)
+	if status == null:
+		return
+	var pulse := 0.5 + 0.5 * sin(animation_time * 5.8)
+	draw_rect(madness_rect, Color(fel_madness_color.r, fel_madness_color.g, fel_madness_color.b, fel_madness_color.a + pulse * 0.025), true)
+	for edge_index in range(4):
+		var inset := float(edge_index % 2) * 2.0
+		draw_rect(madness_rect.grow(-inset), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, 0.20 + pulse * 0.10), false, 1.2 + float(edge_index % 2), true)
 
-	draw_rect(madness_rect, fel_madness_color, true)
-	draw_circle(center, radius * 0.98, Color(0.03, 0.0, 0.04, 0.20))
-	for index in range(3):
-		var grow := float(index) * 4.0
-		var alpha := fel_madness_edge_color.a * (1.0 - float(index) * 0.18)
-		draw_rect(madness_rect.grow(grow), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, alpha), false, maxf(size.x * 0.020, 2.0), true)
+	match status.status_id:
+		CardStatus.STATUS_FEL_MADNESS_HELLHOUND:
+			draw_arc(center + Vector2(0.0, radius * 0.14), radius * 0.72, PI * 0.08, PI * 0.92, 28, fel_madness_rune_color, 3.0, true)
+			draw_arc(center - Vector2(0.0, radius * 0.10), radius * 0.72, -PI * 0.92, -PI * 0.08, 28, fel_madness_rune_color, 3.0, true)
+			for fang_index in range(4):
+				var x := center.x + (float(fang_index) - 1.5) * radius * 0.26
+				draw_line(Vector2(x, center.y - radius * 0.34), Vector2(x + radius * 0.05, center.y - radius * 0.05), Color(0.80, 0.84, 0.24, 0.72), 2.4, true)
+		CardStatus.STATUS_FEL_MADNESS_SUCCUBUS:
+			for loop_index in range(4):
+				draw_arc(center, radius * (0.34 + float(loop_index) * 0.16 + pulse * 0.035), -PI * 0.20 + float(loop_index) * 0.52, PI * 1.32 + float(loop_index) * 0.52, 32, Color(0.40, 0.16, 0.66, 0.54 - float(loop_index) * 0.08), 2.0, true)
+			draw_circle(center, radius * (0.10 + pulse * 0.025), Color(0.68, 0.05, 0.18, 0.68))
+		CardStatus.STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER:
+			draw_arc(center, radius * 0.82, PI * 0.04, PI * 0.96, 30, fel_madness_rune_color, 3.2, true)
+			for slash_index in range(2):
+				var shift := Vector2(float(slash_index) * radius * 0.20 - radius * 0.10, 0.0)
+				draw_line(center + shift + Vector2(-radius * 0.30, radius * 0.34), center + shift + Vector2(radius * 0.22, -radius * 0.32), Color(0.62, 0.05, 0.14, 0.78), 3.0, true)
+		CardStatus.STATUS_FEL_MADNESS_DOOMGUARD:
+			for side_sign in [-1.0, 1.0]:
+				var horn := PackedVector2Array([
+					center + Vector2(side_sign * radius * 0.12, radius * 0.08),
+					center + Vector2(side_sign * radius * 0.72, -radius * 0.18),
+					center + Vector2(side_sign * radius * (0.46 + pulse * 0.08), -radius * 0.92),
+				])
+				draw_polyline(horn, Color(0.74, 0.78, 0.20, 0.66), 4.0, true)
+			draw_arc(center, radius * (0.62 + pulse * 0.10), PI * 0.12, PI * 0.88, 30, fel_madness_edge_color, 3.0, true)
+		CardStatus.STATUS_FEL_MADNESS_WARLOCK:
+			var eye_height := radius * (0.18 + pulse * 0.08)
+			draw_polyline(PackedVector2Array([center - Vector2(radius * 0.72, 0.0), center - Vector2(0.0, eye_height), center + Vector2(radius * 0.72, 0.0), center + Vector2(0.0, eye_height), center - Vector2(radius * 0.72, 0.0)]), Color(0.58, 0.08, 0.32, 0.72), 2.6, true)
+			draw_circle(center, radius * 0.13, Color(0.52, 0.90, 0.12, 0.72))
+			draw_circle(center, radius * 0.055, Color(0.02, 0.0, 0.04, 0.92))
+		_:
+			var claw_count: int = mini(maxi(status.stacks + 2, 3), 6)
+			for claw_index in range(claw_count):
+				var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(claw_index) * 0.56 / float(maxi(claw_count - 1, 1)))
+				var claw_from := Vector2(x - radius * 0.10, center.y - radius * 0.62)
+				var claw_to := Vector2(x + radius * 0.08, center.y + radius * 0.58)
+				draw_line(claw_from, claw_to, Color(0.03, 0.0, 0.03, 0.78), 4.2, true)
+				draw_line(claw_from, claw_to, fel_madness_rune_color, 2.0, true)
 
-	for index in range(claw_count):
-		var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(index) * 0.56 / float(maxi(claw_count - 1, 1)))
-		var top := center.y - radius * (0.56 + 0.10 * float(index % 2))
-		var bottom := center.y + radius * 0.58
-		var claw_from := Vector2(x - radius * 0.10, top)
-		var claw_to := Vector2(x + radius * 0.08, bottom)
-		draw_line(claw_from, claw_to, Color(0.04, 0.0, 0.02, 0.70), 4.0)
-		draw_line(claw_from, claw_to, fel_madness_rune_color, 2.2)
-		draw_line(Vector2(x - radius * 0.02, top + radius * 0.18), Vector2(x + radius * 0.16, bottom - radius * 0.10), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, 0.40), 1.4)
 
-	for index in range(5):
-		var angle := TAU * float(index) / 5.0 - PI * 0.38
-		var inner := center + Vector2(cos(angle), sin(angle)) * radius * 0.28
-		var outer := center + Vector2(cos(angle), sin(angle)) * radius * 0.68
-		draw_line(inner, outer, Color(0.42, 0.88, 0.12, 0.30), 1.5)
+func draw_kiljaeden_whisper_overlay() -> void:
+	var whisper_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.055)
+	var center := whisper_rect.get_center() - Vector2(0.0, size.y * 0.08)
+	var radius := minf(whisper_rect.size.x, whisper_rect.size.y) * 0.34
+	var pulse := 0.5 + 0.5 * sin(animation_time * 2.4)
+	draw_rect(whisper_rect, Color(kiljaeden_whisper_color.r, kiljaeden_whisper_color.g, kiljaeden_whisper_color.b, kiljaeden_whisper_color.a + pulse * 0.018), true)
 
-	draw_circle(center, radius * 0.18, Color(0.58, 0.92, 0.12, 0.30))
-	draw_circle(center, radius * 0.08, Color(0.08, 0.0, 0.06, 0.58))
+	var eye_height := radius * (0.18 + pulse * 0.08)
+	var eye := PackedVector2Array([
+		center - Vector2(radius, 0.0),
+		center - Vector2(radius * 0.42, eye_height),
+		center + Vector2(0.0, -eye_height * 1.16),
+		center + Vector2(radius * 0.42, -eye_height),
+		center + Vector2(radius, 0.0),
+		center + Vector2(radius * 0.42, eye_height),
+		center + Vector2(0.0, eye_height * 1.16),
+		center - Vector2(radius * 0.42, eye_height),
+		center - Vector2(radius, 0.0),
+	])
+	draw_polyline(eye, kiljaeden_whisper_edge_color, 2.4, true)
+	draw_circle(center, radius * (0.14 + pulse * 0.02), kiljaeden_whisper_eye_color)
+	draw_circle(center, radius * 0.055, Color(0.02, 0.0, 0.03, 0.94))
+
+	for wave_index in range(4):
+		var wave_radius := radius * (0.72 + float(wave_index) * 0.18 + pulse * 0.04)
+		draw_arc(center, wave_radius, PI * 0.08, PI * 0.92, 28, Color(kiljaeden_whisper_edge_color.r, kiljaeden_whisper_edge_color.g, kiljaeden_whisper_edge_color.b, 0.34 - float(wave_index) * 0.055), 1.6, true)
+
+
+func draw_infernal_fire_overlay() -> void:
+	var fire := state.get_status(CardStatus.STATUS_FIRE) if state != null else null
+	if fire == null:
+		return
+	var pulse := 0.5 + 0.5 * sin(animation_time * 5.2)
+	var remaining := maxi(fire.remaining_turns, 1)
+	var ground_y := size.y * 0.88
+	draw_rect(Rect2(Vector2(size.x * 0.05, size.y * 0.66), Vector2(size.x * 0.90, size.y * 0.25)), infernal_fire_color, true)
+	for flame_index in range(7):
+		var ratio := float(flame_index) / 6.0
+		var base := Vector2(lerpf(size.x * 0.12, size.x * 0.88, ratio), ground_y)
+		var height := size.y * (0.10 + 0.025 * float(flame_index % 3) + pulse * 0.025)
+		var half_width := size.x * 0.035
+		var flame := PackedVector2Array([
+			base - Vector2(half_width, 0.0),
+			base + Vector2(-half_width * 0.35, -height * 0.42),
+			base + Vector2(sin(animation_time * 3.0 + float(flame_index)) * half_width * 0.45, -height),
+			base + Vector2(half_width * 0.42, -height * 0.34),
+			base + Vector2(half_width, 0.0),
+		])
+		draw_colored_polygon(flame, Color(infernal_fire_ember_color.r, infernal_fire_ember_color.g, infernal_fire_ember_color.b, 0.44))
+		draw_line(base, base + Vector2(0.0, -height * 0.68), infernal_fire_edge_color, maxf(size.x * 0.012, 1.2), true)
+
+	for notch_index in range(mini(remaining, 4)):
+		var notch_center := Vector2(size.x * (0.40 + float(notch_index) * 0.10), size.y * 0.94)
+		draw_circle(notch_center, size.x * 0.018, Color(0.84, 1.0, 0.22, 0.76))
 
 
 func draw_damage_amplify_overlay() -> void:
@@ -1289,6 +1394,8 @@ func get_damage_amplify_status() -> CardStatus:
 
 	for status in state.statuses:
 		if status == null:
+			continue
+		if status.status_id == CardStatus.STATUS_KILJAEDEN_WHISPER:
 			continue
 		if int(status.payload.get(EffectData.KEY_DAMAGE_AMPLIFY, 0)) > 0:
 			return status

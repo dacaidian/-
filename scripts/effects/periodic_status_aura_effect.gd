@@ -48,6 +48,7 @@ func sync_status(
 		return
 
 	var target_states := get_matching_targets(effect_data, game_manager, player.id)
+	var applied_targets: Array[CardState] = []
 	for target_state in target_states:
 		if target_state == null:
 			continue
@@ -65,10 +66,32 @@ func sync_status(
 		EffectData.mark_effect_owner(runtime_effect_data, player.id)
 		var status := CardStatus.from_effect_data(runtime_effect_data, target_state, source_state)
 		target_state.add_status(status)
+		applied_targets.append(target_state)
 
-		var apply_animation := str(runtime_effect_data.get("apply_animation", ""))
-		if apply_animation != "" and game_manager != null and game_manager.has_method("play_status_apply_animation"):
-			await game_manager.play_status_apply_animation(target_state, apply_animation)
+	await play_apply_animation(applied_targets, effect_data, game_manager)
+
+
+func play_apply_animation(
+	targets: Array[CardState],
+	effect_data: Dictionary,
+	game_manager: Node
+) -> void:
+	var apply_animation := str(effect_data.get("apply_animation", ""))
+	if apply_animation == "" or targets.is_empty() or game_manager == null:
+		return
+
+	var played_multi := false
+	if (
+		EffectData.get_presentation_scope(effect_data) == EffectData.PRESENTATION_SCOPE_MULTI
+		and game_manager.has_method("play_multi_target_effect_animation")
+	):
+		played_multi = bool(
+			await game_manager.play_multi_target_effect_animation(targets, apply_animation)
+		)
+	if played_multi or not game_manager.has_method("play_status_apply_animation"):
+		return
+	for target_state in targets:
+		await game_manager.play_status_apply_animation(target_state, apply_animation)
 
 
 func get_matching_targets(effect_data: Dictionary, game_manager: Node, owner_id: String) -> Array[CardState]:
