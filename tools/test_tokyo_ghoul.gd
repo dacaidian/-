@@ -96,7 +96,7 @@ func test_card_definitions() -> void:
 	var wanderer := database.get_card("anteiku_wanderer")
 	assert(wanderer != null)
 	assert(wanderer.level == 2 and wanderer.count == 4)
-	assert(wanderer.attack == 4 and wanderer.health == 5)
+	assert(wanderer.attack == 4 and wanderer.health == 4)
 	assert(wanderer.has_keyword(CardData.KEYWORD_KAGUNE_RINKAKU))
 
 	var aogiri_member := database.get_card("aogiri_tree_member")

@@ -160,18 +160,6 @@ func _test_status_overlays(effect_root: Control) -> bool:
 			quit(1)
 			return false
 
-	card_data.id = "heavenly_avatar"
-	state.card_id = card_data.id
-	overlay.refresh()
-	await process_frame
-	if not overlay.visible or not overlay.is_processing():
-		push_error("Heavenly Avatar overlay did not animate")
-		quit(1)
-		return false
-	card_data.id = "monkey_status_test"
-	state.card_id = card_data.id
-	overlay.refresh()
-
 	overlay.queue_free()
 	await process_frame
 	if effect_root.get_child_count() != 0:

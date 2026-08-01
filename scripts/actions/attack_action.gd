@@ -66,13 +66,21 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
 		await resolve_lifesteal(user, target, actual_life_damage, game_manager)
 		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager, is_melee_attack)
+	if not secondary_damage_targets.is_empty():
+		# Play the shared area-impact presentation while source and primary target
+		# still have stable board nodes. Death resolution remains authoritative and
+		# runs only after the purely visual context has been consumed.
+		await game_manager.play_secondary_attack_impact_animation(
+			user,
+			target,
+			secondary_damage_targets
+		)
 	if target.current_health <= 0:
 		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
 	var resolved_attacker := user
 	if resolved_attacker.is_empty() or resolved_attacker.card_id != attacker_card_id:
 		resolved_attacker = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
 	if not secondary_damage_targets.is_empty():
-		await game_manager.play_secondary_attack_impact_animation(secondary_damage_targets)
 		await game_manager.resolve_dead_states(
 			secondary_damage_targets,
 			EffectData.DEATH_REASON_ATTACK,

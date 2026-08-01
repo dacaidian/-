@@ -18,13 +18,20 @@ var progress := 0.0:
 var source_point := Vector2.ZERO
 var target_point := Vector2.ZERO
 var profile := "bikaku"
+var is_melee_impact := false
 
 
-func configure(source: Vector2, target: Vector2, visual_profile: String) -> void:
+func configure(
+	source: Vector2,
+	target: Vector2,
+	visual_profile: String,
+	melee_impact := false
+) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	source_point = source
 	target_point = target
 	profile = visual_profile
+	is_melee_impact = melee_impact
 	queue_redraw()
 
 
@@ -37,6 +44,10 @@ func _draw() -> void:
 	var impact := _stage(0.62, 0.82)
 	var residue := (1.0 - _stage(0.80, 1.0)) * _stage(0.02, 0.14)
 	var alpha := 1.0 - _stage(0.88, 1.0)
+	if is_melee_impact:
+		_draw_melee_profile_impact(release, impact, alpha)
+		_draw_impact(impact, residue, alpha)
+		return
 
 	_draw_corridor(gather, release, alpha)
 	_draw_source_pulse(gather, alpha)
@@ -71,6 +82,54 @@ func _draw() -> void:
 			_draw_bikaku(release, impact, alpha)
 
 	_draw_impact(impact, residue, alpha)
+
+
+func _draw_melee_profile_impact(release: float, impact: float, alpha: float) -> void:
+	var direction := (target_point - source_point).normalized()
+	var normal := direction.orthogonal()
+	var burst := sin(clampf(release, 0.0, 1.0) * PI)
+	var strike_origin := target_point - direction * (28.0 - release * 12.0)
+
+	match profile:
+		"rinkaku", "centipede", "chimera":
+			for tendril_index in range(4):
+				var lane := float(tendril_index) - 1.5
+				var start := strike_origin + normal * lane * 9.0
+				var control := target_point - direction * 4.0 + normal * lane * 14.0
+				var end := target_point + direction * (8.0 + impact * 12.0) + normal * lane * 2.0
+				var curve := _quadratic_points(start, control, end, 12)
+				_draw_tapered_curve(
+					curve,
+					5.6 - absf(lane),
+					Color(WINE.r, WINE.g, WINE.b, alpha * burst * 0.92),
+					Color(COLD.r, 0.20, 0.30, alpha * burst * 0.68)
+				)
+		"koukaku", "dragon", "owl":
+			var slash_count := 2 if profile == "koukaku" else 3
+			for slash_index in range(slash_count):
+				var lane := float(slash_index) - float(slash_count - 1) * 0.5
+				var slash_center := target_point + normal * lane * 10.0
+				var slash_start := slash_center - direction.rotated(-0.58) * (30.0 + impact * 8.0)
+				var slash_end := slash_center + direction.rotated(0.42) * (24.0 + impact * 12.0)
+				draw_line(slash_start, slash_end, Color(DEEP.r, DEEP.g, DEEP.b, alpha * burst * 0.86), 7.0, true)
+				draw_line(slash_start, slash_end, Color(BLOOD.r, BLOOD.g, BLOOD.b, alpha * burst * 0.90), 2.6, true)
+				draw_line(slash_start, slash_end, Color(COLD.r, COLD.g, COLD.b, alpha * burst * 0.54), 0.9, true)
+		_:
+			# Bikaku and other balanced profiles land as a hooked local sweep.
+			for arc_index in range(3):
+				var arc_radius := 18.0 + float(arc_index) * 7.0 + impact * 8.0
+				var arc_center := target_point - direction * float(arc_index) * 2.0
+				var start_angle := direction.angle() + PI * (0.54 + float(arc_index) * 0.05)
+				draw_arc(
+					arc_center,
+					arc_radius,
+					start_angle,
+					start_angle + PI * 0.96,
+					28,
+					Color(BLOOD.r, BLOOD.g, BLOOD.b, alpha * burst * (0.86 - float(arc_index) * 0.16)),
+					4.2 - float(arc_index) * 0.8,
+					true
+				)
 
 
 func _draw_corridor(gather: float, release: float, alpha: float) -> void:

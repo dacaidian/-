@@ -4,6 +4,7 @@ class_name CardAnimationController
 const SpellAnimationRouterScript := preload("res://scripts/ui/animation/spell_animation_router.gd")
 const BeastmenAnimationProviderScript := preload("res://scripts/ui/animation/beastmen_animation_provider.gd")
 const DalaranAnimationProviderScript := preload("res://scripts/ui/animation/dalaran_animation_provider.gd")
+const CombatImpactAnimationProviderScript := preload("res://scripts/ui/animation/combat_impact_animation_provider.gd")
 const FoxSpiritAnimationProviderScript := preload("res://scripts/ui/animation/fox_spirit_animation_provider.gd")
 const GenericSpellAnimationProviderScript := preload("res://scripts/ui/animation/generic_spell_animation_provider.gd")
 const MiaoAnimationProviderScript := preload("res://scripts/ui/animation/miao_animation_provider.gd")
@@ -44,6 +45,7 @@ var dark_arrow_projectile_glow_color := Color(0.42, 0.18, 0.72, 0.46)
 var dark_arrow_impact_color := Color(0.60, 0.44, 0.92, 1.0)
 var spell_animation_router := SpellAnimationRouterScript.new()
 var beastmen_animation_provider := BeastmenAnimationProviderScript.new()
+var combat_impact_animation_provider := CombatImpactAnimationProviderScript.new()
 var dalaran_animation_provider := DalaranAnimationProviderScript.new()
 var fox_spirit_animation_provider := FoxSpiritAnimationProviderScript.new()
 var generic_spell_animation_provider := GenericSpellAnimationProviderScript.new()
@@ -60,6 +62,7 @@ func setup(config: Dictionary) -> void:
 	attack_animation_duration = float(config.get("attack_animation_duration", attack_animation_duration))
 	attack_lunge_distance = float(config.get("attack_lunge_distance", attack_lunge_distance))
 	attack_target_shake_distance = float(config.get("attack_target_shake_distance", attack_target_shake_distance))
+	combat_impact_animation_provider.setup(attack_animation_duration)
 	ranged_attack_animation_duration = float(config.get("ranged_attack_animation_duration", ranged_attack_animation_duration))
 	ranged_attack_projectile_size = config.get("ranged_attack_projectile_size", ranged_attack_projectile_size)
 	ranged_attack_projectile_color = config.get("ranged_attack_projectile_color", ranged_attack_projectile_color)
@@ -171,11 +174,12 @@ func play_card_attack(
 	is_melee_attack := true,
 	attack_animation_key := ""
 ) -> void:
-	if (
+	var is_tokyo_replacement := (
 		attack_animation_key != ""
 		and root is Control
 		and tokyo_ghoul_animation_provider.is_replacement_attack_key(attack_animation_key)
-	):
+	)
+	if is_tokyo_replacement and not is_melee_attack:
 		await spell_animation_router.try_play_from_rect(
 			attack_animation_key,
 			owner,
@@ -189,6 +193,16 @@ func play_card_attack(
 		await play_melee_attack(owner, attacker_card, target_card)
 	else:
 		await play_ranged_attack(owner, root, attacker_card, target_card)
+	if is_tokyo_replacement:
+		await tokyo_ghoul_animation_provider.play_attack_from_rect(
+			owner,
+			root as Control,
+			attacker_card.get_global_rect(),
+			target_card,
+			attack_animation_key,
+			true
+		)
+		return
 
 	if attack_animation_key == "" or not root is Control:
 		return
@@ -201,9 +215,34 @@ func play_card_attack(
 	)
 
 
-func play_secondary_attack_impacts(owner: Node, target_cards: Array[Card]) -> void:
+func play_secondary_attack_impacts(
+	owner: Node,
+	effect_root: Control,
+	attacker_card: Card,
+	primary_target_card: Card,
+	target_cards: Array[Card],
+	animation_key := ""
+) -> void:
 	if owner == null or target_cards.is_empty():
 		return
+	if (
+		effect_root != null
+		and attacker_card != null
+		and primary_target_card != null
+		and animation_key != ""
+	):
+		var target_rects: Array[Rect2] = []
+		for target_card in target_cards:
+			if target_card != null and is_instance_valid(target_card):
+				target_rects.append(target_card.get_global_rect())
+		combat_impact_animation_provider.spawn_secondary_attack_visual(
+			owner,
+			effect_root,
+			attacker_card.get_global_rect(),
+			primary_target_card.get_global_rect(),
+			target_rects,
+			animation_key
+		)
 
 	var valid_cards: Array[Card] = []
 	var start_positions: Array[Vector2] = []

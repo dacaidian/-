@@ -184,6 +184,29 @@ func play_from_rect(
 				source_rect
 			)
 		return
+	await play_attack_from_rect(
+		owner,
+		effect_root,
+		source_rect,
+		target_card,
+		animation_key,
+		false
+	)
+
+
+func play_attack_from_rect(
+	owner: Node,
+	effect_root: Control,
+	source_rect: Rect2,
+	target_card: Card,
+	animation_key: String,
+	is_melee_impact: bool
+) -> void:
+	if owner == null or effect_root == null or target_card == null:
+		return
+	var profile := str(ATTACK_PROFILES.get(animation_key, ""))
+	if profile == "":
+		return
 
 	var inverse_transform := effect_root.get_global_transform().affine_inverse()
 	var source_point := inverse_transform * source_rect.get_center()
@@ -194,10 +217,10 @@ func play_from_rect(
 	visual.size = _get_canvas_size(effect_root)
 	visual.z_index = 2470
 	effect_root.add_child(visual)
-	visual.configure(source_point, target_point, profile)
+	visual.configure(source_point, target_point, profile, is_melee_impact)
 
 	var high_impact_profiles := ["dragon", "saint_sword", "owl", "furuta"]
-	var duration_scale := 1.85 if profile in high_impact_profiles else 1.48
+	var duration_scale := 1.48 if is_melee_impact else (1.85 if profile in high_impact_profiles else 1.48)
 	await _animate_and_release(owner, visual, maxf(spell_animation_duration * duration_scale, 0.40))
 
 

@@ -122,6 +122,20 @@ func _run() -> void:
 			target.free()
 			return
 
+	await provider.play_attack_from_rect(
+		effect_root,
+		effect_root,
+		caster.get_global_rect(),
+		target,
+		"tokyo_bikaku_attack",
+		true
+	)
+	await process_frame
+	if not _assert_no_children(effect_root, "tokyo_bikaku_melee_impact"):
+		caster.free()
+		target.free()
+		return
+
 	caster.free()
 	target.free()
 	await process_frame

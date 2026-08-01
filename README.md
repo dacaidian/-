@@ -100,6 +100,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_data_lazy_textures.gd -SuccessMarker CARD_DATA_LAZY_TEXTURES_TEST_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_tokyo_ghoul.gd -SuccessMarker TOKYO_GHOUL_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_tokyo_ghoul_animation_provider.gd -SuccessMarker TOKYO_GHOUL_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_combat_impact_animation.gd -SuccessMarker COMBAT_IMPACT_ANIMATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_rc_concentration.gd -SuccessMarker RC_CONCENTRATION_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_texture_preview.gd -SuccessMarker CARD_TEXTURE_PREVIEW_TEST_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_reserve.gd -SuccessMarker CARD_RESERVE_TESTS_OK
@@ -116,7 +117,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 `tools/build_ui_skin_assets.py` 依赖 Pillow，仅在使用新的美术母版重建皮肤资源时需要运行；日常启动游戏不依赖 Python 图像库。
 

@@ -180,8 +180,8 @@ func _draw_body_beyond_body() -> void:
 
 func _draw_hair_clone_assist() -> void:
 	var lock_phase := _ease_out(progress, 0.0, 0.22)
-	var strike_phase := _ease_in_out(progress, 0.14, 0.68)
-	var impact_phase := _ease_out(progress, 0.54, 0.86)
+	var strike_phase := _ease_in_out(progress, 0.16, 0.62)
+	var impact_phase := _ease_out(progress, 0.42, 0.80)
 	var fade := 1.0 - _ease_out(progress, 0.84, 1.0)
 	var radius := _card_radius()
 	var cast_vector := target_point - source_point
@@ -190,10 +190,11 @@ func _draw_hair_clone_assist() -> void:
 	var direction := cast_vector.normalized()
 	var normal := direction.orthogonal()
 
-	# A compact target seal survives between Wukong's primary hit and each
-	# legal clone follow-up, making the shared target readable.
+	# The normal melee lunge already communicates travel. This overlay remains
+	# local to the target so a clone strike reads as a physical follow-up rather
+	# than a second ranged projectile.
 	for lock_index in range(3):
-		var lock_radius := radius * (0.22 + float(lock_index) * 0.09 + impact_phase * 0.10)
+		var lock_radius := radius * (0.18 + float(lock_index) * 0.075 + impact_phase * 0.08)
 		var lock_start := -PI * 0.18 + float(lock_index) * 0.64
 		draw_arc(
 			target_point,
@@ -202,41 +203,39 @@ func _draw_hair_clone_assist() -> void:
 			lock_start + PI * 0.94,
 			24,
 			Color(CINNABAR.r, CINNABAR.g, CINNABAR.b, lock_phase * fade * (0.68 - float(lock_index) * 0.12)),
-			2.2,
+			1.8,
 			true
 		)
 
-	var strike_end := source_point.lerp(target_point, strike_phase)
-	var staff_curve := _quadratic_points(
-		source_point + normal * radius * 0.06,
-		source_point.lerp(target_point, 0.48) - normal * radius * 0.18,
-		strike_end,
-		30
-	)
-	_draw_brush_curve(
-		staff_curve,
-		Color(GOLD.r, GOLD.g, GOLD.b, sin(strike_phase * PI * 0.88) * fade * 0.90),
-		4.2
-	)
-	# A thinner red-gold edge gives the trace the weight of a staff rather than
-	# a spell beam.
-	var edge_start := source_point - normal * radius * 0.035
-	var edge_end := strike_end - normal * radius * 0.035
-	draw_line(
-		edge_start,
-		edge_end,
-		Color(CINNABAR.r, CINNABAR.g, CINNABAR.b, strike_phase * fade * 0.52),
-		1.5,
-		true
-	)
+	for stroke_index in range(3):
+		var stroke_offset := (float(stroke_index) - 1.0) * radius * 0.10
+		var stroke_start := target_point - direction * radius * 0.42 + normal * stroke_offset
+		var stroke_end := target_point + direction * radius * (0.12 + strike_phase * 0.24) + normal * stroke_offset
+		var stroke_curve := _quadratic_points(
+			stroke_start,
+			target_point - normal * radius * (0.12 - float(stroke_index) * 0.08),
+			stroke_end,
+			16
+		)
+		_draw_brush_curve(
+			stroke_curve,
+			Color(GOLD.r, GOLD.g, GOLD.b, strike_phase * fade * (0.86 - float(stroke_index) * 0.12)),
+			4.0 - float(stroke_index) * 0.65
+		)
+		draw_polyline(
+			stroke_curve,
+			Color(CINNABAR.r, CINNABAR.g, CINNABAR.b, strike_phase * fade * 0.46),
+			1.2,
+			true
+		)
 
 	if impact_phase > 0.0:
-		for impact_index in range(6):
+		for impact_index in range(5):
 			var impact_angle := direction.angle() + PI + (-0.62 + float(impact_index) * 0.25)
 			var impact_direction := Vector2.from_angle(impact_angle)
 			draw_line(
 				target_point,
-				target_point + impact_direction * radius * (0.14 + impact_phase * 0.34),
+				target_point + impact_direction * radius * (0.12 + impact_phase * 0.28),
 				Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, (1.0 - impact_phase) * fade * 0.86),
 				2.0,
 				true

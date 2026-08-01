@@ -2,6 +2,9 @@ extends RefCounted
 class_name GameAnimationResolver
 
 const SPELL_TURN_ACTIVATION_ANIMATION_KEY := "spell_turn_activation"
+const SECONDARY_ATTACK_FRONTAL := "frontal_attack_impact"
+const SECONDARY_ATTACK_FIXED_SPLASH := "fixed_splash_impact"
+const SECONDARY_ATTACK_SAINT_SWORD := "tokyo_saint_sword_splash"
 
 # GameAnimationResolver owns animation orchestration that needs both runtime
 # board state and UI nodes. GameManager keeps stable facade methods, while this
@@ -111,11 +114,20 @@ func resolve_attack_animation_key(attacker_state: CardState) -> String:
 
 func play_secondary_attack_impact_animation(
 	game_manager: GameManager,
+	attacker_state: CardState,
+	primary_target_state: CardState,
 	target_states: Array[CardState]
 ) -> void:
-	if game_manager == null or target_states.is_empty():
+	if (
+		game_manager == null
+		or attacker_state == null
+		or primary_target_state == null
+		or target_states.is_empty()
+	):
 		return
 
+	var attacker_card: Card = game_manager.get_card_for_state(attacker_state)
+	var primary_target_card: Card = game_manager.get_card_for_state(primary_target_state)
 	var target_cards: Array[Card] = []
 	for target_state in target_states:
 		if target_state == null:
@@ -123,15 +135,31 @@ func play_secondary_attack_impact_animation(
 		var target_card: Card = game_manager.get_card_for_state(target_state)
 		if target_card != null and not target_cards.has(target_card):
 			target_cards.append(target_card)
-	if target_cards.is_empty():
+	if attacker_card == null or primary_target_card == null or target_cards.is_empty():
 		return
 
 	game_manager.is_resolving_card_action = true
 	await game_manager.card_animation_controller.play_secondary_attack_impacts(
 		game_manager,
-		target_cards
+		get_overlay_animation_root(game_manager),
+		attacker_card,
+		primary_target_card,
+		target_cards,
+		resolve_secondary_attack_animation_key(attacker_state)
 	)
 	game_manager.is_resolving_card_action = false
+
+
+func resolve_secondary_attack_animation_key(attacker_state: CardState) -> String:
+	if attacker_state == null or attacker_state.data == null:
+		return ""
+	if attacker_state.card_id == "kaneki_saint_sword_form":
+		return SECONDARY_ATTACK_SAINT_SWORD
+	if attacker_state.get_frontal_attack_width() > 0:
+		return SECONDARY_ATTACK_FRONTAL
+	if attacker_state.get_splash_damage() > 0:
+		return SECONDARY_ATTACK_FIXED_SPLASH
+	return ""
 
 
 func play_spell_cast_animation(
