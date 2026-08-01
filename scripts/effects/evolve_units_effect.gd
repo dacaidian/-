@@ -22,6 +22,9 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	var states := get_evolution_targets(source_state, effect_data, gm)
+	var animation_key := str(effect_data.get("animation", ""))
+	if not states.is_empty() and animation_key != "":
+		await gm.play_multi_target_effect_animation(states, animation_key)
 	for state in states:
 		evolve_state(state, target_data)
 

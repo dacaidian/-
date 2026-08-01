@@ -49,12 +49,12 @@ var precision_shot_mark_color := Color(0.94, 0.98, 1.0, 0.94)
 var meteor_aura_color := Color(0.20, 0.28, 0.66, 0.14)
 var meteor_aura_edge_color := Color(0.70, 0.88, 1.0, 0.84)
 var meteor_aura_star_color := Color(0.94, 0.98, 1.0, 0.90)
-var soul_hook_color := Color(0.45, 0.04, 0.18, 0.20)
-var soul_hook_edge_color := Color(1.0, 0.24, 0.56, 0.74)
-var soul_hook_chain_color := Color(0.86, 0.44, 1.0, 0.76)
-var charm_color := Color(0.82, 0.18, 0.70, 0.18)
-var charm_edge_color := Color(1.0, 0.42, 0.86, 0.78)
-var charm_rune_color := Color(1.0, 0.78, 0.96, 0.86)
+var soul_hook_color := Color(0.20, 0.015, 0.28, 0.14)
+var soul_hook_edge_color := Color(0.88, 0.16, 0.52, 0.68)
+var soul_hook_chain_color := Color(0.58, 0.24, 0.82, 0.72)
+var charm_color := Color(0.24, 0.015, 0.28, 0.12)
+var charm_edge_color := Color(0.92, 0.18, 0.62, 0.72)
+var charm_rune_color := Color(0.92, 0.84, 1.0, 0.88)
 var reborn_color := Color(0.18, 0.78, 0.44, 0.16)
 var reborn_edge_color := Color(0.76, 1.0, 0.58, 0.82)
 var reborn_core_color := Color(1.0, 0.92, 0.48, 0.88)
@@ -185,6 +185,8 @@ func has_animated_status_visual() -> bool:
 		or should_show_devour()
 		or should_show_precision_shot()
 		or should_show_meteor_aura()
+		or should_show_soul_hook()
+		or should_show_charm()
 		or is_divine_shield_break_active()
 		or is_rooted_break_active()
 	)
@@ -1787,61 +1789,194 @@ func draw_precision_shot_overlay() -> void:
 func draw_soul_hook_overlay() -> void:
 	var hook_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.06)
 	var center := hook_rect.get_center()
-	var edge_width := maxf(size.x * 0.024, 2.0)
 	var status := state.get_status(CardStatus.STATUS_SOUL_HOOK) if state != null else null
-	var stack_count := status.stacks if status != null else 1
-	var ring_count: int = mini(maxi(stack_count, 1), 3)
+	var remaining_turns := maxi(status.remaining_turns if status != null else 1, 1)
+	var breath := 0.5 + 0.5 * sin(animation_time * 2.2)
+	var edge_width := maxf(size.x * 0.015, 1.4)
 
 	draw_rect(hook_rect, soul_hook_color, true)
-	for index in range(ring_count):
-		var grow := float(index) * 4.0
-		var alpha := soul_hook_edge_color.a * (1.0 - float(index) * 0.14)
-		draw_rect(hook_rect.grow(grow), Color(soul_hook_edge_color.r, soul_hook_edge_color.g, soul_hook_edge_color.b, alpha), false, edge_width, true)
+	draw_rect(
+		hook_rect,
+		Color(soul_hook_edge_color.r, soul_hook_edge_color.g, soul_hook_edge_color.b, 0.46 + breath * 0.12),
+		false,
+		edge_width,
+		true
+	)
 
-	var left_anchor := center + Vector2(-hook_rect.size.x * 0.28, -hook_rect.size.y * 0.16)
-	var right_anchor := center + Vector2(hook_rect.size.x * 0.28, hook_rect.size.y * 0.16)
-	var chain_points := PackedVector2Array()
-	for index in range(9):
-		var t := float(index) / 8.0
-		var x := lerpf(left_anchor.x, right_anchor.x, t)
-		var y := lerpf(left_anchor.y, right_anchor.y, t) + sin(t * TAU * 1.4) * hook_rect.size.y * 0.055
-		chain_points.append(Vector2(x, y))
+	# A second translucent card silhouette is pulled away from the body. This
+	# keeps the state readable as soul loss instead of a generic chain debuff.
+	var soul_offset := Vector2(-hook_rect.size.x * (0.08 + breath * 0.025), -hook_rect.size.y * 0.10)
+	var soul_rect := hook_rect.grow(-hook_rect.size.x * 0.15)
+	soul_rect.position += soul_offset
+	draw_rect(soul_rect, Color(0.68, 0.40, 0.88, 0.055 + breath * 0.025), true)
+	draw_rect(soul_rect, Color(0.78, 0.54, 0.94, 0.30 + breath * 0.10), false, 1.4, true)
 
-	draw_polyline(chain_points, soul_hook_chain_color, 2.8, false)
-	for point in chain_points:
-		draw_circle(point, 2.1, Color(soul_hook_edge_color.r, soul_hook_edge_color.g, soul_hook_edge_color.b, 0.52))
+	var thread_start := center + Vector2(hook_rect.size.x * 0.30, hook_rect.size.y * 0.22)
+	var thread_end := soul_rect.get_center() + Vector2(-soul_rect.size.x * 0.22, -soul_rect.size.y * 0.12)
+	var thread_points := PackedVector2Array()
+	for point_index in range(18):
+		var t := float(point_index) / 17.0
+		var point := thread_start.lerp(thread_end, t)
+		point += Vector2(
+			sin(t * PI) * hook_rect.size.x * 0.10,
+			sin(t * TAU * 1.5 + animation_time * 1.4) * hook_rect.size.y * 0.018
+		)
+		thread_points.append(point)
+	draw_polyline(thread_points, Color(soul_hook_chain_color.r, soul_hook_chain_color.g, soul_hook_chain_color.b, 0.20), 6.0, true)
+	draw_polyline(thread_points, soul_hook_chain_color, 1.8, true)
 
-	var hook_tip := center + Vector2(hook_rect.size.x * 0.18, -hook_rect.size.y * 0.24)
-	draw_arc(hook_tip, hook_rect.size.x * 0.08, PI * 0.20, PI * 1.62, 18, soul_hook_edge_color, 2.8, true)
-	draw_line(hook_tip + Vector2(-hook_rect.size.x * 0.04, hook_rect.size.y * 0.055), hook_tip + Vector2(-hook_rect.size.x * 0.12, hook_rect.size.y * 0.13), soul_hook_edge_color, 2.4)
+	draw_status_fox_eye(
+		soul_rect.get_center(),
+		minf(soul_rect.size.x, soul_rect.size.y) * 0.26,
+		0.72 + breath * 0.14,
+		Color(0.16, 0.01, 0.22, 0.42),
+		Color(0.76, 0.36, 0.92, 0.64),
+		Color(0.94, 0.88, 1.0, 0.82)
+	)
+
+	# Cracks remain confined to the attack corner so health readability is not
+	# affected. The small pips preserve duration information.
+	var attack_anchor := Vector2(hook_rect.position.x + hook_rect.size.x * 0.18, hook_rect.end.y - hook_rect.size.y * 0.13)
+	for crack_index in range(4):
+		var crack_angle := -PI * 0.92 + float(crack_index) * 0.38
+		draw_line(
+			attack_anchor,
+			attack_anchor + Vector2(cos(crack_angle), sin(crack_angle)) * hook_rect.size.x * (0.10 + float(crack_index % 2) * 0.025),
+			Color(0.96, 0.24, 0.54, 0.74),
+			1.8,
+			true
+		)
+	for turn_index in range(mini(remaining_turns, 4)):
+		draw_circle(
+			Vector2(hook_rect.end.x - 5.0 - float(turn_index) * 7.0, hook_rect.position.y + 5.0),
+			2.2,
+			Color(0.82, 0.56, 0.96, 0.78)
+		)
 
 
 func draw_charm_overlay() -> void:
 	var charm_rect := Rect2(Vector2.ZERO, size).grow(-size.x * 0.045)
 	var center := charm_rect.get_center()
-	var radius := minf(charm_rect.size.x, charm_rect.size.y) * 0.38
+	var radius := minf(charm_rect.size.x, charm_rect.size.y) * 0.36
+	var status := state.get_status(CardStatus.STATUS_CHARM) if state != null else null
+	var is_temporary := status != null and not status.is_permanent
+	var breath := 0.5 + 0.5 * sin(animation_time * (1.45 if is_temporary else 0.92))
 
 	draw_rect(charm_rect, charm_color, true)
-	for index in range(3):
-		var grow := float(index) * 3.5
-		var alpha := charm_edge_color.a * (1.0 - float(index) * 0.18)
-		draw_rect(charm_rect.grow(grow), Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, alpha), false, maxf(size.x * 0.018, 2.0), true)
+	draw_rect(
+		charm_rect,
+		Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, 0.52 + breath * 0.10),
+		false,
+		maxf(size.x * 0.016, 1.5),
+		true
+	)
+	if is_temporary:
+		draw_rect(
+			charm_rect.grow(-4.0),
+			Color(0.30, 0.62, 0.94, 0.34 + breath * 0.08),
+			false,
+			1.3,
+			true
+		)
 
-	for index in range(6):
-		var angle := TAU * float(index) / 6.0 + PI * 0.18
-		var point := center + Vector2(cos(angle), sin(angle)) * radius
-		draw_circle(point, maxf(size.x * 0.012, 2.0), charm_rune_color)
-		draw_line(center.lerp(point, 0.74), point, Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, 0.42), 1.4)
+	for ripple_index in range(3):
+		var ripple_radius := radius * (0.54 + float(ripple_index) * 0.18 + breath * 0.025)
+		draw_arc(
+			center,
+			ripple_radius,
+			-PI * 0.86 + float(ripple_index) * 0.28,
+			PI * 0.86 + float(ripple_index) * 0.28,
+			34,
+			Color(0.64, 0.30, 0.88, 0.22 - float(ripple_index) * 0.045),
+			1.4,
+			true
+		)
 
-	var heart_top := center + Vector2(0, -radius * 0.18)
-	draw_circle(heart_top + Vector2(-radius * 0.13, 0), radius * 0.12, charm_rune_color)
-	draw_circle(heart_top + Vector2(radius * 0.13, 0), radius * 0.12, charm_rune_color)
-	var points := PackedVector2Array([
-		heart_top + Vector2(-radius * 0.25, radius * 0.03),
-		heart_top + Vector2(radius * 0.25, radius * 0.03),
-		heart_top + Vector2(0, radius * 0.34)
-	])
-	draw_polygon(points, PackedColorArray([charm_rune_color, charm_rune_color, charm_rune_color]))
+	draw_status_fox_eye(
+		center,
+		radius * 0.82,
+		(0.48 + breath * 0.10) if is_temporary else (0.82 + breath * 0.08),
+		Color(0.13, 0.005, 0.18, 0.46),
+		Color(charm_edge_color.r, charm_edge_color.g, charm_edge_color.b, 0.72),
+		charm_rune_color,
+		is_temporary
+	)
+
+	# A permanent charm fully replaces the ownership ribbon. Fox Thought keeps
+	# the original blue underlay visible so its temporary control is unmistakable.
+	var ribbon_y := charm_rect.end.y - charm_rect.size.y * 0.10
+	if is_temporary:
+		draw_line(
+			Vector2(charm_rect.position.x + 6.0, ribbon_y + 4.0),
+			Vector2(charm_rect.end.x - 6.0, ribbon_y + 4.0),
+			Color(0.30, 0.62, 0.94, 0.48),
+			3.0,
+			true
+		)
+	draw_line(
+		Vector2(charm_rect.position.x + 6.0, ribbon_y),
+		Vector2(charm_rect.end.x - 6.0, ribbon_y),
+		Color(0.94, 0.20, 0.60, 0.78),
+		3.2,
+		true
+	)
+	if is_temporary and status != null:
+		for turn_index in range(mini(maxi(status.remaining_turns, 1), 4)):
+			draw_circle(
+				Vector2(charm_rect.end.x - 5.0 - float(turn_index) * 7.0, charm_rect.position.y + 5.0),
+				2.1,
+				Color(0.82, 0.62, 1.0, 0.80)
+			)
+
+
+func draw_status_fox_eye(
+	center: Vector2,
+	radius: float,
+	openness: float,
+	fill_color: Color,
+	edge_color: Color,
+	core_color: Color,
+	partial := false
+) -> void:
+	var safe_open := clampf(openness, 0.0, 1.0)
+	var eye_height := radius * (0.08 + safe_open * 0.32)
+	var upper := PackedVector2Array()
+	var lower := PackedVector2Array()
+	for point_index in range(21):
+		var t := float(point_index) / 20.0
+		var x := lerpf(-radius, radius, t)
+		var arch := sin(t * PI) * eye_height
+		upper.append(center + Vector2(x, -arch))
+		lower.append(center + Vector2(x, arch * (0.72 if partial else 1.0)))
+	var eye_polygon := PackedVector2Array()
+	for point in upper:
+		eye_polygon.append(point)
+	for point_index in range(lower.size() - 1, -1, -1):
+		eye_polygon.append(lower[point_index])
+	draw_colored_polygon(eye_polygon, fill_color)
+	draw_polyline(upper, Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.20), 6.0, true)
+	draw_polyline(lower, Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.16), 6.0, true)
+	draw_polyline(upper, edge_color, 1.8, true)
+	draw_polyline(
+		lower,
+		Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * (0.54 if partial else 1.0)),
+		1.8,
+		true
+	)
+	if safe_open > 0.16:
+		draw_status_ellipse(
+			center,
+			Vector2(radius * 0.105, eye_height * (0.70 if not partial else 0.46)),
+			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open)
+		)
+
+
+func draw_status_ellipse(center: Vector2, radii: Vector2, ellipse_color: Color) -> void:
+	var points := PackedVector2Array()
+	for point_index in range(26):
+		var angle := TAU * float(point_index) / 26.0
+		points.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
+	draw_colored_polygon(points, ellipse_color)
 
 
 func draw_reborn_overlay() -> void:

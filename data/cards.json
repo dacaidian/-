@@ -2064,7 +2064,6 @@
 						"stack_policy": "refresh",
 						"duration_turns": 1,
 						"expires_on_trigger": "after_turn_end",
-						"apply_animation": "soul_hook",
 						"payload": {
 							"attack_bonus": -4
 						}
@@ -2107,7 +2106,6 @@
 						"stack_policy": "replace",
 						"permanent": true,
 						"persists_after_death": false,
-						"apply_animation": "charm",
 						"payload": {}
 					}
 				]
@@ -2130,7 +2128,7 @@
 					{
 						"id": "fox_mind_art",
 						"name": "狐念之术",
-						"animation": "charm",
+						"animation": "fox_mind_art",
 						"target_rule": "low_stat_non_hero_minions",
 						"effects": [
 							{
@@ -2146,7 +2144,6 @@
 								"duration_scope": "source_owner",
 								"expires_on_trigger": "after_turn_end",
 								"persists_after_death": false,
-								"apply_animation": "charm",
 								"payload": {}
 							}
 						]
@@ -2205,7 +2202,8 @@
 						"card_ids": [
 							"qingqiu_fox_immortal"
 						],
-						"target_card_id": "tianhu"
+						"target_card_id": "tianhu",
+						"animation": "celestial_fox_evolve"
 					}
 				]
 			},
@@ -2217,19 +2215,21 @@
 				"type": "spell",
 				"count": 1,
 				"level": 3,
-				"animation": "sacrifice",
+				"animation": "ruin_country",
 				"target_rule": "none",
 				"keywords": [],
 				"effects": [
 					{
 						"id": "sacrifice_friendly_minions",
+						"animation": "ruin_country_targets",
 						"resource_id": "tail",
 						"amount": 1
 					},
 					{
 						"id": "add_card_to_hand",
 						"card_id": "nine_tail_tail",
-						"amount": 9
+						"amount": 9,
+						"animation": "nine_tail_army"
 					}
 				]
 			},
@@ -2351,6 +2351,7 @@
 						"before_target_effects": [
 							{
 								"id": "grant_reborn",
+								"animation": "fox_reborn",
 								"target": "owner_card_by_id",
 								"health_values": [
 									0
@@ -2408,6 +2409,7 @@
 				"type": "minion",
 				"count": 0,
 				"level": 1,
+				"animation": "nine_tail_tail_enter",
 				"keywords": [
 					"flying"
 				],

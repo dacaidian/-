@@ -19,18 +19,25 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		return
 
 	var targets := get_sacrifice_targets(player, gm)
+	var targets_animation := str(effect_data.get("animation", ""))
+	if not targets.is_empty() and targets_animation != "":
+		await gm.play_multi_target_effect_animation(targets, targets_animation)
 	for target in targets:
 		if not can_sacrifice_target(player, target):
 			continue
 
 		var modifiers := get_matching_skill_modifiers(player, SKILL_SACRIFICE)
+		var suppress_resource_gain := should_suppress_resource_gain(modifiers)
 		await execute_before_target_effects(player, target, gm, modifiers)
 
 		if gm.has_method("play_status_apply_animation"):
-			await gm.play_status_apply_animation(target, "sacrifice")
+			await gm.play_status_apply_animation(
+				target,
+				"nine_tail_sacrifice" if suppress_resource_gain else "sacrifice"
+			)
 
 		await gm.destroy_card_with_refill(target, "mass_sacrifice", source_state, true)
-		if not should_suppress_resource_gain(modifiers):
+		if not suppress_resource_gain:
 			player.gain_faction_resource(
 				str(effect_data.get(EffectData.KEY_RESOURCE_ID, RESOURCE_TAIL)),
 				int(effect_data.get(EffectData.KEY_AMOUNT, 1))

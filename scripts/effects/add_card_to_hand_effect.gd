@@ -23,6 +23,9 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	var amount := get_add_amount(source_state, effect_data)
 	if amount <= 0:
 		return
+	var animation_key := str(effect_data.get("animation", ""))
+	if animation_key != "" and game_manager.has_method("play_board_effect_animation"):
+		await game_manager.play_board_effect_animation(animation_key)
 
 	for copy_index in range(amount):
 		var card_data := candidate_cards[randi_range(0, candidate_cards.size() - 1)]

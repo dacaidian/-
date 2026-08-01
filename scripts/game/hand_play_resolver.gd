@@ -316,6 +316,8 @@ func execute_hand_minion_placement(
 			aerial_state.apply_permanent_stat_overrides_as_fresh_state(permanent_stat_overrides)
 		aerial_state.set_owner(player.id)
 		aerial_state.set_face_up(true)
+		if card_data.animation != "":
+			await game_manager.play_slot_effect_animation(aerial_state, card_data.animation)
 		await game_manager.resolve_slot_unit_entered(aerial_state)
 		if not aerial_state.is_empty():
 			game_manager.queue_card_trigger(aerial_state, EventContext.TRIGGER_ON_ENTER_BOARD)
@@ -337,6 +339,8 @@ func execute_hand_minion_placement(
 		target_state.apply_permanent_stat_overrides_as_fresh_state(permanent_stat_overrides)
 	target_state.set_owner(player.id)
 	target_state.set_face_up(true)
+	if card_data.animation != "":
+		await game_manager.play_slot_effect_animation(target_state, card_data.animation)
 	await game_manager.resolve_slot_unit_entered(target_state)
 	if not target_state.is_empty():
 		game_manager.queue_card_trigger(target_state, EventContext.TRIGGER_ON_ENTER_BOARD)

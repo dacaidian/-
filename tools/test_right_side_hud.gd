@@ -5,11 +5,19 @@ const FactionSkillPanelControllerScript := preload("res://scripts/ui/faction_ski
 const FactionTimePanelControllerScript := preload("res://scripts/ui/faction_time_panel_controller.gd")
 const RightSideHudLayoutControllerScript := preload("res://scripts/ui/right_side_hud_layout_controller.gd")
 const RightSideHudStyleScript := preload("res://scripts/ui/right_side_hud_style.gd")
+const TailResourceMeterScript := preload("res://scripts/ui/tail_resource_meter.gd")
 const TurnStatusControllerScript := preload("res://scripts/ui/turn_status_controller.gd")
 
 
 func _init() -> void:
 	run.call_deferred()
+	var watchdog := create_timer(10.0)
+	watchdog.timeout.connect(_on_watchdog_timeout)
+
+
+func _on_watchdog_timeout() -> void:
+	push_error("Right-side HUD test did not finish before the watchdog timeout.")
+	quit(1)
 
 
 func run() -> void:
@@ -55,9 +63,20 @@ func run() -> void:
 	assert(turn_controller.resource_label.text == "34/80")
 	assert(turn_controller.panel.find_child("MetricRow", true, false) != null)
 
-	var pip_meter := skill_controller.panel.find_child("PipMeter", true, false) as HBoxContainer
-	assert(pip_meter != null)
-	assert(pip_meter.get_child_count() == 9)
+	var tail_meter := skill_controller.panel.find_child("TailResourceMeter", true, false) as TailResourceMeter
+	assert(tail_meter != null)
+	assert(tail_meter.current_value == 5)
+	assert(tail_meter.maximum_value == 9)
+	assert(skill_controller.panel.find_child("TailStageLabel", true, false).text == "三尾 · 远程")
+
+	player.gain_faction_resource("tail", 1)
+	skill_controller.update(player, scene, ["sacrifice"])
+	await process_frame
+	tail_meter = skill_controller.panel.find_child("TailResourceMeter", true, false) as TailResourceMeter
+	assert(tail_meter != null)
+	assert(tail_meter.previous_value == 5)
+	assert(tail_meter.current_value == 6)
+	assert(skill_controller.panel.find_child("TailStageLabel", true, false).text == "六尾 · 免疫")
 
 	var previous_bottom := 0.0
 	var expected_x := -1.0
@@ -72,7 +91,10 @@ func run() -> void:
 		assert(panel.position.y >= previous_bottom - 0.01)
 		previous_bottom = panel.position.y + panel.size.y
 
-	assert(previous_bottom <= 720.0 - RightSideHudStyleScript.PANEL_MARGIN + 0.01)
+	assert(
+		previous_bottom <= 720.0 - RightSideHudStyleScript.PANEL_MARGIN + 0.01,
+		"right-side HUD bottom %.2f exceeds the 720p safe area" % previous_bottom
+	)
 	assert(equipment_controller.panel.size.y < 166.0)
 
 	print("RIGHT_SIDE_HUD_TESTS_OK")

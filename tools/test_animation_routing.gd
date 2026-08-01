@@ -31,7 +31,8 @@ func _run() -> void:
 		"drive_spirit_battlefield", "bronze_head_iron_arms_reflect",
 		"dragon_palace_treasure", "hair_clone_enter", "monkey_hair_clone_assist",
 		"beastmen_evolution", "gu_infusion",
-		"sacrifice", "fel_infusion", "feather_needle", "cone_of_cold",
+		"sacrifice", "nine_tail_sacrifice", "fox_reborn", "soul_hook", "charm", "fox_mind_art",
+		"nine_tail_tail_enter", "fel_infusion", "feather_needle", "cone_of_cold",
 		"centipede_form", "dragon_form", "saint_sword_form",
 		"rc_forced_feeding", "bikaku_volley", "free_meal", "kakuja_form",
 		"restore_form", "special_blend", "sugar_cube_coffee",
@@ -54,6 +55,8 @@ func _run() -> void:
 		"somersault_cloud", "body_beyond_body", "bronze_head_iron_arms",
 		"immobilize", "gather_scatter_qi", "heavenly_form",
 		"dragon_palace_treasure", "wild_call", "gu_summon", "charm",
+		"sacrifice", "nine_tail_sacrifice", "fox_reborn", "soul_hook", "fox_mind_art",
+		"nine_tail_tail_enter", "ruin_country",
 		"dark_portal", "centipede_form", "dragon_form", "saint_sword_form",
 		"bikaku_volley", "extreme_cold_storm_cast",
 		"divine_shield", "baptism", "holy_heal", "power_word_shield",
@@ -74,7 +77,8 @@ func _run() -> void:
 		"body_beyond_body", "monkey_somersault_move", "monkey_westward_move",
 		"monkey_hair_clone_assist", "bronze_head_iron_arms_reflect",
 		"wanmo_ritual", "medical_practice",
-		"soul_hook", "life_drain", "divine_shield", "baptism",
+		"sacrifice", "nine_tail_sacrifice", "fox_reborn", "soul_hook", "charm", "fox_mind_art",
+		"nine_tail_tail_enter", "life_drain", "divine_shield", "baptism",
 		"holy_heal", "power_word_shield", "inner_fire", "healing_to_resolve", "fireball",
 		"pyroblast", "frost_shield", "gu_herb_poison",
 		"gu_scorpion_breeding", "gu_life_link_death",
@@ -89,7 +93,8 @@ func _run() -> void:
 	_assert_routes(router, "multi_rect", [
 		"faith_light", "gu_venom_burst", "gu_poison_tick_scorpion",
 		"gu_poison_tick_snake", "gu_poison_tick_king", "gu_poison_burst",
-		"thin_burial_release", "thin_burial_break", "meteor_strike"
+		"thin_burial_release", "thin_burial_break", "meteor_strike",
+		"celestial_fox_evolve", "ruin_country_targets"
 	])
 	_assert_routes(router, "source_rect", [
 		"centipede_form", "dragon_form", "saint_sword_form",
@@ -110,7 +115,7 @@ func _run() -> void:
 		"night_elf_time_transition_dusk",
 		"night_elf_time_transition_moonrise",
 		"night_elf_time_transition_full_moon",
-		"night_elf_time_transition_moonset"
+		"night_elf_time_transition_moonset", "nine_tail_army"
 	])
 	_assert_routes(router, "path", ["beast_path"])
 	_assert_routes(router, "area", ["foxfire", "blizzard"])
