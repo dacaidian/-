@@ -4,6 +4,8 @@ class_name TailResourceMeter
 # Compact nine-slot Fox Spirit resource display. It animates from the previous
 # committed value to the new value but never owns or mutates faction resources.
 
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
+
 const INACTIVE_FILL := Color(0.12, 0.075, 0.11, 0.90)
 const INACTIVE_EDGE := Color(0.38, 0.22, 0.32, 0.56)
 const DARK_RED := Color(0.58, 0.055, 0.16, 1.0)
@@ -28,7 +30,7 @@ func _ready() -> void:
 	# The containing HUD panel owns horizontal sizing. A fixed minimum width here
 	# would include both HUD and inset safe areas and could widen the whole column.
 	custom_minimum_size = Vector2(0.0, 48.0)
-	set_process(current_value != previous_value)
+	set_process(true)
 	queue_redraw()
 
 
@@ -40,7 +42,7 @@ func configure(new_value: int, max_value: int, old_value: int, hint: String) -> 
 	animation_elapsed = 0.0
 	animation_duration = 1.08 if _crossed_threshold(previous_value, current_value) else 0.82
 	animation_progress = 0.0 if current_value != previous_value else 1.0
-	set_process(animation_progress < 1.0)
+	set_process(true)
 	queue_redraw()
 	return self
 
@@ -50,8 +52,6 @@ func _process(delta: float) -> void:
 	if animation_progress < 1.0:
 		animation_elapsed += delta
 		animation_progress = clampf(animation_elapsed / maxf(animation_duration, 0.01), 0.0, 1.0)
-		if animation_progress >= 1.0:
-			set_process(false)
 	queue_redraw()
 
 
@@ -81,7 +81,7 @@ func _draw() -> void:
 			continue
 		var angle := _tail_angle(tail_index)
 		var length_scale := 0.86 + 0.06 * float(tail_index % 3)
-		var pulse := 1.0
+		var pulse := 1.0 + sin(pulse_time * 1.25 + float(tail_index) * 0.36) * 0.018
 		if tail_index == current_value - 1 and current_value != previous_value:
 			pulse += sin(animation_progress * PI) * 0.16
 		var fill := _active_color(tail_index, 0.54 + activation * 0.30)
@@ -141,7 +141,7 @@ func _draw_threshold_marker(center: Vector2, max_length: float, tail_index: int,
 	var angle := _tail_angle(tail_index)
 	var marker_point := center + Vector2(cos(angle), sin(angle)) * max_length * 1.05
 	var active := current_value > tail_index
-	draw_circle(marker_point, 3.0, Color(color.r, color.g, color.b, color.a * (0.94 if active else 0.30)))
+	Toolkit.draw_mote(self, marker_point, 3.4, Color(color.r, color.g, color.b, color.a * (0.94 if active else 0.30)), pulse_time * 2.0 + float(tail_index))
 	draw_arc(marker_point, 5.0, 0.0, TAU, 18, Color(color.r, color.g, color.b, color.a * (0.62 if active else 0.20)), 1.2, true)
 
 
@@ -161,11 +161,10 @@ func _draw_center_eye(center: Vector2, radius: float) -> void:
 		polygon.append(point)
 	for point_index in range(lower.size() - 1, -1, -1):
 		polygon.append(lower[point_index])
+	Toolkit.draw_soft_ellipse(self, center, Vector2(radius * 0.92, eye_height * 1.10), Color(stage_color.r, stage_color.g, stage_color.b, 0.16), Color.TRANSPARENT, 6)
 	draw_colored_polygon(polygon, Color(0.055, 0.018, 0.06, 0.96))
-	draw_polyline(upper, Color(stage_color.r, stage_color.g, stage_color.b, 0.34), 5.0, true)
-	draw_polyline(lower, Color(stage_color.r, stage_color.g, stage_color.b, 0.34), 5.0, true)
-	draw_polyline(upper, stage_color, 1.5, true)
-	draw_polyline(lower, stage_color, 1.5, true)
+	Toolkit.draw_ribbon(self, upper, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.22), 5.0, true, true, pulse_time)
+	Toolkit.draw_ribbon(self, lower, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.18), 5.0, true, true, pulse_time + 0.4)
 
 
 func _draw_value(center: Vector2, value: int) -> void:
@@ -192,11 +191,18 @@ func _draw_tail(
 	if length <= 1.0:
 		return
 	var centerline := _tail_centerline(base, angle, length, width)
-	for point_index in range(centerline.size() - 1):
-		var t := (float(point_index) + 0.5) / float(centerline.size() - 1)
-		var stroke_width := maxf(width * 2.0 * pow(sin(t * PI), 0.60), 1.0)
-		draw_line(centerline[point_index], centerline[point_index + 1], edge, stroke_width + 1.8, true)
-		draw_line(centerline[point_index], centerline[point_index + 1], fill, stroke_width, true)
+	Toolkit.draw_ribbon(
+		self,
+		centerline,
+		width * 2.0,
+		fill,
+		Color(edge.r, edge.g, edge.b, edge.a * 0.76),
+		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, fill.a * 0.28),
+		width * 3.3,
+		true,
+		true,
+		pulse_time * 0.8 + angle
+	)
 
 
 func _tail_centerline(base: Vector2, angle: float, length: float, width: float) -> PackedVector2Array:

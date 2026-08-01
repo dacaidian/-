@@ -4,6 +4,8 @@ class_name FoxSpiritRitualVisual
 # Large-scale and multi-card Fox Spirit rituals. The provider supplies resolved
 # rectangles; this renderer only stages the presentation.
 
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
+
 const CRIMSON := Color(0.78, 0.035, 0.17, 1.0)
 const ROUGE := Color(0.96, 0.18, 0.43, 1.0)
 const VIOLET := Color(0.58, 0.14, 0.82, 1.0)
@@ -41,6 +43,7 @@ func configure(
 
 
 func _draw() -> void:
+	_draw_ritual_veil()
 	match animation_key:
 		"celestial_fox_evolve":
 			_draw_celestial_fox_evolution()
@@ -50,6 +53,37 @@ func _draw() -> void:
 			_draw_nine_tail_army()
 		_:
 			_draw_ruin_country()
+
+
+func _draw_ritual_veil() -> void:
+	var life := sin(progress * PI)
+	if life <= 0.01:
+		return
+	var ritual_center := destination_point
+	if ritual_center == Vector2.ZERO:
+		ritual_center = source_point if source_point != Vector2.ZERO else size * 0.5
+	var radius := maxf(minf(size.x, size.y) * 0.18, 42.0)
+	var high_tier := animation_key in ["celestial_fox_evolve", "nine_tail_army"]
+	var veil_color := MOON_WHITE if high_tier else VIOLET
+	Toolkit.draw_soft_ellipse(
+		self,
+		ritual_center,
+		Vector2(radius * 1.36, radius * 0.86) * (0.94 + sin(progress * TAU * 1.25) * 0.06),
+		Color(veil_color.r, veil_color.g, veil_color.b, life * 0.095),
+		Color(ROUGE.r, ROUGE.g, ROUGE.b, life * 0.07),
+		8,
+		progress * 0.14
+	)
+	for mote_index in range(14):
+		var angle := TAU * float(mote_index) / 14.0 + progress * (0.38 + float(mote_index % 4) * 0.035)
+		var mote_point := ritual_center + Vector2(cos(angle) * radius * 1.18, sin(angle) * radius * 0.72)
+		Toolkit.draw_mote(
+			self,
+			mote_point,
+			radius * (0.014 + float(mote_index % 3) * 0.004),
+			Color(veil_color.r, veil_color.g, veil_color.b, life * 0.25),
+			progress * 6.0 + float(mote_index)
+		)
 
 
 func _draw_ruin_country() -> void:
@@ -309,22 +343,26 @@ func _draw_tail_shape(
 	if length <= 1.0:
 		return
 	var centerline := _tail_centerline(base, angle, length, width)
-	for point_index in range(centerline.size() - 1):
-		var t := (float(point_index) + 0.5) / float(centerline.size() - 1)
-		var stroke_width := maxf(width * 2.0 * pow(sin(t * PI), 0.58), 1.0)
-		draw_line(
-			centerline[point_index],
-			centerline[point_index + 1],
-			Color(edge.r, edge.g, edge.b, edge.a * 0.18),
-			stroke_width + 7.0,
-			true
-		)
-	for point_index in range(centerline.size() - 1):
-		var t := (float(point_index) + 0.5) / float(centerline.size() - 1)
-		var stroke_width := maxf(width * 2.0 * pow(sin(t * PI), 0.58), 1.0)
-		draw_line(centerline[point_index], centerline[point_index + 1], edge, stroke_width + 2.0, true)
-		draw_line(centerline[point_index], centerline[point_index + 1], fill, stroke_width, true)
-	draw_circle(centerline[centerline.size() - 1], maxf(width * 0.12, 0.8), edge)
+	Toolkit.draw_ribbon(
+		self,
+		centerline,
+		width * 2.10,
+		fill,
+		Color(edge.r, edge.g, edge.b, edge.a * 0.74),
+		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, fill.a * 0.32),
+		width * 3.8,
+		true,
+		true,
+		progress * 2.7 + angle
+	)
+	Toolkit.draw_soft_disc(
+		self,
+		centerline[centerline.size() - 1],
+		maxf(width * 0.36, 1.2),
+		Color(edge.r, edge.g, edge.b, edge.a * 0.28),
+		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, edge.a * 0.26),
+		5
+	)
 
 
 func _tail_centerline(base: Vector2, angle: float, length: float, width: float) -> PackedVector2Array:
@@ -348,9 +386,18 @@ func _draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
 func _draw_layered_line(points: PackedVector2Array, color: Color, width: float, glow_width: float) -> void:
 	if points.size() < 2 or color.a <= 0.001:
 		return
-	draw_polyline(points, Color(color.r, color.g, color.b, color.a * 0.10), glow_width, true)
-	draw_polyline(points, Color(color.r, color.g, color.b, color.a * 0.34), width * 1.8, true)
-	draw_polyline(points, color, width, true)
+	Toolkit.draw_ribbon(
+		self,
+		points,
+		width,
+		color,
+		Color(DEEP_PURPLE.r, DEEP_PURPLE.g, DEEP_PURPLE.b, color.a * 0.42),
+		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, color.a * 0.24),
+		glow_width,
+		true,
+		true,
+		progress * 3.2 + float(points.size()) * 0.07
+	)
 
 
 func _cubic_curve(

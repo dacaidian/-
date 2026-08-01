@@ -4,6 +4,8 @@ class_name FoxSpiritAreaVisual
 # A board-space renderer for the 2x2 Foxfire selector and impact. The selected
 # rectangle is supplied by the router; this class never resolves legal targets.
 
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
+
 const FIRE_CORE := Color(0.70, 0.84, 1.0, 1.0)
 const FIRE_BLUE := Color(0.24, 0.46, 0.96, 1.0)
 const FIRE_VIOLET := Color(0.52, 0.12, 0.86, 1.0)
@@ -40,6 +42,7 @@ func _draw() -> void:
 	var center := area_rect.get_center()
 	var cell_size := area_rect.size * 0.5
 
+	_draw_perfume_field(center, cell_size, gather, burn, alpha)
 	_draw_field_boundary(gather, burn, alpha)
 	_draw_casting_arcs(cast, alpha)
 
@@ -68,6 +71,31 @@ func _draw() -> void:
 			)
 
 
+func _draw_perfume_field(center: Vector2, cell_size: Vector2, gather: float, burn: float, alpha: float) -> void:
+	var breath := 0.92 + sin(progress * TAU * 1.8) * 0.08
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		area_rect.size * Vector2(0.48, 0.46) * breath,
+		Color(FIRE_VIOLET.r, FIRE_VIOLET.g, FIRE_VIOLET.b, alpha * (0.07 + burn * 0.05)),
+		Color(FIRE_BLUE.r, FIRE_BLUE.g, FIRE_BLUE.b, alpha * burn * 0.06),
+		7
+	)
+	for mist_index in range(10):
+		var angle := TAU * float(mist_index) / 10.0 + progress * (0.44 + float(mist_index % 3) * 0.06)
+		var orbit := Vector2(area_rect.size.x * 0.38, area_rect.size.y * 0.36)
+		var mist_center := center + Vector2(cos(angle) * orbit.x, sin(angle) * orbit.y)
+		Toolkit.draw_soft_ellipse(
+			self,
+			mist_center,
+			Vector2(cell_size.x * 0.13, cell_size.y * 0.055) * (0.85 + gather * 0.15),
+			Color(FIRE_ROUGE.r, FIRE_ROUGE.g, FIRE_ROUGE.b, alpha * 0.075),
+			Color.TRANSPARENT,
+			4,
+			angle
+		)
+
+
 func _draw_field_boundary(gather: float, burn: float, alpha: float) -> void:
 	var pulse := 0.82 + sin(progress * PI * 4.0) * 0.10
 	var field_fill := Color(FIELD_DARK.r, FIELD_DARK.g, FIELD_DARK.b, alpha * (0.08 + burn * 0.08))
@@ -83,27 +111,19 @@ func _draw_field_boundary(gather: float, burn: float, alpha: float) -> void:
 		var edge_start: Vector2 = corners[edge_index]
 		var edge_end: Vector2 = corners[(edge_index + 1) % 4]
 		var visible_end := edge_start.lerp(edge_end, gather)
-		draw_line(
-			edge_start,
-			visible_end,
-			Color(FIRE_BLUE.r, FIRE_BLUE.g, FIRE_BLUE.b, alpha * 0.18),
-			9.0,
-			true
-		)
-		draw_line(
-			edge_start,
-			visible_end,
-			Color(FIRE_ROUGE.r, FIRE_ROUGE.g, FIRE_ROUGE.b, alpha * 0.54 * pulse),
-			3.2,
-			true
-		)
-		draw_line(
-			edge_start,
-			visible_end,
-			Color(FIRE_CORE.r, FIRE_CORE.g, FIRE_CORE.b, alpha * 0.80),
-			1.2,
-			true
-		)
+		if edge_start.distance_to(visible_end) > 0.5:
+			Toolkit.draw_ribbon(
+				self,
+				PackedVector2Array([edge_start, visible_end]),
+				3.2,
+				Color(FIRE_ROUGE.r, FIRE_ROUGE.g, FIRE_ROUGE.b, alpha * 0.54 * pulse),
+				Color(FIRE_BLUE.r, FIRE_BLUE.g, FIRE_BLUE.b, alpha * 0.20),
+				Color(FIRE_CORE.r, FIRE_CORE.g, FIRE_CORE.b, alpha * 0.72),
+				10.0,
+				false,
+				true,
+				progress * 4.0 + float(edge_index)
+			)
 
 	var vertical_mid_x := area_rect.position.x + area_rect.size.x * 0.5
 	var horizontal_mid_y := area_rect.position.y + area_rect.size.y * 0.5
@@ -231,6 +251,15 @@ func _draw_spirit_flame(
 ) -> void:
 	if length <= 1.0:
 		return
+	Toolkit.draw_soft_ellipse(
+		self,
+		base,
+		Vector2(length * 0.34, length * 0.18),
+		Color(fill.r, fill.g, fill.b, fill.a * 0.20),
+		Color(core.r, core.g, core.b, core.a * 0.18),
+		5,
+		angle
+	)
 	var direction := Vector2(cos(angle), sin(angle))
 	var tangent := direction.orthogonal()
 	var points := PackedVector2Array([
@@ -255,9 +284,18 @@ func _draw_spirit_flame(
 func _draw_layered_line(points: PackedVector2Array, color: Color, width: float, glow_width: float) -> void:
 	if points.size() < 2 or color.a <= 0.001:
 		return
-	draw_polyline(points, Color(color.r, color.g, color.b, color.a * 0.12), glow_width, true)
-	draw_polyline(points, Color(color.r, color.g, color.b, color.a * 0.36), width * 1.8, true)
-	draw_polyline(points, color, width, true)
+	Toolkit.draw_ribbon(
+		self,
+		points,
+		width,
+		color,
+		Color(FIELD_DARK.r, FIELD_DARK.g, FIELD_DARK.b, color.a * 0.42),
+		Color(FIRE_CORE.r, FIRE_CORE.g, FIRE_CORE.b, color.a * 0.30),
+		glow_width,
+		true,
+		true,
+		progress * 4.4 + float(points.size()) * 0.09
+	)
 
 
 func _cubic_curve(

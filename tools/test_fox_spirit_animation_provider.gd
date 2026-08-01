@@ -12,6 +12,7 @@ const FoxSpiritAreaVisualScript := preload(
 const FoxSpiritRitualVisualScript := preload(
 	"res://scripts/ui/animation/fox_spirit_ritual_visual.gd"
 )
+const TailResourceMeterScript := preload("res://scripts/ui/tail_resource_meter.gd")
 
 
 func _initialize() -> void:
@@ -29,6 +30,8 @@ func _run() -> void:
 	if not await _test_provider_lifecycle(effect_root):
 		return
 	if not await _test_status_overlays(effect_root):
+		return
+	if not await _test_tail_resource_meter(effect_root):
 		return
 	if not _test_card_configuration():
 		return
@@ -164,6 +167,21 @@ func _test_status_overlays(effect_root: Control) -> bool:
 
 	overlay.queue_free()
 	await process_frame
+	return true
+
+
+func _test_tail_resource_meter(effect_root: Control) -> bool:
+	var meter := TailResourceMeterScript.new() as TailResourceMeter
+	meter.size = Vector2(360.0, 72.0)
+	meter.configure(9, 9, 5, "tail resource test")
+	effect_root.add_child(meter)
+	await process_frame
+	if not meter.is_processing():
+		return _fail("Tail resource meter does not keep its material breathing animation active")
+	meter.queue_free()
+	await process_frame
+	if effect_root.get_child_count() != 0:
+		return _fail("Tail resource meter leaked nodes after cleanup")
 	return true
 
 

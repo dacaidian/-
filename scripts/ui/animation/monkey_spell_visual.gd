@@ -4,6 +4,8 @@ class_name MonkeySpellVisual
 # Procedural visual language for the Monkey Immortals. The provider owns
 # placement and timing; this node renders deterministic key frames only.
 
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
+
 const AMBER := Color(1.0, 0.66, 0.10, 0.94)
 const GOLD := Color(1.0, 0.86, 0.28, 0.96)
 const HOT_GOLD := Color(1.0, 0.96, 0.62, 1.0)
@@ -42,6 +44,7 @@ func configure(
 
 
 func _draw() -> void:
+	_draw_material_atmosphere()
 	match visual_key:
 		"fiery_eyes_golden_gaze":
 			_draw_fiery_eyes()
@@ -71,6 +74,46 @@ func _draw() -> void:
 			_draw_westward()
 
 
+func _draw_material_atmosphere() -> void:
+	var life := sin(clampf(progress, 0.0, 1.0) * PI)
+	if life <= 0.01:
+		return
+	var atmosphere_color := AMBER
+	match visual_key:
+		"somersault_cloud", "monkey_somersault_move", "monkey_westward_move":
+			atmosphere_color = CLOUD_CYAN
+		"bronze_head_iron_arms", "bronze_head_iron_arms_reflect":
+			atmosphere_color = COPPER
+		"immortal_peach":
+			atmosphere_color = PEACH_LIGHT
+		"drive_spirit", "drive_spirit_battlefield":
+			atmosphere_color = JADE
+		"gather_scatter_qi":
+			atmosphere_color = CLOUD_WHITE
+	var radius := _card_radius()
+	var breath := 0.88 + sin(progress * TAU * 1.7) * 0.12
+	Toolkit.draw_soft_ellipse(
+		self,
+		source_point,
+		Vector2(radius * 0.72, radius * 0.46) * breath,
+		Color(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b, life * 0.10),
+		Color.TRANSPARENT,
+		5,
+		progress * 0.18
+	)
+	for mote_index in range(7):
+		var angle := TAU * float(mote_index) / 7.0 + progress * (1.6 + float(mote_index % 3) * 0.18)
+		var orbit := radius * (0.48 + float(mote_index % 2) * 0.20)
+		var mote_point := source_point + Vector2(cos(angle), sin(angle) * 0.64) * orbit
+		Toolkit.draw_mote(
+			self,
+			mote_point,
+			radius * (0.025 + float(mote_index % 3) * 0.007),
+			Color(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b, life * 0.30),
+			progress * 9.0 + float(mote_index)
+		)
+
+
 func _draw_fiery_eyes() -> void:
 	var reveal := _ease_out(progress, 0.0, 0.24)
 	var scan := _ease_in_out(progress, 0.18, 0.76)
@@ -91,6 +134,14 @@ func _draw_fiery_eyes() -> void:
 		eye_center + Vector2(eye_radius, 0.0),
 		24
 	)
+	Toolkit.draw_soft_ellipse(
+		self,
+		eye_center,
+		Vector2(eye_radius * 1.04, eye_radius * 0.48),
+		Color(CINNABAR.r, CINNABAR.g, CINNABAR.b, reveal * residue * 0.20),
+		Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, reveal * residue * 0.24),
+		6
+	)
 	_draw_brush_curve(upper, Color(AMBER.r, AMBER.g, AMBER.b, reveal * residue), 4.4)
 	_draw_brush_curve(lower, Color(CINNABAR.r, CINNABAR.g, CINNABAR.b, reveal * residue * 0.86), 3.4)
 	draw_circle(eye_center, eye_radius * 0.22 * reveal, Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, 0.92 * residue))
@@ -100,6 +151,14 @@ func _draw_fiery_eyes() -> void:
 	# card backs without pretending that they have been flipped.
 	var scan_x := lerpf(size.x * 0.03, size.x * 0.97, scan)
 	var band_alpha := sin(scan * PI) * residue
+	for band_index in range(5):
+		var band_width := maxf(size.x * (0.045 - float(band_index) * 0.007), 3.0)
+		var band_offset := float(band_index) * maxf(size.x * 0.009, 3.0)
+		draw_rect(
+			Rect2(Vector2(scan_x - band_offset - band_width * 0.5, size.y * 0.05), Vector2(band_width, size.y * 0.90)),
+			Color(AMBER.r, HOT_GOLD.g, HOT_GOLD.b, band_alpha * (0.055 - float(band_index) * 0.008)),
+			true
+		)
 	for trail_index in range(3):
 		var x_offset := float(trail_index) * maxf(size.x * 0.012, 4.0)
 		var line_color := Color(
@@ -552,14 +611,50 @@ func _draw_westward() -> void:
 func _draw_cloud(cloud_center: Vector2, cloud_radius: float, alpha: float) -> void:
 	if cloud_radius <= 0.1 or alpha <= 0.01:
 		return
+	var breath := 0.94 + sin(progress * TAU * 1.35) * 0.06
+	Toolkit.draw_soft_ellipse(
+		self,
+		cloud_center + Vector2(0.0, cloud_radius * 0.06),
+		Vector2(cloud_radius * 0.92, cloud_radius * 0.44) * breath,
+		Color(CLOUD_CYAN.r, CLOUD_CYAN.g, CLOUD_CYAN.b, alpha * 0.24),
+		Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.26),
+		7
+	)
 	for curl_index in range(5):
 		var angle := TAU * float(curl_index) / 5.0 + progress * (0.34 + float(curl_index) * 0.025)
 		var curl_center := cloud_center + Vector2(cos(angle), sin(angle) * 0.52) * cloud_radius * 0.42
 		var curl_radius := cloud_radius * (0.32 + float(curl_index % 2) * 0.08)
-		draw_circle(curl_center, curl_radius, Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.12))
-		draw_arc(curl_center, curl_radius, angle - PI * 0.82, angle + PI * 0.68, 22, Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.74), 2.2, true)
-		draw_arc(curl_center, curl_radius * 0.72, angle - PI * 0.64, angle + PI * 0.42, 18, Color(CLOUD_CYAN.r, CLOUD_CYAN.g, CLOUD_CYAN.b, alpha * 0.54), 1.4, true)
-	draw_line(cloud_center - Vector2(cloud_radius * 0.72, 0.0), cloud_center + Vector2(cloud_radius * 0.72, 0.0), Color(GOLD.r, GOLD.g, GOLD.b, alpha * 0.34), 1.5, true)
+		Toolkit.draw_soft_disc(
+			self,
+			curl_center,
+			curl_radius,
+			Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.18),
+			Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.20),
+			5
+		)
+		Toolkit.draw_arc_ribbon(
+			self,
+			curl_center,
+			curl_radius,
+			angle - PI * 0.82,
+			angle + PI * 0.68,
+			maxf(cloud_radius * 0.075, 1.8),
+			Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.54),
+			Color(CLOUD_CYAN.r, CLOUD_CYAN.g, CLOUD_CYAN.b, alpha * 0.24),
+			Color(1.0, 1.0, 1.0, alpha * 0.34),
+			cloud_radius * 0.24,
+			20,
+			true,
+			true,
+			float(curl_index)
+		)
+	var cloud_base := PackedVector2Array([
+		cloud_center - Vector2(cloud_radius * 0.78, -cloud_radius * 0.05),
+		cloud_center - Vector2(cloud_radius * 0.24, 0.0),
+		cloud_center + Vector2(cloud_radius * 0.26, cloud_radius * 0.01),
+		cloud_center + Vector2(cloud_radius * 0.78, -cloud_radius * 0.04),
+	])
+	Toolkit.draw_ribbon(self, cloud_base, maxf(cloud_radius * 0.055, 1.6), Color(CLOUD_CYAN.r, CLOUD_CYAN.g, CLOUD_CYAN.b, alpha * 0.34), Color(GOLD.r, GOLD.g, GOLD.b, alpha * 0.16), Color(CLOUD_WHITE.r, CLOUD_WHITE.g, CLOUD_WHITE.b, alpha * 0.28), cloud_radius * 0.18, true, true, progress * 2.0)
 
 
 func _draw_peach(peach_center: Vector2, peach_radius: float, alpha: float) -> void:
@@ -654,24 +749,35 @@ func _draw_center_character(character_center: Vector2, character: String, charac
 
 
 func _draw_glow_line(from_point: Vector2, to_point: Vector2, line_color: Color, line_width: float) -> void:
-	draw_line(from_point, to_point, Color(line_color.r, line_color.g, line_color.b, line_color.a * 0.10), line_width * 4.5, true)
-	draw_line(from_point, to_point, Color(line_color.r, line_color.g, line_color.b, line_color.a * 0.34), line_width * 2.1, true)
-	draw_line(from_point, to_point, line_color, line_width, true)
+	Toolkit.draw_ribbon(
+		self,
+		PackedVector2Array([from_point, to_point]),
+		line_width,
+		line_color,
+		Color(INK.r, INK.g, INK.b, line_color.a * 0.30),
+		Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, line_color.a * 0.42),
+		line_width * 4.5,
+		true,
+		true,
+		progress * 5.0
+	)
 
 
 func _draw_brush_curve(points: PackedVector2Array, line_color: Color, line_width: float) -> void:
 	if points.size() < 2 or line_color.a <= 0.01:
 		return
-	draw_polyline(points, Color(line_color.r, line_color.g, line_color.b, line_color.a * 0.10), line_width * 4.2, true)
-	draw_polyline(points, Color(line_color.r, line_color.g, line_color.b, line_color.a * 0.34), line_width * 2.0, true)
-	draw_polyline(points, line_color, line_width, true)
-	# Brush-flying-white gaps are represented by a thinner offset highlight.
-	var highlight := PackedVector2Array()
-	for point_index in range(points.size()):
-		if point_index % 3 != 1:
-			highlight.append(points[point_index] + Vector2(0.0, -line_width * 0.22))
-	if highlight.size() >= 2:
-		draw_polyline(highlight, Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, line_color.a * 0.28), maxf(line_width * 0.26, 0.8), true)
+	Toolkit.draw_ribbon(
+		self,
+		points,
+		line_width,
+		line_color,
+		Color(INK.r, INK.g, INK.b, line_color.a * 0.28),
+		Color(HOT_GOLD.r, HOT_GOLD.g, HOT_GOLD.b, line_color.a * 0.34),
+		line_width * 4.2,
+		true,
+		true,
+		progress * 4.0 + float(points.size()) * 0.13
+	)
 
 
 func _quadratic_points(from_point: Vector2, control_point: Vector2, to_point: Vector2, point_count: int) -> PackedVector2Array:

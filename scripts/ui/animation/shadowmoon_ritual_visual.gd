@@ -1,6 +1,7 @@
 extends Control
 
 const Palette := preload("res://scripts/ui/animation/shadowmoon_vfx_palette.gd")
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 var animation_key := ""
 var source_center := Vector2.ZERO
@@ -36,6 +37,7 @@ func configure(
 
 
 func _draw() -> void:
+	_draw_ritual_atmosphere()
 	match animation_key:
 		"fel_madness_broadcast":
 			_draw_madness_broadcast()
@@ -65,6 +67,41 @@ func _draw() -> void:
 			_draw_multi_madness("warlock")
 
 
+func _draw_ritual_atmosphere() -> void:
+	var life := sin(progress * PI)
+	if life <= 0.01:
+		return
+	var safe_board := _safe_board_rect()
+	var anchor := source_center if source_center != Vector2.ZERO else safe_board.get_center()
+	var scale_value := maxf(minf(source_card_size.x, source_card_size.y), 52.0)
+	var atmosphere_color := Palette.FEL_GREEN
+	if animation_key.begins_with("kiljaeden"):
+		atmosphere_color = Palette.CURSE_RED
+	elif animation_key.begins_with("demon") or animation_key == "dark_portal":
+		atmosphere_color = Palette.SOUL_PURPLE
+	elif animation_key.begins_with("immolation"):
+		atmosphere_color = Palette.DEMON_ORANGE
+	Toolkit.draw_soft_ellipse(
+		self,
+		anchor,
+		Vector2(scale_value * 0.92, scale_value * 0.62) * (0.92 + sin(progress * TAU * 1.9) * 0.08),
+		Palette.with_alpha(atmosphere_color, life * 0.10),
+		Palette.with_alpha(Palette.VOID, life * 0.14),
+		8,
+		progress * 0.12
+	)
+	for mote_index in range(10):
+		var angle := TAU * float(mote_index) / 10.0 + progress * (0.86 + float(mote_index % 3) * 0.12)
+		var mote_center := anchor + Vector2(cos(angle), sin(angle) * 0.68) * scale_value * (0.58 + float(mote_index % 2) * 0.14)
+		Toolkit.draw_mote(
+			self,
+			mote_center,
+			scale_value * (0.012 + float(mote_index % 3) * 0.005),
+			Palette.with_alpha(atmosphere_color, life * 0.28),
+			progress * 9.0 + float(mote_index)
+		)
+
+
 func _draw_madness_broadcast() -> void:
 	var reveal := Palette.ease_out(Palette.phase(progress, 0.0, 0.24))
 	var sweep := Palette.ease_in_out(Palette.phase(progress, 0.14, 0.68))
@@ -80,6 +117,14 @@ func _draw_madness_broadcast() -> void:
 		var x := lerpf(safe_board.position.x, safe_board.end.x, ratio)
 		var y := wave_y + sin(ratio * TAU * 3.0 + progress * 5.0) * safe_board.size.y * 0.018
 		wave.append(Vector2(x, y))
+	Toolkit.draw_soft_ellipse(
+		self,
+		Vector2(safe_board.get_center().x, wave_y),
+		Vector2(safe_board.size.x * 0.48, safe_board.size.y * 0.055),
+		Palette.with_alpha(Palette.FEL_GREEN, 0.10 * reveal * settle),
+		Palette.with_alpha(Palette.VOID, 0.16 * settle),
+		6
+	)
 	_draw_layered_line(wave, Palette.with_alpha(Palette.VOID, 0.72 * settle), Palette.with_alpha(Palette.ACID, 0.52 * reveal * settle), 14.0, 3.0)
 
 	for fissure_index in range(11):
@@ -243,10 +288,30 @@ func _draw_asymmetric_rift(center: Vector2, half_width: float, half_height: floa
 		center + Vector2(-width, -height * 0.12),
 		center + Vector2(-width * 0.56, -height * 0.70),
 	])
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(width * 1.18, height * 1.04),
+		Palette.with_alpha(Palette.SOUL_PURPLE, (0.20 if is_portal else 0.13) * alpha),
+		Palette.with_alpha(Palette.VOID, (0.34 if is_portal else 0.24) * alpha),
+		8,
+		sin(progress * 5.0) * 0.08
+	)
 	draw_colored_polygon(membrane, Palette.with_alpha(Palette.VOID, (0.90 if is_portal else 0.80) * alpha))
 	var closed := membrane.duplicate()
 	closed.append(membrane[0])
-	draw_polyline(closed, Palette.with_alpha(Palette.ACID, (0.92 if is_portal else 0.78) * alpha), 6.0 if is_portal else 4.0, true)
+	Toolkit.draw_ribbon(
+		self,
+		closed,
+		6.0 if is_portal else 4.0,
+		Palette.with_alpha(Palette.ACID, (0.86 if is_portal else 0.72) * alpha),
+		Palette.with_alpha(Palette.CHARCOAL, 0.76 * alpha),
+		Palette.with_alpha(Palette.HOT_CORE, 0.22 * alpha),
+		12.0 if is_portal else 9.0,
+		false,
+		false,
+		progress * 4.0
+	)
 	for split_index in range(5):
 		var x_offset := width * lerpf(-0.44, 0.44, float(split_index) / 4.0)
 		var split := _jagged_segment(center + Vector2(x_offset, -height * 0.76), center + Vector2(x_offset * 0.48, height * 0.72), 9, half_width * 0.055)
@@ -357,6 +422,15 @@ func _draw_fel_flame(base: Vector2, direction: Vector2, height: float, half_widt
 	var forward := direction.normalized()
 	var side := forward.orthogonal()
 	var tip := base + forward * height
+	Toolkit.draw_soft_ellipse(
+		self,
+		base + forward * height * 0.34,
+		Vector2(half_width * 1.40, height * 0.48),
+		Palette.with_alpha(Palette.FEL_GREEN, 0.18 * alpha),
+		Palette.with_alpha(Palette.HOT_CORE, 0.12 * alpha),
+		5,
+		forward.angle()
+	)
 	var outer := PackedVector2Array([
 		base - side * half_width,
 		base + forward * height * 0.42 - side * half_width * 0.46,
@@ -365,7 +439,12 @@ func _draw_fel_flame(base: Vector2, direction: Vector2, height: float, half_widt
 		base + side * half_width,
 	])
 	draw_colored_polygon(outer, Palette.with_alpha(Palette.DEMON_ORANGE, 0.60 * alpha))
-	draw_line(base, base + forward * height * 0.72, Palette.with_alpha(Palette.ACID, 0.84 * alpha), half_width * 0.62, true)
+	var inner := PackedVector2Array([
+		base - side * half_width * 0.34,
+		base + forward * height * 0.72,
+		base + side * half_width * 0.34,
+	])
+	draw_colored_polygon(inner, Palette.with_alpha(Palette.ACID, 0.82 * alpha))
 
 
 func _draw_ground_cracks(center: Vector2, radius: float, phase_value: float, alpha: float, count: int) -> void:
@@ -395,8 +474,18 @@ func _bounds_for_targets() -> Rect2:
 func _draw_layered_line(points: PackedVector2Array, outer: Color, inner: Color, outer_width: float, inner_width: float) -> void:
 	if points.size() < 2:
 		return
-	draw_polyline(points, outer, maxf(outer_width, 1.0), true)
-	draw_polyline(points, inner, maxf(inner_width, 1.0), true)
+	Toolkit.draw_ribbon(
+		self,
+		points,
+		maxf(inner_width, 1.0),
+		inner,
+		Color(outer.r, outer.g, outer.b, outer.a * 0.76),
+		Palette.with_alpha(Palette.HOT_CORE, inner.a * 0.17),
+		maxf(outer_width * 1.36, inner_width * 2.8),
+		true,
+		true,
+		progress * 5.0 + float(points.size()) * 0.07
+	)
 
 
 func _jagged_segment(start_point: Vector2, end_point: Vector2, segments: int, amplitude: float) -> PackedVector2Array:

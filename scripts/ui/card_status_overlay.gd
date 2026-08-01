@@ -6,6 +6,7 @@ class_name CardStatusOverlay
 
 const DIVINE_SHIELD_BREAK_DURATION := 0.52
 const ROOTED_BREAK_DURATION := 0.38
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 var state: CardState
 var beast_path_color := Color(0.11, 0.065, 0.028, 0.54)
@@ -1185,17 +1186,51 @@ func draw_fel_infusion_overlay() -> void:
 	var stack_count := status.stacks if status != null else 1
 
 	draw_rect(fel_rect, Color(fel_infusion_color.r, fel_infusion_color.g, fel_infusion_color.b, fel_infusion_color.a + pulse * 0.025), true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		attack_anchor,
+		Vector2(radius * 0.82, radius * 0.58) * (0.94 + pulse * 0.06),
+		Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.16 + pulse * 0.04),
+		Color(0.84, 1.0, 0.34, 0.16 + pulse * 0.05),
+		6,
+		animation_time * 0.10
+	)
 	for vein_index in range(7):
 		var ratio := float(vein_index) / 6.0
 		var edge_point := Vector2(lerpf(fel_rect.position.x, fel_rect.end.x, ratio), fel_rect.position.y if vein_index % 2 == 0 else fel_rect.end.y)
 		var middle := edge_point.lerp(attack_anchor, 0.56) + Vector2(sin(float(vein_index) * 2.1 + animation_time) * size.x * 0.045, 0.0)
-		draw_line(edge_point, middle, Color(0.01, 0.02, 0.01, 0.62), maxf(size.x * 0.018, 1.8), true)
-		draw_line(middle, attack_anchor, Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.38 + pulse * 0.18), maxf(size.x * 0.008, 1.0), true)
+		Toolkit.draw_ribbon(
+			self,
+			PackedVector2Array([edge_point, middle, attack_anchor]),
+			maxf(size.x * 0.008, 1.0),
+			Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.38 + pulse * 0.18),
+			Color(0.01, 0.02, 0.01, 0.58),
+			Color(0.86, 1.0, 0.38, 0.18),
+			maxf(size.x * 0.028, 3.2),
+			true,
+			true,
+			animation_time * 2.0 + float(vein_index)
+		)
 
 	for ring_index in range(mini(maxi(stack_count, 1), 4)):
 		var ring_radius := radius * (0.15 + float(ring_index) * 0.075 + pulse * 0.018)
-		draw_arc(attack_anchor, ring_radius, -PI * 0.22, PI * 1.54, 32, Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, 0.58 - float(ring_index) * 0.09), 1.8, true)
-	draw_circle(attack_anchor, radius * (0.035 + pulse * 0.012), Color(0.82, 1.0, 0.28, 0.78))
+		Toolkit.draw_arc_ribbon(
+			self,
+			attack_anchor,
+			ring_radius,
+			-PI * 0.22,
+			PI * 1.54,
+			1.8,
+			Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, 0.58 - float(ring_index) * 0.09),
+			Color(0.01, 0.02, 0.01, 0.34),
+			Color(0.90, 1.0, 0.48, 0.20),
+			5.2,
+			32,
+			true,
+			true,
+			animation_time + float(ring_index)
+		)
+	Toolkit.draw_mote(self, attack_anchor, radius * (0.055 + pulse * 0.012), Color(0.82, 1.0, 0.28, 0.78), animation_time * 5.0)
 
 
 func draw_fel_overload_overlay() -> void:
@@ -1205,9 +1240,33 @@ func draw_fel_overload_overlay() -> void:
 	var pressure := 0.5 + 0.5 * sin(animation_time * 7.4)
 
 	draw_rect(overload_rect, Color(fel_overload_color.r, fel_overload_color.g, fel_overload_color.b, fel_overload_color.a + pressure * 0.035), true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 1.04, radius * 1.28) * (0.94 + pressure * 0.06),
+		Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.13 + pressure * 0.04),
+		Color(0.05, 0.0, 0.07, 0.20 + pressure * 0.03),
+		7,
+		animation_time * 0.10
+	)
 	for arc_index in range(5):
 		var start_angle := -PI * 0.34 + float(arc_index) * TAU / 5.0 + animation_time * (0.08 if arc_index % 2 == 0 else -0.06)
-		draw_arc(center, radius * (0.86 + float(arc_index % 2) * 0.11), start_angle, start_angle + PI * 0.56, 24, Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, 0.50 + pressure * 0.18), 2.5, true)
+		Toolkit.draw_arc_ribbon(
+			self,
+			center,
+			radius * (0.86 + float(arc_index % 2) * 0.11),
+			start_angle,
+			start_angle + PI * 0.56,
+			2.5,
+			Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, 0.50 + pressure * 0.18),
+			Color(0.02, 0.0, 0.03, 0.54),
+			Color(0.88, 1.0, 0.42, 0.18),
+			7.0,
+			24,
+			true,
+			true,
+			animation_time + float(arc_index)
+		)
 
 	var crack_points := [
 		[Vector2(0.50, 0.12), Vector2(0.44, 0.34), Vector2(0.55, 0.50), Vector2(0.48, 0.78)],
@@ -1215,15 +1274,42 @@ func draw_fel_overload_overlay() -> void:
 		[Vector2(0.76, 0.22), Vector2(0.62, 0.42), Vector2(0.72, 0.64)],
 	]
 	for crack in crack_points:
-		for point_index in range(crack.size() - 1):
-			var from_point: Vector2 = overload_rect.position + Vector2(overload_rect.size.x * crack[point_index].x, overload_rect.size.y * crack[point_index].y)
-			var to_point: Vector2 = overload_rect.position + Vector2(overload_rect.size.x * crack[point_index + 1].x, overload_rect.size.y * crack[point_index + 1].y)
-			draw_line(from_point, to_point, fel_overload_crack_color, 2.6)
-			draw_line(from_point, to_point, Color(0.0, 0.10, 0.0, 0.52), 1.0)
+		var crack_path := PackedVector2Array()
+		for normalized_point in crack:
+			crack_path.append(
+				overload_rect.position + Vector2(
+					overload_rect.size.x * normalized_point.x,
+					overload_rect.size.y * normalized_point.y
+				)
+			)
+		Toolkit.draw_ribbon(
+			self,
+			crack_path,
+			1.5,
+			fel_overload_crack_color,
+			Color(0.0, 0.04, 0.0, 0.62),
+			Color(0.92, 1.0, 0.50, 0.18),
+			5.2,
+			true,
+			true,
+			animation_time * 3.0 + float(crack_path.size())
+		)
 
-	draw_circle(center, radius * (0.20 + pressure * 0.045), Color(0.02, 0.0, 0.03, 0.72))
-	draw_circle(center, radius * (0.12 + pressure * 0.025), Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.46 + pressure * 0.24))
-	draw_circle(center - Vector2(radius * 0.035, radius * 0.045), radius * 0.035, Color(0.92, 1.0, 0.56, 0.86))
+	Toolkit.draw_soft_disc(
+		self,
+		center,
+		radius * (0.24 + pressure * 0.045),
+		Color(0.02, 0.0, 0.03, 0.72),
+		Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.46 + pressure * 0.24),
+		7
+	)
+	Toolkit.draw_mote(
+		self,
+		center - Vector2(radius * 0.035, radius * 0.045),
+		radius * 0.045,
+		Color(0.92, 1.0, 0.56, 0.86),
+		animation_time * 7.0
+	)
 
 
 func draw_fel_madness_overlay() -> void:
@@ -1235,6 +1321,25 @@ func draw_fel_madness_overlay() -> void:
 		return
 	var pulse := 0.5 + 0.5 * sin(animation_time * 5.8)
 	draw_rect(madness_rect, Color(fel_madness_color.r, fel_madness_color.g, fel_madness_color.b, fel_madness_color.a + pulse * 0.025), true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 1.18, radius * 1.48) * (0.95 + pulse * 0.05),
+		Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.09 + pulse * 0.035),
+		Color(0.14, 0.01, 0.18, 0.15 + pulse * 0.025),
+		7,
+		animation_time * 0.08
+	)
+	for mote_index in range(5):
+		var mote_angle := TAU * float(mote_index) / 5.0 + animation_time * (0.55 + float(mote_index % 2) * 0.13)
+		var mote_point := center + Vector2(cos(mote_angle) * radius * 0.92, sin(mote_angle) * radius * 1.16)
+		Toolkit.draw_mote(
+			self,
+			mote_point,
+			maxf(size.x * 0.012, 1.2),
+			Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.30),
+			animation_time * 4.0 + float(mote_index)
+		)
 	for edge_index in range(4):
 		var inset := float(edge_index % 2) * 2.0
 		draw_rect(madness_rect.grow(-inset), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, 0.20 + pulse * 0.10), false, 1.2 + float(edge_index % 2), true)
@@ -1275,8 +1380,18 @@ func draw_fel_madness_overlay() -> void:
 				var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(claw_index) * 0.56 / float(maxi(claw_count - 1, 1)))
 				var claw_from := Vector2(x - radius * 0.10, center.y - radius * 0.62)
 				var claw_to := Vector2(x + radius * 0.08, center.y + radius * 0.58)
-				draw_line(claw_from, claw_to, Color(0.03, 0.0, 0.03, 0.78), 4.2, true)
-				draw_line(claw_from, claw_to, fel_madness_rune_color, 2.0, true)
+				Toolkit.draw_ribbon(
+					self,
+					PackedVector2Array([claw_from, claw_to]),
+					2.0,
+					fel_madness_rune_color,
+					Color(0.03, 0.0, 0.03, 0.72),
+					Color(0.86, 1.0, 0.34, 0.16),
+					6.0,
+					true,
+					true,
+					animation_time + float(claw_index)
+				)
 
 
 func draw_kiljaeden_whisper_overlay() -> void:
@@ -1285,6 +1400,14 @@ func draw_kiljaeden_whisper_overlay() -> void:
 	var radius := minf(whisper_rect.size.x, whisper_rect.size.y) * 0.34
 	var pulse := 0.5 + 0.5 * sin(animation_time * 2.4)
 	draw_rect(whisper_rect, Color(kiljaeden_whisper_color.r, kiljaeden_whisper_color.g, kiljaeden_whisper_color.b, kiljaeden_whisper_color.a + pulse * 0.018), true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 1.18, radius * 0.58) * (0.96 + pulse * 0.04),
+		Color(kiljaeden_whisper_eye_color.r, kiljaeden_whisper_eye_color.g, kiljaeden_whisper_eye_color.b, 0.13 + pulse * 0.035),
+		Color(0.48, 0.08, 0.42, 0.12 + pulse * 0.025),
+		7
+	)
 
 	var eye_height := radius * (0.18 + pulse * 0.08)
 	var eye := PackedVector2Array([
@@ -1298,13 +1421,42 @@ func draw_kiljaeden_whisper_overlay() -> void:
 		center - Vector2(radius * 0.42, eye_height),
 		center - Vector2(radius, 0.0),
 	])
-	draw_polyline(eye, kiljaeden_whisper_edge_color, 2.4, true)
-	draw_circle(center, radius * (0.14 + pulse * 0.02), kiljaeden_whisper_eye_color)
+	var eye_fill := eye.duplicate()
+	eye_fill.resize(eye_fill.size() - 1)
+	draw_colored_polygon(eye_fill, Color(0.12, 0.005, 0.16, 0.24 + pulse * 0.04))
+	Toolkit.draw_ribbon(
+		self,
+		eye,
+		2.4,
+		kiljaeden_whisper_edge_color,
+		Color(0.02, 0.0, 0.03, 0.56),
+		Color(0.88, 0.40, 0.72, 0.20),
+		7.0,
+		false,
+		false,
+		animation_time * 0.8
+	)
+	Toolkit.draw_soft_disc(self, center, radius * (0.18 + pulse * 0.02), Color(kiljaeden_whisper_eye_color.r, kiljaeden_whisper_eye_color.g, kiljaeden_whisper_eye_color.b, 0.56), kiljaeden_whisper_eye_color, 6)
 	draw_circle(center, radius * 0.055, Color(0.02, 0.0, 0.03, 0.94))
 
 	for wave_index in range(4):
 		var wave_radius := radius * (0.72 + float(wave_index) * 0.18 + pulse * 0.04)
-		draw_arc(center, wave_radius, PI * 0.08, PI * 0.92, 28, Color(kiljaeden_whisper_edge_color.r, kiljaeden_whisper_edge_color.g, kiljaeden_whisper_edge_color.b, 0.34 - float(wave_index) * 0.055), 1.6, true)
+		Toolkit.draw_arc_ribbon(
+			self,
+			center,
+			wave_radius,
+			PI * 0.08,
+			PI * 0.92,
+			1.6,
+			Color(kiljaeden_whisper_edge_color.r, kiljaeden_whisper_edge_color.g, kiljaeden_whisper_edge_color.b, 0.34 - float(wave_index) * 0.055),
+			Color(0.04, 0.0, 0.06, 0.18),
+			Color(0.86, 0.34, 0.68, 0.10),
+			4.8,
+			28,
+			true,
+			true,
+			animation_time + float(wave_index)
+		)
 
 
 func draw_infernal_fire_overlay() -> void:
@@ -1615,13 +1767,52 @@ func draw_bronze_head_iron_arms() -> void:
 	var armor_radius := minf(armor_rect.size.x, armor_rect.size.y) * 0.42
 
 	draw_rect(armor_rect, Color(bronze_iron_color.r, bronze_iron_color.g, bronze_iron_color.b, bronze_iron_color.a * 0.62), true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(armor_radius * 1.04, armor_radius * 1.32) * pulse,
+		Color(bronze_iron_plate_color.r, bronze_iron_plate_color.g, bronze_iron_plate_color.b, 0.12),
+		Color(bronze_iron_rivet_color.r, bronze_iron_rivet_color.g, bronze_iron_rivet_color.b, 0.10),
+		7,
+		animation_time * 0.05
+	)
 	for index in range(ring_count):
 		var grow := float(index) * 3.2
 		var alpha := bronze_iron_edge_color.a * (1.0 - float(index) * 0.12)
 		var ring_radius := armor_radius + grow
 		var ring_phase := animation_time * (0.18 if index % 2 == 0 else -0.14) + float(index) * 0.52
-		draw_arc(center, ring_radius, ring_phase, ring_phase + PI * 1.24, 46, Color(bronze_iron_edge_color.r, bronze_iron_edge_color.g, bronze_iron_edge_color.b, alpha * pulse), edge_width, true)
-		draw_arc(center, ring_radius, ring_phase + PI * 1.42, ring_phase + PI * 1.82, 18, Color(bronze_iron_plate_color.r, bronze_iron_plate_color.g, bronze_iron_plate_color.b, alpha * 0.72), edge_width * 0.72, true)
+		Toolkit.draw_arc_ribbon(
+			self,
+			center,
+			ring_radius,
+			ring_phase,
+			ring_phase + PI * 1.24,
+			edge_width,
+			Color(bronze_iron_edge_color.r, bronze_iron_edge_color.g, bronze_iron_edge_color.b, alpha * pulse),
+			Color(0.16, 0.05, 0.015, alpha * 0.48),
+			Color(bronze_iron_rivet_color.r, bronze_iron_rivet_color.g, bronze_iron_rivet_color.b, alpha * 0.30),
+			edge_width * 3.0,
+			46,
+			true,
+			true,
+			animation_time + float(index)
+		)
+		Toolkit.draw_arc_ribbon(
+			self,
+			center,
+			ring_radius,
+			ring_phase + PI * 1.42,
+			ring_phase + PI * 1.82,
+			edge_width * 0.72,
+			Color(bronze_iron_plate_color.r, bronze_iron_plate_color.g, bronze_iron_plate_color.b, alpha * 0.72),
+			Color(0.16, 0.05, 0.015, alpha * 0.34),
+			Color(bronze_iron_rivet_color.r, bronze_iron_rivet_color.g, bronze_iron_rivet_color.b, alpha * 0.24),
+			edge_width * 2.4,
+			18,
+			true,
+			true,
+			animation_time + float(index) * 0.4
+		)
 
 	# Copper plates read as a hardened body rather than a magical shield.
 	for plate_index in range(6):
@@ -1629,7 +1820,21 @@ func draw_bronze_head_iron_arms() -> void:
 		var radial := Vector2.from_angle(angle)
 		var tangent := radial.orthogonal()
 		var plate_center := center + radial * armor_radius * 0.64
-		draw_line(plate_center - tangent * armor_radius * 0.10, plate_center + tangent * armor_radius * 0.10, bronze_iron_plate_color, maxf(size.x * 0.026, 2.2), true)
+		Toolkit.draw_ribbon(
+			self,
+			PackedVector2Array([
+				plate_center - tangent * armor_radius * 0.10,
+				plate_center + tangent * armor_radius * 0.10,
+			]),
+			maxf(size.x * 0.026, 2.2),
+			bronze_iron_plate_color,
+			Color(0.14, 0.04, 0.01, 0.46),
+			Color(bronze_iron_rivet_color.r, bronze_iron_rivet_color.g, bronze_iron_rivet_color.b, 0.22),
+			maxf(size.x * 0.055, 4.0),
+			true,
+			true,
+			animation_time + float(plate_index)
+		)
 
 	var rivet_count := mini(maxi(stack_count + 1, 2), 6)
 	for index in range(rivet_count):
@@ -1647,20 +1852,38 @@ func draw_immortal_peach_overlay() -> void:
 	var radius := minf(peach_rect.size.x, peach_rect.size.y) * 0.34
 	var pulse := 0.88 + 0.12 * sin(animation_time * 1.8)
 
-	draw_circle(center, radius * 1.02, Color(immortal_peach_color.r, immortal_peach_color.g, immortal_peach_color.b, immortal_peach_color.a * pulse))
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 1.02, radius * 1.14) * pulse,
+		Color(immortal_peach_color.r, immortal_peach_color.g, immortal_peach_color.b, immortal_peach_color.a * 0.78),
+		Color(immortal_peach_core_color.r, immortal_peach_core_color.g, immortal_peach_core_color.b, 0.22),
+		7,
+		animation_time * 0.06
+	)
 	for index in range(ring_count):
 		var ring_radius := radius + float(index) * 4.4
 		var alpha := immortal_peach_edge_color.a * (1.0 - float(index) * 0.13)
 		var ring_phase := -PI * 0.35 + animation_time * (0.12 + float(index) * 0.018)
-		draw_arc(center, ring_radius, ring_phase, ring_phase + PI * 1.46, 54, Color(immortal_peach_edge_color.r, immortal_peach_edge_color.g, immortal_peach_edge_color.b, alpha * pulse), 2.2, true)
-		draw_arc(center, ring_radius, ring_phase + PI * 1.62, ring_phase + PI * 1.90, 16, Color(immortal_peach_leaf_color.r, immortal_peach_leaf_color.g, immortal_peach_leaf_color.b, alpha * 0.68), 1.5, true)
+		Toolkit.draw_arc_ribbon(
+			self, center, ring_radius, ring_phase, ring_phase + PI * 1.46, 2.2,
+			Color(immortal_peach_edge_color.r, immortal_peach_edge_color.g, immortal_peach_edge_color.b, alpha * pulse),
+			Color(0.24, 0.05, 0.08, alpha * 0.24), Color(1.0, 0.84, 0.70, alpha * 0.24),
+			6.2, 54, true, true, animation_time + float(index)
+		)
+		Toolkit.draw_arc_ribbon(
+			self, center, ring_radius, ring_phase + PI * 1.62, ring_phase + PI * 1.90, 1.5,
+			Color(immortal_peach_leaf_color.r, immortal_peach_leaf_color.g, immortal_peach_leaf_color.b, alpha * 0.68),
+			Color(0.04, 0.18, 0.08, alpha * 0.24), Color(0.74, 1.0, 0.72, alpha * 0.18),
+			4.4, 16, true, true, animation_time + float(index) * 0.5
+		)
 
 	var fruit_count := mini(maxi(stack_count, 1), 6)
 	for index in range(fruit_count):
 		var angle := TAU * float(index) / float(fruit_count) - PI * 0.5 + animation_time * 0.14
 		var fruit_center := center + Vector2(cos(angle), sin(angle)) * radius * 0.82
 		var fruit_radius := maxf(size.x * 0.018, 2.4)
-		draw_circle(fruit_center, fruit_radius * pulse, immortal_peach_core_color)
+		Toolkit.draw_mote(self, fruit_center, fruit_radius * pulse, immortal_peach_core_color, animation_time * 2.0 + float(index))
 		draw_circle(fruit_center + Vector2(fruit_radius * 0.42, -fruit_radius * 0.25), fruit_radius * 0.46, Color(1.0, 0.50, 0.64, 0.74))
 		draw_line(fruit_center + Vector2(0.0, -fruit_radius * 0.92), fruit_center + Vector2(fruit_radius * 0.78, -fruit_radius * 1.55), immortal_peach_leaf_color, 1.5)
 
@@ -1988,6 +2211,15 @@ func draw_soul_hook_overlay() -> void:
 	soul_rect.position += soul_offset
 	draw_rect(soul_rect, Color(0.68, 0.40, 0.88, 0.055 + breath * 0.025), true)
 	draw_rect(soul_rect, Color(0.78, 0.54, 0.94, 0.30 + breath * 0.10), false, 1.4, true)
+	Toolkit.draw_soft_ellipse(
+		self,
+		soul_rect.get_center(),
+		Vector2(soul_rect.size.x * 0.40, soul_rect.size.y * 0.34) * (0.94 + breath * 0.06),
+		Color(0.58, 0.20, 0.82, 0.13 + breath * 0.03),
+		Color(0.92, 0.78, 1.0, 0.10 + breath * 0.03),
+		6,
+		animation_time * 0.08
+	)
 
 	var thread_start := center + Vector2(hook_rect.size.x * 0.30, hook_rect.size.y * 0.22)
 	var thread_end := soul_rect.get_center() + Vector2(-soul_rect.size.x * 0.22, -soul_rect.size.y * 0.12)
@@ -2000,8 +2232,18 @@ func draw_soul_hook_overlay() -> void:
 			sin(t * TAU * 1.5 + animation_time * 1.4) * hook_rect.size.y * 0.018
 		)
 		thread_points.append(point)
-	draw_polyline(thread_points, Color(soul_hook_chain_color.r, soul_hook_chain_color.g, soul_hook_chain_color.b, 0.20), 6.0, true)
-	draw_polyline(thread_points, soul_hook_chain_color, 1.8, true)
+	Toolkit.draw_ribbon(
+		self,
+		thread_points,
+		1.8,
+		soul_hook_chain_color,
+		Color(0.08, 0.005, 0.12, 0.44),
+		Color(0.94, 0.86, 1.0, 0.20),
+		7.0,
+		true,
+		true,
+		animation_time * 2.0
+	)
 
 	draw_status_fox_eye(
 		soul_rect.get_center(),
@@ -2048,6 +2290,15 @@ func draw_charm_overlay() -> void:
 		maxf(size.x * 0.016, 1.5),
 		true
 	)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 1.10, radius * 0.64) * (0.95 + breath * 0.05),
+		Color(0.64, 0.20, 0.84, 0.12 + breath * 0.025),
+		Color(0.96, 0.48, 0.76, 0.09 + breath * 0.02),
+		7,
+		animation_time * 0.06
+	)
 	if is_temporary:
 		draw_rect(
 			charm_rect.grow(-4.0),
@@ -2059,15 +2310,21 @@ func draw_charm_overlay() -> void:
 
 	for ripple_index in range(3):
 		var ripple_radius := radius * (0.54 + float(ripple_index) * 0.18 + breath * 0.025)
-		draw_arc(
+		Toolkit.draw_arc_ribbon(
+			self,
 			center,
 			ripple_radius,
 			-PI * 0.86 + float(ripple_index) * 0.28,
 			PI * 0.86 + float(ripple_index) * 0.28,
-			34,
-			Color(0.64, 0.30, 0.88, 0.22 - float(ripple_index) * 0.045),
 			1.4,
-			true
+			Color(0.64, 0.30, 0.88, 0.22 - float(ripple_index) * 0.045),
+			Color(0.10, 0.005, 0.16, 0.16),
+			Color(0.96, 0.72, 0.94, 0.10),
+			4.8,
+			34,
+			true,
+			true,
+			animation_time + float(ripple_index)
 		)
 
 	draw_status_fox_eye(
@@ -2084,19 +2341,35 @@ func draw_charm_overlay() -> void:
 	# the original blue underlay visible so its temporary control is unmistakable.
 	var ribbon_y := charm_rect.end.y - charm_rect.size.y * 0.10
 	if is_temporary:
-		draw_line(
-			Vector2(charm_rect.position.x + 6.0, ribbon_y + 4.0),
-			Vector2(charm_rect.end.x - 6.0, ribbon_y + 4.0),
-			Color(0.30, 0.62, 0.94, 0.48),
+		Toolkit.draw_ribbon(
+			self,
+			PackedVector2Array([
+				Vector2(charm_rect.position.x + 6.0, ribbon_y + 4.0),
+				Vector2(charm_rect.end.x - 6.0, ribbon_y + 4.0),
+			]),
 			3.0,
-			true
+			Color(0.30, 0.62, 0.94, 0.48),
+			Color(0.08, 0.12, 0.30, 0.28),
+			Color(0.78, 0.92, 1.0, 0.16),
+			7.0,
+			true,
+			true,
+			animation_time
 		)
-	draw_line(
-		Vector2(charm_rect.position.x + 6.0, ribbon_y),
-		Vector2(charm_rect.end.x - 6.0, ribbon_y),
-		Color(0.94, 0.20, 0.60, 0.78),
+	Toolkit.draw_ribbon(
+		self,
+		PackedVector2Array([
+			Vector2(charm_rect.position.x + 6.0, ribbon_y),
+			Vector2(charm_rect.end.x - 6.0, ribbon_y),
+		]),
 		3.2,
-		true
+		Color(0.94, 0.20, 0.60, 0.78),
+		Color(0.16, 0.005, 0.20, 0.34),
+		Color(1.0, 0.76, 0.94, 0.20),
+		7.4,
+		true,
+		true,
+		animation_time * 0.8
 	)
 	if is_temporary and status != null:
 		for turn_index in range(mini(maxi(status.remaining_turns, 1), 4)):
@@ -2132,20 +2405,35 @@ func draw_status_fox_eye(
 	for point_index in range(lower.size() - 1, -1, -1):
 		eye_polygon.append(lower[point_index])
 	draw_colored_polygon(eye_polygon, fill_color)
-	draw_polyline(upper, Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.20), 6.0, true)
-	draw_polyline(lower, Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.16), 6.0, true)
-	draw_polyline(upper, edge_color, 1.8, true)
-	draw_polyline(
-		lower,
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(radius * 0.82, eye_height * 0.86),
+		Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.10),
+		Color.TRANSPARENT,
+		5
+	)
+	Toolkit.draw_ribbon(
+		self, upper, 1.8, edge_color,
+		Color(fill_color.r, fill_color.g, fill_color.b, edge_color.a * 0.42),
+		Color(1.0, 0.92, 1.0, edge_color.a * 0.18),
+		6.0, true, true, animation_time * 0.8
+	)
+	Toolkit.draw_ribbon(
+		self, lower, 1.8,
 		Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * (0.54 if partial else 1.0)),
-		1.8,
-		true
+		Color(fill_color.r, fill_color.g, fill_color.b, edge_color.a * 0.36),
+		Color(1.0, 0.92, 1.0, edge_color.a * 0.14),
+		6.0, true, true, animation_time * 0.8 + 0.4
 	)
 	if safe_open > 0.16:
-		draw_status_ellipse(
+		Toolkit.draw_soft_ellipse(
+			self,
 			center,
-			Vector2(radius * 0.105, eye_height * (0.70 if not partial else 0.46)),
-			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open)
+			Vector2(radius * 0.15, eye_height * (0.78 if not partial else 0.54)),
+			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open * 0.56),
+			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open),
+			6
 		)
 
 

@@ -1,6 +1,7 @@
 extends Control
 
 const Palette := preload("res://scripts/ui/animation/shadowmoon_vfx_palette.gd")
+const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 var animation_key := ""
 var source_center := Vector2.ZERO
@@ -33,6 +34,7 @@ func configure(
 
 
 func _draw() -> void:
+	_draw_fel_atmosphere()
 	match animation_key:
 		"fel_sacrifice":
 			_draw_fel_sacrifice(false)
@@ -82,6 +84,40 @@ func _draw() -> void:
 			_draw_overload_detonation()
 		"fel_burst_impact":
 			_draw_burst_impact()
+
+
+func _draw_fel_atmosphere() -> void:
+	var life := sin(progress * PI)
+	if life <= 0.01:
+		return
+	var scale_value := _target_scale()
+	var atmosphere_color := Palette.FEL_GREEN
+	if animation_key.begins_with("life_drain"):
+		atmosphere_color = Palette.SOUL_PURPLE
+	elif animation_key.begins_with("curse") or animation_key.begins_with("kiljaeden"):
+		atmosphere_color = Palette.CURSE_RED
+	elif animation_key.begins_with("immolation") or animation_key == "fire":
+		atmosphere_color = Palette.DEMON_ORANGE
+	var breath := 0.90 + sin(progress * TAU * 2.1) * 0.10
+	Toolkit.draw_soft_ellipse(
+		self,
+		target_center,
+		Vector2(target_card_size.x * 0.42, target_card_size.y * 0.38) * breath,
+		Palette.with_alpha(atmosphere_color, life * 0.095),
+		Palette.with_alpha(Palette.VOID, life * 0.12),
+		7,
+		sin(progress * TAU) * 0.06
+	)
+	for mote_index in range(7):
+		var angle := TAU * float(mote_index) / 7.0 + progress * (1.10 + float(mote_index % 3) * 0.16)
+		var mote_center := target_center + Vector2(cos(angle) * target_card_size.x * 0.43, sin(angle) * target_card_size.y * 0.39)
+		Toolkit.draw_mote(
+			self,
+			mote_center,
+			scale_value * (0.014 + float(mote_index % 3) * 0.005),
+			Palette.with_alpha(atmosphere_color, life * 0.30),
+			progress * 10.0 + float(mote_index)
+		)
 
 
 func _draw_fel_sacrifice(is_heavy: bool) -> void:
@@ -447,10 +483,24 @@ func _draw_burst_impact() -> void:
 
 func _draw_pressure_core(center: Vector2, radius: float, gather: float, release: float, alpha: float, core_color: Color) -> void:
 	var pulse_radius := radius * (0.62 + gather * 0.34 + sin(release * PI) * 0.20)
-	draw_circle(center, pulse_radius * 1.72, Palette.with_alpha(Palette.VOID, 0.68 * alpha))
-	draw_circle(center, pulse_radius * 1.24, Palette.with_alpha(Palette.INK_GREEN, 0.54 * alpha))
-	draw_circle(center, pulse_radius, Palette.with_alpha(core_color, 0.88 * alpha))
-	draw_circle(center - Vector2(radius * 0.18, radius * 0.20), radius * 0.20, Palette.with_alpha(Palette.HOT_CORE, 0.84 * alpha))
+	Toolkit.draw_soft_disc(
+		self,
+		center,
+		pulse_radius * 1.55,
+		Palette.with_alpha(Palette.VOID, 0.72 * alpha),
+		Palette.with_alpha(core_color, 0.74 * alpha),
+		8
+	)
+	Toolkit.draw_soft_ellipse(
+		self,
+		center + Vector2(sin(progress * 8.0) * radius * 0.08, cos(progress * 6.0) * radius * 0.05),
+		Vector2(pulse_radius * 0.92, pulse_radius * 0.70),
+		Palette.with_alpha(Palette.INK_GREEN, 0.34 * alpha),
+		Palette.with_alpha(core_color, 0.68 * alpha),
+		6,
+		progress * 0.32
+	)
+	Toolkit.draw_mote(self, center - Vector2(radius * 0.18, radius * 0.20), radius * 0.20, Palette.with_alpha(Palette.HOT_CORE, 0.82 * alpha), progress * 9.0)
 
 
 func _draw_broken_sigil(center: Vector2, radius: float, phase_value: float, alpha: float, is_overload: bool) -> void:
@@ -479,8 +529,30 @@ func _draw_target_fissure(center: Vector2, radius: float, phase_value: float, al
 	draw_colored_polygon(fissure, Palette.with_alpha(Palette.VOID, 0.92 * alpha))
 	var closed := fissure.duplicate()
 	closed.append(fissure[0])
-	draw_polyline(closed, Palette.with_alpha(Palette.ACID, 0.86 * alpha), 4.2 if is_overload else 3.0, true)
-	draw_line(center + Vector2(0.0, -half_height * 0.78), center + Vector2(0.0, half_height * 0.70), Palette.with_alpha(Palette.HOT_CORE, 0.70 * alpha), 2.0, true)
+	Toolkit.draw_ribbon(
+		self,
+		closed,
+		4.2 if is_overload else 3.0,
+		Palette.with_alpha(Palette.ACID, 0.82 * alpha),
+		Palette.with_alpha(Palette.INK_GREEN, 0.50 * alpha),
+		Palette.with_alpha(Palette.HOT_CORE, 0.28 * alpha),
+		8.0 if is_overload else 6.0,
+		false,
+		false,
+		progress * 5.0
+	)
+	Toolkit.draw_ribbon(
+		self,
+		PackedVector2Array([center + Vector2(0.0, -half_height * 0.78), center + Vector2(0.0, half_height * 0.70)]),
+		2.0,
+		Palette.with_alpha(Palette.HOT_CORE, 0.66 * alpha),
+		Palette.with_alpha(Palette.VOID, 0.40 * alpha),
+		Color.TRANSPARENT,
+		6.0,
+		true,
+		true,
+		progress * 6.0
+	)
 
 
 func _draw_demon_jaw(center: Vector2, radius: float, close_phase: float, alpha: float, with_fangs: bool) -> void:
@@ -585,6 +657,15 @@ func _draw_curse_hook(center: Vector2, angle: float, radius: float, phase_value:
 func _draw_fel_flame(base: Vector2, half_width: float, height: float, sway: float, alpha: float) -> void:
 	if height <= 0.0:
 		return
+	Toolkit.draw_soft_ellipse(
+		self,
+		base - Vector2(0.0, height * 0.28),
+		Vector2(half_width * 1.45, height * 0.52),
+		Palette.with_alpha(Palette.FEL_GREEN, 0.18 * alpha),
+		Palette.with_alpha(Palette.HOT_CORE, 0.12 * alpha),
+		5,
+		sway * 0.18
+	)
 	var outer := PackedVector2Array([
 		base - Vector2(half_width, 0.0),
 		base + Vector2(-half_width * 0.45, -height * 0.46),
@@ -638,8 +719,18 @@ func _target_scale() -> float:
 func _draw_layered_line(points: PackedVector2Array, outer: Color, inner: Color, outer_width: float, inner_width: float) -> void:
 	if points.size() < 2:
 		return
-	draw_polyline(points, outer, maxf(outer_width, 1.0), true)
-	draw_polyline(points, inner, maxf(inner_width, 1.0), true)
+	Toolkit.draw_ribbon(
+		self,
+		points,
+		maxf(inner_width, 1.0),
+		inner,
+		Color(outer.r, outer.g, outer.b, outer.a * 0.74),
+		Palette.with_alpha(Palette.HOT_CORE, inner.a * 0.18),
+		maxf(outer_width * 1.32, inner_width * 2.8),
+		true,
+		true,
+		progress * 5.3 + float(points.size()) * 0.08
+	)
 
 
 func _jagged_segment(start_point: Vector2, end_point: Vector2, segments: int, amplitude: float) -> PackedVector2Array:
