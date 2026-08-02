@@ -7,7 +7,9 @@ class_name CardStatusOverlay
 const DIVINE_SHIELD_BREAK_DURATION := 0.52
 const ROOTED_BREAK_DURATION := 0.38
 const DEFAULT_ANIMATED_REDRAW_INTERVAL := 1.0 / 30.0
-const SHADOWMOON_STATUS_REDRAW_INTERVAL := 1.0 / 15.0
+const LOW_RATE_STATUS_REDRAW_INTERVAL := 1.0 / 12.0
+const PERSISTENT_BREATH_MIN_ALPHA := 0.94
+const PERSISTENT_BREATH_HALF_DURATION := 0.90
 const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 var state: CardState
@@ -130,11 +132,13 @@ var redraw_accumulator := 0.0
 var divine_shield_break_progress := -1.0
 var rooted_break_progress := -1.0
 var was_showing_rooted := false
+var persistent_breath_tween: Tween
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process(false)
+	_sync_persistent_breath()
 
 
 func _process(delta: float) -> void:
@@ -160,15 +164,8 @@ func _process(delta: float) -> void:
 func _get_animated_redraw_interval() -> float:
 	if is_divine_shield_break_active() or is_rooted_break_active():
 		return DEFAULT_ANIMATED_REDRAW_INTERVAL
-	if (
-		should_show_fel_infusion()
-		or should_show_fel_overload()
-		or should_show_fel_madness()
-		or should_show_damage_amplify()
-		or should_show_kiljaeden_whisper()
-		or should_show_infernal_fire()
-	):
-		return SHADOWMOON_STATUS_REDRAW_INTERVAL
+	if should_show_infernal_fire():
+		return LOW_RATE_STATUS_REDRAW_INTERVAL
 	return DEFAULT_ANIMATED_REDRAW_INTERVAL
 
 
@@ -188,6 +185,7 @@ func refresh() -> void:
 	was_showing_rooted = rooted_visible
 	visible = has_visible_status() or is_divine_shield_break_active() or is_rooted_break_active()
 	set_process(visible and has_animated_status_visual())
+	_sync_persistent_breath()
 	if visible:
 		queue_redraw()
 
@@ -217,17 +215,45 @@ func has_animated_status_visual() -> bool:
 		or should_show_devour()
 		or should_show_precision_shot()
 		or should_show_meteor_aura()
-		or should_show_soul_hook()
+		or should_show_infernal_fire()
+		or is_divine_shield_break_active()
+		or is_rooted_break_active()
+	)
+
+
+func has_persistent_breath_visual() -> bool:
+	return (
+		should_show_soul_hook()
 		or should_show_charm()
 		or should_show_fel_infusion()
 		or should_show_fel_overload()
 		or should_show_fel_madness()
 		or should_show_damage_amplify()
 		or should_show_kiljaeden_whisper()
-		or should_show_infernal_fire()
-		or is_divine_shield_break_active()
-		or is_rooted_break_active()
 	)
+
+
+func is_persistent_breath_active() -> bool:
+	return persistent_breath_tween != null and persistent_breath_tween.is_valid()
+
+
+func _sync_persistent_breath() -> void:
+	var should_breathe := visible and has_persistent_breath_visual()
+	if should_breathe:
+		if not is_inside_tree() or is_persistent_breath_active():
+			return
+		self_modulate = Color(1.0, 1.0, 1.0, PERSISTENT_BREATH_MIN_ALPHA)
+		persistent_breath_tween = create_tween()
+		persistent_breath_tween.set_loops()
+		persistent_breath_tween.set_trans(Tween.TRANS_SINE)
+		persistent_breath_tween.set_ease(Tween.EASE_IN_OUT)
+		persistent_breath_tween.tween_property(self, "self_modulate:a", 1.0, PERSISTENT_BREATH_HALF_DURATION)
+		persistent_breath_tween.tween_property(self, "self_modulate:a", PERSISTENT_BREATH_MIN_ALPHA, PERSISTENT_BREATH_HALF_DURATION)
+		return
+	if is_persistent_breath_active():
+		persistent_breath_tween.kill()
+	persistent_breath_tween = null
+	self_modulate = Color.WHITE
 
 
 func has_visible_status() -> bool:
@@ -1430,12 +1456,15 @@ func _draw_persistent_energy_path(
 	edge_color: Color,
 	width: float
 ) -> void:
-	if points.size() < 2 or not is_finite(width) or width <= 0.0:
-		return
-	var glow_color := Color(body_color.r, body_color.g, body_color.b, body_color.a * 0.16)
-	draw_polyline(points, glow_color, maxf(width * 3.2, 3.2), true)
-	draw_polyline(points, edge_color, maxf(width * 1.65, 1.6), true)
-	draw_polyline(points, body_color, maxf(width, 1.0), true)
+	Toolkit.draw_stroked_path(
+		self,
+		points,
+		width,
+		body_color,
+		edge_color,
+		Color(1.0, 1.0, 0.82, body_color.a * 0.12),
+		maxf(width * 3.2, 3.2)
+	)
 
 
 func _draw_persistent_energy_arc(
@@ -1448,12 +1477,19 @@ func _draw_persistent_energy_arc(
 	width: float,
 	point_count: int
 ) -> void:
-	if radius <= 0.0 or width <= 0.0 or point_count < 2:
-		return
-	var glow_color := Color(body_color.r, body_color.g, body_color.b, body_color.a * 0.16)
-	draw_arc(center, radius, start_angle, end_angle, point_count, glow_color, maxf(width * 3.0, 3.0), true)
-	draw_arc(center, radius, start_angle, end_angle, point_count, edge_color, maxf(width * 1.60, 1.5), true)
-	draw_arc(center, radius, start_angle, end_angle, point_count, body_color, maxf(width, 1.0), true)
+	Toolkit.draw_stroked_arc(
+		self,
+		center,
+		radius,
+		start_angle,
+		end_angle,
+		width,
+		body_color,
+		edge_color,
+		Color(1.0, 1.0, 0.82, body_color.a * 0.12),
+		maxf(width * 3.0, 3.0),
+		point_count
+	)
 
 
 func draw_infernal_fire_overlay() -> void:
@@ -2214,7 +2250,7 @@ func draw_soul_hook_overlay() -> void:
 		Vector2(soul_rect.size.x * 0.40, soul_rect.size.y * 0.34) * (0.94 + breath * 0.06),
 		Color(0.58, 0.20, 0.82, 0.13 + breath * 0.03),
 		Color(0.92, 0.78, 1.0, 0.10 + breath * 0.03),
-		6,
+		4,
 		animation_time * 0.08
 	)
 
@@ -2229,17 +2265,14 @@ func draw_soul_hook_overlay() -> void:
 			sin(t * TAU * 1.5 + animation_time * 1.4) * hook_rect.size.y * 0.018
 		)
 		thread_points.append(point)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		thread_points,
 		1.8,
 		soul_hook_chain_color,
 		Color(0.08, 0.005, 0.12, 0.44),
 		Color(0.94, 0.86, 1.0, 0.20),
-		7.0,
-		true,
-		true,
-		animation_time * 2.0
+		7.0
 	)
 
 	draw_status_fox_eye(
@@ -2293,7 +2326,7 @@ func draw_charm_overlay() -> void:
 		Vector2(radius * 1.10, radius * 0.64) * (0.95 + breath * 0.05),
 		Color(0.64, 0.20, 0.84, 0.12 + breath * 0.025),
 		Color(0.96, 0.48, 0.76, 0.09 + breath * 0.02),
-		7,
+		4,
 		animation_time * 0.06
 	)
 	if is_temporary:
@@ -2307,7 +2340,7 @@ func draw_charm_overlay() -> void:
 
 	for ripple_index in range(3):
 		var ripple_radius := radius * (0.54 + float(ripple_index) * 0.18 + breath * 0.025)
-		Toolkit.draw_arc_ribbon(
+		Toolkit.draw_stroked_arc(
 			self,
 			center,
 			ripple_radius,
@@ -2318,10 +2351,7 @@ func draw_charm_overlay() -> void:
 			Color(0.10, 0.005, 0.16, 0.16),
 			Color(0.96, 0.72, 0.94, 0.10),
 			4.8,
-			34,
-			true,
-			true,
-			animation_time + float(ripple_index)
+			24
 		)
 
 	draw_status_fox_eye(
@@ -2338,7 +2368,7 @@ func draw_charm_overlay() -> void:
 	# the original blue underlay visible so its temporary control is unmistakable.
 	var ribbon_y := charm_rect.end.y - charm_rect.size.y * 0.10
 	if is_temporary:
-		Toolkit.draw_ribbon(
+		Toolkit.draw_stroked_path(
 			self,
 			PackedVector2Array([
 				Vector2(charm_rect.position.x + 6.0, ribbon_y + 4.0),
@@ -2348,12 +2378,9 @@ func draw_charm_overlay() -> void:
 			Color(0.30, 0.62, 0.94, 0.48),
 			Color(0.08, 0.12, 0.30, 0.28),
 			Color(0.78, 0.92, 1.0, 0.16),
-			7.0,
-			true,
-			true,
-			animation_time
+			7.0
 		)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		PackedVector2Array([
 			Vector2(charm_rect.position.x + 6.0, ribbon_y),
@@ -2363,10 +2390,7 @@ func draw_charm_overlay() -> void:
 		Color(0.94, 0.20, 0.60, 0.78),
 		Color(0.16, 0.005, 0.20, 0.34),
 		Color(1.0, 0.76, 0.94, 0.20),
-		7.4,
-		true,
-		true,
-		animation_time * 0.8
+		7.4
 	)
 	if is_temporary and status != null:
 		for turn_index in range(mini(maxi(status.remaining_turns, 1), 4)):
@@ -2408,20 +2432,20 @@ func draw_status_fox_eye(
 		Vector2(radius * 0.82, eye_height * 0.86),
 		Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * 0.10),
 		Color.TRANSPARENT,
-		5
+		3
 	)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self, upper, 1.8, edge_color,
 		Color(fill_color.r, fill_color.g, fill_color.b, edge_color.a * 0.42),
 		Color(1.0, 0.92, 1.0, edge_color.a * 0.18),
-		6.0, true, true, animation_time * 0.8
+		6.0
 	)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self, lower, 1.8,
 		Color(edge_color.r, edge_color.g, edge_color.b, edge_color.a * (0.54 if partial else 1.0)),
 		Color(fill_color.r, fill_color.g, fill_color.b, edge_color.a * 0.36),
 		Color(1.0, 0.92, 1.0, edge_color.a * 0.14),
-		6.0, true, true, animation_time * 0.8 + 0.4
+		6.0
 	)
 	if safe_open > 0.16:
 		Toolkit.draw_soft_ellipse(
@@ -2430,7 +2454,7 @@ func draw_status_fox_eye(
 			Vector2(radius * 0.15, eye_height * (0.78 if not partial else 0.54)),
 			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open * 0.56),
 			Color(core_color.r, core_color.g, core_color.b, core_color.a * safe_open),
-			6
+			4
 		)
 
 

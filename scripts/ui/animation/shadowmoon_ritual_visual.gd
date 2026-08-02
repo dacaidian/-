@@ -1,4 +1,4 @@
-extends Control
+extends "res://scripts/ui/animation/throttled_progress_visual.gd"
 
 const Palette := preload("res://scripts/ui/animation/shadowmoon_vfx_palette.gd")
 const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
@@ -9,16 +9,6 @@ var destination_center := Vector2.ZERO
 var board_rect := Rect2()
 var source_card_size := Vector2(120.0, 168.0)
 var target_rects: Array[Rect2] = []
-var progress := 0.0:
-	set(value):
-		progress = clampf(value, 0.0, 1.0)
-		queue_redraw()
-
-
-func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-
 func configure(
 	key: String,
 	local_source_center: Vector2,
@@ -33,7 +23,7 @@ func configure(
 	board_rect = local_board_rect
 	source_card_size = local_source_card_size
 	target_rects = local_target_rects.duplicate()
-	queue_redraw()
+	request_visual_redraw(true)
 
 
 func _draw() -> void:
@@ -300,17 +290,14 @@ func _draw_asymmetric_rift(center: Vector2, half_width: float, half_height: floa
 	draw_colored_polygon(membrane, Palette.with_alpha(Palette.VOID, (0.90 if is_portal else 0.80) * alpha))
 	var closed := membrane.duplicate()
 	closed.append(membrane[0])
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		closed,
 		6.0 if is_portal else 4.0,
 		Palette.with_alpha(Palette.ACID, (0.86 if is_portal else 0.72) * alpha),
 		Palette.with_alpha(Palette.CHARCOAL, 0.76 * alpha),
 		Palette.with_alpha(Palette.HOT_CORE, 0.22 * alpha),
-		12.0 if is_portal else 9.0,
-		false,
-		false,
-		progress * 4.0
+		12.0 if is_portal else 9.0
 	)
 	for split_index in range(5):
 		var x_offset := width * lerpf(-0.44, 0.44, float(split_index) / 4.0)
@@ -490,17 +477,14 @@ func _bounds_for_targets() -> Rect2:
 func _draw_layered_line(points: PackedVector2Array, outer: Color, inner: Color, outer_width: float, inner_width: float) -> void:
 	if points.size() < 2:
 		return
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		points,
 		maxf(inner_width, 1.0),
 		inner,
 		Color(outer.r, outer.g, outer.b, outer.a * 0.76),
 		Palette.with_alpha(Palette.HOT_CORE, inner.a * 0.17),
-		maxf(outer_width * 1.36, inner_width * 2.8),
-		true,
-		true,
-		progress * 5.0 + float(points.size()) * 0.07
+		maxf(outer_width * 1.36, inner_width * 2.8)
 	)
 
 

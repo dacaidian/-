@@ -1,4 +1,4 @@
-extends Control
+extends "res://scripts/ui/animation/throttled_progress_visual.gd"
 class_name FoxSpiritAreaVisual
 
 # A board-space renderer for the 2x2 Foxfire selector and impact. The selected
@@ -14,21 +14,10 @@ const FIELD_DARK := Color(0.08, 0.01, 0.16, 1.0)
 
 var source_point := Vector2.ZERO
 var area_rect := Rect2()
-var progress := 0.0:
-	set(value):
-		progress = clampf(value, 0.0, 1.0)
-		queue_redraw()
-
-
-func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	queue_redraw()
-
-
 func configure(local_source: Vector2, local_area_rect: Rect2) -> void:
 	source_point = local_source
 	area_rect = local_area_rect
-	queue_redraw()
+	request_visual_redraw(true)
 
 
 func _draw() -> void:
@@ -112,17 +101,14 @@ func _draw_field_boundary(gather: float, burn: float, alpha: float) -> void:
 		var edge_end: Vector2 = corners[(edge_index + 1) % 4]
 		var visible_end := edge_start.lerp(edge_end, gather)
 		if edge_start.distance_to(visible_end) > 0.5:
-			Toolkit.draw_ribbon(
+			Toolkit.draw_stroked_path(
 				self,
 				PackedVector2Array([edge_start, visible_end]),
 				3.2,
 				Color(FIRE_ROUGE.r, FIRE_ROUGE.g, FIRE_ROUGE.b, alpha * 0.54 * pulse),
 				Color(FIRE_BLUE.r, FIRE_BLUE.g, FIRE_BLUE.b, alpha * 0.20),
 				Color(FIRE_CORE.r, FIRE_CORE.g, FIRE_CORE.b, alpha * 0.72),
-				10.0,
-				false,
-				true,
-				progress * 4.0 + float(edge_index)
+				10.0
 			)
 
 	var vertical_mid_x := area_rect.position.x + area_rect.size.x * 0.5
@@ -284,17 +270,14 @@ func _draw_spirit_flame(
 func _draw_layered_line(points: PackedVector2Array, color: Color, width: float, glow_width: float) -> void:
 	if points.size() < 2 or color.a <= 0.001:
 		return
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		points,
 		width,
 		color,
 		Color(FIELD_DARK.r, FIELD_DARK.g, FIELD_DARK.b, color.a * 0.42),
 		Color(FIRE_CORE.r, FIRE_CORE.g, FIRE_CORE.b, color.a * 0.30),
-		glow_width,
-		true,
-		true,
-		progress * 4.4 + float(points.size()) * 0.09
+		glow_width
 	)
 
 

@@ -109,6 +109,66 @@ static func draw_ribbon(
 		_draw_ribbon_segments(canvas, render_points, width * 0.23, highlight_color, taper_start, taper_end, organic_phase + 0.71, -width * 0.18)
 
 
+static func draw_stroked_path(
+	canvas: CanvasItem,
+	points: PackedVector2Array,
+	width: float,
+	body_color: Color,
+	edge_color := Color.TRANSPARENT,
+	highlight_color := Color.TRANSPARENT,
+	glow_width := 0.0
+) -> void:
+	if not is_finite(width) or not is_finite(glow_width) or width <= 0.1 or body_color.a <= 0.001:
+		return
+	var render_points := _sanitize_ribbon_points(points)
+	if render_points.size() < 2:
+		return
+	var safe_glow_width := maxf(glow_width, width * 2.8)
+	canvas.draw_polyline(
+		render_points,
+		Color(body_color.r, body_color.g, body_color.b, body_color.a * 0.075),
+		safe_glow_width,
+		true
+	)
+	if edge_color.a > 0.001:
+		canvas.draw_polyline(render_points, edge_color, width * 1.34, true)
+	canvas.draw_polyline(render_points, body_color, width, true)
+	if highlight_color.a > 0.001:
+		canvas.draw_polyline(render_points, highlight_color, maxf(width * 0.23, 0.8), true)
+
+
+static func draw_stroked_arc(
+	canvas: CanvasItem,
+	center: Vector2,
+	radius: float,
+	start_angle: float,
+	end_angle: float,
+	width: float,
+	body_color: Color,
+	edge_color := Color.TRANSPARENT,
+	highlight_color := Color.TRANSPARENT,
+	glow_width := 0.0,
+	segments := 24
+) -> void:
+	if not center.is_finite() or not is_finite(radius) or radius <= 0.1:
+		return
+	var points := PackedVector2Array()
+	var safe_segments := maxi(segments, 4)
+	for point_index in range(safe_segments + 1):
+		var ratio := float(point_index) / float(safe_segments)
+		var angle := lerpf(start_angle, end_angle, ratio)
+		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
+	draw_stroked_path(
+		canvas,
+		points,
+		width,
+		body_color,
+		edge_color,
+		highlight_color,
+		glow_width
+	)
+
+
 static func draw_arc_ribbon(
 	canvas: CanvasItem,
 	center: Vector2,
@@ -196,8 +256,7 @@ static func _draw_ribbon_segments(
 		var finish_outer := shifted_finish + normal * end_half_width
 		var finish_inner := shifted_finish - normal * end_half_width
 		var start_inner := shifted_start - normal * start_half_width
-		_draw_safe_triangle(canvas, start_outer, finish_outer, finish_inner, color)
-		_draw_safe_triangle(canvas, start_outer, finish_inner, start_inner, color)
+		_draw_safe_quad(canvas, start_outer, finish_outer, finish_inner, start_inner, color)
 	for point_index in range(1, last_index):
 		if not points[point_index].is_finite():
 			continue
@@ -217,21 +276,33 @@ static func _sanitize_ribbon_points(points: PackedVector2Array) -> PackedVector2
 	return sanitized
 
 
-static func _draw_safe_triangle(
+static func _draw_safe_quad(
 	canvas: CanvasItem,
 	point_a: Vector2,
 	point_b: Vector2,
 	point_c: Vector2,
+	point_d: Vector2,
 	color: Color
 ) -> void:
-	if not point_a.is_finite() or not point_b.is_finite() or not point_c.is_finite():
+	if (
+		not point_a.is_finite()
+		or not point_b.is_finite()
+		or not point_c.is_finite()
+		or not point_d.is_finite()
+	):
 		return
-	var double_area := absf((point_b - point_a).cross(point_c - point_a))
-	if not is_finite(double_area) or double_area < MIN_TRIANGLE_DOUBLE_AREA:
+	var first_double_area := absf((point_b - point_a).cross(point_c - point_a))
+	var second_double_area := absf((point_c - point_a).cross(point_d - point_a))
+	if (
+		not is_finite(first_double_area)
+		or not is_finite(second_double_area)
+		or first_double_area < MIN_TRIANGLE_DOUBLE_AREA
+		or second_double_area < MIN_TRIANGLE_DOUBLE_AREA
+	):
 		return
 	canvas.draw_primitive(
-		PackedVector2Array([point_a, point_b, point_c]),
-		PackedColorArray([color, color, color]),
+		PackedVector2Array([point_a, point_b, point_c, point_d]),
+		PackedColorArray([color, color, color, color]),
 		PackedVector2Array()
 	)
 

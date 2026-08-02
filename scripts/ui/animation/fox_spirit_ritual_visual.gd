@@ -1,4 +1,4 @@
-extends Control
+extends "res://scripts/ui/animation/throttled_progress_visual.gd"
 class_name FoxSpiritRitualVisual
 
 # Large-scale and multi-card Fox Spirit rituals. The provider supplies resolved
@@ -18,17 +18,6 @@ var animation_key := ""
 var source_point := Vector2.ZERO
 var destination_point := Vector2.ZERO
 var target_rects: Array[Rect2] = []
-var progress := 0.0:
-	set(value):
-		progress = clampf(value, 0.0, 1.0)
-		queue_redraw()
-
-
-func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	queue_redraw()
-
-
 func configure(
 	key: String,
 	local_source: Vector2,
@@ -39,7 +28,7 @@ func configure(
 	source_point = local_source
 	destination_point = local_destination
 	target_rects = local_target_rects.duplicate()
-	queue_redraw()
+	request_visual_redraw(true)
 
 
 func _draw() -> void:
@@ -343,17 +332,14 @@ func _draw_tail_shape(
 	if length <= 1.0:
 		return
 	var centerline := _tail_centerline(base, angle, length, width)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		centerline,
 		width * 2.10,
 		fill,
 		Color(edge.r, edge.g, edge.b, edge.a * 0.74),
 		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, fill.a * 0.32),
-		width * 3.8,
-		true,
-		true,
-		progress * 2.7 + angle
+		width * 3.8
 	)
 	Toolkit.draw_soft_disc(
 		self,
@@ -386,17 +372,14 @@ func _draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
 func _draw_layered_line(points: PackedVector2Array, color: Color, width: float, glow_width: float) -> void:
 	if points.size() < 2 or color.a <= 0.001:
 		return
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		points,
 		width,
 		color,
 		Color(DEEP_PURPLE.r, DEEP_PURPLE.g, DEEP_PURPLE.b, color.a * 0.42),
 		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, color.a * 0.24),
-		glow_width,
-		true,
-		true,
-		progress * 3.2 + float(points.size()) * 0.07
+		glow_width
 	)
 
 

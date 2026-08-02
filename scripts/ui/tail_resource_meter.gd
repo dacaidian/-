@@ -13,6 +13,7 @@ const ROUGE := Color(0.92, 0.16, 0.40, 1.0)
 const VIOLET := Color(0.60, 0.24, 0.84, 1.0)
 const MOON_WHITE := Color(0.94, 0.92, 1.0, 1.0)
 const PEARL_GOLD := Color(0.92, 0.76, 0.42, 1.0)
+const ANIMATION_REDRAW_INTERVAL := 1.0 / 24.0
 
 var current_value := 0
 var previous_value := 0
@@ -21,6 +22,7 @@ var animation_elapsed := 0.0
 var animation_duration := 0.82
 var animation_progress := 1.0
 var pulse_time := 0.0
+var redraw_accumulator := 0.0
 
 
 func _ready() -> void:
@@ -30,7 +32,7 @@ func _ready() -> void:
 	# The containing HUD panel owns horizontal sizing. A fixed minimum width here
 	# would include both HUD and inset safe areas and could widen the whole column.
 	custom_minimum_size = Vector2(0.0, 48.0)
-	set_process(true)
+	_sync_processing()
 	queue_redraw()
 
 
@@ -42,17 +44,30 @@ func configure(new_value: int, max_value: int, old_value: int, hint: String) -> 
 	animation_elapsed = 0.0
 	animation_duration = 1.08 if _crossed_threshold(previous_value, current_value) else 0.82
 	animation_progress = 0.0 if current_value != previous_value else 1.0
-	set_process(true)
+	redraw_accumulator = 0.0
+	if is_inside_tree():
+		_sync_processing()
 	queue_redraw()
 	return self
 
 
 func _process(delta: float) -> void:
+	if animation_progress >= 1.0:
+		set_process(false)
+		return
 	pulse_time = fmod(pulse_time + delta, 1000.0)
-	if animation_progress < 1.0:
-		animation_elapsed += delta
-		animation_progress = clampf(animation_elapsed / maxf(animation_duration, 0.01), 0.0, 1.0)
-	queue_redraw()
+	animation_elapsed += delta
+	animation_progress = clampf(animation_elapsed / maxf(animation_duration, 0.01), 0.0, 1.0)
+	redraw_accumulator += delta
+	if redraw_accumulator >= ANIMATION_REDRAW_INTERVAL or animation_progress >= 1.0:
+		redraw_accumulator = fmod(redraw_accumulator, ANIMATION_REDRAW_INTERVAL)
+		queue_redraw()
+	if animation_progress >= 1.0:
+		set_process(false)
+
+
+func _sync_processing() -> void:
+	set_process(animation_progress < 1.0)
 
 
 func _draw() -> void:
@@ -161,10 +176,10 @@ func _draw_center_eye(center: Vector2, radius: float) -> void:
 		polygon.append(point)
 	for point_index in range(lower.size() - 1, -1, -1):
 		polygon.append(lower[point_index])
-	Toolkit.draw_soft_ellipse(self, center, Vector2(radius * 0.92, eye_height * 1.10), Color(stage_color.r, stage_color.g, stage_color.b, 0.16), Color.TRANSPARENT, 6)
+	Toolkit.draw_soft_ellipse(self, center, Vector2(radius * 0.92, eye_height * 1.10), Color(stage_color.r, stage_color.g, stage_color.b, 0.16), Color.TRANSPARENT, 4)
 	draw_colored_polygon(polygon, Color(0.055, 0.018, 0.06, 0.96))
-	Toolkit.draw_ribbon(self, upper, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.22), 5.0, true, true, pulse_time)
-	Toolkit.draw_ribbon(self, lower, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.18), 5.0, true, true, pulse_time + 0.4)
+	Toolkit.draw_stroked_path(self, upper, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.22), 5.0)
+	Toolkit.draw_stroked_path(self, lower, 1.5, stage_color, Color(0.04, 0.01, 0.05, 0.64), Color(1.0, 0.94, 1.0, 0.18), 5.0)
 
 
 func _draw_value(center: Vector2, value: int) -> void:
@@ -191,17 +206,14 @@ func _draw_tail(
 	if length <= 1.0:
 		return
 	var centerline := _tail_centerline(base, angle, length, width)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		centerline,
 		width * 2.0,
 		fill,
 		Color(edge.r, edge.g, edge.b, edge.a * 0.76),
 		Color(MOON_WHITE.r, MOON_WHITE.g, MOON_WHITE.b, fill.a * 0.28),
-		width * 3.3,
-		true,
-		true,
-		pulse_time * 0.8 + angle
+		width * 3.3
 	)
 
 

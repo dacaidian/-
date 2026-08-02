@@ -10,6 +10,7 @@ var panel: PanelContainer
 var resource_list: VBoxContainer
 var skill_list: VBoxContainer
 var last_resource_values_by_player: Dictionary = {}
+var last_view_signature := ""
 
 
 func setup(root: Control) -> void:
@@ -66,6 +67,10 @@ func setup(root: Control) -> void:
 func update(current_player: PlayerState, _root: Control = null, usable_skill_ids: Array[String] = []) -> void:
 	if panel == null:
 		return
+	var view_signature := _build_view_signature(current_player, usable_skill_ids)
+	if view_signature == last_view_signature:
+		return
+	last_view_signature = view_signature
 	var previous_values: Dictionary = {}
 	if current_player != null:
 		previous_values = last_resource_values_by_player.get(current_player.id, {}).duplicate()
@@ -94,6 +99,40 @@ func update(current_player: PlayerState, _root: Control = null, usable_skill_ids
 	if has_skills:
 		for skill_config in current_player.get_unlocked_faction_skill_configs():
 			skill_list.add_child(create_skill_row(current_player, skill_config, usable_skill_ids))
+
+
+func _build_view_signature(player: PlayerState, usable_skill_ids: Array[String]) -> String:
+	if player == null:
+		return "none"
+	var resources: Array[String] = []
+	var resource_ids: Array = player.faction_resource_configs.keys()
+	resource_ids.sort()
+	for resource_id_value in resource_ids:
+		var resource_id := str(resource_id_value)
+		var config := player.get_faction_resource_config(resource_id)
+		resources.append("%s:%d:%d" % [
+			resource_id,
+			player.get_faction_resource_value(resource_id),
+			int(config.get("max", 0)),
+		])
+
+	var usable_ids := usable_skill_ids.duplicate()
+	usable_ids.sort()
+	var skills: Array[String] = []
+	for skill_config in player.get_unlocked_faction_skill_configs():
+		var skill_id := str(skill_config.get("id", ""))
+		skills.append("%s:%s:%s" % [
+			skill_id,
+			str(player.can_use_faction_skill(skill_id)),
+			str(usable_ids.has(skill_id)),
+		])
+	skills.sort()
+	return "%s|%s|%s|%s" % [
+		player.id,
+		player.faction_id,
+		",".join(resources),
+		",".join(skills),
+	]
 
 
 func create_resource_row(player: PlayerState, resource_id: String, previous_value := -1) -> Control:

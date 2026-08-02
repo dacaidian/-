@@ -1,4 +1,4 @@
-extends Control
+extends "res://scripts/ui/animation/throttled_progress_visual.gd"
 
 const Palette := preload("res://scripts/ui/animation/shadowmoon_vfx_palette.gd")
 const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
@@ -8,16 +8,6 @@ var source_center := Vector2.ZERO
 var target_center := Vector2.ZERO
 var source_card_size := Vector2(120.0, 168.0)
 var target_card_size := Vector2(120.0, 168.0)
-var progress := 0.0:
-	set(value):
-		progress = clampf(value, 0.0, 1.0)
-		queue_redraw()
-
-
-func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-
 func configure(
 	key: String,
 	local_source_center: Vector2,
@@ -30,7 +20,7 @@ func configure(
 	target_center = local_target_center
 	source_card_size = local_source_size
 	target_card_size = local_target_size
-	queue_redraw()
+	request_visual_redraw(true)
 
 
 func _draw() -> void:
@@ -529,29 +519,23 @@ func _draw_target_fissure(center: Vector2, radius: float, phase_value: float, al
 	draw_colored_polygon(fissure, Palette.with_alpha(Palette.VOID, 0.92 * alpha))
 	var closed := fissure.duplicate()
 	closed.append(fissure[0])
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		closed,
 		4.2 if is_overload else 3.0,
 		Palette.with_alpha(Palette.ACID, 0.82 * alpha),
 		Palette.with_alpha(Palette.INK_GREEN, 0.50 * alpha),
 		Palette.with_alpha(Palette.HOT_CORE, 0.28 * alpha),
-		8.0 if is_overload else 6.0,
-		false,
-		false,
-		progress * 5.0
+		8.0 if is_overload else 6.0
 	)
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		PackedVector2Array([center + Vector2(0.0, -half_height * 0.78), center + Vector2(0.0, half_height * 0.70)]),
 		2.0,
 		Palette.with_alpha(Palette.HOT_CORE, 0.66 * alpha),
 		Palette.with_alpha(Palette.VOID, 0.40 * alpha),
 		Color.TRANSPARENT,
-		6.0,
-		true,
-		true,
-		progress * 6.0
+		6.0
 	)
 
 
@@ -727,17 +711,14 @@ func _target_scale() -> float:
 func _draw_layered_line(points: PackedVector2Array, outer: Color, inner: Color, outer_width: float, inner_width: float) -> void:
 	if points.size() < 2:
 		return
-	Toolkit.draw_ribbon(
+	Toolkit.draw_stroked_path(
 		self,
 		points,
 		maxf(inner_width, 1.0),
 		inner,
 		Color(outer.r, outer.g, outer.b, outer.a * 0.74),
 		Palette.with_alpha(Palette.HOT_CORE, inner.a * 0.18),
-		maxf(outer_width * 1.32, inner_width * 2.8),
-		true,
-		true,
-		progress * 5.3 + float(points.size()) * 0.08
+		maxf(outer_width * 1.32, inner_width * 2.8)
 	)
 
 

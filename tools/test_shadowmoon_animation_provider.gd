@@ -245,13 +245,10 @@ func _test_status_overlays(effect_root: Control) -> bool:
 		state.add_status(status)
 		overlay.refresh()
 		await process_frame
-		if not overlay.visible or not overlay.is_processing():
-			return _fail("Shadowmoon status overlay is not animated for %s" % status_id)
-		if not is_equal_approx(
-			overlay._get_animated_redraw_interval(),
-			CardStatusOverlay.SHADOWMOON_STATUS_REDRAW_INTERVAL
-		):
-			return _fail("Shadowmoon status overlay is not using its bounded redraw rate for %s" % status_id)
+		if not overlay.visible or overlay.is_processing():
+			return _fail("Shadowmoon persistent status still rebuilds geometry for %s" % status_id)
+		if not overlay.is_persistent_breath_active():
+			return _fail("Shadowmoon persistent status lost its compositor breath for %s" % status_id)
 		state.remove_status(status_id)
 
 	var fire := CardStatus.new()
@@ -267,7 +264,7 @@ func _test_status_overlays(effect_root: Control) -> bool:
 		return _fail("Infernal fire overlay is not animated")
 	if not is_equal_approx(
 		overlay._get_animated_redraw_interval(),
-		CardStatusOverlay.SHADOWMOON_STATUS_REDRAW_INTERVAL
+		CardStatusOverlay.LOW_RATE_STATUS_REDRAW_INTERVAL
 	):
 		return _fail("Infernal fire overlay is not using its bounded redraw rate")
 

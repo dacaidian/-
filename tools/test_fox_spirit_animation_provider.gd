@@ -151,8 +151,10 @@ func _test_status_overlays(effect_root: Control) -> bool:
 	state.add_status(soul_hook)
 	overlay.refresh()
 	await process_frame
-	if not overlay.visible or not overlay.is_processing():
-		return _fail("Soul Hook persistent visual is not animated")
+	if not overlay.visible or overlay.is_processing():
+		return _fail("Soul Hook persistent visual still rebuilds geometry")
+	if not overlay.is_persistent_breath_active():
+		return _fail("Soul Hook persistent visual lost its compositor breath")
 	state.remove_status(CardStatus.STATUS_SOUL_HOOK)
 
 	var temporary_charm := CardStatus.new()
@@ -162,8 +164,10 @@ func _test_status_overlays(effect_root: Control) -> bool:
 	state.add_status(temporary_charm)
 	overlay.refresh()
 	await process_frame
-	if not overlay.visible or not overlay.is_processing():
-		return _fail("Fox Thought persistent visual is not animated")
+	if not overlay.visible or overlay.is_processing():
+		return _fail("Fox Thought persistent visual still rebuilds geometry")
+	if not overlay.is_persistent_breath_active():
+		return _fail("Fox Thought persistent visual lost its compositor breath")
 
 	overlay.queue_free()
 	await process_frame
@@ -177,7 +181,20 @@ func _test_tail_resource_meter(effect_root: Control) -> bool:
 	effect_root.add_child(meter)
 	await process_frame
 	if not meter.is_processing():
-		return _fail("Tail resource meter does not keep its material breathing animation active")
+		return _fail("Tail resource meter did not start its value transition")
+	var draw_counter := {"count": 0}
+	meter.draw.connect(func(): draw_counter["count"] = int(draw_counter["count"]) + 1)
+	await create_timer(meter.animation_duration + 0.12).timeout
+	await process_frame
+	if meter.is_processing():
+		return _fail("Tail resource meter keeps redrawing after its value settled")
+	var settled_draw_count := int(draw_counter["count"])
+	await create_timer(0.16).timeout
+	if int(draw_counter["count"]) != settled_draw_count:
+		return _fail("Tail resource meter redraws while its value is stable")
+	var maximum_expected_draws := int(ceil(meter.animation_duration / TailResourceMeter.ANIMATION_REDRAW_INTERVAL)) + 4
+	if settled_draw_count > maximum_expected_draws:
+		return _fail("Tail resource meter exceeded its bounded redraw budget")
 	meter.queue_free()
 	await process_frame
 	if effect_root.get_child_count() != 0:

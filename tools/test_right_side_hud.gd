@@ -68,6 +68,13 @@ func run() -> void:
 	assert(tail_meter.current_value == 5)
 	assert(tail_meter.maximum_value == 9)
 	assert(skill_controller.panel.find_child("TailStageLabel", true, false).text == "三尾 · 远程")
+	assert(not tail_meter.is_processing())
+	skill_controller.update(player, scene, ["sacrifice"])
+	await process_frame
+	assert(
+		skill_controller.panel.find_child("TailResourceMeter", true, false) == tail_meter,
+		"unchanged faction HUD data should reuse the existing tail meter"
+	)
 
 	player.gain_faction_resource("tail", 1)
 	skill_controller.update(player, scene, ["sacrifice"])
