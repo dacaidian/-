@@ -18,6 +18,8 @@ func move_card_content_to_empty_slot(
 	if from_state.is_empty() or not to_state.is_empty():
 		return
 
+	var involved_slots: Array[int] = [from_state.slot_index, to_state.slot_index]
+	await game_manager.ensure_board_slots_visible(involved_slots)
 	var from_card: Card = game_manager.get_card_by_slot(from_state.slot_index)
 	var to_card: Card = game_manager.get_card_by_slot(to_state.slot_index)
 	var moving_snapshot := from_state.create_card_snapshot()
@@ -55,6 +57,8 @@ func move_flying_card_to_slot(
 	if to_state == null or not to_state.is_empty():
 		return
 
+	var involved_slots: Array[int] = [from_slot_index, to_slot_index]
+	await game_manager.ensure_board_slots_visible(involved_slots)
 	var from_card := game_manager.get_card_for_state(from_state)
 	var to_card := game_manager.get_card_for_state(to_state)
 	var moving_snapshot := from_state.create_card_snapshot()

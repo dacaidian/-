@@ -10,6 +10,7 @@ const FactionSkillPanelControllerScript := preload("res://scripts/ui/faction_ski
 const HandDrawerControllerScript := preload("res://scripts/ui/hand_drawer_controller.gd")
 const EquipmentDisplayControllerScript := preload("res://scripts/ui/equipment_display_controller.gd")
 const RightSideHudLayoutControllerScript := preload("res://scripts/ui/right_side_hud_layout_controller.gd")
+const BoardViewToggleControllerScript := preload("res://scripts/ui/board_view_toggle_controller.gd")
 const AttackOccupyChoiceControllerScript := preload("res://scripts/ui/attack_occupy_choice_controller.gd")
 const CardAnimationControllerScript := preload("res://scripts/ui/card_animation_controller.gd")
 const GameAnimationResolverScript := preload("res://scripts/game/game_animation_resolver.gd")
@@ -52,6 +53,7 @@ const AIControllerScript := preload("res://scripts/ai/ai_controller.gd")
 # 它持有玩家、棋盘、牌池和交互状态，并串起回合、行动、死亡、补位等规则流程。
 # 具体 UI 和动画表现委托给独立 Controller，避免规则主类继续膨胀。
 @export var card_board_path: NodePath
+@export var board_view_toggle_path: NodePath
 @export var debug_panel_path: NodePath
 @export var end_turn_button_path: NodePath
 @export var card_pool_view_path: NodePath
@@ -155,6 +157,7 @@ var faction_skill_panel_controller := FactionSkillPanelControllerScript.new()
 var hand_drawer_controller := HandDrawerControllerScript.new()
 var equipment_display_controller := EquipmentDisplayControllerScript.new()
 var right_side_hud_layout_controller := RightSideHudLayoutControllerScript.new()
+var board_view_toggle_controller := BoardViewToggleControllerScript.new()
 var attack_occupy_choice_controller := AttackOccupyChoiceControllerScript.new()
 var card_animation_controller := CardAnimationControllerScript.new()
 var game_animation_resolver := GameAnimationResolverScript.new()
@@ -212,6 +215,7 @@ func _ready() -> void:
 	game_hud_coordinator.refresh_all(self)
 	card_pool = create_initial_card_pool()
 	initialize_board()
+	setup_board_view_toggle()
 	setup_card_pool_view()
 	setup_board_persistent_visuals()
 	update_card_pool_view()
@@ -477,7 +481,7 @@ func initialize_board() -> void:
 
 
 func prepare_card_board_view() -> void:
-	var card_board := get_node_or_null(card_board_path)
+	var card_board := get_card_board_view()
 	if card_board == null:
 		return
 
@@ -487,6 +491,40 @@ func prepare_card_board_view() -> void:
 		card_board.ensure_board_slots()
 	if card_board.has_method("resize_to_viewport"):
 		card_board.resize_to_viewport()
+
+
+func setup_board_view_toggle() -> void:
+	var card_board := get_card_board_view()
+	var view_toggle := get_node_or_null(board_view_toggle_path) as CheckButton
+	if card_board == null or view_toggle == null:
+		return
+	board_view_toggle_controller.setup(self, get_parent() as Control, card_board, view_toggle)
+
+
+func get_card_board_view() -> Control:
+	return get_node_or_null(card_board_path) as Control
+
+
+func is_board_slot_visible(slot_index: int) -> bool:
+	var card_board := get_card_board_view()
+	if card_board == null or not card_board.has_method("is_slot_visible_in_current_view"):
+		return true
+	return bool(card_board.call("is_slot_visible_in_current_view", slot_index))
+
+
+func ensure_board_slots_visible(slot_indices: Array[int]) -> bool:
+	var card_board := get_card_board_view()
+	if card_board == null or not card_board.has_method("ensure_slots_visible"):
+		return false
+	var changed := bool(card_board.call("ensure_slots_visible", slot_indices))
+	if changed:
+		await get_tree().process_frame
+	return changed
+
+
+func prepare_board_view_change() -> void:
+	cancel_interaction()
+	get_tree().call_group("card_hover_previews", "hide_preview")
 
 
 func create_board_cell(slot_index: int, ground_state: CardState) -> BoardCell:
@@ -1484,6 +1522,8 @@ func swap_board_slot_contents(
 	if first_state == null or second_state == null:
 		return
 
+	var involved_slots: Array[int] = [first_state.slot_index, second_state.slot_index]
+	await ensure_board_slots_visible(involved_slots)
 	var first_card: Card = get_card_by_slot(first_state.slot_index)
 	var second_card: Card = get_card_by_slot(second_state.slot_index)
 

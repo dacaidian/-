@@ -81,6 +81,8 @@ func setup_ui(title: String) -> void:
 	margin.add_child(_title_label)
 
 	for slot_index in range(_game_manager.board_states.size()):
+		if not _game_manager.is_board_slot_visible(slot_index):
+			continue
 		var card := _game_manager.get_card_by_slot(slot_index)
 		if card == null:
 			continue
@@ -128,6 +130,8 @@ func handle_slot_pressed(slot_index: int) -> void:
 
 func mark_start_candidates() -> void:
 	for slot_index in range(_game_manager.board_states.size()):
+		if not _game_manager.is_board_slot_visible(slot_index):
+			continue
 		if get_valid_end_slots(slot_index).is_empty():
 			continue
 		var state := _game_manager.get_board_state(slot_index)
@@ -162,13 +166,18 @@ func clear_marks() -> void:
 
 
 func get_valid_end_slots(start_slot: int) -> Array[int]:
-	return BoardQuery.get_line_end_slots(
+	var visible_end_slots: Array[int] = []
+	var end_slots := BoardQuery.get_line_end_slots(
 		start_slot,
 		_line_length,
 		_game_manager.board_columns,
 		_game_manager.board_states.size(),
 		_direction_mode
 	)
+	for slot_index in end_slots:
+		if _game_manager.is_board_slot_visible(slot_index):
+			visible_end_slots.append(slot_index)
+	return visible_end_slots
 
 
 func get_line_slots(start_slot: int, end_slot: int) -> Array[int]:

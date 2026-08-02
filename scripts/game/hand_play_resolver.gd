@@ -300,6 +300,8 @@ func execute_hand_minion_placement(
 
 	if not can_place_minion_on_target(target_state, game_manager, card_data):
 		return
+	var placement_slots: Array[int] = [target_state.slot_index]
+	await game_manager.ensure_board_slots_visible(placement_slots)
 
 	var hand_card_state := player.get_hand_card_state_at(hand_index)
 	var permanent_stat_overrides := hand_card_state.get_permanent_stat_overrides() if hand_card_state != null and hand_card_state.has_permanent_stat_overrides() else {}

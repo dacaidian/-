@@ -42,6 +42,7 @@ func play_card_attack_animation(
 ) -> void:
 	if game_manager == null or attacker_state == null or target_state == null:
 		return
+	await ensure_primary_states_visible(game_manager, [attacker_state, target_state])
 	if attack_animation_key == "":
 		attack_animation_key = resolve_attack_animation_key(attacker_state)
 
@@ -125,6 +126,7 @@ func play_secondary_attack_impact_animation(
 		or target_states.is_empty()
 	):
 		return
+	await ensure_primary_states_visible(game_manager, [attacker_state, primary_target_state])
 
 	var attacker_card: Card = game_manager.get_card_for_state(attacker_state)
 	var primary_target_card: Card = game_manager.get_card_for_state(primary_target_state)
@@ -133,7 +135,7 @@ func play_secondary_attack_impact_animation(
 		if target_state == null:
 			continue
 		var target_card: Card = game_manager.get_card_for_state(target_state)
-		if target_card != null and not target_cards.has(target_card):
+		if is_card_visible(target_card) and not target_cards.has(target_card):
 			target_cards.append(target_card)
 	if attacker_card == null or primary_target_card == null or target_cards.is_empty():
 		return
@@ -170,6 +172,7 @@ func play_spell_cast_animation(
 ) -> void:
 	if game_manager == null or caster_state == null or target_state == null:
 		return
+	await ensure_primary_states_visible(game_manager, [caster_state, target_state])
 
 	var caster_card: Card = game_manager.get_card_for_state(caster_state)
 	var target_card: Card = game_manager.get_card_for_state(target_state)
@@ -196,6 +199,7 @@ func play_area_spell_animation(
 ) -> void:
 	if game_manager == null or caster_state == null or center_state == null:
 		return
+	await ensure_primary_states_visible(game_manager, [caster_state, center_state])
 
 	var caster_card: Card = game_manager.get_card_for_state(caster_state)
 	var center_card: Card = game_manager.get_card_for_state(center_state)
@@ -222,6 +226,7 @@ func play_link_units_animation(
 ) -> void:
 	if game_manager == null or first_state == null or second_state == null:
 		return
+	await ensure_primary_states_visible(game_manager, [first_state, second_state])
 
 	var first_card: Card = game_manager.get_card_for_state(first_state)
 	var second_card: Card = game_manager.get_card_for_state(second_state)
@@ -247,6 +252,7 @@ func play_moonblade_animation(
 ) -> void:
 	if game_manager == null or caster_state == null or first_state == null or second_state == null:
 		return
+	await ensure_primary_states_visible(game_manager, [caster_state, first_state, second_state])
 
 	var caster_card: Card = game_manager.get_card_for_state(caster_state)
 	var first_card: Card = game_manager.get_card_for_state(first_state)
@@ -270,7 +276,7 @@ func play_effect_heal_animation(game_manager: GameManager, target_state: CardSta
 		return
 
 	var target_card: Card = game_manager.get_card_for_state(target_state)
-	if target_card == null:
+	if not is_card_visible(target_card):
 		return
 
 	await game_manager.card_animation_controller.play_spell_cast(
@@ -293,7 +299,7 @@ func play_multi_target_effect_animation(
 	var target_rects: Array[Rect2] = []
 	for target_state in target_states:
 		var target_card: Card = game_manager.get_card_for_state(target_state)
-		if target_card != null and is_instance_valid(target_card):
+		if is_card_visible(target_card):
 			target_rects.append(target_card.get_global_rect())
 	if target_rects.is_empty():
 		return false
@@ -315,7 +321,7 @@ func play_status_apply_animation(
 		return
 
 	var target_card: Card = game_manager.get_card_for_state(target_state)
-	if target_card == null:
+	if not is_card_visible(target_card):
 		return
 
 	await game_manager.card_animation_controller.play_spell_cast(
@@ -336,7 +342,7 @@ func play_slot_effect_animation(
 		return
 
 	var target_card: Card = game_manager.get_card_for_state(target_state)
-	if target_card == null:
+	if not is_card_visible(target_card):
 		return
 
 	await game_manager.card_animation_controller.play_spell_cast_at_rect(
@@ -365,7 +371,7 @@ func play_path_effect_animation(game_manager: GameManager, slot_indices: Array[i
 	var rects: Array[Rect2] = []
 	for slot_index in slot_indices:
 		var card := game_manager.get_card_by_slot(slot_index)
-		if card == null:
+		if not is_card_visible(card):
 			continue
 		rects.append(card.get_global_rect())
 
@@ -387,6 +393,8 @@ func play_card_to_hand_animation(
 ) -> void:
 	if game_manager == null or source_card == null or card_data == null:
 		return
+	if not is_card_visible(source_card):
+		return
 
 	await game_manager.hand_drawer_controller.play_card_to_hand_animation(
 		game_manager,
@@ -404,6 +412,8 @@ func play_hand_spell_card_animation(
 ) -> void:
 	if game_manager == null or card_data == null:
 		return
+	if target_state != null:
+		await ensure_primary_states_visible(game_manager, [target_state])
 
 	var spell_data := {
 		"animation": animation_override if animation_override != "" else (card_data.animation if card_data.animation != "" else "heal")
@@ -416,7 +426,7 @@ func play_hand_spell_card_animation(
 
 	if target_state != null:
 		var target_card: Card = game_manager.get_card_for_state(target_state)
-		if target_card != null:
+		if is_card_visible(target_card):
 			var hand_card_rect: Rect2 = game_manager.hand_interaction_controller.get_selected_hand_card_rect()
 			if hand_card_rect.size != Vector2.ZERO:
 				await game_manager.card_animation_controller.play_spell_cast_from_rect_to_card(
@@ -454,6 +464,22 @@ func get_overlay_animation_root(game_manager: GameManager) -> Control:
 		return game_manager.card_pool_view_controller.animation_root
 
 	return game_manager.get_parent() as Control
+
+
+func ensure_primary_states_visible(game_manager: GameManager, states: Array) -> void:
+	if game_manager == null:
+		return
+	var slot_indices: Array[int] = []
+	for state_value in states:
+		var state := state_value as CardState
+		if state != null and state.slot_index >= 0 and not slot_indices.has(state.slot_index):
+			slot_indices.append(state.slot_index)
+	if not slot_indices.is_empty():
+		await game_manager.ensure_board_slots_visible(slot_indices)
+
+
+func is_card_visible(card: Control) -> bool:
+	return card != null and is_instance_valid(card) and card.is_visible_in_tree()
 
 
 func animate_refill_board_slot(game_manager: GameManager, slot_index: int, card_data: CardData) -> void:

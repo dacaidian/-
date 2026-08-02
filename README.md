@@ -7,7 +7,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **完整应用流程**：主菜单提供开始游戏、牌局历史、卡牌图鉴和退出入口；图鉴支持完整卡牌浏览、组合筛选、搜索、排序和详情查看，牌局历史保留独立页面骨架。种族选择可返回主菜单，对局可确认投降，资源胜利和投降共用结算与返回流程。
 - **卡牌图鉴**：按种族归档普通牌与衍生牌，明确区分常规牌池、默认入手、衍生牌和状态展示；支持英雄专属关系、阶级、类型、来源、中文关键字搜索和分页卡墙。
 - **种族与英雄选择**：不同种族拥有独立机制、英雄、默认升级、衍生牌和配套法术。
-- **7x7 分层棋盘**：内圈 5x5 是常规战场，外圈为边缘区域；飞行单位可进入空中层并可与地面单位同格存在。
+- **7x7 分层棋盘**：规则层始终保留完整 7x7 棋盘；默认视图放大中央 5x5，玩家可通过“完整战场”开关查看飞行外环。飞行单位可进入空中层并可与地面单位同格存在，切换视图不会重建槽位或改变格子能力。
 - **等级牌池**：卡牌按 1-3 阶推进，低阶牌池耗尽后进入更高阶。
 - **手牌系统**：支持法术、随从放置、升级牌、装备牌、英雄复活冷却牌和衍生牌。
 - **行动系统**：移动、攻击、施法是主行动组；副动作、骑乘攻击、固定方向移动、瞬移、飞行、移动攻击等由通用行动资源系统处理。
@@ -119,6 +119,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_vfx_canvas_toolkit.gd -SuccessMarker VFX_CANVAS_TOOLKIT_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_vfx_redraw_scheduling.gd -SuccessMarker VFX_REDRAW_SCHEDULING_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_shadowmoon_animation_provider.gd -SuccessMarker SHADOWMOON_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_board_view_modes.gd -SuccessMarker BOARD_VIEW_MODE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_vfx_modules.gd -SuccessMarker NIGHT_ELF_VFX_MODULE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```

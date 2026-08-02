@@ -1,6 +1,8 @@
 @tool
 extends PanelContainer
 
+signal view_mode_changed(is_full_view: bool)
+
 const CardScene := preload("res://scenes/card.tscn")
 const GuTrapSlotOverlayScript := preload("res://scripts/ui/gu_trap_slot_overlay.gd")
 
@@ -9,14 +11,20 @@ const GuTrapSlotOverlayScript := preload("res://scripts/ui/gu_trap_slot_overlay.
 @export var slot_aspect_ratio := 180.0 / 252.0
 @export var board_columns := 7
 @export var board_rows := 7
+@export var compact_board_columns := 5
+@export var compact_board_rows := 5
+@export var default_full_board_view := false
 
 @onready var grid_container: GridContainer = $MarginContainer/GridContainer
 
 var land_slot_states: Array[bool] = []
+var is_full_board_view := false
+var has_applied_view_mode := false
 
 
 func _ready() -> void:
 	ensure_board_slots()
+	set_full_board_view(default_full_board_view, false)
 	resize_to_viewport()
 
 
@@ -29,7 +37,6 @@ func ensure_board_slots() -> void:
 	if grid_container == null:
 		return
 
-	grid_container.columns = board_columns
 	var desired_count := maxi(board_columns * board_rows, 0)
 
 	while grid_container.get_child_count() < desired_count:
@@ -57,6 +64,93 @@ func ensure_board_slots() -> void:
 		ensure_slot_layer_cards(slot)
 
 	apply_slot_styles()
+	apply_view_mode()
+
+
+func set_full_board_view(enabled: bool, emit_change := true) -> void:
+	if has_applied_view_mode and is_full_board_view == enabled:
+		return
+
+	is_full_board_view = enabled
+	has_applied_view_mode = true
+	apply_view_mode()
+	resize_to_viewport()
+	if emit_change:
+		view_mode_changed.emit(is_full_board_view)
+
+
+func toggle_full_board_view() -> void:
+	set_full_board_view(not is_full_board_view)
+
+
+func apply_view_mode() -> void:
+	if grid_container == null:
+		return
+
+	grid_container.columns = get_visible_column_count()
+	for slot_index in range(grid_container.get_child_count()):
+		var slot := grid_container.get_child(slot_index) as Control
+		if slot != null:
+			slot.visible = is_slot_visible_in_current_view(slot_index)
+	grid_container.queue_sort()
+
+
+func is_slot_visible_in_current_view(slot_index: int) -> bool:
+	if slot_index < 0 or slot_index >= board_columns * board_rows:
+		return false
+	return is_full_board_view or is_slot_in_compact_view(slot_index)
+
+
+func is_slot_in_compact_view(slot_index: int) -> bool:
+	if board_columns <= 0 or board_rows <= 0:
+		return false
+
+	var compact_columns := get_compact_column_count()
+	var compact_rows := get_compact_row_count()
+	var start_column := maxi(floori(float(board_columns - compact_columns) / 2.0), 0)
+	var start_row := maxi(floori(float(board_rows - compact_rows) / 2.0), 0)
+	var column := slot_index % board_columns
+	var row := floori(float(slot_index) / float(board_columns))
+	return (
+		column >= start_column
+		and column < start_column + compact_columns
+		and row >= start_row
+		and row < start_row + compact_rows
+	)
+
+
+func ensure_slots_visible(slot_indices: Array[int]) -> bool:
+	if is_full_board_view:
+		return false
+	for slot_index in slot_indices:
+		if not is_slot_in_compact_view(slot_index):
+			set_full_board_view(true)
+			return true
+	return false
+
+
+func get_visible_slot_indices() -> Array[int]:
+	var result: Array[int] = []
+	for slot_index in range(board_columns * board_rows):
+		if is_slot_visible_in_current_view(slot_index):
+			result.append(slot_index)
+	return result
+
+
+func get_visible_column_count() -> int:
+	return maxi(board_columns if is_full_board_view else get_compact_column_count(), 1)
+
+
+func get_visible_row_count() -> int:
+	return maxi(board_rows if is_full_board_view else get_compact_row_count(), 1)
+
+
+func get_compact_column_count() -> int:
+	return clampi(compact_board_columns, 1, maxi(board_columns, 1))
+
+
+func get_compact_row_count() -> int:
+	return clampi(compact_board_rows, 1, maxi(board_rows, 1))
 
 
 func ensure_slot_layer_cards(slot: Node) -> void:
@@ -175,8 +269,8 @@ func update_slot_sizes(board_size: Vector2) -> void:
 	var horizontal_gap: float = 12.0
 	var vertical_gap: float = 12.0
 	var inner_size: Vector2 = board_size - Vector2(margin, margin)
-	var column_count := maxf(float(board_columns), 1.0)
-	var row_count := maxf(float(board_rows), 1.0)
+	var column_count := float(get_visible_column_count())
+	var row_count := float(get_visible_row_count())
 	var horizontal_gaps := maxf(column_count - 1.0, 0.0)
 	var vertical_gaps := maxf(row_count - 1.0, 0.0)
 	var slot_width: float = (inner_size.x - horizontal_gap * horizontal_gaps) / column_count

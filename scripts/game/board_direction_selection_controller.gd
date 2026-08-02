@@ -25,6 +25,8 @@ func select_direction_result(game_manager: GameManager, request: SelectionReques
 		return SelectionResult.cancelled_result(SelectionRequest.KIND_DIRECTION_RAY)
 
 	for result in _target_resolver.get_valid_results(_game_manager, _request):
+		if not is_result_visible(result):
+			continue
 		_results_by_direction[result.direction] = result
 	if _results_by_direction.is_empty():
 		cleanup()
@@ -98,7 +100,7 @@ func setup_ui() -> void:
 			_game_manager.board_columns,
 			_game_manager.board_states.size()
 		)
-		if target_slot < 0:
+		if target_slot < 0 or not _game_manager.is_board_slot_visible(target_slot):
 			continue
 
 		var card := _game_manager.get_card_by_slot(target_slot)
@@ -151,13 +153,17 @@ func mark_direction_candidates() -> void:
 			_game_manager.board_columns,
 			_game_manager.board_states.size()
 		)
-		if slot >= 0:
+		if slot >= 0 and _game_manager.is_board_slot_visible(slot):
 			var state := _game_manager.get_board_state(slot)
 			if state != null:
 				state.set_valid_target(true)
 
 		var result := _results_by_direction.get(direction) as SelectionResult
-		if result != null and result.hit_state != null:
+		if (
+			result != null
+			and result.hit_state != null
+			and _game_manager.is_board_slot_visible(result.hit_state.slot_index)
+		):
 			result.hit_state.set_valid_target(true)
 
 
@@ -168,11 +174,35 @@ func mark_ray_preview(direction: Vector2i) -> void:
 		return
 
 	for slot in result.ray_slots:
+		if not _game_manager.is_board_slot_visible(slot):
+			continue
 		var state := _game_manager.get_board_state(slot)
 		if state != null:
 			state.set_area_preview(true)
-	if result.hit_state != null:
+	if (
+		result.hit_state != null
+		and _game_manager.is_board_slot_visible(result.hit_state.slot_index)
+	):
 		result.hit_state.set_selected(true)
+
+
+func is_result_visible(result: SelectionResult) -> bool:
+	if result == null:
+		return false
+
+	var selector_slot := BoardQuery.get_slot_at_offset(
+		_request.origin_slot,
+		result.direction,
+		_game_manager.board_columns,
+		_game_manager.board_states.size()
+	)
+	if selector_slot < 0 or not _game_manager.is_board_slot_visible(selector_slot):
+		return false
+
+	return (
+		result.hit_state == null
+		or _game_manager.is_board_slot_visible(result.hit_state.slot_index)
+	)
 
 
 func clear_ray_preview() -> void:

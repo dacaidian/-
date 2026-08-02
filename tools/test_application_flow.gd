@@ -134,6 +134,19 @@ func test_shell_navigation() -> void:
 	var game_manager := shell.current_screen.get_node("GameManager") as GameManager
 	assert(game_manager != null)
 	assert(game_manager.players.size() == 2)
+	assert(game_manager.board_states.size() == 49)
+	var card_board := shell.current_screen.get_node("BoardCenter/CardBoard") as Control
+	var board_view_toggle := shell.current_screen.get_node("BoardViewToggle") as CheckButton
+	assert(card_board != null and board_view_toggle != null)
+	assert(not bool(card_board.get("is_full_board_view")))
+	assert((card_board.call("get_visible_slot_indices") as Array).size() == 25)
+	board_view_toggle.button_pressed = true
+	await process_frame
+	assert(bool(card_board.get("is_full_board_view")))
+	assert((card_board.call("get_visible_slot_indices") as Array).size() == 49)
+	board_view_toggle.button_pressed = false
+	await process_frame
+	assert(not bool(card_board.get("is_full_board_view")))
 	assert(game_manager.get_node_or_null("MatchExitLayer/SurrenderButton") != null)
 	var result := MatchResult.create(
 		MatchResult.EndReason.RESOURCE_VICTORY,

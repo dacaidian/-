@@ -93,6 +93,9 @@
 
 ## 棋盘与移动
 
+- 规则棋盘始终是 7x7，`BoardCell`、`board_states`、地面/空中卡节点和槽位索引不随视图变化。`CardBoard` 默认隐藏外环并把中央 25 格按 5x5 放大排布；“完整战场”开关只恢复 7x7 展示，禁止删除槽位、重绑状态或用视图模式改变合法性。
+- 棋盘视图切换由 `scripts/ui/board_view_toggle_controller.gd` 管理交互，`scenes/card_board/scripts/card_board.gd` 管理投影。切换会取消未完成的目标选择，动作动画期间不得手动切换；矢量与方向选择器只为可见格生成命中区和预览。部署、移动、交换、普通攻击和显式目标法术涉及隐藏外环时先展开并等待布局；群体、路径、状态与持续区域特效只消费当前可见卡牌的实时全局矩形，禁止使用隐藏节点的旧坐标。修改后运行 `tools/test_board_view_modes.gd`、`tools/test_board_persistent_visuals.gd` 和整项目检查。
+
 优先读：
 
 - `scripts/data/board_cell.gd`
