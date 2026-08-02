@@ -370,7 +370,7 @@ UI 控制器只负责表现，不应直接修改规则数据，除非通过明�
 
 语义 key 必须区分阶段而不是复用一个“绿色法术”：基础灌注使用 `fel_sacrifice`、`fel_infusion_transfer`、`fel_infusion_settle`；古尔丹之杖使用更重的 `fel_sacrifice_heavy`、`fel_overload_transfer`、`fel_overload_settle`、`fel_overload_detonate` 和 `fel_burst_impact`；灵魂虹吸使用深紫灵魂丝带 `life_drain`，接收端使用 `life_drain_receive`；诅咒使用 `curse_cast`、`curse_mark`、疯狂追加伤害 `curse_impact`；邪能狂乱先播放低矮全战场 `fel_madness_broadcast`，再分别使用混乱兽人、地狱犬、魅魔、狼骑兵、末日守卫和术士的专属响应 key，禁止给全军套同一个绿色火圈。地狱火的施放、状态附着和回合伤害分别使用 `immolation_cast`、`immolation_mark`、`immolation_tick`；火焰结算动画由状态 payload 的 `tick_animation` 驱动，不在 `StatusResolver` 写死卡牌 id。
 
-持续状态只消费真实状态：邪能灌注把低亮邪能脉络收束到攻击区；邪能过载显示加速脉动的压力核心和炭化裂纹；六类疯狂各自显示颚、灵魂涡流、爪痕、恶魔角或低语眼；基尔加丹低语使用暗红紫恶魔眼；地狱火来源的火焰状态使用贴底邪能火与剩余回合刻度。它们全部由 `CardStatusOverlay` 管理，状态移除后立即停止刷新。修改后运行 `tools/test_shadowmoon_animation_provider.gd`、`tools/test_animation_routing.gd`、`python tools/validate_cards.py` 和安全整项目检查。
+持续状态只消费真实状态：邪能灌注把低亮邪能脉络收束到攻击区；邪能过载显示加速脉动的压力核心和炭化裂纹；六类疯狂各自显示颚、灵魂涡流、爪痕、恶魔角或低语眼；基尔加丹低语使用暗红紫恶魔眼；地狱火来源的火焰状态使用贴底邪能火与剩余回合刻度。它们全部由 `CardStatusOverlay` 管理，状态移除后立即停止刷新。影月持续状态使用15 FPS低频呼吸预算，瞬时破盾和解除演出仍保持30 FPS；卡面小尺寸循环不得堆叠多组高分段 Ribbon。`VfxCanvasToolkit` 必须过滤非有限和子像素重复路径点，Ribbon 面片使用经过面积校验的直接三角形原语，不能把退化四边形交给 Canvas 多边形三角化器。修改后运行 `tools/test_vfx_canvas_toolkit.gd`、`tools/test_shadowmoon_animation_provider.gd`、`tools/test_animation_routing.gd`、`python tools/validate_cards.py` 和安全整项目检查。
 
 音频表现由 `AudioManager` 统一管理，配置在 `data/audio.json`。`GameManager` 只暴露 `play_sfx()`、`play_spell_sfx()` 和 `start_battle_music()` 门面；规则层不直接持有 `AudioStreamPlayer`，视觉动画层也不直接加载音频资源。进入棋盘后默认播放 `battle_default` 背景音乐；没有外部音频文件时可使用程序化 BGM 兜底。攻击音效使用 `attack_melee` / `attack_ranged`，法术优先读取卡牌或 spell action 的 `audio` key，否则可按 `spell_<animation>` 约定扩展。
 

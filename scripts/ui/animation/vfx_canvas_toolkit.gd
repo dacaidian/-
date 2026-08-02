@@ -4,6 +4,10 @@ class_name VfxCanvasToolkit
 # Shared canvas primitives for code-native VFX. These helpers favor filled,
 # tapered material shapes over stacks of equally weighted lines.
 
+const MIN_PATH_POINT_DISTANCE := 0.05
+const MIN_PATH_POINT_DISTANCE_SQUARED := MIN_PATH_POINT_DISTANCE * MIN_PATH_POINT_DISTANCE
+const MIN_TRIANGLE_DOUBLE_AREA := 0.01
+
 
 static func with_alpha(color: Color, alpha_scale: float) -> Color:
 	return Color(color.r, color.g, color.b, color.a * clampf(alpha_scale, 0.0, 1.0))
@@ -69,13 +73,24 @@ static func draw_ribbon(
 	taper_end := true,
 	organic_phase := 0.0
 ) -> void:
-	if points.size() < 2 or width <= 0.1 or body_color.a <= 0.001:
+	if (
+		points.size() < 2
+		or not is_finite(width)
+		or not is_finite(glow_width)
+		or not is_finite(organic_phase)
+		or width <= 0.1
+		or body_color.a <= 0.001
+	):
 		return
-	var render_points := points
-	if points.size() == 2 and points[0].distance_squared_to(points[1]) > 0.0001:
+	var render_points := _sanitize_ribbon_points(points)
+	if render_points.size() < 2:
+		return
+	if render_points.size() == 2:
+		var start_point := render_points[0]
+		var end_point := render_points[1]
 		render_points = PackedVector2Array()
 		for point_index in range(7):
-			render_points.append(points[0].lerp(points[1], float(point_index) / 6.0))
+			render_points.append(start_point.lerp(end_point, float(point_index) / 6.0))
 	var safe_glow_width := maxf(glow_width, width * 2.8)
 	_draw_ribbon_segments(
 		canvas,
@@ -157,34 +172,68 @@ static func _draw_ribbon_segments(
 	organic_phase: float,
 	lateral_offset: float
 ) -> void:
-	if points.size() < 2 or color.a <= 0.001:
+	if points.size() < 2 or not is_finite(width) or width <= 0.0 or color.a <= 0.001:
 		return
 	var last_index := points.size() - 1
 	for segment_index in range(last_index):
 		var start := points[segment_index]
 		var finish := points[segment_index + 1]
+		if not start.is_finite() or not finish.is_finite():
+			continue
 		var direction := finish - start
-		if direction.length_squared() <= 0.0001:
+		if direction.length_squared() < MIN_PATH_POINT_DISTANCE_SQUARED:
 			continue
 		var normal := direction.normalized().orthogonal()
 		var start_ratio := float(segment_index) / float(last_index)
 		var end_ratio := float(segment_index + 1) / float(last_index)
 		var start_half_width := _ribbon_half_width(width, start_ratio, taper_start, taper_end, organic_phase)
 		var end_half_width := _ribbon_half_width(width, end_ratio, taper_start, taper_end, organic_phase)
+		if not is_finite(start_half_width) or not is_finite(end_half_width):
+			continue
 		var shifted_start := start + normal * lateral_offset
 		var shifted_finish := finish + normal * lateral_offset
-		var quad := PackedVector2Array([
-			shifted_start + normal * start_half_width,
-			shifted_finish + normal * end_half_width,
-			shifted_finish - normal * end_half_width,
-			shifted_start - normal * start_half_width,
-		])
-		canvas.draw_colored_polygon(quad, color)
+		var start_outer := shifted_start + normal * start_half_width
+		var finish_outer := shifted_finish + normal * end_half_width
+		var finish_inner := shifted_finish - normal * end_half_width
+		var start_inner := shifted_start - normal * start_half_width
+		_draw_safe_triangle(canvas, start_outer, finish_outer, finish_inner, color)
+		_draw_safe_triangle(canvas, start_outer, finish_inner, start_inner, color)
 	for point_index in range(1, last_index):
+		if not points[point_index].is_finite():
+			continue
 		var ratio := float(point_index) / float(last_index)
 		var joint_radius := _ribbon_half_width(width, ratio, taper_start, taper_end, organic_phase)
-		if joint_radius > 0.1:
+		if is_finite(joint_radius) and joint_radius > 0.1:
 			canvas.draw_circle(points[point_index], joint_radius, color)
+
+
+static func _sanitize_ribbon_points(points: PackedVector2Array) -> PackedVector2Array:
+	var sanitized := PackedVector2Array()
+	for point in points:
+		if not point.is_finite():
+			continue
+		if sanitized.is_empty() or sanitized[-1].distance_squared_to(point) >= MIN_PATH_POINT_DISTANCE_SQUARED:
+			sanitized.append(point)
+	return sanitized
+
+
+static func _draw_safe_triangle(
+	canvas: CanvasItem,
+	point_a: Vector2,
+	point_b: Vector2,
+	point_c: Vector2,
+	color: Color
+) -> void:
+	if not point_a.is_finite() or not point_b.is_finite() or not point_c.is_finite():
+		return
+	var double_area := absf((point_b - point_a).cross(point_c - point_a))
+	if not is_finite(double_area) or double_area < MIN_TRIANGLE_DOUBLE_AREA:
+		return
+	canvas.draw_primitive(
+		PackedVector2Array([point_a, point_b, point_c]),
+		PackedColorArray([color, color, color]),
+		PackedVector2Array()
+	)
 
 
 static func _ribbon_half_width(

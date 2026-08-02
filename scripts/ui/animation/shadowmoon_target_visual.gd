@@ -156,8 +156,8 @@ func _draw_fel_sacrifice(is_heavy: bool) -> void:
 			7,
 			scale_value * 0.018
 		)
-		draw_polyline(crack, Palette.with_alpha(Palette.VOID, 0.90 * settle), 4.6, true)
-		draw_polyline(crack, Palette.with_alpha(Palette.ACID, 0.66 * rupture * settle), 1.5, true)
+		_draw_safe_polyline(crack, Palette.with_alpha(Palette.VOID, 0.90 * settle), 4.6)
+		_draw_safe_polyline(crack, Palette.with_alpha(Palette.ACID, 0.66 * rupture * settle), 1.5)
 
 
 func _draw_fel_transfer(is_overload: bool) -> void:
@@ -683,12 +683,20 @@ func _draw_fel_flame(base: Vector2, half_width: float, height: float, sway: floa
 
 
 func _draw_corroded_frame(rect: Rect2, phase_value: float, alpha: float, is_overload: bool, edge_color := Color()) -> void:
+	var visible_phase := clampf(phase_value, 0.0, 1.0)
+	if visible_phase <= 0.001:
+		return
 	var chosen_edge: Color = Palette.ACID if edge_color == Color() else edge_color
 	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
 	for edge_index in range(4):
 		var start: Vector2 = corners[edge_index]
 		var finish: Vector2 = corners[(edge_index + 1) % 4]
-		var edge := _jagged_segment(start, start.lerp(finish, phase_value), 10, minf(rect.size.x, rect.size.y) * (0.020 if is_overload else 0.012))
+		var edge := _jagged_segment(
+			start,
+			start.lerp(finish, visible_phase),
+			10,
+			minf(rect.size.x, rect.size.y) * (0.020 if is_overload else 0.012) * visible_phase
+		)
 		_draw_layered_line(edge, Palette.with_alpha(Palette.VOID, 0.84 * alpha), Palette.with_alpha(chosen_edge, (0.74 if is_overload else 0.58) * alpha), 5.0 if is_overload else 3.6, 1.5)
 
 
@@ -697,8 +705,8 @@ func _draw_radial_cracks(center: Vector2, radius: float, phase_value: float, alp
 		var angle := TAU * float(crack_index) / float(count) + float(crack_index % 3) * 0.08
 		var direction := Vector2(cos(angle), sin(angle))
 		var crack := _jagged_segment(center + direction * radius * 0.12, center + direction * radius * (0.24 + phase_value * 0.76), 6, radius * 0.045)
-		draw_polyline(crack, Palette.with_alpha(Palette.CHARCOAL, 0.88 * alpha), 4.0, true)
-		draw_polyline(crack, Palette.with_alpha(Palette.FEL_GREEN if crack_index % 3 != 0 else Palette.DEMON_ORANGE, 0.72 * phase_value * alpha), 1.4, true)
+		_draw_safe_polyline(crack, Palette.with_alpha(Palette.CHARCOAL, 0.88 * alpha), 4.0)
+		_draw_safe_polyline(crack, Palette.with_alpha(Palette.FEL_GREEN if crack_index % 3 != 0 else Palette.DEMON_ORANGE, 0.72 * phase_value * alpha), 1.4)
 
 
 func _rect_perimeter_point(rect: Rect2, ratio: float) -> Vector2:
@@ -733,13 +741,27 @@ func _draw_layered_line(points: PackedVector2Array, outer: Color, inner: Color, 
 	)
 
 
+func _draw_safe_polyline(points: PackedVector2Array, color: Color, width: float) -> void:
+	if points.size() < 2 or not is_finite(width) or width <= 0.0:
+		return
+	draw_polyline(points, color, width, true)
+
+
 func _jagged_segment(start_point: Vector2, end_point: Vector2, segments: int, amplitude: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
+	if not start_point.is_finite() or not end_point.is_finite() or not is_finite(amplitude):
+		return points
 	var direction := end_point - start_point
-	var normal := direction.normalized().orthogonal() if direction.length_squared() > 0.001 else Vector2.UP
-	for point_index in range(segments + 1):
-		var ratio := float(point_index) / float(segments)
-		var offset := sin(float(point_index) * 2.41 + ratio * 3.0) * amplitude * sin(ratio * PI)
+	var length := direction.length()
+	if length < 0.05:
+		return points
+	var safe_segments := maxi(segments, 1)
+	var safe_amplitude := minf(absf(amplitude), length * 0.35)
+	var normal := direction / length
+	normal = normal.orthogonal()
+	for point_index in range(safe_segments + 1):
+		var ratio := float(point_index) / float(safe_segments)
+		var offset := sin(float(point_index) * 2.41 + ratio * 3.0) * safe_amplitude * sin(ratio * PI)
 		points.append(start_point.lerp(end_point, ratio) + normal * offset)
 	return points
 

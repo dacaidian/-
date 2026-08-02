@@ -25,6 +25,9 @@ const RITUAL_VISUAL_KEYS: Array[String] = [
 	"fel_madness_chaos_orc", "fel_madness_hellhound", "fel_madness_succubus",
 	"fel_madness_wolf_rider", "fel_madness_doomguard", "fel_madness_warlock",
 ]
+const VISUAL_PROGRESS_SAMPLES: Array[float] = [
+	0.0, 0.001, 0.01, 0.1, 0.35, 0.61, 0.9, 1.0,
+]
 
 
 class PresentationProbe:
@@ -106,9 +109,11 @@ func _test_visual_frames(effect_root: Control) -> bool:
 			Vector2(120.0, 168.0),
 			Vector2(120.0, 168.0)
 		)
-		visual.progress = 0.58
 		effect_root.add_child(visual)
-		await process_frame
+		for progress_sample in VISUAL_PROGRESS_SAMPLES:
+			visual.progress = progress_sample
+			visual.queue_redraw()
+			await process_frame
 		visual.queue_free()
 		await process_frame
 		if effect_root.get_child_count() != 0:
@@ -130,9 +135,11 @@ func _test_visual_frames(effect_root: Control) -> bool:
 			Vector2(120.0, 168.0),
 			target_rects
 		)
-		visual.progress = 0.61
 		effect_root.add_child(visual)
-		await process_frame
+		for progress_sample in VISUAL_PROGRESS_SAMPLES:
+			visual.progress = progress_sample
+			visual.queue_redraw()
+			await process_frame
 		visual.queue_free()
 		await process_frame
 		if effect_root.get_child_count() != 0:
@@ -240,6 +247,11 @@ func _test_status_overlays(effect_root: Control) -> bool:
 		await process_frame
 		if not overlay.visible or not overlay.is_processing():
 			return _fail("Shadowmoon status overlay is not animated for %s" % status_id)
+		if not is_equal_approx(
+			overlay._get_animated_redraw_interval(),
+			CardStatusOverlay.SHADOWMOON_STATUS_REDRAW_INTERVAL
+		):
+			return _fail("Shadowmoon status overlay is not using its bounded redraw rate for %s" % status_id)
 		state.remove_status(status_id)
 
 	var fire := CardStatus.new()
@@ -253,6 +265,11 @@ func _test_status_overlays(effect_root: Control) -> bool:
 	await process_frame
 	if not overlay.visible or not overlay.is_processing():
 		return _fail("Infernal fire overlay is not animated")
+	if not is_equal_approx(
+		overlay._get_animated_redraw_interval(),
+		CardStatusOverlay.SHADOWMOON_STATUS_REDRAW_INTERVAL
+	):
+		return _fail("Infernal fire overlay is not using its bounded redraw rate")
 
 	overlay.queue_free()
 	await process_frame

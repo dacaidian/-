@@ -6,6 +6,8 @@ class_name CardStatusOverlay
 
 const DIVINE_SHIELD_BREAK_DURATION := 0.52
 const ROOTED_BREAK_DURATION := 0.38
+const DEFAULT_ANIMATED_REDRAW_INTERVAL := 1.0 / 30.0
+const SHADOWMOON_STATUS_REDRAW_INTERVAL := 1.0 / 15.0
 const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 var state: CardState
@@ -149,9 +151,25 @@ func _process(delta: float) -> void:
 			refresh()
 
 	redraw_accumulator += delta
-	if redraw_accumulator >= 1.0 / 30.0:
-		redraw_accumulator = 0.0
+	var redraw_interval := _get_animated_redraw_interval()
+	if redraw_accumulator >= redraw_interval:
+		redraw_accumulator = fmod(redraw_accumulator, redraw_interval)
 		queue_redraw()
+
+
+func _get_animated_redraw_interval() -> float:
+	if is_divine_shield_break_active() or is_rooted_break_active():
+		return DEFAULT_ANIMATED_REDRAW_INTERVAL
+	if (
+		should_show_fel_infusion()
+		or should_show_fel_overload()
+		or should_show_fel_madness()
+		or should_show_damage_amplify()
+		or should_show_kiljaeden_whisper()
+		or should_show_infernal_fire()
+	):
+		return SHADOWMOON_STATUS_REDRAW_INTERVAL
+	return DEFAULT_ANIMATED_REDRAW_INTERVAL
 
 
 func set_state(new_state: CardState) -> void:
@@ -1192,43 +1210,31 @@ func draw_fel_infusion_overlay() -> void:
 		Vector2(radius * 0.82, radius * 0.58) * (0.94 + pulse * 0.06),
 		Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.16 + pulse * 0.04),
 		Color(0.84, 1.0, 0.34, 0.16 + pulse * 0.05),
-		6,
+		4,
 		animation_time * 0.10
 	)
-	for vein_index in range(7):
-		var ratio := float(vein_index) / 6.0
+	for vein_index in range(5):
+		var ratio := float(vein_index) / 4.0
 		var edge_point := Vector2(lerpf(fel_rect.position.x, fel_rect.end.x, ratio), fel_rect.position.y if vein_index % 2 == 0 else fel_rect.end.y)
 		var middle := edge_point.lerp(attack_anchor, 0.56) + Vector2(sin(float(vein_index) * 2.1 + animation_time) * size.x * 0.045, 0.0)
-		Toolkit.draw_ribbon(
-			self,
+		_draw_persistent_energy_path(
 			PackedVector2Array([edge_point, middle, attack_anchor]),
-			maxf(size.x * 0.008, 1.0),
 			Color(fel_infusion_flame_color.r, fel_infusion_flame_color.g, fel_infusion_flame_color.b, 0.38 + pulse * 0.18),
 			Color(0.01, 0.02, 0.01, 0.58),
-			Color(0.86, 1.0, 0.38, 0.18),
-			maxf(size.x * 0.028, 3.2),
-			true,
-			true,
-			animation_time * 2.0 + float(vein_index)
+			maxf(size.x * 0.008, 1.0)
 		)
 
-	for ring_index in range(mini(maxi(stack_count, 1), 4)):
+	for ring_index in range(mini(maxi(stack_count, 1), 3)):
 		var ring_radius := radius * (0.15 + float(ring_index) * 0.075 + pulse * 0.018)
-		Toolkit.draw_arc_ribbon(
-			self,
+		_draw_persistent_energy_arc(
 			attack_anchor,
 			ring_radius,
 			-PI * 0.22,
 			PI * 1.54,
-			1.8,
 			Color(fel_infusion_edge_color.r, fel_infusion_edge_color.g, fel_infusion_edge_color.b, 0.58 - float(ring_index) * 0.09),
 			Color(0.01, 0.02, 0.01, 0.34),
-			Color(0.90, 1.0, 0.48, 0.20),
-			5.2,
-			32,
-			true,
-			true,
-			animation_time + float(ring_index)
+			1.8,
+			18
 		)
 	Toolkit.draw_mote(self, attack_anchor, radius * (0.055 + pulse * 0.012), Color(0.82, 1.0, 0.28, 0.78), animation_time * 5.0)
 
@@ -1246,26 +1252,20 @@ func draw_fel_overload_overlay() -> void:
 		Vector2(radius * 1.04, radius * 1.28) * (0.94 + pressure * 0.06),
 		Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.13 + pressure * 0.04),
 		Color(0.05, 0.0, 0.07, 0.20 + pressure * 0.03),
-		7,
+		4,
 		animation_time * 0.10
 	)
-	for arc_index in range(5):
-		var start_angle := -PI * 0.34 + float(arc_index) * TAU / 5.0 + animation_time * (0.08 if arc_index % 2 == 0 else -0.06)
-		Toolkit.draw_arc_ribbon(
-			self,
+	for arc_index in range(3):
+		var start_angle := -PI * 0.34 + float(arc_index) * TAU / 3.0 + animation_time * (0.08 if arc_index % 2 == 0 else -0.06)
+		_draw_persistent_energy_arc(
 			center,
 			radius * (0.86 + float(arc_index % 2) * 0.11),
 			start_angle,
 			start_angle + PI * 0.56,
-			2.5,
 			Color(fel_overload_edge_color.r, fel_overload_edge_color.g, fel_overload_edge_color.b, 0.50 + pressure * 0.18),
 			Color(0.02, 0.0, 0.03, 0.54),
-			Color(0.88, 1.0, 0.42, 0.18),
-			7.0,
-			24,
-			true,
-			true,
-			animation_time + float(arc_index)
+			2.5,
+			18
 		)
 
 	var crack_points := [
@@ -1282,17 +1282,11 @@ func draw_fel_overload_overlay() -> void:
 					overload_rect.size.y * normalized_point.y
 				)
 			)
-		Toolkit.draw_ribbon(
-			self,
+		_draw_persistent_energy_path(
 			crack_path,
-			1.5,
 			fel_overload_crack_color,
 			Color(0.0, 0.04, 0.0, 0.62),
-			Color(0.92, 1.0, 0.50, 0.18),
-			5.2,
-			true,
-			true,
-			animation_time * 3.0 + float(crack_path.size())
+			1.5
 		)
 
 	Toolkit.draw_soft_disc(
@@ -1301,7 +1295,7 @@ func draw_fel_overload_overlay() -> void:
 		radius * (0.24 + pressure * 0.045),
 		Color(0.02, 0.0, 0.03, 0.72),
 		Color(fel_overload_crack_color.r, fel_overload_crack_color.g, fel_overload_crack_color.b, 0.46 + pressure * 0.24),
-		7
+		4
 	)
 	Toolkit.draw_mote(
 		self,
@@ -1327,11 +1321,11 @@ func draw_fel_madness_overlay() -> void:
 		Vector2(radius * 1.18, radius * 1.48) * (0.95 + pulse * 0.05),
 		Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.09 + pulse * 0.035),
 		Color(0.14, 0.01, 0.18, 0.15 + pulse * 0.025),
-		7,
+		4,
 		animation_time * 0.08
 	)
-	for mote_index in range(5):
-		var mote_angle := TAU * float(mote_index) / 5.0 + animation_time * (0.55 + float(mote_index % 2) * 0.13)
+	for mote_index in range(3):
+		var mote_angle := TAU * float(mote_index) / 3.0 + animation_time * (0.55 + float(mote_index % 2) * 0.13)
 		var mote_point := center + Vector2(cos(mote_angle) * radius * 0.92, sin(mote_angle) * radius * 1.16)
 		Toolkit.draw_mote(
 			self,
@@ -1340,23 +1334,23 @@ func draw_fel_madness_overlay() -> void:
 			Color(fel_madness_rune_color.r, fel_madness_rune_color.g, fel_madness_rune_color.b, 0.30),
 			animation_time * 4.0 + float(mote_index)
 		)
-	for edge_index in range(4):
+	for edge_index in range(2):
 		var inset := float(edge_index % 2) * 2.0
 		draw_rect(madness_rect.grow(-inset), Color(fel_madness_edge_color.r, fel_madness_edge_color.g, fel_madness_edge_color.b, 0.20 + pulse * 0.10), false, 1.2 + float(edge_index % 2), true)
 
 	match status.status_id:
 		CardStatus.STATUS_FEL_MADNESS_HELLHOUND:
-			draw_arc(center + Vector2(0.0, radius * 0.14), radius * 0.72, PI * 0.08, PI * 0.92, 28, fel_madness_rune_color, 3.0, true)
-			draw_arc(center - Vector2(0.0, radius * 0.10), radius * 0.72, -PI * 0.92, -PI * 0.08, 28, fel_madness_rune_color, 3.0, true)
+			draw_arc(center + Vector2(0.0, radius * 0.14), radius * 0.72, PI * 0.08, PI * 0.92, 20, fel_madness_rune_color, 3.0, true)
+			draw_arc(center - Vector2(0.0, radius * 0.10), radius * 0.72, -PI * 0.92, -PI * 0.08, 20, fel_madness_rune_color, 3.0, true)
 			for fang_index in range(4):
 				var x := center.x + (float(fang_index) - 1.5) * radius * 0.26
 				draw_line(Vector2(x, center.y - radius * 0.34), Vector2(x + radius * 0.05, center.y - radius * 0.05), Color(0.80, 0.84, 0.24, 0.72), 2.4, true)
 		CardStatus.STATUS_FEL_MADNESS_SUCCUBUS:
-			for loop_index in range(4):
-				draw_arc(center, radius * (0.34 + float(loop_index) * 0.16 + pulse * 0.035), -PI * 0.20 + float(loop_index) * 0.52, PI * 1.32 + float(loop_index) * 0.52, 32, Color(0.40, 0.16, 0.66, 0.54 - float(loop_index) * 0.08), 2.0, true)
+			for loop_index in range(3):
+				draw_arc(center, radius * (0.34 + float(loop_index) * 0.18 + pulse * 0.035), -PI * 0.20 + float(loop_index) * 0.52, PI * 1.32 + float(loop_index) * 0.52, 20, Color(0.40, 0.16, 0.66, 0.54 - float(loop_index) * 0.08), 2.0, true)
 			draw_circle(center, radius * (0.10 + pulse * 0.025), Color(0.68, 0.05, 0.18, 0.68))
 		CardStatus.STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER:
-			draw_arc(center, radius * 0.82, PI * 0.04, PI * 0.96, 30, fel_madness_rune_color, 3.2, true)
+			draw_arc(center, radius * 0.82, PI * 0.04, PI * 0.96, 20, fel_madness_rune_color, 3.2, true)
 			for slash_index in range(2):
 				var shift := Vector2(float(slash_index) * radius * 0.20 - radius * 0.10, 0.0)
 				draw_line(center + shift + Vector2(-radius * 0.30, radius * 0.34), center + shift + Vector2(radius * 0.22, -radius * 0.32), Color(0.62, 0.05, 0.14, 0.78), 3.0, true)
@@ -1368,29 +1362,23 @@ func draw_fel_madness_overlay() -> void:
 					center + Vector2(side_sign * radius * (0.46 + pulse * 0.08), -radius * 0.92),
 				])
 				draw_polyline(horn, Color(0.74, 0.78, 0.20, 0.66), 4.0, true)
-			draw_arc(center, radius * (0.62 + pulse * 0.10), PI * 0.12, PI * 0.88, 30, fel_madness_edge_color, 3.0, true)
+			draw_arc(center, radius * (0.62 + pulse * 0.10), PI * 0.12, PI * 0.88, 20, fel_madness_edge_color, 3.0, true)
 		CardStatus.STATUS_FEL_MADNESS_WARLOCK:
 			var eye_height := radius * (0.18 + pulse * 0.08)
 			draw_polyline(PackedVector2Array([center - Vector2(radius * 0.72, 0.0), center - Vector2(0.0, eye_height), center + Vector2(radius * 0.72, 0.0), center + Vector2(0.0, eye_height), center - Vector2(radius * 0.72, 0.0)]), Color(0.58, 0.08, 0.32, 0.72), 2.6, true)
 			draw_circle(center, radius * 0.13, Color(0.52, 0.90, 0.12, 0.72))
 			draw_circle(center, radius * 0.055, Color(0.02, 0.0, 0.04, 0.92))
 		_:
-			var claw_count: int = mini(maxi(status.stacks + 2, 3), 6)
+			var claw_count: int = mini(maxi(status.stacks + 2, 3), 4)
 			for claw_index in range(claw_count):
 				var x := madness_rect.position.x + madness_rect.size.x * (0.22 + float(claw_index) * 0.56 / float(maxi(claw_count - 1, 1)))
 				var claw_from := Vector2(x - radius * 0.10, center.y - radius * 0.62)
 				var claw_to := Vector2(x + radius * 0.08, center.y + radius * 0.58)
-				Toolkit.draw_ribbon(
-					self,
+				_draw_persistent_energy_path(
 					PackedVector2Array([claw_from, claw_to]),
-					2.0,
 					fel_madness_rune_color,
 					Color(0.03, 0.0, 0.03, 0.72),
-					Color(0.86, 1.0, 0.34, 0.16),
-					6.0,
-					true,
-					true,
-					animation_time + float(claw_index)
+					2.0
 				)
 
 
@@ -1406,7 +1394,7 @@ func draw_kiljaeden_whisper_overlay() -> void:
 		Vector2(radius * 1.18, radius * 0.58) * (0.96 + pulse * 0.04),
 		Color(kiljaeden_whisper_eye_color.r, kiljaeden_whisper_eye_color.g, kiljaeden_whisper_eye_color.b, 0.13 + pulse * 0.035),
 		Color(0.48, 0.08, 0.42, 0.12 + pulse * 0.025),
-		7
+		4
 	)
 
 	var eye_height := radius * (0.18 + pulse * 0.08)
@@ -1424,39 +1412,48 @@ func draw_kiljaeden_whisper_overlay() -> void:
 	var eye_fill := eye.duplicate()
 	eye_fill.resize(eye_fill.size() - 1)
 	draw_colored_polygon(eye_fill, Color(0.12, 0.005, 0.16, 0.24 + pulse * 0.04))
-	Toolkit.draw_ribbon(
-		self,
-		eye,
-		2.4,
-		kiljaeden_whisper_edge_color,
-		Color(0.02, 0.0, 0.03, 0.56),
-		Color(0.88, 0.40, 0.72, 0.20),
-		7.0,
-		false,
-		false,
-		animation_time * 0.8
-	)
-	Toolkit.draw_soft_disc(self, center, radius * (0.18 + pulse * 0.02), Color(kiljaeden_whisper_eye_color.r, kiljaeden_whisper_eye_color.g, kiljaeden_whisper_eye_color.b, 0.56), kiljaeden_whisper_eye_color, 6)
+	draw_polyline(eye, Color(0.02, 0.0, 0.03, 0.56), 5.2, true)
+	draw_polyline(eye, kiljaeden_whisper_edge_color, 2.2, true)
+	Toolkit.draw_soft_disc(self, center, radius * (0.18 + pulse * 0.02), Color(kiljaeden_whisper_eye_color.r, kiljaeden_whisper_eye_color.g, kiljaeden_whisper_eye_color.b, 0.56), kiljaeden_whisper_eye_color, 4)
 	draw_circle(center, radius * 0.055, Color(0.02, 0.0, 0.03, 0.94))
 
-	for wave_index in range(4):
-		var wave_radius := radius * (0.72 + float(wave_index) * 0.18 + pulse * 0.04)
-		Toolkit.draw_arc_ribbon(
-			self,
-			center,
-			wave_radius,
-			PI * 0.08,
-			PI * 0.92,
-			1.6,
-			Color(kiljaeden_whisper_edge_color.r, kiljaeden_whisper_edge_color.g, kiljaeden_whisper_edge_color.b, 0.34 - float(wave_index) * 0.055),
-			Color(0.04, 0.0, 0.06, 0.18),
-			Color(0.86, 0.34, 0.68, 0.10),
-			4.8,
-			28,
-			true,
-			true,
-			animation_time + float(wave_index)
-		)
+	for wave_index in range(3):
+		var wave_radius := radius * (0.72 + float(wave_index) * 0.22 + pulse * 0.04)
+		var wave_alpha := 0.34 - float(wave_index) * 0.07
+		draw_arc(center, wave_radius, PI * 0.08, PI * 0.92, 20, Color(0.04, 0.0, 0.06, wave_alpha * 0.55), 4.2, true)
+		draw_arc(center, wave_radius, PI * 0.08, PI * 0.92, 20, Color(kiljaeden_whisper_edge_color.r, kiljaeden_whisper_edge_color.g, kiljaeden_whisper_edge_color.b, wave_alpha), 1.6, true)
+
+
+func _draw_persistent_energy_path(
+	points: PackedVector2Array,
+	body_color: Color,
+	edge_color: Color,
+	width: float
+) -> void:
+	if points.size() < 2 or not is_finite(width) or width <= 0.0:
+		return
+	var glow_color := Color(body_color.r, body_color.g, body_color.b, body_color.a * 0.16)
+	draw_polyline(points, glow_color, maxf(width * 3.2, 3.2), true)
+	draw_polyline(points, edge_color, maxf(width * 1.65, 1.6), true)
+	draw_polyline(points, body_color, maxf(width, 1.0), true)
+
+
+func _draw_persistent_energy_arc(
+	center: Vector2,
+	radius: float,
+	start_angle: float,
+	end_angle: float,
+	body_color: Color,
+	edge_color: Color,
+	width: float,
+	point_count: int
+) -> void:
+	if radius <= 0.0 or width <= 0.0 or point_count < 2:
+		return
+	var glow_color := Color(body_color.r, body_color.g, body_color.b, body_color.a * 0.16)
+	draw_arc(center, radius, start_angle, end_angle, point_count, glow_color, maxf(width * 3.0, 3.0), true)
+	draw_arc(center, radius, start_angle, end_angle, point_count, edge_color, maxf(width * 1.60, 1.5), true)
+	draw_arc(center, radius, start_angle, end_angle, point_count, body_color, maxf(width, 1.0), true)
 
 
 func draw_infernal_fire_overlay() -> void:

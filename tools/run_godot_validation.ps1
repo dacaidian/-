@@ -121,7 +121,12 @@ $fatalLogLines = @(
         "Parse Error:",
         "Failed loading resource:",
         "Can't load script:",
-        "Assertion failed"
+        "Assertion failed",
+        "Invalid polygon data",
+        "triangulation failed",
+        "indices.is_empty()",
+        "p_points.size() < 2",
+        "canvas_item_add_polyline"
     ) -SimpleMatch
 )
 if ($fatalLogLines.Count -gt 0) {
