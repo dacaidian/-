@@ -39,7 +39,6 @@ func setup(root: Control) -> void:
 	panel.add_child(margin)
 
 	var content := VBoxContainer.new()
-	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", RightSideHudStyleScript.CONTENT_GAP)
 	content.mouse_filter = Control.MOUSE_FILTER_PASS
 	margin.add_child(content)

@@ -88,10 +88,13 @@ func run() -> void:
 	var previous_bottom := 0.0
 	var expected_x := -1.0
 	var expected_width := RightSideHudStyleScript.get_panel_width(1280.0)
+	var natural_heights: Array[float] = []
 	for panel_entry in panels:
 		var panel := panel_entry as Control
 		assert(panel != null and panel.visible)
 		assert(is_equal_approx(panel.size.x, expected_width))
+		assert(is_equal_approx(panel.size.y, panel.get_combined_minimum_size().y))
+		natural_heights.append(panel.size.y)
 		if expected_x < 0.0:
 			expected_x = panel.position.x
 		else:
@@ -103,14 +106,12 @@ func run() -> void:
 		previous_bottom <= 720.0 - RightSideHudStyleScript.PANEL_MARGIN + 0.01,
 		"right-side HUD bottom %.2f exceeds the 720p safe area" % previous_bottom
 	)
-	assert(
-		previous_bottom >= 720.0 - RightSideHudStyleScript.PANEL_MARGIN - 0.5,
-		"full right-side HUD did not use the available vertical rail"
-	)
-
 	layout_controller.layout_for_viewport(panels, Vector2(1920.0, 1080.0))
 	assert(is_equal_approx(turn_controller.panel.size.x, RightSideHudStyleScript.PANEL_WIDTH))
-	assert(equipment_controller.panel.size.y > equipment_controller.panel.get_combined_minimum_size().y)
+	for panel_index in range(panels.size()):
+		var panel := panels[panel_index] as Control
+		assert(is_equal_approx(panel.size.y, panel.get_combined_minimum_size().y))
+		assert(is_equal_approx(panel.size.y, natural_heights[panel_index]))
 	var expanded_bottom := equipment_controller.panel.position.y + equipment_controller.panel.size.y
 	assert(expanded_bottom <= 1080.0 - RightSideHudStyleScript.PANEL_MARGIN + 0.01)
 

@@ -47,11 +47,10 @@ func layout_for_viewport(
 	var total_panel_height := get_total_panel_height(visible_panels)
 	var available_height := maxf(0.0, viewport_size.y - effective_margin * 2.0)
 	if visible_panels.size() > 1 and total_panel_height + effective_gap * float(visible_panels.size() - 1) > available_height:
-		effective_gap = maxf(
+			effective_gap = maxf(
 			4.0,
 			(available_height - total_panel_height) / float(visible_panels.size() - 1)
 		)
-	stretch_panels_to_available_height(visible_panels, available_height, effective_gap)
 
 	var x_position := maxf(
 		effective_margin,
@@ -77,58 +76,6 @@ func normalize_panel(panel: Control, panel_width: float) -> void:
 		panel_width,
 		maxf(panel.custom_minimum_size.y, minimum_size.y)
 	)
-
-
-func stretch_panels_to_available_height(
-	panels: Array[Control],
-	available_height: float,
-	gap: float
-) -> void:
-	if panels.is_empty():
-		return
-
-	var gap_height := gap * float(maxi(panels.size() - 1, 0))
-	var free_height := available_height - gap_height - get_total_panel_height(panels)
-	if free_height <= 0.0:
-		return
-
-	# Three or more panels form the full HUD rail and share all remaining height.
-	# Sparse factions keep a bounded amount of breathing room instead of creating
-	# two oversized empty panels.
-	var stretch_budget := free_height
-	if panels.size() < 3:
-		stretch_budget = minf(stretch_budget, 96.0 * float(panels.size()))
-
-	var total_weight := 0.0
-	for panel in panels:
-		total_weight += get_panel_stretch_weight(panel)
-	if total_weight <= 0.0:
-		return
-
-	var pixel_budget := maxi(floori(stretch_budget), 0)
-	var allocated_pixels := 0
-	for panel_index in range(panels.size()):
-		var panel := panels[panel_index]
-		var extra_pixels := pixel_budget - allocated_pixels
-		if panel_index < panels.size() - 1:
-			extra_pixels = floori(
-				float(pixel_budget) * get_panel_stretch_weight(panel) / total_weight
-			)
-		panel.size.y += float(extra_pixels)
-		allocated_pixels += extra_pixels
-
-
-func get_panel_stretch_weight(panel: Control) -> float:
-	match panel.name:
-		"TurnStatusPanel":
-			return 1.10
-		"FactionSkillPanel":
-			return 1.15
-		"EquipmentDisplayPanel":
-			return 1.05
-		_:
-			return 1.0
-
 
 func get_total_panel_height(panels: Array[Control]) -> float:
 	var total := 0.0

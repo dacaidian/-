@@ -359,7 +359,7 @@
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 卡面内的持续状态标识放在 `CardStatusOverlay`。覆盖多个格子并跟随来源移动的持续动态效果，通过状态 payload 的 `persistent_visuals` 声明，交给 `BoardPersistentVisualController`；新增主题时注册独立 renderer，不要让 `Card` 越界绘制。
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
-- 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它把列宽按视口限制在 296px 至 340px，保留自然高度后为三块以上面板分配剩余高度，稀疏面板限制扩张，并用整数像素分配避免 720p 取整越界。它只排列已有 panel，不负责内容、可见性或玩法规则；各 panel controller 禁止再实现自己的 `position_panel()` 或固定 `TOP_MARGIN`。
+- 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它把列宽按视口限制在 296px 至 340px，但所有框体高度必须由内容、皮肤安全边距和内容间距自然撑开，不得分配剩余屏幕高度。它只排列已有 panel，不负责内容、可见性或玩法规则；各 panel controller 禁止再实现自己的 `position_panel()`、固定 `TOP_MARGIN` 或纵向拉伸策略。
 - 右侧 HUD 的面板外壳、标题、按钮、指标块与资源刻度统一复用 `RightSideHudStyle`；无专属贴图的稳定语义图标复用 `HudSymbolIcon`。法力、翻牌和资源分采用图标加短数值；通用小上限资源使用离散刻度。资源具有不可替代的形状语义时可提供只读专属仪表，但仍须嵌入统一 HUD 外壳、由 controller 传入规则值且不得反向修改状态；`TailResourceMeter` 是九尾扇形九槽的首个例子。`FactionSkillPanelController` 必须用包含玩家、资源值和技能可用性的视图签名跳过无变化重建，避免玩家状态信号反复销毁专属仪表。修改后运行 `tools/test_right_side_hud.gd`。
 - 结束回合等对局主命令统一调用 `ApplicationUiStyle.style_match_action_button()`，复用 `GameUiSkin` 的普通、悬浮、按下、禁用四态；禁止在 `.tscn` 中留下默认 Godot 按钮作为最终视觉。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
