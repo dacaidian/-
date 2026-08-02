@@ -7,7 +7,7 @@ class_name EquipmentDisplayController
 const CardTexturePreviewControllerScript := preload("res://scripts/ui/card_texture_preview_controller.gd")
 const RightSideHudStyleScript := preload("res://scripts/ui/right_side_hud_style.gd")
 
-const CARD_SIZE := Vector2(46.0, 64.0)
+const CARD_SIZE := Vector2(48.0, 66.0)
 
 var panel: PanelContainer
 var card_box: VBoxContainer
@@ -39,6 +39,7 @@ func setup(root: Control) -> void:
 	panel.add_child(margin)
 
 	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", RightSideHudStyleScript.CONTENT_GAP)
 	content.mouse_filter = Control.MOUSE_FILTER_PASS
 	margin.add_child(content)

@@ -4,9 +4,11 @@ class_name RightSideHudStyle
 const HudSymbolIconScript := preload("res://scripts/ui/hud_symbol_icon.gd")
 const GameUiSkinScript := preload("res://scripts/ui/game_ui_skin.gd")
 
-const PANEL_WIDTH := 296.0
+const PANEL_WIDTH := 340.0
+const PANEL_MIN_WIDTH := 296.0
+const PANEL_WIDTH_RATIO := 0.265625
 const PANEL_MARGIN := 16.0
-const PANEL_GAP := 8.0
+const PANEL_GAP := 10.0
 const CONTENT_MARGIN := 8
 const CONTENT_GAP := 8
 
@@ -20,6 +22,10 @@ const ACCENT_TURN := Color(0.95, 0.70, 0.30, 1.0)
 const ACCENT_SKILL := Color(0.93, 0.43, 0.48, 1.0)
 const ACCENT_TIME := Color(0.38, 0.78, 0.86, 1.0)
 const ACCENT_EQUIPMENT := Color(0.78, 0.63, 0.38, 1.0)
+
+
+static func get_panel_width(viewport_width: float) -> float:
+	return clampf(viewport_width * PANEL_WIDTH_RATIO, PANEL_MIN_WIDTH, PANEL_WIDTH)
 
 
 static func create_icon(
@@ -98,11 +104,11 @@ static func create_metric_chip(
 	row.add_theme_constant_override("separation", 5)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.add_child(row)
-	row.add_child(create_icon(symbol_id, accent, Vector2(17.0, 17.0), hint))
+	row.add_child(create_icon(symbol_id, accent, Vector2(18.0, 18.0), hint))
 
 	var value_label := Label.new()
 	value_label.name = "ValueLabel"
-	value_label.add_theme_font_size_override("font_size", 14)
+	value_label.add_theme_font_size_override("font_size", 15)
 	value_label.add_theme_color_override("font_color", PRIMARY_TEXT)
 	value_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.75))
 	value_label.add_theme_constant_override("shadow_offset_x", 1)

@@ -120,6 +120,15 @@ static func style_inline_button(
 	button.add_theme_font_size_override("font_size", 14)
 
 
+static func style_match_action_button(button: Button, accent := GOLD) -> void:
+	if button == null:
+		return
+	style_menu_button(button, accent, true)
+	button.custom_minimum_size = Vector2(240.0, 54.0)
+	button.add_theme_font_size_override("font_size", 18)
+	button.focus_mode = Control.FOCUS_NONE
+
+
 static func style_choice_button(button: Button) -> void:
 	if button == null:
 		return

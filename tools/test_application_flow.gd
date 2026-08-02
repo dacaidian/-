@@ -137,9 +137,20 @@ func test_shell_navigation() -> void:
 	assert(game_manager.board_states.size() == 49)
 	var card_board := shell.current_screen.get_node("BoardCenter/CardBoard") as Control
 	var board_view_toggle := shell.current_screen.get_node("BoardViewToggle") as CheckButton
+	var end_turn_button := shell.current_screen.get_node("EndTurnButton") as Button
 	assert(card_board != null and board_view_toggle != null)
+	assert(end_turn_button != null)
+	assert(end_turn_button.custom_minimum_size == Vector2(240.0, 54.0))
+	assert(end_turn_button.has_theme_stylebox_override("normal"))
+	assert(end_turn_button.has_theme_stylebox_override("hover"))
+	assert(end_turn_button.has_theme_stylebox_override("pressed"))
+	assert(end_turn_button.has_theme_stylebox_override("disabled"))
 	assert(not bool(card_board.get("is_full_board_view")))
 	assert((card_board.call("get_visible_slot_indices") as Array).size() == 25)
+	var board_rect := card_board.get_global_rect()
+	var toggle_rect := board_view_toggle.get_global_rect()
+	assert(absf(toggle_rect.get_center().x - board_rect.get_center().x) <= 1.0)
+	assert(toggle_rect.end.y <= board_rect.position.y + 1.0)
 	board_view_toggle.button_pressed = true
 	await process_frame
 	assert(bool(card_board.get("is_full_board_view")))

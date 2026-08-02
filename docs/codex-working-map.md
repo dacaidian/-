@@ -94,7 +94,7 @@
 ## 棋盘与移动
 
 - 规则棋盘始终是 7x7，`BoardCell`、`board_states`、地面/空中卡节点和槽位索引不随视图变化。`CardBoard` 默认隐藏外环并把中央 25 格按 5x5 放大排布；“完整战场”开关只恢复 7x7 展示，禁止删除槽位、重绑状态或用视图模式改变合法性。
-- 棋盘视图切换由 `scripts/ui/board_view_toggle_controller.gd` 管理交互，`scenes/card_board/scripts/card_board.gd` 管理投影。切换会取消未完成的目标选择，动作动画期间不得手动切换；矢量与方向选择器只为可见格生成命中区和预览。部署、移动、交换、普通攻击和显式目标法术涉及隐藏外环时先展开并等待布局；群体、路径、状态与持续区域特效只消费当前可见卡牌的实时全局矩形，禁止使用隐藏节点的旧坐标。修改后运行 `tools/test_board_view_modes.gd`、`tools/test_board_persistent_visuals.gd` 和整项目检查。
+- 棋盘视图切换由 `scripts/ui/board_view_toggle_controller.gd` 管理交互与战场顶部中央定位，`scenes/card_board/scripts/card_board.gd` 管理投影。切换会取消未完成的目标选择，动作动画期间不得手动切换；矢量与方向选择器只为可见格生成命中区和预览。部署、移动、交换、普通攻击和显式目标法术涉及隐藏外环时先展开并等待布局；群体、路径、状态与持续区域特效只消费当前可见卡牌的实时全局矩形，禁止使用隐藏节点的旧坐标。修改后运行 `tools/test_board_view_modes.gd`、`tools/test_board_persistent_visuals.gd` 和整项目检查。
 
 优先读：
 
@@ -359,8 +359,9 @@
 - 音频放在 `scripts/audio/audio_manager.gd` 和 `data/audio.json`。规则层只传递 `audio` key 或 animation key，不直接加载音频资源；背景音乐、攻击音效、法术音效统一走 `GameManager` 的音频门面。
 - 卡面内的持续状态标识放在 `CardStatusOverlay`。覆盖多个格子并跟随来源移动的持续动态效果，通过状态 payload 的 `persistent_visuals` 声明，交给 `BoardPersistentVisualController`；新增主题时注册独立 renderer，不要让 `Card` 越界绘制。
 - 数值图标和战场种族 logo 放在 `Card`；logo 路径由卡牌 `front_texture_path.get_base_dir() + "/logo.png"` 推导，不要为每个种族写分支。
-- 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它统一列宽、边距、间距并防止面板重叠，只排列已有 panel，不负责面板内容、可见性或玩法规则。各 panel controller 禁止再实现自己的 `position_panel()` 或固定 `TOP_MARGIN`。
+- 右侧 HUD 面板排布交给 `RightSideHudLayoutController`；它把列宽按视口限制在 296px 至 340px，保留自然高度后为三块以上面板分配剩余高度，稀疏面板限制扩张，并用整数像素分配避免 720p 取整越界。它只排列已有 panel，不负责内容、可见性或玩法规则；各 panel controller 禁止再实现自己的 `position_panel()` 或固定 `TOP_MARGIN`。
 - 右侧 HUD 的面板外壳、标题、按钮、指标块与资源刻度统一复用 `RightSideHudStyle`；无专属贴图的稳定语义图标复用 `HudSymbolIcon`。法力、翻牌和资源分采用图标加短数值；通用小上限资源使用离散刻度。资源具有不可替代的形状语义时可提供只读专属仪表，但仍须嵌入统一 HUD 外壳、由 controller 传入规则值且不得反向修改状态；`TailResourceMeter` 是九尾扇形九槽的首个例子。`FactionSkillPanelController` 必须用包含玩家、资源值和技能可用性的视图签名跳过无变化重建，避免玩家状态信号反复销毁专属仪表。修改后运行 `tools/test_right_side_hud.gd`。
+- 结束回合等对局主命令统一调用 `ApplicationUiStyle.style_match_action_button()`，复用 `GameUiSkin` 的普通、悬浮、按下、禁用四态；禁止在 `.tscn` 中留下默认 Godot 按钮作为最终视觉。
 - 对局 HUD 的创建与刷新顺序交给 `GameHudCoordinator`；`GameManager.update_*_view()` 是兼容门面。新增面板时，把内容控制留在独立 panel controller，把生命周期接入协调器，把位置交给布局控制器。
 - 通用法术与种族主题特效注册到 `SpellAnimationRouter`，并按卡牌到卡牌、直接矩形、来源矩形到卡牌、全战场、多格路径、范围区域、多目标矩形组七种上下文声明 key。`multi_rect` 只接收一组已解析的可见目标矩形，用于同一时点同步播放群体治疗/祝福；未注册该上下文时调用方必须回退原有逐目标动画。同一上下文的同一 key 只能由一个 Callable 拥有，路由器会拒绝后续冲突注册；不要通过 provider 注册顺序覆盖行为。主题节点和 Tween 放在 provider；通用攻击、移动和默认法术仍由 `CardAnimationController` 处理。已经迁移到 provider 的 key 必须删除中央 `match` 中的旧分支与旧样式，禁止长期保留双实现。不要让规则层直接调用某个 provider；`GameManager` 只负责选择稳定 animation key，不创建表现节点。
 - 达拉然表现优先读 `scripts/ui/animation/dalaran_animation_provider.gd`、`dalaran_spell_visual.gd`、`dalaran_fire_animation_player.gd`、`dalaran_space_swap_player.gd`、`scripts/ui/persistent_visuals/extreme_cold_storm_area_visual.gd` 和 `scripts/ui/card_status_overlay.gd`。`DalaranSpellVisual` 只提供奥术、冰霜、火焰、水元素的共享形状语言；provider 负责路由和生命周期；火球/炎爆的投射物阶段与奥术空间的双格交换分别由专用 player 管理。冰锥术必须表现为“凝聚→沿方向飞行→命中碎裂→冻结反馈”，魔免只保留碰撞碎裂，不显示冻结结晶。辉煌光环属于卡面局部持续状态，回合产蓝反馈由 `gain_mana.source_animation` 配置；极寒风暴的 3x3 常驻风场属于 `BoardPersistentVisualController`，施放、回合结算坠落冰暴和原格召唤仍是一次性 provider 动画。不要把持续节点留在 provider，也不要让规则效果识别具体卡牌 id。

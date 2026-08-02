@@ -4,8 +4,9 @@ class_name BoardViewToggleController
 const RightSideHudStyleScript := preload("res://scripts/ui/right_side_hud_style.gd")
 
 const ACCENT := Color(0.48, 0.78, 0.90, 1.0)
-const OUTER_GAP := 10.0
-const SCREEN_MARGIN := 8.0
+const OUTER_GAP := 6.0
+const SCREEN_MARGIN := 4.0
+const TOGGLE_SIZE := Vector2(196.0, 34.0)
 
 var game_manager: Node
 var game_root: Control
@@ -44,9 +45,8 @@ func setup(
 
 
 func configure_toggle_style() -> void:
-	toggle.text = "完整战场 7×7"
-	toggle.tooltip_text = "关闭时放大中央 5×5；开启后显示包含飞行外环的完整 7×7 战场。"
-	toggle.custom_minimum_size = Vector2(172.0, 38.0)
+	toggle.tooltip_text = "切换中央 5×5 与包含飞行外环的完整 7×7 战场。"
+	toggle.custom_minimum_size = TOGGLE_SIZE
 	toggle.z_index = 3050
 	toggle.focus_mode = Control.FOCUS_NONE
 	toggle.add_theme_font_size_override("font_size", 14)
@@ -66,6 +66,7 @@ func sync_from_board() -> void:
 		return
 	var is_full_view := bool(card_board.get("is_full_board_view"))
 	toggle.set_pressed_no_signal(is_full_view)
+	toggle.text = "完整战场 7×7" if is_full_view else "中央战场 5×5"
 
 
 func schedule_layout() -> void:
@@ -87,23 +88,20 @@ func _position_toggle() -> void:
 		maxf(toggle.size.x, toggle.custom_minimum_size.x),
 		maxf(toggle.size.y, toggle.custom_minimum_size.y)
 	)
-	var desired_position := Vector2(
-		board_rect.position.x - toggle_size.x - OUTER_GAP,
-		board_rect.position.y + 8.0
-	)
-	if desired_position.x < SCREEN_MARGIN:
-		desired_position = Vector2(
-			board_rect.get_center().x - toggle_size.x * 0.5,
-			board_rect.position.y - toggle_size.y - OUTER_GAP
-		)
-	if desired_position.y < SCREEN_MARGIN:
-		desired_position.y = SCREEN_MARGIN
-
 	var root_rect := game_root.get_global_rect()
+	var desired_position := Vector2(
+		board_rect.get_center().x - toggle_size.x * 0.5,
+		board_rect.position.y - toggle_size.y - OUTER_GAP
+	)
 	desired_position.x = clampf(
 		desired_position.x,
 		root_rect.position.x + SCREEN_MARGIN,
 		root_rect.end.x - toggle_size.x - SCREEN_MARGIN
+	)
+	desired_position.y = clampf(
+		desired_position.y,
+		root_rect.position.y + SCREEN_MARGIN,
+		root_rect.end.y - toggle_size.y - SCREEN_MARGIN
 	)
 	toggle.global_position = desired_position
 

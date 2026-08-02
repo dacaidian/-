@@ -41,14 +41,14 @@ layout_mode = 2
 
 [node name="BoardViewToggle" type="CheckButton" parent="."]
 z_index = 3050
-custom_minimum_size = Vector2(172, 38)
+custom_minimum_size = Vector2(196, 34)
 layout_mode = 0
 offset_left = 12.0
 offset_top = 12.0
-offset_right = 184.0
-offset_bottom = 50.0
+offset_right = 208.0
+offset_bottom = 46.0
 focus_mode = 0
-text = "完整战场 7×7"
+text = "中央战场 5×5"
 
 [node name="CardPoolView" type="Control" parent="."]
 z_index = 50
@@ -169,16 +169,17 @@ text = "Card State Debug"
 scroll_following = true
 
 [node name="EndTurnButton" type="Button" parent="." unique_id=337040413]
-custom_minimum_size = Vector2(220, 56)
+z_index = 3050
+custom_minimum_size = Vector2(240, 54)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -110.0
-offset_top = -76.0
-offset_right = 110.0
+offset_left = -120.0
+offset_top = -74.0
+offset_right = 120.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0

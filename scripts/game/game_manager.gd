@@ -305,6 +305,8 @@ func connect_end_turn_button() -> void:
 	end_turn_button = get_node_or_null(end_turn_button_path) as Button
 	if end_turn_button == null:
 		return
+	ApplicationUiStyle.style_match_action_button(end_turn_button, ApplicationUiStyle.GOLD)
+	end_turn_button.tooltip_text = "结束当前玩家的回合"
 
 	if not end_turn_button.pressed.is_connected(end_turn):
 		end_turn_button.pressed.connect(end_turn)

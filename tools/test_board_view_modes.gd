@@ -96,8 +96,16 @@ func _run() -> void:
 	host.add_child(toggle)
 	var fake_game_manager := FakeGameManager.new()
 	host.add_child(fake_game_manager)
+	board.position = Vector2(240.0, 60.0)
 	var toggle_controller = BoardViewToggleControllerScript.new()
 	toggle_controller.setup(fake_game_manager, host, board, toggle)
+	await process_frame
+	var board_rect := board.get_global_rect()
+	var toggle_rect := toggle.get_global_rect()
+	if absf(toggle_rect.get_center().x - board_rect.get_center().x) > 1.0:
+		return _fail("View toggle was not centered above the board")
+	if toggle_rect.end.y > board_rect.position.y + 1.0:
+		return _fail("View toggle intruded into the board content area")
 	board.call("set_full_board_view", false)
 	await process_frame
 	if toggle.button_pressed:

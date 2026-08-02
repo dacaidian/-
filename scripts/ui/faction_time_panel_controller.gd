@@ -4,7 +4,7 @@ class_name FactionTimePanelController
 const CardTexturePreviewControllerScript := preload("res://scripts/ui/card_texture_preview_controller.gd")
 const RightSideHudStyleScript := preload("res://scripts/ui/right_side_hud_style.gd")
 
-const CARD_PREVIEW_SIZE := Vector2(46.0, 64.0)
+const CARD_PREVIEW_SIZE := Vector2(48.0, 66.0)
 
 var panel: PanelContainer
 var state_box: VBoxContainer
@@ -38,6 +38,7 @@ func setup(root: Control) -> void:
 
 	var content := VBoxContainer.new()
 	content.name = "Content"
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", RightSideHudStyleScript.CONTENT_GAP)
 	content.mouse_filter = Control.MOUSE_FILTER_PASS
 	margin.add_child(content)

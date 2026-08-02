@@ -65,8 +65,8 @@ war-card/
 - **图鉴查询与 UI 分离**：`CardCollectionCatalog` 只构建只读目录并执行筛选排序，`CardCollectionScreen` 只维护页面交互；普通牌与衍生牌来源由 `CardDatabase` 的独立索引判定，不通过 `count` 猜测。
 - **结算契约统一**：资源胜利和投降都生成 `MatchResult`，由同一结算页面展示；未来牌局历史只消费结果快照，不读取已销毁的 `GameManager`。
 - **规则与表现分离**：`scripts/effects/` 和 `scripts/actions/` 修改规则状态；动画、音效和 UI 由表现层 resolver 处理。
-- **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。
-- **UI 皮肤集中管理**：`GameUiSkin` 只管理位图、九宫格边距、安全内容区和控件状态，并把框体分为 `MAIN`、`DRAWER`、`SIDEBAR`、`INSET`、`SECTION`、`HUD` 六档；`ApplicationUiStyle` 负责主菜单、图鉴和全局操作面板的语义样式，`RightSideHudStyle` 负责战斗 HUD。页面 controller 只选择语义变体，不自行复制外框，也不能把内容放进木框、金属角或内侧斜面覆盖范围。
+- **HUD 生命周期集中编排**：`GameHudCoordinator` 统一组织各对局面板的创建与刷新，panel controller 管内容，`RightSideHudLayoutController` 管位置，`GameManager` 仅保留稳定门面。右侧 HUD 在窄视口保持 296px 紧凑宽度，在宽屏扩展到 340px；完整面板列会共享可用高度，避免内容拥挤或下方空间长期闲置。
+- **UI 皮肤集中管理**：`GameUiSkin` 只管理位图、九宫格边距、安全内容区和控件状态，并把框体分为 `MAIN`、`DRAWER`、`SIDEBAR`、`INSET`、`SECTION`、`HUD` 六档；`ApplicationUiStyle` 负责主菜单、图鉴、全局操作面板和结束回合等对局主命令，`RightSideHudStyle` 负责战斗 HUD。页面 controller 只选择语义变体，不自行复制外框，也不能把内容放进木框、金属角或内侧斜面覆盖范围。
 - **HUD 卡图统一预览**：种族状态牌与装备牌通过 `CardTexturePreviewController` 共享悬浮大图、视口内定位和显示生命周期。
 - **自适应手牌抽屉**：法术、随从、升级、装备四区保留独立纵向滚动，横向滚动被禁用；抽屉尺寸始终限制在可见视口内，空区自动收缩，非空区按目标可用宽度换行并按卡牌行数共享净可用高度；窗口实时缩放会保持收起开关可见、重排已有卡牌并保留各区滚动位置。
 - **法术特效模块化**：`SpellAnimationRouter` 按目标单位、矩形、来源矩形、全战场、多格路径、范围区域和多目标矩形组七种表现上下文分派 animation key，并拒绝同一上下文的重复处理器；普通施法回合由通用 provider 播放蓝金法阵，各种族 provider 独立维护主题视觉，复杂 provider 再按语义编排、图元工厂和生命周期运行时分层。
