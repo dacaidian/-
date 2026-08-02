@@ -19,6 +19,7 @@ func _run() -> void:
 	var catalog := CardCollectionCatalogScript.new()
 	catalog.rebuild(card_database)
 	test_catalog_completeness(card_database, catalog)
+	test_symbiote_framework(card_database, catalog)
 	test_source_categories(catalog)
 	test_search_and_filters(catalog)
 	await test_screen_interactions(catalog.get_total_count())
@@ -44,6 +45,24 @@ func test_catalog_completeness(
 	assert(catalog.query({
 		"category": CardCatalogEntryScript.CATEGORY_TOKEN,
 	}).size() == expected_tokens)
+
+
+func test_symbiote_framework(
+	card_database: CardDatabase,
+	catalog: CardCollectionCatalogScript
+) -> void:
+	assert(card_database.get_playable_faction_ids().has("symbiote"))
+	assert(card_database.get_faction_display_name("symbiote") == "共生体")
+	assert(card_database.get_default_hero_id("symbiote") == "venom")
+
+	var heroes := card_database.get_faction_heroes("symbiote")
+	assert(heroes.size() == 1)
+	assert(heroes[0].id == "venom")
+	assert(heroes[0].role == "hero")
+	assert(heroes[0].attack == 2)
+	assert(heroes[0].health == 20)
+	assert(catalog.get_faction_count("symbiote") == 1)
+	assert(_find_entry(catalog.entries, "venom") != null)
 
 
 func test_source_categories(catalog: CardCollectionCatalogScript) -> void:

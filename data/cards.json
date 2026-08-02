@@ -4913,6 +4913,34 @@
 		]
 	},
 	{
+		"id": "symbiote",
+		"name": "symbiote",
+		"displayName": "共生体",
+		"description": "来自异星的共生体以宿主、组织剥离与子代进化构成独特生态。毒液可以剥离自身组织，组织未来将在子代池中进化并附着于人类随从；纳尔则是这一体系的终局力量。",
+		"heroes": [
+			{
+				"card_id": "venom",
+				"attached_cards": []
+			}
+		],
+		"cards": [
+			{
+				"id": "venom",
+				"name": "毒液",
+				"description": "共生体英雄。毒液与宿主共同战斗，并能从自身剥离组织孕育新的子代。当前仅接入2/20英雄框架；自我剥离、撕咬、恐怖尖啸、法典和子代判定将在后续卡牌任务中实现。",
+				"url": "res://assets/img/共生体/毒液.png",
+				"type": "minion",
+				"role": "hero",
+				"count": 1,
+				"level": 1,
+				"keywords": [],
+				"attack": 2,
+				"health": 20,
+				"effects": []
+			}
+		]
+	},
+	{
 		"id": "neutral",
 		"name": "neutral",
 		"displayName": "中立牌库",
