@@ -61,8 +61,11 @@ func test_symbiote_framework(
 	assert(heroes[0].role == "hero")
 	assert(heroes[0].attack == 2)
 	assert(heroes[0].health == 20)
-	assert(catalog.get_faction_count("symbiote") == 1)
+	assert(catalog.get_faction_count("symbiote") == 6)
 	assert(_find_entry(catalog.entries, "venom") != null)
+	var tissue_entry = _find_entry(catalog.entries, "symbiote_tissue")
+	assert(tissue_entry != null)
+	assert(tissue_entry.is_token())
 
 
 func test_source_categories(catalog: CardCollectionCatalogScript) -> void:

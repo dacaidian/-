@@ -67,6 +67,10 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not pay_action_cost(user):
 		return
 
+	# Effects may kill or replace the caster and clear the board state's owner.
+	# Keep one immutable owner for the entire action chain.
+	var effect_owner_id := user.owner_id
+
 	if not bool(spell_data.get(EffectData.KEY_EFFECT_HANDLES_ANIMATION, false)):
 		if SpellTargetResolver.is_area_rule(target_rule):
 			await game_manager.play_area_spell_animation(user, target, spell_data)
@@ -76,6 +80,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 
 	for effect_data in effects:
 		var runtime_effect_data := effect_data.duplicate(true)
+		EffectData.mark_effect_owner(runtime_effect_data, effect_owner_id)
 		if requires_target():
 			EffectData.mark_selected_target(runtime_effect_data, target)
 		EffectData.mark_spell_power_enabled(runtime_effect_data)

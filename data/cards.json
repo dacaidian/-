@@ -4927,7 +4927,7 @@
 			{
 				"id": "venom",
 				"name": "毒液",
-				"description": "共生体英雄。毒液与宿主共同战斗，并能从自身剥离组织孕育新的子代。当前仅接入2/20英雄框架；自我剥离、撕咬、恐怖尖啸、法典和子代判定将在后续卡牌任务中实现。",
+				"description": "共生体英雄。施法动作自我剥离：对毒液自身造成2点伤害，获得一张共生体组织。撕咬、恐怖尖啸、法典和子代判定将在后续实现。",
 				"url": "res://assets/img/共生体/毒液.png",
 				"type": "minion",
 				"role": "hero",
@@ -4936,6 +4936,133 @@
 				"keywords": [],
 				"attack": 2,
 				"health": 20,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "self_severance",
+						"name": "自我剥离",
+						"effect_handles_animation": true,
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "play_animation",
+								"target": "self",
+								"animation": "symbiote_self_severance"
+							},
+							{
+								"id": "damage",
+								"target": "self",
+								"amount": 2,
+								"spell_power_scaling": false
+							},
+							{
+								"id": "add_card_to_hand",
+								"card_id": "symbiote_tissue",
+								"amount": 1
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "symbiote_shield_agent",
+				"name": "共生神盾局探员",
+				"description": "与共生体建立稳定联系的神盾局探员。远程。",
+				"url": "res://assets/img/共生体/共生神盾局探员.png",
+				"type": "minion",
+				"count": 5,
+				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 1,
+				"health": 5,
+				"effects": []
+			},
+			{
+				"id": "symbiote_biologist",
+				"name": "生物研究员",
+				"description": "研究共生体组织的远程单位。施法动作人工剥离：对己方毒液造成2点伤害，获得一张共生体组织；毒液不在场时无法释放。",
+				"url": "res://assets/img/共生体/生物研究员.png",
+				"type": "minion",
+				"count": 5,
+				"level": 2,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 6,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "artificial_severance",
+						"name": "人工剥离",
+						"effect_handles_animation": true,
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "play_animation",
+								"target": "owner_card_by_id",
+								"target_card_id": "venom",
+								"animation": "symbiote_artificial_severance",
+								"presentation_scope": "source_to_target"
+							},
+							{
+								"id": "damage",
+								"target": "owner_card_by_id",
+								"target_card_id": "venom",
+								"amount": 2,
+								"spell_power_scaling": false
+							},
+							{
+								"id": "add_card_to_hand",
+								"card_id": "symbiote_tissue",
+								"amount": 1
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "xenophage",
+				"name": "异噬体",
+				"description": "以共生体为猎物的强大异星生物。巨兽。",
+				"url": "res://assets/img/共生体/异噬体.png",
+				"type": "minion",
+				"count": 3,
+				"level": 2,
+				"keywords": [
+					"giant"
+				],
+				"attack": 3,
+				"health": 8,
+				"effects": []
+			},
+			{
+				"id": "genetic_warrior",
+				"name": "基因战士",
+				"description": "经过基因强化的战斗单位。",
+				"url": "res://assets/img/共生体/基因战士.png",
+				"type": "minion",
+				"count": 4,
+				"level": 3,
+				"keywords": [],
+				"attack": 3,
+				"health": 7,
+				"effects": []
+			}
+		],
+		"tokens": [
+			{
+				"id": "symbiote_tissue",
+				"name": "共生体组织",
+				"description": "由毒液或生物研究员剥离出的活性共生体组织。当前为无效果衍生法术牌，后续将用于子代进化与宿主附着。",
+				"url": "res://assets/img/共生体/共生体组织.png",
+				"type": "spell",
+				"count": 0,
+				"level": 1,
+				"target_rule": "none",
+				"keywords": [],
 				"effects": []
 			}
 		]

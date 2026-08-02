@@ -12,6 +12,7 @@ const MonkeyAnimationProviderScript := preload("res://scripts/ui/animation/monke
 const NightElfAnimationProviderScript := preload("res://scripts/ui/animation/night_elf_animation_provider.gd")
 const SilverHandAnimationProviderScript := preload("res://scripts/ui/animation/silver_hand_animation_provider.gd")
 const ShadowmoonAnimationProviderScript := preload("res://scripts/ui/animation/shadowmoon_animation_provider.gd")
+const SymbioteAnimationProviderScript := preload("res://scripts/ui/animation/symbiote_animation_provider.gd")
 const TokyoGhoulAnimationProviderScript := preload("res://scripts/ui/animation/tokyo_ghoul_animation_provider.gd")
 
 # CardAnimationController 只负责卡牌相关的表现动画。
@@ -54,6 +55,7 @@ var monkey_animation_provider := MonkeyAnimationProviderScript.new()
 var night_elf_animation_provider := NightElfAnimationProviderScript.new()
 var silver_hand_animation_provider := SilverHandAnimationProviderScript.new()
 var shadowmoon_animation_provider := ShadowmoonAnimationProviderScript.new()
+var symbiote_animation_provider := SymbioteAnimationProviderScript.new()
 var tokyo_ghoul_animation_provider := TokyoGhoulAnimationProviderScript.new()
 
 
@@ -92,6 +94,8 @@ func setup(config: Dictionary) -> void:
 	silver_hand_animation_provider.register_routes(spell_animation_router)
 	shadowmoon_animation_provider.setup(spell_animation_duration)
 	shadowmoon_animation_provider.register_routes(spell_animation_router)
+	symbiote_animation_provider.setup(spell_animation_duration)
+	symbiote_animation_provider.register_routes(spell_animation_router)
 	tokyo_ghoul_animation_provider.setup(spell_animation_duration)
 	tokyo_ghoul_animation_provider.register_routes(spell_animation_router)
 
