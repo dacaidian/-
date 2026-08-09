@@ -15,7 +15,12 @@ const KEY_INHERIT_HOST_BASE_STATS_CARD_IDS := "inherit_host_base_stats_card_ids"
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var owner_id := get_effect_owner_id(source_state, effect_data)
 	var target_state := EffectData.get_selected_target_state(effect_data)
-	if not can_attach_target(target_state, owner_id, get_host_card_ids(effect_data)):
+	if not can_attach_target(
+		target_state,
+		owner_id,
+		get_host_card_ids(effect_data),
+		allows_any_non_hero_minion(effect_data)
+	):
 		return
 	if game_manager == null or not game_manager.has_method("draw_symbiote_offspring_card_id"):
 		return
@@ -45,12 +50,18 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 		return false
 
 	var host_card_ids := get_host_card_ids(effect_data)
+	var allow_any_non_hero := allows_any_non_hero_minion(effect_data)
 	if target_state != null:
-		return can_attach_target(target_state, owner_id, host_card_ids)
+		return can_attach_target(target_state, owner_id, host_card_ids, allow_any_non_hero)
 	if not game_manager.has_method("get_all_board_states"):
 		return false
 	for board_state in game_manager.get_all_board_states():
-		if can_attach_target(board_state as CardState, owner_id, host_card_ids):
+		if can_attach_target(
+			board_state as CardState,
+			owner_id,
+			host_card_ids,
+			allow_any_non_hero
+		):
 			return true
 	return false
 
@@ -58,21 +69,29 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 func can_attach_target(
 	target_state: CardState,
 	owner_id: String,
-	host_card_ids: Array[String]
+	host_card_ids: Array[String],
+	allow_any_non_hero := false
 ) -> bool:
 	if (
 		target_state == null
 		or owner_id == ""
 		or not BoardQuery.is_face_up_minion(target_state)
 		or target_state.is_hero()
-		or target_state.owner_id != owner_id
 		or target_state.get_transform_status() != null
 	):
+		return false
+	if allow_any_non_hero:
+		return true
+	if target_state.owner_id != owner_id:
 		return false
 	for host_card_id in host_card_ids:
 		if target_state.represents_card_id(host_card_id):
 			return true
 	return false
+
+
+func allows_any_non_hero_minion(effect_data: Dictionary) -> bool:
+	return bool(effect_data.get(EffectData.KEY_ALLOW_ANY_NON_HERO_MINION, false))
 
 
 func get_host_card_ids(effect_data: Dictionary) -> Array[String]:

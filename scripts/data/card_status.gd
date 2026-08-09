@@ -48,6 +48,8 @@ const STATUS_DAMAGE_AMPLIFY := "damage_amplify"
 const STATUS_KILJAEDEN_WHISPER := "kiljaeden_whisper"
 const STATUS_KAGUNE_RELEASE := "kagune_release"
 const STATUS_BIKAKU_VOLLEY_KAGUNE := "bikaku_volley_kagune"
+const STATUS_VENOM_BITE_READY := "venom_bite_ready"
+const STATUS_FEAR := "fear"
 const STACK_POLICY_STACK := "stack"
 const STACK_POLICY_REFRESH := "refresh"
 const STACK_POLICY_REPLACE := "replace"
@@ -68,6 +70,7 @@ const TAG_BREAKS_ON_ATTACK_OR_SPELL := "breaks_on_attack_or_spell"
 const TAG_TRANSFORM := "transform"
 const TAG_UNCLEANSEABLE := "uncleanseable"
 const TAG_KAGUNE_POWER := "kagune_power"
+const TAG_NEXT_ATTACK_MODIFIER := "next_attack_modifier"
 const STATUS_FREEZE := "freeze"
 
 var status_id := ""
@@ -330,7 +333,8 @@ func get_cleanse_valence() -> String:
 		STATUS_FEL_MADNESS_HELLHOUND,
 		STATUS_FEL_MADNESS_SUCCUBUS,
 		STATUS_FEL_MADNESS_CHAOS_WOLF_RIDER,
-		STATUS_FEL_MADNESS_DOOMGUARD
+		STATUS_FEL_MADNESS_DOOMGUARD,
+		STATUS_VENOM_BITE_READY
 	]
 	if positive_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_POSITIVE
@@ -345,7 +349,8 @@ func get_cleanse_valence() -> String:
 		STATUS_CHARM,
 		STATUS_ROOTED,
 		STATUS_FREEZE,
-		STATUS_DAMAGE_AMPLIFY
+		STATUS_DAMAGE_AMPLIFY,
+		STATUS_FEAR
 	]
 	if negative_status_ids.has(status_id):
 		return EffectData.STATUS_VALENCE_NEGATIVE

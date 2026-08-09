@@ -70,9 +70,9 @@ func evaluate_hand_card(card_data: CardData, hand_index: int, player: PlayerStat
 
 
 func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, hpr: HandPlayResolver) -> Dictionary:
-	var target_rule := hpr.get_target_rule(card_data, player)
+	var target_rule := hpr.get_target_rule(card_data, player, gm)
 	if not SpellTargetResolver.requires_target(target_rule):
-		var no_target_effects := get_resolved_spell_effects(card_data, player, null, hpr)
+		var no_target_effects := get_resolved_spell_effects(card_data, player, null, hpr, gm)
 		return {"target": null, "score": _score_no_target_spell(no_target_effects, player, gm)}
 
 	var valid_targets: Array = hpr.get_valid_targets(card_data, gm, player)
@@ -82,7 +82,7 @@ func _evaluate_spell(card_data: CardData, player: PlayerState, gm: GameManager, 
 	for target in valid_targets:
 		if target == null:
 			continue
-		var target_effects := get_resolved_spell_effects(card_data, player, target, hpr)
+		var target_effects := get_resolved_spell_effects(card_data, player, target, hpr, gm)
 		var score: float = _score_spell_on_target(target_effects, target, player, gm)
 		if score > best_score:
 			best_target = target
@@ -95,7 +95,8 @@ func get_resolved_spell_effects(
 	card_data: CardData,
 	player: PlayerState,
 	target: CardState,
-	hpr: HandPlayResolver
+	hpr: HandPlayResolver,
+	game_manager: GameManager = null
 ) -> Array[Dictionary]:
 	if hpr == null:
 		var fallback_effects: Array[Dictionary] = []
@@ -103,7 +104,7 @@ func get_resolved_spell_effects(
 			fallback_effects = card_data.effects.duplicate(true)
 		return fallback_effects
 
-	return hpr.get_resolved_spell_effects(player, card_data, target)
+	return hpr.get_resolved_spell_effects(player, card_data, target, game_manager)
 
 
 func _score_no_target_spell(effects: Array[Dictionary], _player: PlayerState, _gm: GameManager) -> float:

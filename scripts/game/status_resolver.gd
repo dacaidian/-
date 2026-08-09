@@ -10,10 +10,118 @@ func resolve_pre_trigger_status_effects(game_manager: GameManager, trigger: Stri
 
 	match trigger:
 		EventContext.TRIGGER_BEFORE_TURN_START:
+			await resolve_fear_movements(game_manager, turn_player_id)
 			await mature_life_link_larvae(game_manager, turn_player_id)
 		EventContext.TRIGGER_AFTER_TURN_END:
 			await resolve_poison_damage(game_manager, trigger, turn_player_id)
 			await resolve_fire_damage(game_manager, trigger, turn_player_id)
+
+
+func resolve_fear_movements(game_manager: GameManager, turn_player_id: String) -> void:
+	var feared_states: Array[CardState] = []
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state):
+			continue
+		if state.owner_id != turn_player_id or not state.has_status(CardStatus.STATUS_FEAR):
+			continue
+		feared_states.append(state)
+
+	for feared_state in feared_states:
+		if not BoardQuery.is_face_up_minion(feared_state) or feared_state.owner_id != turn_player_id:
+			continue
+		var fear_status := feared_state.get_status(CardStatus.STATUS_FEAR)
+		if fear_status == null:
+			continue
+		var source_slot := resolve_fear_source_slot(game_manager, fear_status)
+		var destination_slot := get_fear_destination_slot(
+			feared_state.slot_index,
+			source_slot,
+			game_manager.board_columns,
+			game_manager.board_rows
+		)
+		if destination_slot < 0:
+			continue
+
+		if game_manager.has_method("play_status_apply_animation"):
+			await game_manager.play_status_apply_animation(
+				feared_state,
+				"symbiote_fear_flee"
+			)
+		if feared_state.is_flying():
+			if not can_fear_move_flying(game_manager, destination_slot):
+				continue
+			await game_manager.move_flying_card_to_slot(
+				feared_state,
+				destination_slot
+			)
+		else:
+			var destination_state := game_manager.get_board_state(destination_slot)
+			if not can_fear_move_ground(game_manager, destination_state):
+				continue
+			await game_manager.swap_board_slot_contents(feared_state, destination_state)
+
+
+func resolve_fear_source_slot(game_manager: GameManager, fear_status: CardStatus) -> int:
+	if game_manager == null or fear_status == null:
+		return -1
+	if fear_status.source_owner_id != "" and fear_status.source_card_id != "":
+		var source_state := game_manager.find_face_up_board_state(
+			fear_status.source_owner_id,
+			fear_status.source_card_id
+		)
+		if source_state != null:
+			return source_state.slot_index
+	return int(fear_status.payload.get(EffectData.KEY_FEAR_SOURCE_SLOT, -1))
+
+
+func get_fear_destination_slot(
+	target_slot: int,
+	source_slot: int,
+	board_columns: int,
+	board_rows: int
+) -> int:
+	if (
+		target_slot < 0
+		or source_slot < 0
+		or board_columns <= 0
+		or board_rows <= 0
+	):
+		return -1
+
+	var target_row := floori(float(target_slot) / float(board_columns))
+	var target_column := target_slot % board_columns
+	var source_row := floori(float(source_slot) / float(board_columns))
+	var source_column := source_slot % board_columns
+	var row_direction := signi(target_row - source_row)
+	var column_direction := signi(target_column - source_column)
+	if row_direction == 0 and column_direction == 0:
+		return -1
+
+	var destination_row := target_row + row_direction
+	var destination_column := target_column + column_direction
+	if (
+		destination_row < 0
+		or destination_row >= board_rows
+		or destination_column < 0
+		or destination_column >= board_columns
+	):
+		return -1
+	return destination_row * board_columns + destination_column
+
+
+func can_fear_move_ground(game_manager: GameManager, destination_state: CardState) -> bool:
+	if game_manager == null or destination_state == null:
+		return false
+	if not game_manager.can_place_ground_card_on_slot(destination_state.slot_index):
+		return false
+	return destination_state.is_empty() or not destination_state.is_face_up
+
+
+func can_fear_move_flying(game_manager: GameManager, destination_slot: int) -> bool:
+	if game_manager == null or not game_manager.can_place_aerial_card_on_slot(destination_slot):
+		return false
+	var destination_state := game_manager.get_aerial_state(destination_slot)
+	return destination_state != null and destination_state.is_empty()
 
 
 func resolve_turn_timing(game_manager: GameManager, trigger: String, turn_player_id: String) -> void:

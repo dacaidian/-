@@ -36,9 +36,9 @@ func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: 
 		return false
 
 	if card_data.is_spell():
-		if requires_target(card_data, player) and get_valid_targets(card_data, game_manager, player).is_empty():
+		if requires_target(card_data, player, game_manager) and get_valid_targets(card_data, game_manager, player).is_empty():
 			return false
-		return not card_data.effects.is_empty() and has_playable_effects(player, card_data, game_manager)
+		return has_playable_effects(player, card_data, game_manager)
 
 	if card_data.is_minion():
 		return not get_valid_placement_targets(game_manager, card_data).is_empty()
@@ -89,7 +89,7 @@ func start_cast_target_selection(game_manager: GameManager, player: PlayerState,
 	if game_manager == null or not can_play_hand_card_at(player, hand_index, game_manager):
 		return false
 
-	if not requires_target(card_data, player):
+	if not requires_target(card_data, player, game_manager):
 		await execute_hand_card(game_manager, player, card_data, hand_index, null)
 		return true
 
@@ -171,8 +171,8 @@ func execute_hand_card(
 	if game_manager == null or not can_play_hand_card_at(player, hand_index, game_manager):
 		return
 
-	var resolved_spell := resolve_hand_spell(player, card_data, target_state)
-	var resolved_target_rule := str(resolved_spell.get("target_rule", get_target_rule(card_data, player)))
+	var resolved_spell := resolve_hand_spell(player, card_data, target_state, game_manager)
+	var resolved_target_rule := str(resolved_spell.get("target_rule", get_target_rule(card_data, player, game_manager)))
 	if SpellTargetResolver.requires_target(resolved_target_rule) and not can_target(card_data, target_state, game_manager, player):
 		return
 
@@ -239,12 +239,27 @@ func get_resolved_effects(resolved_spell: Dictionary) -> Array[Dictionary]:
 	return effects
 
 
-func resolve_hand_spell(player: PlayerState, card_data: CardData, target_state: CardState) -> Dictionary:
-	return hand_spell_modifier_resolver.resolve_hand_spell(player, card_data, target_state)
+func resolve_hand_spell(
+	player: PlayerState,
+	card_data: CardData,
+	target_state: CardState,
+	game_manager: GameManager = null
+) -> Dictionary:
+	return hand_spell_modifier_resolver.resolve_hand_spell(
+		player,
+		card_data,
+		target_state,
+		game_manager
+	)
 
 
-func get_resolved_spell_effects(player: PlayerState, card_data: CardData, target_state: CardState) -> Array[Dictionary]:
-	return get_resolved_effects(resolve_hand_spell(player, card_data, target_state))
+func get_resolved_spell_effects(
+	player: PlayerState,
+	card_data: CardData,
+	target_state: CardState,
+	game_manager: GameManager = null
+) -> Array[Dictionary]:
+	return get_resolved_effects(resolve_hand_spell(player, card_data, target_state, game_manager))
 
 
 func get_valid_targets(card_data: CardData, game_manager: GameManager, player: PlayerState = null) -> Array[CardState]:
@@ -260,9 +275,9 @@ func get_valid_targets(card_data: CardData, game_manager: GameManager, player: P
 
 	var owner_id := player.id if player != null else ""
 	return SpellTargetResolver.get_valid_targets(
-		get_target_rule(card_data, player),
+		get_target_rule(card_data, player, game_manager),
 		game_manager,
-		get_target_card_ids(card_data, player),
+		get_target_card_ids(card_data, player, game_manager),
 		null,
 		owner_id
 	)
@@ -421,8 +436,12 @@ func refill_one_empty_slot_after_replacing_hidden_card(game_manager: GameManager
 		return
 
 
-func requires_target(card_data: CardData, player: PlayerState = null) -> bool:
-	return SpellTargetResolver.requires_target(get_target_rule(card_data, player))
+func requires_target(
+	card_data: CardData,
+	player: PlayerState = null,
+	game_manager: GameManager = null
+) -> bool:
+	return SpellTargetResolver.requires_target(get_target_rule(card_data, player, game_manager))
 
 
 func can_target(card_data: CardData, target: CardState, game_manager: GameManager, player: PlayerState = null) -> bool:
@@ -437,9 +456,9 @@ func can_target(card_data: CardData, target: CardState, game_manager: GameManage
 
 	var owner_id := player.id if player != null else ""
 	return SpellTargetResolver.can_target(
-		get_target_rule(card_data, player),
+		get_target_rule(card_data, player, game_manager),
 		target,
-		get_target_card_ids(card_data, player),
+		get_target_card_ids(card_data, player, game_manager),
 		null,
 		owner_id,
 		game_manager
@@ -513,19 +532,27 @@ func get_direction_origin_state(
 	return null
 
 
-func get_target_rule(card_data: CardData, player: PlayerState = null) -> String:
+func get_target_rule(
+	card_data: CardData,
+	player: PlayerState = null,
+	game_manager: GameManager = null
+) -> String:
 	if player != null and card_data != null and card_data.is_spell():
-		var resolved_spell := resolve_hand_spell(player, card_data, null)
+		var resolved_spell := resolve_hand_spell(player, card_data, null, game_manager)
 		return str(resolved_spell.get("target_rule", SpellTargetResolver.get_rule_from_card_data(card_data)))
 
 	return SpellTargetResolver.get_rule_from_card_data(card_data)
 
 
-func get_target_card_ids(card_data: CardData, player: PlayerState = null) -> Array[String]:
+func get_target_card_ids(
+	card_data: CardData,
+	player: PlayerState = null,
+	game_manager: GameManager = null
+) -> Array[String]:
 	if card_data == null:
 		return []
 	if player != null and card_data.is_spell():
-		return EffectData.get_card_ids(resolve_hand_spell(player, card_data, null))
+		return EffectData.get_card_ids(resolve_hand_spell(player, card_data, null, game_manager))
 	return card_data.target_card_ids.duplicate()
 
 
@@ -542,7 +569,11 @@ func has_playable_effects(player: PlayerState, card_data: CardData, game_manager
 	if card_data == null:
 		return false
 
-	for effect_data in card_data.effects:
+	var resolved_spell := resolve_hand_spell(player, card_data, null, game_manager)
+	var resolved_effects := get_resolved_effects(resolved_spell)
+	if resolved_effects.is_empty():
+		return false
+	for effect_data in resolved_effects:
 		if not is_effect_playable(player, effect_data, game_manager):
 			return false
 

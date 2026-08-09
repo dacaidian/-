@@ -4971,14 +4971,18 @@
 		"heroes": [
 			{
 				"card_id": "venom",
-				"attached_cards": []
+				"attached_cards": [
+					"venom_bite",
+					"terrifying_scream",
+					"knull_codex"
+				]
 			}
 		],
 		"cards": [
 			{
 				"id": "venom",
 				"name": "毒液",
-				"description": "共生体英雄。施法动作自我剥离：毒液攻击力永久+1，对自身造成2点伤害，获得一张共生体组织，并推进共生体子代池的剥离计数。撕咬、恐怖尖啸和法典将在后续实现。",
+				"description": "共生体英雄。施法动作自我剥离：毒液攻击力永久+1，对自身造成2点伤害，获得一张共生体组织，并推进共生体子代池的剥离计数。",
 				"url": "res://assets/img/共生体/毒液.png",
 				"type": "minion",
 				"role": "hero",
@@ -5021,6 +5025,116 @@
 								"amount": 1
 							}
 						]
+					}
+				]
+			},
+			{
+				"id": "venom_bite",
+				"name": "撕咬",
+				"description": "本回合毒液的下一次普通攻击额外造成2点伤害，并恢复毒液4点生命值。攻击建筑时本效果不生效，但仍会消耗。",
+				"url": "res://assets/img/共生体/撕咬.png",
+				"type": "spell",
+				"count": 3,
+				"level": 1,
+				"target_rule": "none",
+				"animation": "symbiote_bite_ready",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "apply_status",
+						"target": "owner_card_by_id",
+						"target_card_id": "venom",
+						"presentation_target": "effect_target",
+						"status_id": "venom_bite_ready",
+						"status_name": "撕咬蓄势",
+						"status_description": "本回合下一次普通攻击额外造成2点伤害并恢复4点生命；对建筑无效。",
+						"status_tags": [
+							"next_attack_modifier"
+						],
+						"stack_policy": "replace",
+						"duration_turns": 1,
+						"duration_scope": "source_owner",
+						"expires_on_trigger": "after_turn_end",
+						"status_valence": "positive",
+						"payload": {
+							"next_attack_bonus_damage": 2,
+							"next_attack_heal": 4,
+							"next_attack_excludes_buildings": true,
+							"trigger_animation": "symbiote_bite_strike",
+							"lifesteal_animation": "symbiote_bite_restore"
+						}
+					}
+				]
+			},
+			{
+				"id": "terrifying_scream",
+				"name": "恐怖尖啸",
+				"description": "毒液对相邻敌方随从造成2点伤害并使其恐惧一回合。被恐惧的随从在其回合开始时尝试背离毒液移动一格，且本回合无法行动。",
+				"url": "res://assets/img/共生体/恐怖尖啸.png",
+				"type": "spell",
+				"count": 2,
+				"level": 2,
+				"target_rule": "none",
+				"animation": "symbiote_terrifying_scream",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "terrifying_scream",
+						"target": "owner_card_by_id",
+						"target_card_id": "venom",
+						"presentation_target": "effect_target",
+						"amount": 2,
+						"status_id": "fear",
+						"status_name": "恐惧",
+						"status_description": "回合开始时尝试背离恐惧源移动一格，本回合无法行动。",
+						"status_tags": [
+							"action_prevention"
+						],
+						"stack_policy": "replace",
+						"duration_turns": 1,
+						"duration_scope": "target_owner",
+						"expires_on_trigger": "after_turn_end",
+						"status_valence": "negative",
+						"apply_animation": "symbiote_fear_apply"
+					}
+				]
+			},
+			{
+				"id": "knull_codex",
+				"name": "法典",
+				"description": "使纳尔·囚禁无论位于牌库、未翻开的棋盘、战场或坟场，都转化为纳尔·解放；战场上的纳尔会直接完成进化，其余区域则将解放形态置入手牌。",
+				"url": "res://assets/img/共生体/法典.png",
+				"type": "spell",
+				"count": 1,
+				"level": 3,
+				"target_rule": "none",
+				"animation": "symbiote_codex",
+				"keywords": [],
+				"effects": [
+					{
+						"id": "liberate_card",
+						"card_id": "knull_imprisoned",
+						"target_card_id": "knull_liberated"
+					}
+				]
+			},
+			{
+				"id": "knull_imprisoned",
+				"name": "纳尔·囚禁",
+				"description": "光环：所有友方共生体随从攻击力+2。",
+				"url": "res://assets/img/共生体/纳尔囚禁.png",
+				"type": "minion",
+				"count": 1,
+				"level": 3,
+				"keywords": [],
+				"attack": 2,
+				"health": 14,
+				"effects": [
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_on_board",
+						"target_faction_id": "symbiote",
+						"amount": 2
 					}
 				]
 			},
@@ -5123,6 +5237,43 @@
 			}
 		],
 		"tokens": [
+			{
+				"id": "knull_liberated",
+				"name": "纳尔·解放",
+				"description": "光环：所有友方共生体随从攻击力+4。纳尔在场时，共生体组织可以附着于场上任意非英雄随从。",
+				"url": "res://assets/img/共生体/纳尔解放.png",
+				"type": "minion",
+				"count": 0,
+				"level": 3,
+				"keywords": [],
+				"attack": 4,
+				"health": 16,
+				"effects": [
+					{
+						"id": "modify_unit_attack",
+						"trigger": "while_on_board",
+						"target_faction_id": "symbiote",
+						"amount": 4
+					},
+					{
+						"id": "modify_hand_spell_effects",
+						"trigger": "while_on_board",
+						"card_ids": [
+							"symbiote_tissue"
+						],
+						"target_rule": "non_hero_minions",
+						"replace_effects": [
+							{
+								"id": "attach_symbiote_offspring",
+								"allow_any_non_hero_minion": true,
+								"inherit_host_base_stats_card_ids": [
+									"genetic_warrior"
+								]
+							}
+						]
+					}
+				]
+			},
 			{
 				"id": "symbiote_tissue",
 				"name": "共生体组织",

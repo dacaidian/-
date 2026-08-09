@@ -768,6 +768,11 @@ class CardValidator:
                 )
 
         self.validate_status_fields(effect, path)
+        raw_status_tags = effect.get("status_tags", [])
+        if isinstance(raw_status_tags, list) and "next_attack_modifier" in [
+            str(tag) for tag in raw_status_tags
+        ]:
+            self.validate_next_attack_modifier(effect, path)
         self.validate_card_references(effect, path)
         self.validate_animation(effect, path, key_name="animation")
         self.validate_animation(effect, path, key_name="apply_animation")
@@ -804,15 +809,32 @@ class CardValidator:
                 )
         elif effect_id == "attach_symbiote_offspring":
             raw_host_ids = effect.get("card_ids", [])
-            if not isinstance(raw_host_ids, list) or not raw_host_ids:
-                self.reporter.error(f"{path}.card_ids", "must be a non-empty array")
+            allow_any_non_hero = effect.get("allow_any_non_hero_minion", False)
+            if not isinstance(allow_any_non_hero, bool):
+                self.reporter.error(
+                    f"{path}.allow_any_non_hero_minion",
+                    "must be a boolean",
+                )
+                allow_any_non_hero = False
+            if (
+                not isinstance(raw_host_ids, list)
+                or (not raw_host_ids and not allow_any_non_hero)
+            ):
+                self.reporter.error(
+                    f"{path}.card_ids",
+                    "must be a non-empty array unless allow_any_non_hero_minion is true",
+                )
             raw_inheritance_ids = effect.get("inherit_host_base_stats_card_ids", [])
             self.validate_pool_card_ids(
                 raw_inheritance_ids,
                 set(self.cards_by_id),
                 f"{path}.inherit_host_base_stats_card_ids",
             )
-            if isinstance(raw_host_ids, list) and isinstance(raw_inheritance_ids, list):
+            if (
+                not allow_any_non_hero
+                and isinstance(raw_host_ids, list)
+                and isinstance(raw_inheritance_ids, list)
+            ):
                 for card_index, card_id in enumerate(raw_inheritance_ids):
                     if card_id not in raw_host_ids:
                         self.reporter.error(
@@ -829,6 +851,36 @@ class CardValidator:
             self.validate_actions(payload.get("actions", []), f"{path}.payload.actions")
         elif "payload" in effect:
             self.reporter.error(f"{path}.payload", "must be an object")
+
+    def validate_next_attack_modifier(self, effect: dict[str, Any], path: str) -> None:
+        payload = effect.get("payload", {})
+        if not isinstance(payload, dict):
+            self.reporter.error(f"{path}.payload", "must be an object")
+            return
+
+        has_numeric_modifier = False
+        for key in ("next_attack_bonus_damage", "next_attack_heal"):
+            if key not in payload:
+                continue
+            if not isinstance(payload[key], int):
+                self.reporter.error(f"{path}.payload.{key}", "must be an integer")
+                continue
+            has_numeric_modifier = has_numeric_modifier or payload[key] != 0
+        if not has_numeric_modifier:
+            self.reporter.error(
+                f"{path}.payload",
+                "next_attack_modifier must define a non-zero damage or heal modifier",
+            )
+
+        if "next_attack_excludes_buildings" in payload and not isinstance(
+            payload["next_attack_excludes_buildings"], bool
+        ):
+            self.reporter.error(
+                f"{path}.payload.next_attack_excludes_buildings",
+                "must be a boolean",
+            )
+        self.validate_animation(payload, f"{path}.payload", "trigger_animation")
+        self.validate_animation(payload, f"{path}.payload", "lifesteal_animation")
 
     def validate_death_slot_replacement(self, raw_claim: Any, path: str) -> None:
         if raw_claim is None:

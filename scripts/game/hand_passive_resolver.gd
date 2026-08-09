@@ -1,7 +1,7 @@
 extends RefCounted
 class_name HandPassiveResolver
 
-# HandPassiveResolver 统一解析手牌与装备区的持续被动。
+# HandPassiveResolver 统一解析手牌、装备区与场上单位的持续被动。
 # 刷新时先收集一次 active passive effects，再把同一批配置传给各个子刷新器。
 # 规则效果来源和场上应用范围在这里集中，避免 UI、PlayerState 或单张行动里重复扫描。
 
@@ -9,7 +9,7 @@ func refresh_player_passives(player: PlayerState, should_adjust_remaining_flips 
 	if player == null:
 		return
 
-	var passive_effects := collect_active_passive_effects(player)
+	var passive_effects := collect_active_passive_effects(player, game_manager)
 	var previous_capacity := player.max_flips_per_turn
 	var flip_bonus := get_flip_capacity_bonus(passive_effects)
 	player.set_flip_capacity_bonus(flip_bonus)
@@ -159,15 +159,45 @@ func refresh_unit_attack_passives(player: PlayerState, game_manager: GameManager
 	if player == null or game_manager == null:
 		return
 
-	var attack_bonus_by_card_id := get_unit_attack_bonuses(player, passive_effects)
 	for state in get_owned_face_up_minions(player, game_manager):
-		var attack_bonus := 0
-		var attack_bonus_value: Variant = get_represented_card_value(state, attack_bonus_by_card_id, null)
-		if attack_bonus_value != null:
-			attack_bonus = int(attack_bonus_value)
+		var attack_bonus := get_unit_attack_bonus_for_state(state, player, passive_effects)
 		attack_bonus += get_board_attack_resource_bonus(state, player)
 
 		state.set_passive_attack_bonus(attack_bonus)
+
+
+func get_unit_attack_bonus_for_state(
+	state: CardState,
+	player: PlayerState,
+	passive_effects: Array[Dictionary]
+) -> int:
+	if state == null or state.data == null or player == null:
+		return 0
+
+	var bonus := 0
+	for effect_data in passive_effects:
+		if not is_effect_condition_met(effect_data, player):
+			continue
+		if EffectData.get_id(effect_data) != EffectData.EFFECT_MODIFY_UNIT_ATTACK:
+			continue
+
+		var card_ids := EffectData.get_card_ids(effect_data)
+		var target_faction_id := str(effect_data.get(EffectData.KEY_TARGET_FACTION_ID, ""))
+		var matches_card := not card_ids.is_empty() and state_represents_any_card_id(state, card_ids)
+		var matches_faction := target_faction_id != "" and state.data.faction_id == target_faction_id
+		if matches_card or matches_faction:
+			bonus += EffectData.get_amount(effect_data)
+
+	return bonus
+
+
+func state_represents_any_card_id(state: CardState, card_ids: Array[String]) -> bool:
+	if state == null:
+		return false
+	for card_id in card_ids:
+		if state.represents_card_id(card_id):
+			return true
+	return false
 
 
 func refresh_unit_armor_passives(player: PlayerState, game_manager: GameManager, passive_effects: Array[Dictionary]) -> void:
@@ -397,7 +427,10 @@ func is_effect_condition_met(effect_data: Dictionary, player: PlayerState) -> bo
 	return true
 
 
-func collect_active_passive_effects(player: PlayerState) -> Array[Dictionary]:
+func collect_active_passive_effects(
+	player: PlayerState,
+	game_manager: GameManager = null
+) -> Array[Dictionary]:
 	var effects: Array[Dictionary] = []
 	if player == null:
 		return effects
@@ -415,6 +448,16 @@ func collect_active_passive_effects(player: PlayerState) -> Array[Dictionary]:
 		for effect_data in card_data.effects:
 			if is_equipped_passive_effect(effect_data):
 				effects.append(effect_data)
+
+	if game_manager != null:
+		for state in game_manager.get_all_board_states():
+			if not BoardQuery.is_face_up_unit(state) or state.owner_id != player.id:
+				continue
+			if state.data == null:
+				continue
+			for effect_data in state.data.effects:
+				if effect_data is Dictionary and is_board_passive_effect(effect_data):
+					effects.append(effect_data)
 
 	return effects
 

@@ -80,6 +80,25 @@ func draw_at(index: int) -> CardData:
 	return card
 
 
+func take_first_by_card_id(card_id: String) -> CardData:
+	if card_id == "":
+		return null
+	for index in range(_pool.size()):
+		var card_data := _pool[index]
+		if card_data != null and card_data.id == card_id:
+			return draw_at(index)
+	return null
+
+
+func has_card_id(card_id: String) -> bool:
+	if card_id == "":
+		return false
+	for card_data in _pool:
+		if card_data != null and card_data.id == card_id:
+			return true
+	return false
+
+
 func get_pool() -> Array[CardData]:
 	return _pool.duplicate()
 

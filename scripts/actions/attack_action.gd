@@ -85,8 +85,46 @@ func perform_attack(
 	var attacker_owner_id := user.owner_id
 	var attacker_card_id := user.card_id
 	var is_melee_attack := bool(attack_profile[PROFILE_IS_MELEE])
+	var next_attack_statuses := get_next_attack_modifier_statuses(user)
+	var next_attack_bonus_damage := 0
+	var next_attack_heal_amount := 0
+	var next_attack_animation := ""
+	var next_attack_heal_animation := ""
+	for modifier_status in next_attack_statuses:
+		var excludes_buildings := bool(modifier_status.payload.get(
+			EffectData.KEY_NEXT_ATTACK_EXCLUDES_BUILDINGS,
+			false
+		))
+		if excludes_buildings and target.is_building():
+			continue
+		next_attack_bonus_damage += int(modifier_status.payload.get(
+			EffectData.KEY_NEXT_ATTACK_BONUS_DAMAGE,
+			0
+		))
+		next_attack_heal_amount += int(modifier_status.payload.get(
+			EffectData.KEY_NEXT_ATTACK_HEAL,
+			0
+		))
+		if next_attack_animation == "":
+			next_attack_animation = str(modifier_status.payload.get(
+				EffectData.KEY_TRIGGER_ANIMATION,
+				""
+			))
+		if next_attack_heal_animation == "":
+			next_attack_heal_animation = str(modifier_status.payload.get(
+				EffectData.KEY_LIFESTEAL_ANIMATION,
+				""
+			))
 	await game_manager.play_card_attack_animation(user, target, is_melee_attack)
-	var attack_damage := calculate_attack_damage(user, target)
+	for modifier_status in next_attack_statuses:
+		user.remove_status_instance(modifier_status)
+	if next_attack_animation != "":
+		await game_manager.play_spell_cast_animation(
+			user,
+			target,
+			{EffectData.KEY_ANIMATION: next_attack_animation}
+		)
+	var attack_damage := calculate_attack_damage(user, target) + next_attack_bonus_damage
 	if is_ranged_attack_immune(target, is_melee_attack):
 		attack_damage = 0
 	var was_reflected := await resolve_attack_reflection(user, target, attack_damage, game_manager)
@@ -96,6 +134,13 @@ func perform_attack(
 		actual_life_damage = deal_attack_damage_to_target(target, apply_armor_to_attack_damage(target, attack_damage))
 		await resolve_lifesteal(user, target, actual_life_damage, game_manager)
 		secondary_damage_targets = apply_secondary_attack_damage(user, target, game_manager, is_melee_attack)
+	if next_attack_heal_amount > 0:
+		await resolve_fixed_attack_heal(
+			user,
+			next_attack_heal_amount,
+			game_manager,
+			next_attack_heal_animation
+		)
 	if not secondary_damage_targets.is_empty():
 		# Play the shared area-impact presentation while source and primary target
 		# still have stable board nodes. Death resolution remains authoritative and
@@ -123,6 +168,43 @@ func perform_attack(
 	if trigger_source != null:
 		await game_manager.resolve_after_attack_triggers(trigger_source, target)
 	return true
+
+
+func resolve_fixed_attack_heal(
+	user: CardState,
+	heal_amount: int,
+	game_manager: GameManager,
+	animation_key := ""
+) -> void:
+	if (
+		user == null
+		or game_manager == null
+		or heal_amount <= 0
+		or not BoardQuery.is_face_up_minion(user)
+		or user.is_pending_death
+	):
+		return
+
+	var healed_amount := user.heal(heal_amount)
+	if healed_amount <= 0:
+		return
+	if animation_key != "":
+		await game_manager.play_status_apply_animation(user, animation_key)
+	game_manager.queue_card_trigger(user, EventContext.TRIGGER_ON_EFFECTIVE_HEAL, {
+		EventContext.EFFECTIVE_HEAL_AMOUNT: healed_amount,
+		EventContext.SOURCE_STATE: user
+	})
+	await game_manager.resolve_queued_triggers()
+
+
+func get_next_attack_modifier_statuses(user: CardState) -> Array[CardStatus]:
+	var modifier_statuses: Array[CardStatus] = []
+	if user == null:
+		return modifier_statuses
+	for status in user.statuses:
+		if status != null and status.tags.has(CardStatus.TAG_NEXT_ATTACK_MODIFIER):
+			modifier_statuses.append(status)
+	return modifier_statuses
 
 
 func resolve_attack_reflection(

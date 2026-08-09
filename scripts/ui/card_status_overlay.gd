@@ -127,6 +127,15 @@ var kagune_koukaku_color := Color(0.48, 0.035, 0.11, 0.86)
 var kagune_rinkaku_color := Color(0.70, 0.05, 0.18, 0.86)
 var kagune_bikaku_color := Color(0.56, 0.025, 0.12, 0.90)
 var kagune_cold_edge_color := Color(0.98, 0.82, 0.88, 0.76)
+var symbiote_bite_color := Color(0.26, 0.015, 0.035, 0.16)
+var symbiote_bite_edge_color := Color(0.92, 0.12, 0.20, 0.72)
+var symbiote_bite_core_color := Color(1.0, 0.72, 0.68, 0.88)
+var symbiote_fear_color := Color(0.055, 0.012, 0.09, 0.20)
+var symbiote_fear_edge_color := Color(0.62, 0.10, 0.34, 0.74)
+var symbiote_fear_eye_color := Color(0.94, 0.30, 0.48, 0.86)
+var knull_aura_color := Color(0.045, 0.008, 0.055, 0.18)
+var knull_aura_edge_color := Color(0.74, 0.08, 0.22, 0.72)
+var knull_aura_core_color := Color(0.96, 0.72, 0.80, 0.88)
 var animation_time := 0.0
 var redraw_accumulator := 0.0
 var divine_shield_break_progress := -1.0
@@ -230,6 +239,9 @@ func has_persistent_breath_visual() -> bool:
 		or should_show_fel_madness()
 		or should_show_damage_amplify()
 		or should_show_kiljaeden_whisper()
+		or should_show_venom_bite_ready()
+		or should_show_fear()
+		or should_show_knull_aura()
 	)
 
 
@@ -257,7 +269,7 @@ func _sync_persistent_breath() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify() or should_show_kiljaeden_whisper() or should_show_infernal_fire()
+	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify() or should_show_kiljaeden_whisper() or should_show_infernal_fire() or should_show_venom_bite_ready() or should_show_fear() or should_show_knull_aura()
 
 
 func should_show_beast_path() -> bool:
@@ -521,6 +533,33 @@ func should_show_infernal_fire() -> bool:
 	return fire != null and fire.source_card_id == "infernal" and fire.get_fire_damage() > 0
 
 
+func should_show_venom_bite_ready() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.has_status(CardStatus.STATUS_VENOM_BITE_READY)
+	)
+
+
+func should_show_fear() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.has_status(CardStatus.STATUS_FEAR)
+	)
+
+
+func should_show_knull_aura() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.card_id in ["knull_imprisoned", "knull_liberated"]
+	)
+
+
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
@@ -560,6 +599,12 @@ func _draw() -> void:
 		draw_damage_amplify_overlay()
 	if should_show_infernal_fire():
 		draw_infernal_fire_overlay()
+	if should_show_knull_aura():
+		draw_knull_aura_overlay()
+	if should_show_venom_bite_ready():
+		draw_venom_bite_ready_overlay()
+	if should_show_fear():
+		draw_fear_overlay()
 	if should_show_encourage_gu():
 		draw_encourage_gu_overlay()
 	if should_show_snake_venom():
@@ -2876,6 +2921,129 @@ func draw_devour_overlay() -> void:
 			2.0,
 			true
 		)
+
+
+func draw_venom_bite_ready_overlay() -> void:
+	var card_rect := Rect2(Vector2.ZERO, size).grow(-minf(size.x, size.y) * 0.045)
+	var center := card_rect.get_center()
+	var jaw_radius := minf(card_rect.size.x, card_rect.size.y) * 0.28
+	draw_rect(card_rect, symbiote_bite_color, false, maxf(size.x * 0.032, 3.0), true)
+	draw_rect(
+		card_rect.grow(-maxf(size.x * 0.025, 2.0)),
+		symbiote_bite_edge_color,
+		false,
+		maxf(size.x * 0.012, 1.4),
+		true
+	)
+	draw_arc(
+		center + Vector2(0.0, -jaw_radius * 0.12),
+		jaw_radius,
+		PI * 0.12,
+		PI * 0.88,
+		30,
+		symbiote_bite_edge_color,
+		maxf(size.x * 0.020, 2.2),
+		true
+	)
+	draw_arc(
+		center + Vector2(0.0, jaw_radius * 0.12),
+		jaw_radius,
+		-PI * 0.88,
+		-PI * 0.12,
+		30,
+		symbiote_bite_edge_color,
+		maxf(size.x * 0.020, 2.2),
+		true
+	)
+	for side in [-1.0, 1.0]:
+		var upper_root := center + Vector2(side * jaw_radius * 0.48, -jaw_radius * 0.48)
+		var upper_tip := center + Vector2(side * jaw_radius * 0.26, -jaw_radius * 0.02)
+		var lower_root := center + Vector2(side * jaw_radius * 0.48, jaw_radius * 0.48)
+		var lower_tip := center + Vector2(side * jaw_radius * 0.26, jaw_radius * 0.02)
+		draw_line(upper_root, upper_tip, symbiote_bite_core_color, maxf(size.x * 0.024, 2.4), true)
+		draw_line(lower_root, lower_tip, symbiote_bite_core_color, maxf(size.x * 0.024, 2.4), true)
+		draw_circle(upper_tip, maxf(size.x * 0.012, 1.6), symbiote_bite_core_color)
+		draw_circle(lower_tip, maxf(size.x * 0.012, 1.6), symbiote_bite_core_color)
+
+
+func draw_fear_overlay() -> void:
+	var fear_rect := Rect2(Vector2.ZERO, size).grow(-minf(size.x, size.y) * 0.055)
+	var center := fear_rect.get_center()
+	var eye_radius := minf(fear_rect.size.x, fear_rect.size.y) * 0.24
+	draw_rect(fear_rect, symbiote_fear_color, false, maxf(size.x * 0.042, 3.6), true)
+	draw_arc(
+		center,
+		eye_radius,
+		PI * 0.12,
+		PI * 0.88,
+		28,
+		symbiote_fear_edge_color,
+		maxf(size.x * 0.018, 2.0),
+		true
+	)
+	draw_arc(
+		center,
+		eye_radius,
+		-PI * 0.88,
+		-PI * 0.12,
+		28,
+		symbiote_fear_edge_color,
+		maxf(size.x * 0.018, 2.0),
+		true
+	)
+	draw_line(
+		center + Vector2(0.0, -eye_radius * 0.46),
+		center + Vector2(0.0, eye_radius * 0.46),
+		symbiote_fear_eye_color,
+		maxf(size.x * 0.030, 2.8),
+		true
+	)
+	draw_circle(center, maxf(size.x * 0.020, 2.2), Color(0.05, 0.0, 0.04, 0.94))
+	var arrow_y := fear_rect.position.y + fear_rect.size.y * 0.82
+	for side in [-1.0, 1.0]:
+		var arrow_root := Vector2(center.x + side * fear_rect.size.x * 0.10, arrow_y)
+		var arrow_tip := Vector2(center.x + side * fear_rect.size.x * 0.34, arrow_y)
+		draw_line(arrow_root, arrow_tip, symbiote_fear_edge_color, maxf(size.x * 0.014, 1.6), true)
+		draw_line(arrow_tip, arrow_tip + Vector2(-side, -0.65) * size.x * 0.055, symbiote_fear_edge_color, maxf(size.x * 0.014, 1.6), true)
+		draw_line(arrow_tip, arrow_tip + Vector2(-side, 0.65) * size.x * 0.055, symbiote_fear_edge_color, maxf(size.x * 0.014, 1.6), true)
+
+
+func draw_knull_aura_overlay() -> void:
+	var aura_rect := Rect2(Vector2.ZERO, size).grow(-minf(size.x, size.y) * 0.038)
+	var center := aura_rect.get_center()
+	var is_liberated := state != null and state.card_id == "knull_liberated"
+	var intensity := 1.0 if is_liberated else 0.72
+	draw_rect(aura_rect, knull_aura_color, false, maxf(size.x * 0.050, 4.0), true)
+	draw_rect(
+		aura_rect.grow(-maxf(size.x * 0.022, 2.0)),
+		Color(knull_aura_edge_color.r, knull_aura_edge_color.g, knull_aura_edge_color.b, knull_aura_edge_color.a * intensity),
+		false,
+		maxf(size.x * 0.014, 1.6),
+		true
+	)
+	var crown_y := aura_rect.position.y + aura_rect.size.y * 0.10
+	for crown_index in range(3):
+		var offset := (float(crown_index) - 1.0) * aura_rect.size.x * 0.13
+		var root := Vector2(center.x + offset, crown_y + aura_rect.size.y * 0.075)
+		var tip := Vector2(center.x + offset * 1.18, crown_y - aura_rect.size.y * (0.10 if crown_index == 1 else 0.045))
+		draw_line(root, tip, knull_aura_edge_color, maxf(size.x * 0.020, 2.0), true)
+		draw_circle(tip, maxf(size.x * 0.010, 1.4), knull_aura_core_color)
+	for side in [-1.0, 1.0]:
+		var side_sign := float(side)
+		var outer_x: float = center.x + side_sign * aura_rect.size.x * 0.46
+		for segment_index in range(3):
+			var y0 := aura_rect.position.y + aura_rect.size.y * (0.30 + float(segment_index) * 0.18)
+			var y1 := y0 + aura_rect.size.y * 0.12
+			var inward: float = center.x + side_sign * aura_rect.size.x * (0.34 - float(segment_index % 2) * 0.04)
+			draw_line(Vector2(outer_x, y0), Vector2(inward, y1), knull_aura_edge_color, maxf(size.x * 0.012, 1.4), true)
+	var amount := 4 if is_liberated else 2
+	var label := "+%d" % amount
+	var font := ThemeDB.fallback_font
+	var font_size := maxi(int(size.x * 0.16), 12)
+	var text_width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var label_position := Vector2(center.x - text_width * 0.5, aura_rect.position.y + aura_rect.size.y * 0.25)
+	draw_string(font, label_position + Vector2(1.0, 1.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.02, 0.0, 0.03, 0.96))
+	draw_string(font, label_position, label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, knull_aura_core_color)
 
 
 func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:

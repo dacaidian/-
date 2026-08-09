@@ -182,6 +182,7 @@
 - `action_prevention`：禁止行动，用于定身、冻结等控制。
 - `stealth`：隐身，影响敌方选取。
 - `breaks_on_attack_or_spell`：攻击或施法后移除。
+- `next_attack_modifier`：下一次普通攻击修正。`AttackAction` 统一读取状态 payload 中的 `next_attack_bonus_damage`、`next_attack_heal`、目标排除条件和表现 key，并在攻击发生后消费状态；具体卡牌不得在攻击流程中按状态 id 分支。
 
 重要状态族：
 
@@ -194,6 +195,7 @@
 - `life_link`：成熟同命蛊，带 `death_link` 标签和 `on_destroyed` 触发效果；其中一个链接随从死亡时，另一方通过死亡链路直接死亡。
 - `charm`：改变控制权，可被净化。
 - `death_immunity`：生命可固定到 0，状态结束后再检查死亡。
+- `fear`：恐惧源卡牌 id、owner 与施加时格子共同写入状态快照。目标拥有者回合开始的前置状态阶段，目标先尝试沿源头到自身的八方向单位向量移动一格；实时源仍在场时使用其当前位置，否则使用施加时格子。移动不消耗行动资源，失败也不改道；`action_prevention` 保证目标该回合不能行动，状态在目标回合结束后到期。
 - `reborn`：死亡触发仍会正常发生，然后原地复生，跳过坟场、补牌和占领。卡牌文案可使用 `复生[层数,生命值]` 的易读缩写，例如巨水元素的 `复生[1,1]`；静态数据不要保存这组冗余二元值，而统一配置为顶层 `reborn_health_values: Array[int]`。数组顺序就是复生消耗顺序：`0` 表示该次满血复生，正整数表示该次以指定生命值复生；因此 `复生[1,1]` 的配置是 `[1]`，`[0, 0, 2, 3]` 则是依次满血、满血、2血、3血的四次复生。层数由数组长度唯一决定，不额外保存容易失配的 count。运行时由 `CardState.reborn_health_values` 保存剩余队列，并写入实例快照与 `origin`；`grant_reborn` 继续向同一队列追加。旧 `reborn` / `reborn_N` 关键字只做兼容，新卡不得与显式数组混用。
 - `health_modifier`：可叠加生命上限修正，如真言术·盾。净化时会降低生命上限和当前生命，并可能触发死亡。
 - `transform`：变身状态。变身形态不继承原状态；原形完整快照会被保存，持续结束时恢复原形和原状态。变身是形态规则，不可被净化/驱散。变身不刷新行动经济，进入变身和恢复原形时都会保留本回合已消耗的移动、攻击、主行动组、行动 id 和副动作使用量；当前可用行动按“当前形态上限 - 已消耗量”重新计算，只有正常回合开始流程会恢复行动力。同一单位任一时刻只允许存在一层变身，`TransformUnitEffect` 在目标已经变身时判定不可执行，禁止嵌套原形快照。
@@ -275,9 +277,12 @@
 - 共生体：静态子代池由种族块 `faction_card_pools` 描述，`CardDatabase.get_faction_card_pool_configs()` 只负责读取配置；每位玩家的动态池由 `SymbioteOffspringPoolResolver` 写入 `PlayerState.effect_runtime_values.symbiote_offspring_pool`，保存 `available_card_ids`、`dead_card_ids`、`severance_count`、`unlocked_rule_ids` 和一次性初始化标记。初始池只在玩家状态首次建立时写入，后续查询不得补回已抽走卡牌。初始池包含暴乱、嚎叫、皮鞭、极端、吞噬、反毒液和共生体战士；嚎叫死亡直接解锁沉默，暴乱/吞噬/皮鞭/极端/嚎叫均曾死亡后解锁混种，累计五次剥离解锁毒素、屠杀和眠者。解锁规则按稳定 rule id 幂等执行，池内卡牌去重；卡牌定义仍位于本族 `tokens[]`，不会进入普通牌堆。
 - 毒液“自我剥离”和研究员“人工剥离”使用 `play_animation -> gain_permanent_attack -> update_symbiote_offspring_pool -> damage -> add_card_to_hand` 配置链：毒液攻击力永久 +1、玩家剥离计数 +1、毒液受到固定2点非强化伤害，并获得衍生法术 `symbiote_tissue`。永久成长和池进度都先于自伤结算，因此致死剥离仍会保存成长并计入五次解锁；`gain_permanent_attack` 写入 `permanent_stat_overrides.attack`，不使用状态且不可驱散。人工剥离以 `owner_card_by_id: venom` 作为可执行性门闩，己方毒液不在场时动作不可用。子代死亡通过卡牌配置的 `on_destroyed` 效果调用同一个池更新入口，规则层不按卡名监听死亡。
 - “共生体组织”使用手牌法术通用字段 `target_card_ids` 和目标规则 `friendly_minions_by_card_ids`，只允许选择己方共生神盾局探员、生物研究员或基因战士。`HandSpellModifierResolver` 将卡牌筛选随解析后法术一起传递，`HandPlayResolver` 与 `SpellTargetResolver` 共用同一结果，避免 UI 可选目标和实际效果分叉。`AttachSymbioteOffspringEffect` 在目标再次校验通过后才调用玩家池抽取：`with_replacement_card_ids` 中的共生体战士保持在池中，其余结果立即移除。目标随后通过 `CardState.transform_to_card_data()` 执行不可逆永久进化，旧状态和旧卡牌能力全部清空，不创建 transform 状态，不保留宿主身份，但保留本回合已经消耗的行动经济。效果配置的 `inherit_host_base_stats_card_ids` 声明特殊遗传宿主；当前基因战士会在替换前读取其 `CardData.attack/health`，并在替换后通过 `add_permanent_attack()` / `add_permanent_max_health()` 将这组基础属性叠加到子代、写入 `permanent_stat_overrides`，生命上限增长同步增加当前生命。该加成不是状态且不可驱散。抽取、卡牌替换、遗传加成和池消耗均在同一同步结算段完成，不允许动画层预抽或回滚池内容。
+- 场上来源被动与手牌改写使用相同的快照边界。`HandPassiveResolver.collect_active_passive_effects(player, game_manager)` 汇总手牌、装备和己方正面场上单位的 `while_on_board` 效果；攻击光环可用 `target_faction_id` 面向整个种族，而不需要枚举卡牌 id。`HandSpellModifierResolver.resolve_hand_spell()` 必须接收 `GameManager` 才能收集场上法术改写器；`HandPlayResolver` 的可用性、目标高亮、实际结算与 AI 评估都必须消费同一份动态解析结果。纳尔·解放使用该机制把“共生体组织”改为 `non_hero_minions`，并通过 `allow_any_non_hero_minion` 明确关闭固定宿主限制；效果层仍在抽池前二次校验目标。
+- “撕咬”通过 `next_attack_modifier` 状态声明下一次普通攻击额外伤害、固定恢复、建筑排除规则和命中/恢复表现。多个同类状态可以共同结算并在同一次攻击后统一消费；建筑攻击会消费撕咬，但其加伤和恢复均不生效。“恐怖尖啸”由 `TerrifyingScreamEffect` 以毒液为源，遍历相邻格的地面与飞行层敌方随从，先处理魔法免疫，再统一造成伤害、解析死亡并给幸存者施加 `fear`；范围效果不依赖逐个目标选择。
+- “法典”使用 `LiberateCardEffect` 处理唯一卡牌的跨区域迁移，优先级固定为正面战场、手牌、坟场、隐藏棋盘、共享牌库。正面战场在原格永久进化为纳尔·解放；其余区域先移除纳尔·囚禁，再只向施法者手牌加入一张解放形态；隐藏棋盘被移除后正常补牌。每次施法命中第一个区域后立即结束，避免异常重复状态生成多张纳尔。
 - 子代能力保持通用边界：暴乱的 `random_normal_attacks` 从标准攻击合法目标中随机取至多三个，并调用 `AttackAction.perform_attack(..., false)` 复用动画、伤害、反伤、吸血、次级伤害、死亡归因和攻击后触发；它不消耗动作/攻击次数，也不触发占领。皮鞭通过 `symbiote_whip` 在同一个目标规则内按敌友分支。吞噬通过 `symbiote_absorb` 摧毁敌方非英雄随从，并把其当前攻击、生命上限、固有关键字、动作、施法动作和触发效果写入可累计状态；不要复制运行时状态或玩家归属。沉默由 `UnitSilenceResolver` 汇总存活正面敌方 `silence_aura`：只禁用单位施法动作，以及被沉默英雄所属的手牌法术，不禁用普通动作、被动或亡语。屠杀使用标准 `on_kill` 事件和实例级 `runtime_counters` 每两次敌方非英雄随从击杀增加1点攻速；攻速成长写入 `permanent_stat_overrides.attack_speed`，不是可驱散状态。新增类似子代能力时，应优先扩展效果、目标规则或事件上下文，不在 `GameManager` 中按卡牌 id 分支。
 
-共生体表现采用“语义键 -> `SymbioteAnimationProvider` -> `SymbioteSeveranceVisual`”边界。自我剥离以黑红活体膜、湿润高光、伤口收缩和组织核分离为主体；人工剥离增加冷青固定器、牵引膜和标本封存囊；共生附着使用移动组织核、多层活体膜索、宿主卡框扎根和稳定甲壳表达永久进化。画布继承 `ThrottledProgressVisual` 并限制为24 FPS，复杂组织连接使用共享安全 Ribbon，不在规则层查询目标、抽池或替换卡牌。共享 `VfxCanvasToolkit.draw_soft_ellipse()` 使用稳定单位圆与非均匀绘制变换，不得重新把动画初始阶段的子像素椭圆提交给多边形三角化器；调用方仍应跳过不可见尺寸。修改后运行 `tools/test_vfx_canvas_toolkit.gd`、`tools/test_symbiote.gd`、`tools/test_symbiote_offspring_pool.gd`、卡牌校验、图鉴测试和整项目检查。
+共生体表现采用“语义键 -> `SymbioteAnimationProvider` -> 专用 Visual”边界。`SymbioteSeveranceVisual` 保持负责自我剥离、人工剥离和组织附着；`SymbiotePowerVisual` 负责撕咬蓄势/命中/恢复、恐怖尖啸、恐惧附着/逃离、法典和纳尔解放。持续状态只由 `CardStatusOverlay` 绘制低成本撕咬颚纹、恐惧眼纹和纳尔光环读数，使用合成透明度呼吸而非逐帧重建复杂几何。画布继承 `ThrottledProgressVisual` 并限制为24 FPS，复杂组织连接使用共享安全 Ribbon，不在规则层查询目标、抽池或替换卡牌。共享 `VfxCanvasToolkit.draw_soft_ellipse()` 使用稳定单位圆与非均匀绘制变换，不得重新把动画初始阶段的子像素椭圆提交给多边形三角化器；调用方仍应跳过不可见尺寸。修改后运行 `tools/test_vfx_canvas_toolkit.gd`、`tools/test_symbiote.gd`、`tools/test_symbiote_offspring_pool.gd`、卡牌校验、图鉴测试和整项目检查。
 
 状态净化支持正负面筛选。`CardStatus` 保存 `status_valence`，可取 `positive`、`negative`、`neutral`；未显式配置时按状态 id、标签和属性修正数值推断。`CleanseEffect` 通过 `cleanse_mode` 控制净化范围：`all` 保持旧逻辑，`positive` 只移除正面状态，`negative` 只移除负面状态。全场阵营型净化使用效果目标 `friendly_units` / `enemy_units`，只影响随从时使用 `friendly_minions`，不要在单张卡牌里手写遍历逻辑。当前例子是猴妖仙“驱神大圣禺狨王”：驱散敌方单位正面状态，并解除己方单位负面状态。
 

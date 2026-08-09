@@ -6,8 +6,17 @@ const SymbioteAnimationProviderScript := preload(
 const SymbioteSeveranceVisualScript := preload(
 	"res://scripts/ui/animation/symbiote_severance_visual.gd"
 )
+const SymbiotePowerVisualScript := preload(
+	"res://scripts/ui/animation/symbiote_power_visual.gd"
+)
 const SpellAnimationRouterScript := preload(
 	"res://scripts/ui/animation/spell_animation_router.gd"
+)
+const AttachSymbioteOffspringEffectScript := preload(
+	"res://scripts/effects/attach_symbiote_offspring_effect.gd"
+)
+const LiberateCardEffectScript := preload(
+	"res://scripts/effects/liberate_card_effect.gd"
 )
 
 const PROGRESS_SAMPLES: Array[float] = [
@@ -103,6 +112,104 @@ class LethalSpellGameManager:
 		pass
 
 
+class SymbioteRuleProbe:
+	extends GameManager
+
+	var animation_keys: Array[String] = []
+	var refilled_slots: Array[int] = []
+
+	func play_card_attack_animation(
+		_attacker_state: CardState,
+		_target_state: CardState,
+		_is_melee_attack := true,
+		_attack_animation_key := ""
+	) -> void:
+		pass
+
+	func play_spell_cast_animation(
+		_caster_state: CardState,
+		_target_state: CardState,
+		spell_data: Dictionary
+	) -> void:
+		animation_keys.append(str(spell_data.get(EffectData.KEY_ANIMATION, "")))
+
+	func play_status_apply_animation(
+		_target_state: CardState,
+		animation_key: String
+	) -> void:
+		animation_keys.append(animation_key)
+
+	func play_multi_target_effect_animation(
+		_target_states: Array[CardState],
+		animation_key: String
+	) -> bool:
+		animation_keys.append(animation_key)
+		return true
+
+	func resolve_dead_states(
+		states_to_check: Array,
+		_reason: String = "damage",
+		_source_state: CardState = null,
+		_source_owner_id := "",
+		_death_slot_claim: Dictionary = {}
+	) -> bool:
+		var destroyed_any := false
+		for raw_state in states_to_check:
+			var target_state := raw_state as CardState
+			if target_state != null and not target_state.is_empty() and target_state.current_health <= 0:
+				target_state.clear_card()
+				destroyed_any = true
+		return destroyed_any
+
+	func resolve_after_attack_triggers(
+		_attacker_state: CardState,
+		_attacked_state: CardState
+	) -> void:
+		pass
+
+	func queue_card_trigger(
+		_source_state: CardState,
+		_trigger: String,
+		_context: Dictionary = {}
+	) -> void:
+		pass
+
+	func resolve_queued_triggers() -> void:
+		pass
+
+	func can_place_ground_card_on_slot(slot_index: int) -> bool:
+		return slot_index >= 0 and slot_index < board_states.size()
+
+	func swap_board_slot_contents(
+		first_state: CardState,
+		second_state: CardState,
+		_animation_key := ""
+	) -> void:
+		first_state.swap_card_content_with(second_state)
+
+	func refill_board_slot_from_pool(slot_index: int) -> bool:
+		refilled_slots.append(slot_index)
+		return true
+
+	func refresh_hand_passives_for_player(
+		_player: PlayerState,
+		_should_adjust_remaining_flips := false
+	) -> void:
+		pass
+
+	func update_card_pool_view() -> void:
+		pass
+
+	func update_hand_drawer_view() -> void:
+		pass
+
+	func refresh_action_available_hints() -> void:
+		pass
+
+	func refresh_debug_panel() -> void:
+		pass
+
+
 func _initialize() -> void:
 	call_deferred("_run")
 
@@ -120,6 +227,16 @@ func _run() -> void:
 		return
 	if not await _test_effect_chains(card_database):
 		return
+	if not await _test_bite_runtime(card_database):
+		return
+	if not await _test_fear_runtime(card_database):
+		return
+	if not await _test_terrifying_scream_runtime(card_database):
+		return
+	if not _test_knull_runtime_rules(card_database):
+		return
+	if not await _test_codex_zones(card_database):
+		return
 	if not await _test_visual_frames():
 		return
 	if not await _test_provider_routes():
@@ -136,7 +253,12 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 	var xenophage := card_database.get_card("xenophage")
 	var warrior := card_database.get_card("genetic_warrior")
 	var tissue := card_database.get_card("symbiote_tissue")
-	if venom == null or agent == null or biologist == null or xenophage == null or warrior == null or tissue == null:
+	var bite := card_database.get_card("venom_bite")
+	var scream := card_database.get_card("terrifying_scream")
+	var codex := card_database.get_card("knull_codex")
+	var imprisoned_knull := card_database.get_card("knull_imprisoned")
+	var liberated_knull := card_database.get_card("knull_liberated")
+	if venom == null or agent == null or biologist == null or xenophage == null or warrior == null or tissue == null or bite == null or scream == null or codex == null or imprisoned_knull == null or liberated_knull == null:
 		return _fail("Symbiote card framework is incomplete")
 	if venom.attack != 2 or venom.health != 20 or venom.role != CardData.ROLE_HERO:
 		return _fail("Venom stats or hero role changed")
@@ -146,7 +268,7 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Symbiote biologist configuration is invalid")
 	if xenophage.level != 2 or xenophage.count != 3 or xenophage.attack != 3 or xenophage.health != 8 or not xenophage.has_keyword(CardData.KEYWORD_GIANT):
 		return _fail("Xenophage configuration is invalid")
-	if warrior.level != 3 or warrior.count != 4 or warrior.attack != 3 or warrior.health != 7:
+	if warrior.level != 3 or warrior.count != 6 or warrior.attack != 3 or warrior.health != 7:
 		return _fail("Genetic warrior configuration is invalid")
 	if tissue.type != CardData.TYPE_SPELL or tissue.count != 0:
 		return _fail("Symbiote Tissue derived spell configuration is invalid")
@@ -162,6 +284,34 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		or EffectData.get_id(tissue.effects[0]) != EffectData.EFFECT_ATTACH_SYMBIOTE_OFFSPRING
 	):
 		return _fail("Symbiote Tissue attachment rules are incomplete")
+	if bite.level != 1 or bite.count != 3 or bite.owner_hero_card_id != "venom":
+		return _fail("Venom Bite ownership or card count is invalid")
+	if scream.level != 2 or scream.count != 2 or scream.owner_hero_card_id != "venom":
+		return _fail("Terrifying Scream ownership or card count is invalid")
+	if codex.level != 3 or codex.count != 1 or codex.owner_hero_card_id != "venom":
+		return _fail("Knull Codex ownership or card count is invalid")
+	if imprisoned_knull.attack != 2 or imprisoned_knull.health != 14 or imprisoned_knull.count != 1:
+		return _fail("Imprisoned Knull configuration is invalid")
+	if liberated_knull.attack != 4 or liberated_knull.health != 16 or liberated_knull.count != 0:
+		return _fail("Liberated Knull configuration is invalid")
+	if (
+		imprisoned_knull.effects.is_empty()
+		or EffectData.get_id(imprisoned_knull.effects[0]) != EffectData.EFFECT_MODIFY_UNIT_ATTACK
+		or EffectData.get_amount(imprisoned_knull.effects[0]) != 2
+		or str(imprisoned_knull.effects[0].get(EffectData.KEY_TARGET_FACTION_ID, "")) != "symbiote"
+	):
+		return _fail("Imprisoned Knull aura is incomplete")
+	if liberated_knull.effects.size() != 2:
+		return _fail("Liberated Knull board effects are incomplete")
+	var liberated_tissue_modifier := liberated_knull.effects[1]
+	var replacement_effects := EffectData.get_replace_effects(liberated_tissue_modifier)
+	if (
+		EffectData.get_amount(liberated_knull.effects[0]) != 4
+		or EffectData.get_target_rule(liberated_tissue_modifier) != SpellTargetResolver.TARGET_RULE_NON_HERO_MINIONS
+		or replacement_effects.size() != 1
+		or not bool(replacement_effects[0].get(EffectData.KEY_ALLOW_ANY_NON_HERO_MINION, false))
+	):
+		return _fail("Liberated Knull aura or Tissue override is incomplete")
 
 	var self_action := _find_action(venom, "self_severance")
 	var artificial_action := _find_action(biologist, "artificial_severance")
@@ -301,6 +451,267 @@ func _test_effect_chains(card_database: CardDatabase) -> bool:
 	return true
 
 
+func _test_bite_runtime(card_database: CardDatabase) -> bool:
+	var attacker_player := _make_player("bite_owner", "symbiote")
+	var defender_player := _make_player("bite_target", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [attacker_player, defender_player]
+	manager.card_database = card_database
+	manager.board_columns = 7
+
+	var venom_state := _make_state(card_database.get_card("venom"), attacker_player.id, 24)
+	var target_state := _make_state(card_database.get_card("symbiote_shield_agent"), defender_player.id, 25)
+	venom_state.damage_taken = 6
+	manager.board_states = [venom_state, target_state]
+	venom_state.add_status(_make_bite_status(attacker_player.id))
+
+	var attack := AttackAction.new()
+	if not await attack.perform_attack(venom_state, target_state, manager, false):
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite could not perform a legal adjacent attack")
+	if target_state.damage_taken != 4:
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite did not add exactly 2 damage to its primary target")
+	if venom_state.current_health != 18:
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite did not restore exactly 4 health")
+	if venom_state.has_status(CardStatus.STATUS_VENOM_BITE_READY):
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite was not consumed by the next attack")
+	if not manager.animation_keys.has("symbiote_bite_strike") or not manager.animation_keys.has("symbiote_bite_restore"):
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite combat feedback is incomplete")
+
+	var building_data := CardData.new()
+	building_data.id = "bite_test_building"
+	building_data.display_name = "Bite Test Building"
+	building_data.type = CardData.TYPE_BUILDING
+	building_data.attack = 0
+	building_data.health = 12
+	var building_state := _make_state(building_data, defender_player.id, 25)
+	manager.board_states = [venom_state, building_state]
+	venom_state.damage_taken = 6
+	venom_state.add_status(_make_bite_status(attacker_player.id))
+	await attack.perform_attack(venom_state, building_state, manager, false)
+	if building_state.damage_taken != venom_state.current_attack:
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite incorrectly increased damage against a building")
+	if venom_state.current_health != 14:
+		_cleanup_rule_probe(manager)
+		return _fail("Venom Bite incorrectly healed after attacking a building")
+	if venom_state.has_status(CardStatus.STATUS_VENOM_BITE_READY):
+		_cleanup_rule_probe(manager)
+		return _fail("A building attack did not consume the prepared Venom Bite")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_fear_runtime(card_database: CardDatabase) -> bool:
+	var resolver := StatusResolver.new()
+	if resolver.get_fear_destination_slot(24, 16, 7, 7) != 32:
+		return _fail("Fear did not calculate a diagonal tile directly away from its source")
+	if resolver.get_fear_destination_slot(48, 40, 7, 7) != -1:
+		return _fail("Fear allowed forced movement beyond the board")
+
+	var source_player := _make_player("fear_source", "symbiote")
+	var target_player := _make_player("fear_target", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [source_player, target_player]
+	manager.card_database = card_database
+	manager.board_columns = 7
+	manager.board_rows = 7
+	manager.board_states = _make_empty_board(49)
+
+	var source_state := _make_state(card_database.get_card("venom"), source_player.id, 16)
+	var feared_state := _make_state(card_database.get_card("symbiote_shield_agent"), target_player.id, 24)
+	manager.board_states[16] = source_state
+	manager.board_states[24] = feared_state
+	var fear_status := CardStatus.new()
+	fear_status.status_id = CardStatus.STATUS_FEAR
+	fear_status.tags = [CardStatus.TAG_ACTION_PREVENTION]
+	fear_status.source_owner_id = source_player.id
+	fear_status.source_card_id = source_state.card_id
+	fear_status.payload = {EffectData.KEY_FEAR_SOURCE_SLOT: source_state.slot_index}
+	feared_state.add_status(fear_status)
+	if feared_state.can_take_action_group(CardState.ACTION_GROUP_ATTACK):
+		_cleanup_rule_probe(manager)
+		return _fail("Fear did not prevent all actions")
+
+	await resolver.resolve_fear_movements(manager, target_player.id)
+	var destination_state := manager.board_states[32]
+	if destination_state.card_id != "symbiote_shield_agent" or not manager.board_states[24].is_empty():
+		_cleanup_rule_probe(manager)
+		return _fail("Fear did not move the target exactly one tile away")
+	if not manager.animation_keys.has("symbiote_fear_flee"):
+		_cleanup_rule_probe(manager)
+		return _fail("Fear forced movement did not publish presentation feedback")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_terrifying_scream_runtime(card_database: CardDatabase) -> bool:
+	var source_player := _make_player("scream_source", "symbiote")
+	var enemy_player := _make_player("scream_enemy", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [source_player, enemy_player]
+	manager.card_database = card_database
+	manager.board_columns = 7
+	manager.board_rows = 7
+	manager.board_states = _make_empty_board(49)
+	manager.aerial_board_states = _make_empty_board(49)
+
+	var venom_state := _make_state(card_database.get_card("venom"), source_player.id, 24)
+	var ground_enemy := _make_state(card_database.get_card("symbiote_shield_agent"), enemy_player.id, 16)
+	var aerial_enemy := _make_state(card_database.get_card("symbiote_shield_agent"), enemy_player.id, 25)
+	var friendly_state := _make_state(card_database.get_card("symbiote_shield_agent"), source_player.id, 17)
+	manager.board_states[24] = venom_state
+	manager.board_states[16] = ground_enemy
+	manager.board_states[17] = friendly_state
+	manager.aerial_board_states[25] = aerial_enemy
+
+	var scream_data := card_database.get_card("terrifying_scream")
+	var effect_data := scream_data.effects[0].duplicate(true)
+	EffectData.mark_effect_owner(effect_data, source_player.id)
+	if not manager.effect_registry.can_execute_effect(null, effect_data, manager):
+		_cleanup_rule_probe(manager)
+		return _fail("Terrifying Scream was unavailable with adjacent enemies")
+	await manager.effect_registry.execute_effect(null, effect_data, manager)
+	for raw_target_state in [ground_enemy, aerial_enemy]:
+		var target_state := raw_target_state as CardState
+		if target_state.damage_taken != 2 or not target_state.has_status(CardStatus.STATUS_FEAR):
+			_cleanup_rule_probe(manager)
+			return _fail("Terrifying Scream did not damage and Fear both board layers")
+		var fear_status: CardStatus = target_state.get_status(CardStatus.STATUS_FEAR)
+		if int(fear_status.payload.get(EffectData.KEY_FEAR_SOURCE_SLOT, -1)) != venom_state.slot_index:
+			_cleanup_rule_probe(manager)
+			return _fail("Terrifying Scream did not retain the Fear source slot")
+	if friendly_state.damage_taken != 0 or friendly_state.has_status(CardStatus.STATUS_FEAR):
+		_cleanup_rule_probe(manager)
+		return _fail("Terrifying Scream affected a friendly minion")
+	if not manager.animation_keys.has("symbiote_fear_apply"):
+		_cleanup_rule_probe(manager)
+		return _fail("Terrifying Scream did not publish its multi-target effect")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_knull_runtime_rules(card_database: CardDatabase) -> bool:
+	var player := _make_player("knull_owner", "symbiote")
+	var enemy := _make_player("knull_enemy", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [player, enemy]
+	manager.card_database = card_database
+	var knull_state := _make_state(card_database.get_card("knull_imprisoned"), player.id, 8)
+	var ally_state := _make_state(card_database.get_card("symbiote_shield_agent"), player.id, 9)
+	var enemy_state := _make_state(card_database.get_card("symbiote_shield_agent"), enemy.id, 10)
+	manager.board_states = [knull_state, ally_state, enemy_state]
+
+	var passive_resolver := HandPassiveResolver.new()
+	var passives := passive_resolver.collect_active_passive_effects(player, manager)
+	passive_resolver.refresh_unit_attack_passives(player, manager, passives)
+	if knull_state.current_attack != 4 or ally_state.current_attack != 3:
+		_cleanup_rule_probe(manager)
+		return _fail("Imprisoned Knull did not grant +2 attack to all friendly Symbiotes")
+	if enemy_state.current_attack != 1:
+		_cleanup_rule_probe(manager)
+		return _fail("Knull aura affected an enemy Symbiote")
+
+	knull_state.transform_to_card_data(card_database.get_card("knull_liberated"))
+	passives = passive_resolver.collect_active_passive_effects(player, manager)
+	passive_resolver.refresh_unit_attack_passives(player, manager, passives)
+	if knull_state.current_attack != 8 or ally_state.current_attack != 5:
+		_cleanup_rule_probe(manager)
+		return _fail("Liberated Knull did not replace its aura with +4 attack")
+
+	var tissue := card_database.get_card("symbiote_tissue")
+	var resolved_spell := HandSpellModifierResolver.new().resolve_hand_spell(
+		player,
+		tissue,
+		enemy_state,
+		manager
+	)
+	var resolved_effects: Array = resolved_spell.get("effects", [])
+	if str(resolved_spell.get("target_rule", "")) != SpellTargetResolver.TARGET_RULE_NON_HERO_MINIONS or resolved_effects.size() != 1:
+		_cleanup_rule_probe(manager)
+		return _fail("Liberated Knull did not broaden Symbiote Tissue targeting")
+	var resolved_effect := resolved_effects[0] as Dictionary
+	if not bool(resolved_effect.get(EffectData.KEY_ALLOW_ANY_NON_HERO_MINION, false)):
+		_cleanup_rule_probe(manager)
+		return _fail("Liberated Knull Tissue effect lost its open-host rule")
+	var attach_effect := AttachSymbioteOffspringEffectScript.new()
+	if not attach_effect.can_attach_target(enemy_state, player.id, [], true):
+		_cleanup_rule_probe(manager)
+		return _fail("Liberated Knull could not attach Tissue to an enemy non-hero minion")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_codex_zones(card_database: CardDatabase) -> bool:
+	var player := _make_player("codex_owner", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [player]
+	manager.card_database = card_database
+	var imprisoned := card_database.get_card("knull_imprisoned")
+	var effect_data := {
+		EffectData.KEY_ID: EffectData.EFFECT_LIBERATE_CARD,
+		EffectData.KEY_CARD_ID: "knull_imprisoned",
+		EffectData.KEY_TARGET_CARD_ID: "knull_liberated",
+	}
+	EffectData.mark_effect_owner(effect_data, player.id)
+	var liberate_effect := LiberateCardEffectScript.new()
+
+	var board_state := _make_state(imprisoned, player.id, 8)
+	manager.board_states = [board_state]
+	if not liberate_effect.can_execute(null, effect_data, manager):
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not recognize face-up imprisoned Knull")
+	await liberate_effect.execute(null, effect_data, manager)
+	if board_state.card_id != "knull_liberated" or not player.hand.is_empty():
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not evolve face-up Knull in place")
+
+	manager.board_states = []
+	player.hand.clear()
+	player.add_to_hand(imprisoned)
+	await liberate_effect.execute(null, effect_data, manager)
+	if player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "knull_liberated":
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not replace imprisoned Knull in hand")
+
+	player.hand.clear()
+	player.graveyard.clear()
+	player.add_to_graveyard(_make_state(imprisoned, player.id, 8).create_card_snapshot())
+	await liberate_effect.execute(null, effect_data, manager)
+	if not player.graveyard.is_empty() or player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "knull_liberated":
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not revive liberated Knull from the graveyard")
+
+	player.hand.clear()
+	var hidden_state := _make_state(imprisoned, "", 12)
+	hidden_state.set_face_up(false)
+	manager.board_states = [hidden_state]
+	await liberate_effect.execute(null, effect_data, manager)
+	if not hidden_state.is_empty() or player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "knull_liberated" or manager.refilled_slots != [12]:
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not replace hidden Knull and refill its board slot")
+
+	player.hand.clear()
+	manager.board_states = []
+	manager.card_pool = CardPool.new("", card_database)
+	manager.card_pool.add_card(imprisoned, false)
+	await liberate_effect.execute(null, effect_data, manager)
+	if manager.card_pool.has_card_id("knull_imprisoned") or player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "knull_liberated":
+		_cleanup_rule_probe(manager)
+		return _fail("Codex did not replace imprisoned Knull in the shared pool")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
 func _test_visual_frames() -> bool:
 	var effect_root := Control.new()
 	effect_root.name = "SymbioteVisualTestRoot"
@@ -331,6 +742,36 @@ func _test_visual_frames() -> bool:
 			if effect_root.get_child_count() != 0:
 				return _fail("Symbiote visual leaked nodes at %s:%s" % [animation_key, progress_sample])
 
+	for animation_key in [
+		"symbiote_bite_ready",
+		"symbiote_bite_strike",
+		"symbiote_bite_restore",
+		"symbiote_terrifying_scream",
+		"symbiote_fear_apply",
+		"symbiote_fear_flee",
+		"symbiote_codex",
+		"symbiote_knull_liberation",
+	]:
+		for progress_sample in PROGRESS_SAMPLES:
+			var visual := SymbiotePowerVisualScript.new()
+			visual.size = effect_root.size
+			effect_root.add_child(visual)
+			visual.configure(
+				animation_key,
+				Vector2(280.0, 500.0),
+				Vector2(850.0, 260.0),
+				Vector2(120.0, 168.0),
+				Vector2(120.0, 168.0),
+				[Vector2(850.0, 260.0), Vector2(630.0, 190.0)]
+			)
+			visual.progress = progress_sample
+			visual.queue_redraw()
+			await process_frame
+			visual.queue_free()
+			await process_frame
+			if effect_root.get_child_count() != 0:
+				return _fail("Symbiote power visual leaked nodes at %s:%s" % [animation_key, progress_sample])
+
 	effect_root.queue_free()
 	await process_frame
 	return true
@@ -352,6 +793,12 @@ func _test_provider_routes() -> bool:
 		return _fail("Artificial severance targeted route is missing")
 	if not router.has_targeted_route("symbiote_attachment"):
 		return _fail("Symbiote attachment targeted route is missing")
+	if not router.has_targeted_route("symbiote_bite_strike"):
+		return _fail("Venom Bite targeted route is missing")
+	if not router.has_rect_route("symbiote_codex"):
+		return _fail("Knull Codex rect route is missing")
+	if not router.has_multi_rect_route("symbiote_fear_apply"):
+		return _fail("Fear multi-target route is missing")
 
 	var source_rect := Rect2(Vector2(250.0, 450.0), Vector2(120.0, 168.0))
 	var target_rect := Rect2(Vector2(820.0, 210.0), Vector2(120.0, 168.0))
@@ -431,6 +878,46 @@ func _effect_ids(action_data: Dictionary) -> Array[String]:
 	for raw_effect in action_data.get("effects", []):
 		ids.append(str((raw_effect as Dictionary).get("id", "")))
 	return ids
+
+
+func _make_player(player_id: String, faction_id: String) -> PlayerState:
+	var player := PlayerState.new()
+	player.setup(player_id, player_id)
+	player.set_faction(faction_id, faction_id)
+	return player
+
+
+func _make_bite_status(owner_id: String) -> CardStatus:
+	var status := CardStatus.new()
+	status.status_id = CardStatus.STATUS_VENOM_BITE_READY
+	status.tags = [CardStatus.TAG_NEXT_ATTACK_MODIFIER]
+	status.source_card_id = "venom"
+	status.source_owner_id = owner_id
+	status.payload = {
+		EffectData.KEY_NEXT_ATTACK_BONUS_DAMAGE: 2,
+		EffectData.KEY_NEXT_ATTACK_HEAL: 4,
+		EffectData.KEY_NEXT_ATTACK_EXCLUDES_BUILDINGS: true,
+		EffectData.KEY_TRIGGER_ANIMATION: "symbiote_bite_strike",
+		EffectData.KEY_LIFESTEAL_ANIMATION: "symbiote_bite_restore",
+	}
+	return status
+
+
+func _make_empty_board(slot_count: int) -> Array[CardState]:
+	var states: Array[CardState] = []
+	for slot_index in range(slot_count):
+		var state := CardState.new()
+		state.slot_index = slot_index
+		states.append(state)
+	return states
+
+
+func _cleanup_rule_probe(manager: SymbioteRuleProbe) -> void:
+	if manager == null:
+		return
+	if is_instance_valid(manager.audio_manager):
+		manager.audio_manager.free()
+	manager.free()
 
 
 func _make_state(card_data: CardData, owner_id: String, slot_index: int) -> CardState:

@@ -68,7 +68,7 @@ func _consider_hand_candidates(best: Dictionary, gm: GameManager, player: Player
 		var evaluation: Dictionary = _hand_evaluator.evaluate_hand_card(card_data, hand_index, player, gm, hpr)
 		var score := float(evaluation.get("score", 0.0))
 		var target := evaluation.get("target") as CardState
-		if card_data.is_spell() and hpr.requires_target(card_data) and target == null:
+		if card_data.is_spell() and hpr.requires_target(card_data, player, gm) and target == null:
 			continue
 		if card_data.is_minion() and target == null:
 			continue

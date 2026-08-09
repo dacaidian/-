@@ -9,7 +9,8 @@ class_name HandSpellModifierResolver
 func resolve_hand_spell(
 	player: PlayerState,
 	card_data: CardData,
-	target_state: CardState
+	target_state: CardState,
+	game_manager: GameManager = null
 ) -> Dictionary:
 	var resolved_effects := duplicate_effects(card_data.effects if card_data != null else [])
 	var resolved_animation := card_data.animation if card_data != null else ""
@@ -32,7 +33,7 @@ func resolve_hand_spell(
 			EffectData.KEY_CARD_IDS: resolved_target_card_ids,
 		}
 
-	for modifier_data in get_spell_modifiers(player):
+	for modifier_data in get_spell_modifiers(player, null, game_manager):
 		if not applies_to_spell(modifier_data, card_data, player, target_state):
 			continue
 
@@ -102,7 +103,11 @@ func resolve_spell_action(
 	return resolved_spell
 
 
-func get_spell_modifiers(player: PlayerState, user_state: CardState = null) -> Array[Dictionary]:
+func get_spell_modifiers(
+	player: PlayerState,
+	user_state: CardState = null,
+	game_manager: GameManager = null
+) -> Array[Dictionary]:
 	var modifiers: Array[Dictionary] = []
 	if player == null:
 		return modifiers
@@ -137,8 +142,32 @@ func get_spell_modifiers(player: PlayerState, user_state: CardState = null) -> A
 			modifiers.append(effect_data)
 
 	append_status_spell_modifiers(modifiers, user_state)
+	append_board_spell_modifiers(modifiers, player, game_manager)
 
 	return modifiers
+
+
+func append_board_spell_modifiers(
+	modifiers: Array[Dictionary],
+	player: PlayerState,
+	game_manager: GameManager
+) -> void:
+	if player == null or game_manager == null:
+		return
+
+	for state in game_manager.get_all_board_states():
+		if not BoardQuery.is_face_up_minion(state) or state.owner_id != player.id:
+			continue
+		if state.data == null:
+			continue
+		for effect_data in state.data.effects:
+			if not effect_data is Dictionary:
+				continue
+			if not is_spell_modifier_effect(effect_data):
+				continue
+			if EffectData.get_trigger(effect_data) != EffectData.TRIGGER_WHILE_ON_BOARD:
+				continue
+			modifiers.append(effect_data)
 
 
 func append_status_spell_modifiers(modifiers: Array[Dictionary], user_state: CardState) -> void:

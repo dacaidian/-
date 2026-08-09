@@ -35,6 +35,10 @@ const CarnageKillProgressEffectScript := preload(
 const AttachSymbioteOffspringEffectScript := preload(
 	"res://scripts/effects/attach_symbiote_offspring_effect.gd"
 )
+const TerrifyingScreamEffectScript := preload(
+	"res://scripts/effects/terrifying_scream_effect.gd"
+)
+const LiberateCardEffectScript := preload("res://scripts/effects/liberate_card_effect.gd")
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -72,6 +76,11 @@ func _init() -> void:
 		EffectData.EFFECT_ATTACH_SYMBIOTE_OFFSPRING,
 		AttachSymbioteOffspringEffectScript.new()
 	)
+	register_effect(
+		EffectData.EFFECT_TERRIFYING_SCREAM,
+		TerrifyingScreamEffectScript.new()
+	)
+	register_effect(EffectData.EFFECT_LIBERATE_CARD, LiberateCardEffectScript.new())
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_KAGUNE_POWER, ApplyKagunePowerEffectScript.new())
