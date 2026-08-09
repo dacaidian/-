@@ -65,6 +65,7 @@ var actions: Array[Dictionary] = []
 var mounted_attacks: Array[Dictionary] = []
 var selection: Dictionary = {}
 var target_rule := ""
+var target_card_ids: Array[String] = []
 var animation := ""
 var audio := ""
 var equipment_type := ""
@@ -204,6 +205,12 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	data.count = int(card_dictionary.get("count", 1))
 	data.level = maxi(int(card_dictionary.get("level", 1)), 1)
 	data.target_rule = str(card_dictionary.get("target_rule", ""))
+	var raw_target_card_ids: Variant = card_dictionary.get("target_card_ids", [])
+	if raw_target_card_ids is Array:
+		for target_card_id in raw_target_card_ids:
+			var normalized_target_card_id := str(target_card_id)
+			if normalized_target_card_id != "" and not data.target_card_ids.has(normalized_target_card_id):
+				data.target_card_ids.append(normalized_target_card_id)
 	var raw_selection: Variant = card_dictionary.get("selection", {})
 	if raw_selection is Dictionary:
 		data.selection = raw_selection.duplicate(true)

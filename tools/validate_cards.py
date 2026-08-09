@@ -325,6 +325,11 @@ class CardValidator:
                 local_card_ids,
                 f"{pool_path}.initial_card_ids",
             )
+            self.validate_pool_card_ids(
+                pool.get("with_replacement_card_ids", []),
+                local_card_ids,
+                f"{pool_path}.with_replacement_card_ids",
+            )
             self.validate_pool_unlock(
                 pool.get("severance_unlock", {}),
                 local_card_ids,
@@ -513,6 +518,23 @@ class CardValidator:
         target_rule = str(card.get("target_rule", ""))
         if target_rule and target_rule not in self.target_rules:
             self.reporter.error(f"{path}.target_rule", f"unknown target rule '{target_rule}'")
+        raw_target_card_ids = card.get("target_card_ids", [])
+        if not isinstance(raw_target_card_ids, list):
+            self.reporter.error(f"{path}.target_card_ids", "must be an array")
+        else:
+            normalized_target_card_ids = [str(card_id) for card_id in raw_target_card_ids]
+            if len(normalized_target_card_ids) != len(set(normalized_target_card_ids)):
+                self.reporter.error(f"{path}.target_card_ids", "must not contain duplicate card ids")
+            for target_index, target_card_id in enumerate(normalized_target_card_ids):
+                self.validate_card_id_reference(
+                    target_card_id,
+                    f"{path}.target_card_ids[{target_index}]",
+                )
+        if target_rule in {"minions_by_card_ids", "friendly_minions_by_card_ids"} and not raw_target_card_ids:
+            self.reporter.error(
+                f"{path}.target_card_ids",
+                f"target rule '{target_rule}' requires at least one card id",
+            )
 
         self.validate_selection(card.get("selection", None), target_rule, path)
         self.validate_animation(card, path)
@@ -780,6 +802,10 @@ class CardValidator:
                     f"{path}.preserve_original_identity",
                     "must be a boolean",
                 )
+        elif effect_id == "attach_symbiote_offspring":
+            raw_host_ids = effect.get("card_ids", [])
+            if not isinstance(raw_host_ids, list) or not raw_host_ids:
+                self.reporter.error(f"{path}.card_ids", "must be a non-empty array")
         elif effect_id == "claim_death_slot":
             self.validate_death_slot_replacement(effect, path)
 

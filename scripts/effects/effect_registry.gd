@@ -32,6 +32,9 @@ const SymbioteAbsorbEffectScript := preload("res://scripts/effects/symbiote_abso
 const CarnageKillProgressEffectScript := preload(
 	"res://scripts/effects/carnage_kill_progress_effect.gd"
 )
+const AttachSymbioteOffspringEffectScript := preload(
+	"res://scripts/effects/attach_symbiote_offspring_effect.gd"
+)
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -64,6 +67,10 @@ func _init() -> void:
 	register_effect(
 		EffectData.EFFECT_CARNAGE_KILL_PROGRESS,
 		CarnageKillProgressEffectScript.new()
+	)
+	register_effect(
+		EffectData.EFFECT_ATTACH_SYMBIOTE_OFFSPRING,
+		AttachSymbioteOffspringEffectScript.new()
 	)
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())

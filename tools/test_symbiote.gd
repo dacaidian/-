@@ -148,8 +148,20 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Xenophage configuration is invalid")
 	if warrior.level != 3 or warrior.count != 4 or warrior.attack != 3 or warrior.health != 7:
 		return _fail("Genetic warrior configuration is invalid")
-	if tissue.type != CardData.TYPE_SPELL or tissue.count != 0 or not tissue.effects.is_empty():
-		return _fail("Symbiote tissue must remain an inert derived spell")
+	if tissue.type != CardData.TYPE_SPELL or tissue.count != 0:
+		return _fail("Symbiote Tissue derived spell configuration is invalid")
+	if (
+		tissue.target_rule != SpellTargetResolver.TARGET_RULE_FRIENDLY_MINIONS_BY_CARD_IDS
+		or tissue.target_card_ids != [
+			"symbiote_shield_agent",
+			"symbiote_biologist",
+			"genetic_warrior",
+		]
+		or tissue.animation != "symbiote_attachment"
+		or tissue.effects.size() != 1
+		or EffectData.get_id(tissue.effects[0]) != EffectData.EFFECT_ATTACH_SYMBIOTE_OFFSPRING
+	):
+		return _fail("Symbiote Tissue attachment rules are incomplete")
 
 	var self_action := _find_action(venom, "self_severance")
 	var artificial_action := _find_action(biologist, "artificial_severance")
@@ -295,7 +307,11 @@ func _test_visual_frames() -> bool:
 	effect_root.size = Vector2(1280.0, 720.0)
 	root.add_child(effect_root)
 
-	for animation_key in ["symbiote_self_severance", "symbiote_artificial_severance"]:
+	for animation_key in [
+		"symbiote_self_severance",
+		"symbiote_artificial_severance",
+		"symbiote_attachment",
+	]:
 		for progress_sample in PROGRESS_SAMPLES:
 			var visual := SymbioteSeveranceVisualScript.new()
 			visual.size = effect_root.size
@@ -334,6 +350,8 @@ func _test_provider_routes() -> bool:
 		return _fail("Self-severance rect route is missing")
 	if not router.has_targeted_route("symbiote_artificial_severance"):
 		return _fail("Artificial severance targeted route is missing")
+	if not router.has_targeted_route("symbiote_attachment"):
+		return _fail("Symbiote attachment targeted route is missing")
 
 	var source_rect := Rect2(Vector2(250.0, 450.0), Vector2(120.0, 168.0))
 	var target_rect := Rect2(Vector2(820.0, 210.0), Vector2(120.0, 168.0))
@@ -361,6 +379,25 @@ func _test_provider_routes() -> bool:
 	await process_frame
 	if effect_root.get_child_count() != 0:
 		return _fail("Artificial severance provider leaked its visual")
+
+	var source_card := Card.new()
+	source_card.position = source_rect.position
+	source_card.size = source_rect.size
+	var attachment_target := Card.new()
+	attachment_target.position = target_rect.position
+	attachment_target.size = target_rect.size
+	await provider.play_targeted(
+		effect_root,
+		effect_root,
+		source_card,
+		attachment_target,
+		"symbiote_attachment"
+	)
+	source_card.free()
+	attachment_target.free()
+	await process_frame
+	if effect_root.get_child_count() != 0:
+		return _fail("Symbiote attachment provider leaked its visual")
 
 	effect_root.queue_free()
 	await process_frame

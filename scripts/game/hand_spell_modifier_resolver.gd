@@ -14,8 +14,10 @@ func resolve_hand_spell(
 	var resolved_effects := duplicate_effects(card_data.effects if card_data != null else [])
 	var resolved_animation := card_data.animation if card_data != null else ""
 	var resolved_target_rule := SpellTargetResolver.get_rule_from_card_data(card_data)
+	var resolved_target_card_ids: Array[String] = []
 	var resolved_spell_tags: Array[String] = []
 	if card_data != null:
+		resolved_target_card_ids.assign(card_data.target_card_ids)
 		for spell_tag in card_data.spell_tags:
 			resolved_spell_tags.append(spell_tag)
 
@@ -26,7 +28,8 @@ func resolve_hand_spell(
 			EffectData.KEY_SPELL_TAGS: resolved_spell_tags,
 			"effects": resolved_effects,
 			"animation": resolved_animation,
-			"target_rule": resolved_target_rule
+			"target_rule": resolved_target_rule,
+			EffectData.KEY_CARD_IDS: resolved_target_card_ids,
 		}
 
 	for modifier_data in get_spell_modifiers(player):
@@ -55,7 +58,8 @@ func resolve_hand_spell(
 		EffectData.KEY_SPELL_TAGS: resolved_spell_tags,
 		"effects": resolved_effects,
 		"animation": resolved_animation,
-		"target_rule": resolved_target_rule
+		"target_rule": resolved_target_rule,
+		EffectData.KEY_CARD_IDS: resolved_target_card_ids,
 	}
 
 

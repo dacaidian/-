@@ -1088,6 +1088,13 @@ func record_symbiote_offspring_death(owner_id: String, card_id: String) -> Array
 	)
 
 
+func draw_symbiote_offspring_card_id(owner_id: String) -> String:
+	return symbiote_offspring_pool_resolver.draw_random_card_id(
+		get_player_by_id(owner_id),
+		card_database
+	)
+
+
 func is_unit_silenced(state: CardState) -> bool:
 	return unit_silence_resolver.is_unit_silenced(state, self)
 

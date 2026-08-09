@@ -4930,6 +4930,9 @@
 					"anti_venom",
 					"symbiote_warrior"
 				],
+				"with_replacement_card_ids": [
+					"symbiote_warrior"
+				],
 				"death_unlocks": [
 					{
 						"id": "scream_unlocks_silence",
@@ -5123,14 +5126,29 @@
 			{
 				"id": "symbiote_tissue",
 				"name": "共生体组织",
-				"description": "由毒液或生物研究员剥离出的活性共生体组织。当前为无效果衍生法术牌，后续将用于子代进化与宿主附着。",
+				"description": "选择一个友方人类随从，使共生体组织附着并将其永久进化为子代池中的随机随从。共生体战士为放回抽取，其余子代为不放回抽取。",
 				"url": "res://assets/img/共生体/共生体组织.png",
 				"type": "spell",
 				"count": 0,
 				"level": 1,
-				"target_rule": "none",
+				"target_rule": "friendly_minions_by_card_ids",
+				"target_card_ids": [
+					"symbiote_shield_agent",
+					"symbiote_biologist",
+					"genetic_warrior"
+				],
+				"animation": "symbiote_attachment",
 				"keywords": [],
-				"effects": []
+				"effects": [
+					{
+						"id": "attach_symbiote_offspring",
+						"card_ids": [
+							"symbiote_shield_agent",
+							"symbiote_biologist",
+							"genetic_warrior"
+						]
+					}
+				]
 			},
 			{
 				"id": "symbiote_riot",

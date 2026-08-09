@@ -8,6 +8,9 @@ const RandomNormalAttacksEffectScript := preload(
 )
 const SymbioteWhipEffectScript := preload("res://scripts/effects/symbiote_whip_effect.gd")
 const SymbioteAbsorbEffectScript := preload("res://scripts/effects/symbiote_absorb_effect.gd")
+const AttachSymbioteOffspringEffectScript := preload(
+	"res://scripts/effects/attach_symbiote_offspring_effect.gd"
+)
 
 const INITIAL_POOL_IDS: Array[String] = [
 	"symbiote_riot",
@@ -63,6 +66,12 @@ class RuleProbe:
 	) -> void:
 		after_attack_count += 1
 
+	func refresh_action_available_hints() -> void:
+		pass
+
+	func refresh_debug_panel() -> void:
+		pass
+
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -75,6 +84,8 @@ func _run() -> void:
 		return
 	if not test_pool_state(card_database):
 		return
+	if not test_pool_draw_modes(card_database):
+		return
 	if not await test_configured_death_unlock(card_database):
 		return
 	if not test_card_definitions(card_database):
@@ -82,6 +93,8 @@ func _run() -> void:
 	if not await test_random_normal_attacks(card_database):
 		return
 	if not await test_whip_and_absorption(card_database):
+		return
+	if not await test_tissue_attachment(card_database):
 		return
 	if not test_silence_rules(card_database):
 		return
@@ -135,6 +148,28 @@ func test_pool_state(card_database: CardDatabase) -> bool:
 	resolver.record_offspring_death(death_player, card_database, "symbiote_scream")
 	if resolver.get_available_card_ids(death_player, card_database).count("symbiote_silence") != 1:
 		return _fail("Repeated death duplicated an offspring unlock")
+	return true
+
+
+func test_pool_draw_modes(card_database: CardDatabase) -> bool:
+	var resolver = SymbioteOffspringPoolResolverScript.new()
+	var finite_player := make_player("finite_draw_owner", "symbiote")
+	finite_player.set_effect_runtime_value("symbiote_offspring_pool", make_pool_state([
+		"symbiote_riot",
+	]))
+	if resolver.draw_random_card_id(finite_player, card_database) != "symbiote_riot":
+		return _fail("Finite offspring draw returned the wrong card")
+	if not resolver.get_available_card_ids(finite_player, card_database).is_empty():
+		return _fail("Finite offspring was not removed after drawing")
+
+	var replacement_player := make_player("replacement_draw_owner", "symbiote")
+	replacement_player.set_effect_runtime_value("symbiote_offspring_pool", make_pool_state([
+		"symbiote_warrior",
+	]))
+	if resolver.draw_random_card_id(replacement_player, card_database) != "symbiote_warrior":
+		return _fail("Replacement offspring draw returned the wrong card")
+	if resolver.get_available_card_ids(replacement_player, card_database) != ["symbiote_warrior"]:
+		return _fail("Symbiote Warrior was removed despite replacement draw")
 	return true
 
 
@@ -288,6 +323,65 @@ func test_whip_and_absorption(card_database: CardDatabase) -> bool:
 	return true
 
 
+func test_tissue_attachment(card_database: CardDatabase) -> bool:
+	var player_one := make_player("attachment_owner", "symbiote")
+	var player_two := make_player("attachment_enemy", "symbiote")
+	player_one.set_effect_runtime_value("symbiote_offspring_pool", make_pool_state([
+		"symbiote_riot",
+	]))
+	var manager := RuleProbe.new()
+	manager.players = [player_one, player_two]
+	manager.card_database = card_database
+	var host := make_state(card_database.get_card("symbiote_shield_agent"), player_one.id, 24)
+	var enemy_host := make_state(card_database.get_card("symbiote_biologist"), player_two.id, 25)
+	var invalid_friendly := make_state(card_database.get_card("xenophage"), player_one.id, 23)
+	manager.board_states = [host, enemy_host, invalid_friendly]
+
+	var tissue := card_database.get_card("symbiote_tissue")
+	var hand_resolver := HandPlayResolver.new()
+	player_one.hand.append(tissue)
+	if not hand_resolver.can_play_hand_card(player_one, tissue, manager):
+		cleanup_manager(manager)
+		return _fail("Symbiote Tissue was disabled before target selection")
+	var valid_targets := HandPlayResolver.new().get_valid_targets(tissue, manager, player_one)
+	if valid_targets != [host]:
+		cleanup_manager(manager)
+		return _fail("Symbiote Tissue did not restrict selection to friendly human hosts")
+
+	host.current_attacks = 0
+	host.used_action_groups = ["attack"]
+	host.refresh_current_main_actions()
+	var old_status := CardStatus.new()
+	old_status.status_id = "attachment_probe_status"
+	old_status.display_name = "Attachment Probe"
+	host.statuses.append(old_status)
+	var effect_data := tissue.effects[0].duplicate(true)
+	EffectData.mark_effect_owner(effect_data, player_one.id)
+	effect_data[EffectData.KEY_SELECTED_TARGET_STATE] = host
+	var effect = AttachSymbioteOffspringEffectScript.new()
+	if not effect.can_execute(null, effect_data, manager):
+		cleanup_manager(manager)
+		return _fail("Symbiote Tissue rejected a legal host and available offspring")
+	await effect.execute(null, effect_data, manager)
+	if host.card_id != "symbiote_riot" or host.owner_id != player_one.id:
+		cleanup_manager(manager)
+		return _fail("Symbiote Tissue did not permanently evolve the selected host")
+	if not host.statuses.is_empty() or host.get_transform_status() != null:
+		cleanup_manager(manager)
+		return _fail("Symbiote attachment retained host statuses or created a reversible transform")
+	if host.current_attacks != 0 or host.current_main_actions != 0:
+		cleanup_manager(manager)
+		return _fail("Symbiote attachment refreshed spent action economy")
+	if manager.get_symbiote_offspring_pool_card_ids(player_one.id).has("symbiote_riot"):
+		cleanup_manager(manager)
+		return _fail("Symbiote attachment did not consume a finite offspring")
+	if hand_resolver.can_play_hand_card(player_one, tissue, manager):
+		cleanup_manager(manager)
+		return _fail("Symbiote Tissue remained playable with an empty offspring pool")
+	cleanup_manager(manager)
+	return true
+
+
 func test_silence_rules(card_database: CardDatabase) -> bool:
 	var player_one := make_player("silenced_owner", "symbiote")
 	var player_two := make_player("silence_owner", "symbiote")
@@ -395,6 +489,16 @@ func make_player(player_id: String, faction_id: String) -> PlayerState:
 	player.setup(player_id, player_id)
 	player.set_faction(faction_id, faction_id)
 	return player
+
+
+func make_pool_state(available_card_ids: Array) -> Dictionary:
+	return {
+		"available_card_ids": available_card_ids.duplicate(),
+		"dead_card_ids": [],
+		"severance_count": 0,
+		"unlocked_rule_ids": [],
+		"is_initialized": true,
+	}
 
 
 func make_state(card_data: CardData, owner_id: String, slot_index: int) -> CardState:

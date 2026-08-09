@@ -12,6 +12,8 @@ const KEY_AVAILABLE_CARD_IDS := "available_card_ids"
 const KEY_DEAD_CARD_IDS := "dead_card_ids"
 const KEY_SEVERANCE_COUNT := "severance_count"
 const KEY_UNLOCKED_RULE_IDS := "unlocked_rule_ids"
+const KEY_IS_INITIALIZED := "is_initialized"
+const KEY_WITH_REPLACEMENT_CARD_IDS := "with_replacement_card_ids"
 
 
 func initialize_player(player: PlayerState, card_database: CardDatabase) -> void:
@@ -24,8 +26,11 @@ func initialize_player(player: PlayerState, card_database: CardDatabase) -> void
 
 	var state := get_runtime_state(player)
 	var did_change := normalize_state(state)
-	for card_id in normalize_string_array(config.get("initial_card_ids", [])):
-		did_change = append_unique_card_id(state[KEY_AVAILABLE_CARD_IDS], card_id) or did_change
+	if not bool(state.get(KEY_IS_INITIALIZED, false)):
+		for card_id in normalize_string_array(config.get("initial_card_ids", [])):
+			append_unique_card_id(state[KEY_AVAILABLE_CARD_IDS], card_id)
+		state[KEY_IS_INITIALIZED] = true
+		did_change = true
 
 	if did_change or not player.effect_runtime_values.has(RUNTIME_KEY):
 		store_runtime_state(player, state)
@@ -50,6 +55,33 @@ func get_dead_card_ids(player: PlayerState, card_database: CardDatabase) -> Arra
 	if player == null:
 		return []
 	return normalize_string_array(get_runtime_state(player).get(KEY_DEAD_CARD_IDS, []))
+
+
+func draw_random_card_id(player: PlayerState, card_database: CardDatabase) -> String:
+	if player == null or card_database == null or player.faction_id != FACTION_ID:
+		return ""
+
+	initialize_player(player, card_database)
+	var config := get_pool_config(card_database)
+	var state := get_runtime_state(player)
+	var candidates: Array[String] = []
+	for card_id in normalize_string_array(state.get(KEY_AVAILABLE_CARD_IDS, [])):
+		var card_data := card_database.get_card(card_id)
+		if card_data != null and card_data.is_minion():
+			candidates.append(card_id)
+	if candidates.is_empty():
+		return ""
+
+	var selected_card_id := str(candidates.pick_random())
+	var with_replacement_ids := normalize_string_array(
+		config.get(KEY_WITH_REPLACEMENT_CARD_IDS, [])
+	)
+	if not with_replacement_ids.has(selected_card_id):
+		var available_ids := normalize_string_array(state.get(KEY_AVAILABLE_CARD_IDS, []))
+		available_ids.erase(selected_card_id)
+		state[KEY_AVAILABLE_CARD_IDS] = available_ids
+		store_runtime_state(player, state)
+	return selected_card_id
 
 
 func record_severance(player: PlayerState, card_database: CardDatabase) -> Array[String]:
@@ -134,6 +166,7 @@ func create_empty_state() -> Dictionary:
 		KEY_DEAD_CARD_IDS: [],
 		KEY_SEVERANCE_COUNT: 0,
 		KEY_UNLOCKED_RULE_IDS: [],
+		KEY_IS_INITIALIZED: false,
 	}
 
 
@@ -142,16 +175,19 @@ func normalize_state(state: Dictionary) -> bool:
 	var dead_ids := normalize_string_array(state.get(KEY_DEAD_CARD_IDS, []))
 	var unlocked_rule_ids := normalize_string_array(state.get(KEY_UNLOCKED_RULE_IDS, []))
 	var severance_count := maxi(int(state.get(KEY_SEVERANCE_COUNT, 0)), 0)
+	var is_initialized := bool(state.get(KEY_IS_INITIALIZED, false))
 	var did_change: bool = (
 		state.get(KEY_AVAILABLE_CARD_IDS, null) != available_ids
 		or state.get(KEY_DEAD_CARD_IDS, null) != dead_ids
 		or state.get(KEY_UNLOCKED_RULE_IDS, null) != unlocked_rule_ids
 		or int(state.get(KEY_SEVERANCE_COUNT, -1)) != severance_count
+		or not state.has(KEY_IS_INITIALIZED)
 	)
 	state[KEY_AVAILABLE_CARD_IDS] = available_ids
 	state[KEY_DEAD_CARD_IDS] = dead_ids
 	state[KEY_SEVERANCE_COUNT] = severance_count
 	state[KEY_UNLOCKED_RULE_IDS] = unlocked_rule_ids
+	state[KEY_IS_INITIALIZED] = is_initialized
 	return did_change
 
 

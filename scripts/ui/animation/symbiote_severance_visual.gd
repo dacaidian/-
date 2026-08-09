@@ -48,7 +48,9 @@ func _draw() -> void:
 		return
 
 	_draw_target_atmosphere(alpha)
-	if animation_key == "symbiote_artificial_severance":
+	if animation_key == "symbiote_attachment":
+		_draw_attachment(alpha)
+	elif animation_key == "symbiote_artificial_severance":
 		_draw_artificial_severance(alpha)
 	else:
 		_draw_self_severance(alpha)
@@ -126,6 +128,181 @@ func _draw_artificial_severance(alpha: float) -> void:
 		_ease_out(_phase(0.60, 0.94)),
 		alpha
 	)
+
+
+func _draw_attachment(alpha: float) -> void:
+	var awaken := _ease_out(_phase(0.0, 0.18))
+	var travel := _ease_in_out(_phase(0.08, 0.52))
+	var bind := _ease_out(_phase(0.38, 0.80))
+	var stabilize := _ease_in_out(_phase(0.68, 0.96))
+	var scale_value := _target_scale()
+	var start_point := source_center
+	if start_point.distance_squared_to(target_center) <= 16.0:
+		start_point = target_center + Vector2(-target_card_size.x * 0.78, target_card_size.y * 0.62)
+	var direction := target_center - start_point
+	var normal := direction.normalized().orthogonal() if direction.length_squared() > 0.01 else Vector2.UP
+	var control_a := start_point.lerp(target_center, 0.30) + normal * scale_value * 0.38
+	var control_b := start_point.lerp(target_center, 0.72) - normal * scale_value * 0.24
+	var attachment_path := _cubic_curve(
+		start_point,
+		control_a,
+		control_b,
+		target_center,
+		travel,
+		28
+	)
+
+	_draw_attachment_conduit(attachment_path, travel, alpha)
+	var organism_center := _cubic_point(
+		start_point,
+		control_a,
+		control_b,
+		target_center,
+		travel
+	)
+	_draw_tissue_clot(
+		organism_center,
+		scale_value * lerpf(0.10, 0.17, awaken),
+		awaken,
+		alpha
+	)
+	_draw_rc_droplets(start_point, organism_center, travel, bind, alpha * 0.78)
+
+	if bind > 0.01:
+		_draw_living_frame(target_center, target_card_size, bind, alpha)
+		_draw_host_integration(target_center, bind, stabilize, alpha)
+		_draw_symbiote_shell(target_center, bind, stabilize, alpha)
+
+
+func _draw_attachment_conduit(
+	path: PackedVector2Array,
+	travel: float,
+	alpha: float
+) -> void:
+	if path.size() < 2 or travel <= 0.01:
+		return
+	var scale_value := _target_scale()
+	for strand_index in range(3):
+		var strand_path := PackedVector2Array()
+		var offset_ratio := float(strand_index) - 1.0
+		for point_index in range(path.size()):
+			var path_ratio := float(point_index) / float(maxi(path.size() - 1, 1))
+			var tangent := path[mini(point_index + 1, path.size() - 1)] - path[maxi(point_index - 1, 0)]
+			var path_normal := tangent.normalized().orthogonal() if tangent.length_squared() > 0.01 else Vector2.UP
+			strand_path.append(
+				path[point_index]
+				+ path_normal * scale_value * offset_ratio * 0.035
+				* sin(path_ratio * PI)
+			)
+		Toolkit.draw_ribbon(
+			self,
+			strand_path,
+			scale_value * (0.052 if strand_index == 1 else 0.030),
+			Toolkit.with_alpha(DEEP_RED, alpha * 0.90),
+			Toolkit.with_alpha(VOID, alpha * 0.88),
+			Toolkit.with_alpha(WET_HIGHLIGHT, alpha * (0.56 if strand_index == 1 else 0.32)),
+			scale_value * 0.16,
+			true,
+			true,
+			progress * 7.0 + float(strand_index)
+		)
+
+	for pulse_index in range(5):
+		var pulse_ratio := fmod(travel * 1.18 + float(pulse_index) * 0.18, 1.0)
+		Toolkit.draw_mote(
+			self,
+			_sample_path(path, pulse_ratio),
+			scale_value * (0.012 + float(pulse_index % 2) * 0.005),
+			Toolkit.with_alpha(HOT_TISSUE, alpha * 0.72),
+			progress * 10.0 + float(pulse_index)
+		)
+
+
+func _draw_host_integration(
+	center_point: Vector2,
+	bind: float,
+	stabilize: float,
+	alpha: float
+) -> void:
+	var scale_value := _target_scale()
+	var half_size := target_card_size * 0.43
+	var anchors: Array[Vector2] = [
+		center_point + Vector2(-half_size.x, -half_size.y),
+		center_point + Vector2(half_size.x, -half_size.y),
+		center_point + Vector2(half_size.x, 0.0),
+		center_point + Vector2(half_size.x, half_size.y),
+		center_point + Vector2(-half_size.x, half_size.y),
+		center_point + Vector2(-half_size.x, 0.0),
+	]
+	for anchor_index in range(anchors.size()):
+		var anchor := anchors[anchor_index]
+		var radial := anchor - center_point
+		var curve_normal := radial.normalized().orthogonal()
+		var path := _cubic_curve(
+			center_point,
+			center_point + radial * 0.28 + curve_normal * scale_value * 0.12,
+			center_point + radial * 0.72 - curve_normal * scale_value * 0.07,
+			anchor,
+			bind,
+			16
+		)
+		Toolkit.draw_ribbon(
+			self,
+			path,
+			scale_value * (0.026 + float(anchor_index % 2) * 0.006),
+			Toolkit.with_alpha(BLACK_FLESH, alpha * 0.88),
+			Toolkit.with_alpha(DEEP_RED, alpha * 0.78),
+			Toolkit.with_alpha(HOT_TISSUE, alpha * 0.40),
+			scale_value * 0.10,
+			true,
+			false,
+			progress * 6.0 + float(anchor_index)
+		)
+
+	var pulse := 0.92 + sin(progress * TAU * 3.2) * 0.08
+	Toolkit.draw_soft_disc(
+		self,
+		center_point,
+		scale_value * (0.17 + stabilize * 0.06) * pulse,
+		Toolkit.with_alpha(LIVING_RED, alpha * 0.38),
+		Toolkit.with_alpha(BLACK_FLESH, alpha * 0.72),
+		8
+	)
+
+
+func _draw_symbiote_shell(
+	center_point: Vector2,
+	bind: float,
+	stabilize: float,
+	alpha: float
+) -> void:
+	var scale_value := _target_scale()
+	var breath := 0.96 + sin(progress * TAU * 2.4) * 0.04
+	for shell_index in range(4):
+		var angle := PI * (0.25 + float(shell_index) * 0.50)
+		var shell_center := center_point + Vector2.from_angle(angle) * scale_value * 0.34
+		Toolkit.draw_soft_ellipse(
+			self,
+			shell_center,
+			Vector2(scale_value * 0.19, scale_value * 0.075) * breath * bind,
+			Toolkit.with_alpha(LIVING_RED, alpha * 0.28),
+			Toolkit.with_alpha(BLACK_FLESH, alpha * (0.72 + stabilize * 0.18)),
+			6,
+			angle + PI * 0.5
+		)
+		Toolkit.draw_stroked_arc(
+			self,
+			shell_center,
+			scale_value * 0.13 * bind,
+			angle - 0.72,
+			angle + 0.72,
+			scale_value * 0.018,
+			Toolkit.with_alpha(HOT_TISSUE, alpha * 0.64),
+			Toolkit.with_alpha(VOID, alpha * 0.76),
+			Toolkit.with_alpha(WET_HIGHLIGHT, alpha * 0.42),
+			scale_value * 0.07,
+			14
+		)
 
 
 func _draw_target_atmosphere(alpha: float) -> void:

@@ -11,6 +11,7 @@ const SeveranceVisualScript := preload(
 const TARGETED_KEYS: Array[String] = [
 	"symbiote_self_severance",
 	"symbiote_artificial_severance",
+	"symbiote_attachment",
 ]
 const RECT_KEYS: Array[String] = [
 	"symbiote_self_severance",
@@ -101,7 +102,9 @@ func _play(
 		target_rect.size
 	)
 
-	var duration_scale := 2.75 if animation_key == "symbiote_artificial_severance" else 2.35
+	var duration_scale := 3.05 if animation_key == "symbiote_attachment" else (
+		2.75 if animation_key == "symbiote_artificial_severance" else 2.35
+	)
 	var duration := maxf(spell_animation_duration * duration_scale, 0.72)
 	var tween := owner_node.create_tween()
 	tween.set_trans(Tween.TRANS_QUART)
