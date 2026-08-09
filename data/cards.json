@@ -5111,7 +5111,7 @@
 			{
 				"id": "genetic_warrior",
 				"name": "基因战士",
-				"description": "经过基因强化的战斗单位。",
+				"description": "经过基因强化的战斗单位。被共生体组织附身时，新共生体额外获得基因战士的基础攻击力和基础生命值上限。",
 				"url": "res://assets/img/共生体/基因战士.png",
 				"type": "minion",
 				"count": 4,
@@ -5126,7 +5126,7 @@
 			{
 				"id": "symbiote_tissue",
 				"name": "共生体组织",
-				"description": "选择一个友方人类随从，使共生体组织附着并将其永久进化为子代池中的随机随从。共生体战士为放回抽取，其余子代为不放回抽取。",
+				"description": "选择一个友方人类随从，使共生体组织附着并将其永久进化为子代池中的随机随从。附着基因战士时，新共生体额外获得其基础属性。共生体战士为放回抽取，其余子代为不放回抽取。",
 				"url": "res://assets/img/共生体/共生体组织.png",
 				"type": "spell",
 				"count": 0,
@@ -5145,6 +5145,9 @@
 						"card_ids": [
 							"symbiote_shield_agent",
 							"symbiote_biologist",
+							"genetic_warrior"
+						],
+						"inherit_host_base_stats_card_ids": [
 							"genetic_warrior"
 						]
 					}

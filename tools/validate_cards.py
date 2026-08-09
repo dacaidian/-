@@ -806,6 +806,19 @@ class CardValidator:
             raw_host_ids = effect.get("card_ids", [])
             if not isinstance(raw_host_ids, list) or not raw_host_ids:
                 self.reporter.error(f"{path}.card_ids", "must be a non-empty array")
+            raw_inheritance_ids = effect.get("inherit_host_base_stats_card_ids", [])
+            self.validate_pool_card_ids(
+                raw_inheritance_ids,
+                set(self.cards_by_id),
+                f"{path}.inherit_host_base_stats_card_ids",
+            )
+            if isinstance(raw_host_ids, list) and isinstance(raw_inheritance_ids, list):
+                for card_index, card_id in enumerate(raw_inheritance_ids):
+                    if card_id not in raw_host_ids:
+                        self.reporter.error(
+                            f"{path}.inherit_host_base_stats_card_ids[{card_index}]",
+                            "must also be listed in card_ids",
+                        )
         elif effect_id == "claim_death_slot":
             self.validate_death_slot_replacement(effect, path)
 

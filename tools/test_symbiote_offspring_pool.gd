@@ -96,6 +96,8 @@ func _run() -> void:
 		return
 	if not await test_tissue_attachment(card_database):
 		return
+	if not await test_genetic_warrior_attachment(card_database):
+		return
 	if not test_silence_rules(card_database):
 		return
 	if not await test_carnage_progress(card_database):
@@ -378,6 +380,42 @@ func test_tissue_attachment(card_database: CardDatabase) -> bool:
 	if hand_resolver.can_play_hand_card(player_one, tissue, manager):
 		cleanup_manager(manager)
 		return _fail("Symbiote Tissue remained playable with an empty offspring pool")
+	cleanup_manager(manager)
+	return true
+
+
+func test_genetic_warrior_attachment(card_database: CardDatabase) -> bool:
+	var player := make_player("genetic_attachment_owner", "symbiote")
+	player.set_effect_runtime_value("symbiote_offspring_pool", make_pool_state([
+		"symbiote_riot",
+	]))
+	var manager := RuleProbe.new()
+	manager.players = [player]
+	manager.card_database = card_database
+	var host := make_state(card_database.get_card("genetic_warrior"), player.id, 24)
+	manager.board_states = [host]
+
+	var tissue := card_database.get_card("symbiote_tissue")
+	var effect_data := tissue.effects[0].duplicate(true)
+	EffectData.mark_effect_owner(effect_data, player.id)
+	effect_data[EffectData.KEY_SELECTED_TARGET_STATE] = host
+	var effect = AttachSymbioteOffspringEffectScript.new()
+	await effect.execute(null, effect_data, manager)
+	if host.card_id != "symbiote_riot":
+		cleanup_manager(manager)
+		return _fail("Genetic Warrior did not evolve into the forced offspring")
+	if host.current_attack != 6 or host.max_health != 14 or host.current_health != 14:
+		cleanup_manager(manager)
+		return _fail("Genetic Warrior base stats were not inherited by the offspring")
+	if (
+		int(host.permanent_stat_overrides.get("attack", 0)) != 6
+		or int(host.permanent_stat_overrides.get("health", 0)) != 14
+	):
+		cleanup_manager(manager)
+		return _fail("Inherited genetic stats were not stored as permanent overrides")
+	if not manager.get_symbiote_offspring_pool_card_ids(player.id).is_empty():
+		cleanup_manager(manager)
+		return _fail("Genetic attachment did not consume its finite offspring")
 	cleanup_manager(manager)
 	return true
 

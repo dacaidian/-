@@ -1682,6 +1682,17 @@ func add_permanent_attack(amount: int) -> void:
 	state_changed.emit(self)
 
 
+func add_permanent_max_health(amount: int) -> void:
+	if data == null or amount <= 0:
+		return
+	var origin_health := int(origin.get("health", data.health))
+	var previous_health := int(permanent_stat_overrides.get("health", origin_health))
+	var next_health := previous_health + amount
+	permanent_stat_overrides["health"] = next_health
+	max_health += next_health - previous_health
+	state_changed.emit(self)
+
+
 func add_permanent_attack_speed(amount: int) -> void:
 	if data == null or amount == 0:
 		return

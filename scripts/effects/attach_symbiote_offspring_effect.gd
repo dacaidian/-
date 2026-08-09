@@ -9,6 +9,7 @@ const DEFAULT_HOST_CARD_IDS: Array[String] = [
 	"symbiote_biologist",
 	"genetic_warrior",
 ]
+const KEY_INHERIT_HOST_BASE_STATS_CARD_IDS := "inherit_host_base_stats_card_ids"
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
@@ -26,7 +27,9 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if offspring_data == null or not offspring_data.is_minion():
 		return
 
+	var inherited_stats := get_inherited_host_base_stats(target_state, effect_data)
 	apply_permanent_evolution(target_state, offspring_data, owner_id)
+	apply_inherited_host_base_stats(target_state, inherited_stats)
 	if game_manager.has_method("refresh_action_available_hints"):
 		game_manager.refresh_action_available_hints()
 	if game_manager.has_method("refresh_debug_panel"):
@@ -75,6 +78,44 @@ func can_attach_target(
 func get_host_card_ids(effect_data: Dictionary) -> Array[String]:
 	var configured_ids := EffectData.get_card_ids(effect_data)
 	return configured_ids if not configured_ids.is_empty() else DEFAULT_HOST_CARD_IDS.duplicate()
+
+
+func get_inherited_host_base_stats(
+	target_state: CardState,
+	effect_data: Dictionary
+) -> Dictionary:
+	if target_state == null or target_state.data == null:
+		return {}
+	var inheritance_ids := normalize_card_ids(
+		effect_data.get(KEY_INHERIT_HOST_BASE_STATS_CARD_IDS, [])
+	)
+	if not inheritance_ids.has(target_state.card_id):
+		return {}
+	return {
+		"attack": maxi(target_state.data.attack, 0),
+		"health": maxi(target_state.data.health, 0),
+	}
+
+
+func apply_inherited_host_base_stats(target_state: CardState, inherited_stats: Dictionary) -> void:
+	if target_state == null or inherited_stats.is_empty():
+		return
+	var attack_gain := maxi(int(inherited_stats.get("attack", 0)), 0)
+	var health_gain := maxi(int(inherited_stats.get("health", 0)), 0)
+	if attack_gain > 0:
+		target_state.add_permanent_attack(attack_gain)
+	if health_gain > 0:
+		target_state.add_permanent_max_health(health_gain)
+
+
+func normalize_card_ids(value: Variant) -> Array[String]:
+	var card_ids: Array[String] = []
+	if value is Array:
+		for raw_card_id in value:
+			var card_id := str(raw_card_id)
+			if card_id != "" and not card_ids.has(card_id):
+				card_ids.append(card_id)
+	return card_ids
 
 
 func apply_permanent_evolution(
