@@ -5114,7 +5114,7 @@
 				"description": "经过基因强化的战斗单位。被共生体组织附身时，新共生体额外获得基因战士的基础攻击力和基础生命值上限。",
 				"url": "res://assets/img/共生体/基因战士.png",
 				"type": "minion",
-				"count": 4,
+				"count": 6,
 				"level": 3,
 				"keywords": [],
 				"attack": 3,
