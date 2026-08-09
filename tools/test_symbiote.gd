@@ -117,6 +117,7 @@ class SymbioteRuleProbe:
 
 	var animation_keys: Array[String] = []
 	var refilled_slots: Array[int] = []
+	var next_offspring_card_id := ""
 
 	func play_card_attack_animation(
 		_attacker_state: CardState,
@@ -192,10 +193,17 @@ class SymbioteRuleProbe:
 		return true
 
 	func refresh_hand_passives_for_player(
-		_player: PlayerState,
-		_should_adjust_remaining_flips := false
+		player_state: PlayerState,
+		should_adjust_remaining_flips := false
 	) -> void:
-		pass
+		hand_passive_resolver.refresh_player_passives(
+			player_state,
+			should_adjust_remaining_flips,
+			self
+		)
+
+	func draw_symbiote_offspring_card_id(_owner_id: String) -> String:
+		return next_offspring_card_id
 
 	func update_card_pool_view() -> void:
 		pass
@@ -294,11 +302,41 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Imprisoned Knull configuration is invalid")
 	if liberated_knull.attack != 4 or liberated_knull.health != 16 or liberated_knull.count != 0:
 		return _fail("Liberated Knull configuration is invalid")
+	for symbiote_card_id in [
+		"venom",
+		"symbiote_riot",
+		"symbiote_scream",
+		"symbiote_lasher",
+		"symbiote_extreme",
+		"symbiote_devour",
+		"anti_venom",
+		"symbiote_warrior",
+		"symbiote_silence",
+		"symbiote_hybrid",
+		"toxin",
+		"carnage",
+		"sleeper",
+		"symbiote_cat",
+	]:
+		var symbiote_data := card_database.get_card(symbiote_card_id)
+		if symbiote_data == null or not symbiote_data.has_unit_trait(CardData.UNIT_TRAIT_SYMBIOTE):
+			return _fail("Actual Symbiote is missing its unit trait: %s" % symbiote_card_id)
+	for excluded_card_id in [
+		"symbiote_shield_agent",
+		"symbiote_biologist",
+		"genetic_warrior",
+		"xenophage",
+		"knull_imprisoned",
+		"knull_liberated",
+	]:
+		var excluded_data := card_database.get_card(excluded_card_id)
+		if excluded_data == null or excluded_data.has_unit_trait(CardData.UNIT_TRAIT_SYMBIOTE):
+			return _fail("Knull aura exclusion has an invalid unit trait: %s" % excluded_card_id)
 	if (
 		imprisoned_knull.effects.is_empty()
 		or EffectData.get_id(imprisoned_knull.effects[0]) != EffectData.EFFECT_MODIFY_UNIT_ATTACK
 		or EffectData.get_amount(imprisoned_knull.effects[0]) != 2
-		or str(imprisoned_knull.effects[0].get(EffectData.KEY_TARGET_FACTION_ID, "")) != "symbiote"
+		or EffectData.get_target_unit_traits(imprisoned_knull.effects[0]) != [CardData.UNIT_TRAIT_SYMBIOTE]
 	):
 		return _fail("Imprisoned Knull aura is incomplete")
 	if liberated_knull.effects.size() != 2:
@@ -307,6 +345,7 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 	var replacement_effects := EffectData.get_replace_effects(liberated_tissue_modifier)
 	if (
 		EffectData.get_amount(liberated_knull.effects[0]) != 4
+		or EffectData.get_target_unit_traits(liberated_knull.effects[0]) != [CardData.UNIT_TRAIT_SYMBIOTE]
 		or EffectData.get_target_rule(liberated_tissue_modifier) != SpellTargetResolver.TARGET_RULE_NON_HERO_MINIONS
 		or replacement_effects.size() != 1
 		or not bool(replacement_effects[0].get(EffectData.KEY_ALLOW_ANY_NON_HERO_MINION, false))
@@ -605,26 +644,42 @@ func _test_knull_runtime_rules(card_database: CardDatabase) -> bool:
 	manager.players = [player, enemy]
 	manager.card_database = card_database
 	var knull_state := _make_state(card_database.get_card("knull_imprisoned"), player.id, 8)
-	var ally_state := _make_state(card_database.get_card("symbiote_shield_agent"), player.id, 9)
-	var enemy_state := _make_state(card_database.get_card("symbiote_shield_agent"), enemy.id, 10)
-	manager.board_states = [knull_state, ally_state, enemy_state]
+	var human_state := _make_state(card_database.get_card("symbiote_shield_agent"), player.id, 9)
+	var xenophage_state := _make_state(card_database.get_card("xenophage"), player.id, 10)
+	var venom_state := _make_state(card_database.get_card("venom"), player.id, 11)
+	var offspring_state := _make_state(card_database.get_card("symbiote_riot"), player.id, 12)
+	var enemy_state := _make_state(card_database.get_card("symbiote_riot"), enemy.id, 13)
+	manager.board_states = [
+		knull_state,
+		human_state,
+		xenophage_state,
+		venom_state,
+		offspring_state,
+		enemy_state,
+	]
 
 	var passive_resolver := HandPassiveResolver.new()
 	var passives := passive_resolver.collect_active_passive_effects(player, manager)
 	passive_resolver.refresh_unit_attack_passives(player, manager, passives)
-	if knull_state.current_attack != 4 or ally_state.current_attack != 3:
+	if venom_state.current_attack != 4 or offspring_state.current_attack != 5:
 		_cleanup_rule_probe(manager)
-		return _fail("Imprisoned Knull did not grant +2 attack to all friendly Symbiotes")
-	if enemy_state.current_attack != 1:
+		return _fail("Imprisoned Knull did not grant +2 attack to friendly Symbiote-trait units")
+	if knull_state.current_attack != 2 or human_state.current_attack != 1 or xenophage_state.current_attack != 3:
+		_cleanup_rule_probe(manager)
+		return _fail("Imprisoned Knull aura affected Knull, a human host, or Xenophage")
+	if enemy_state.current_attack != 3:
 		_cleanup_rule_probe(manager)
 		return _fail("Knull aura affected an enemy Symbiote")
 
 	knull_state.transform_to_card_data(card_database.get_card("knull_liberated"))
 	passives = passive_resolver.collect_active_passive_effects(player, manager)
 	passive_resolver.refresh_unit_attack_passives(player, manager, passives)
-	if knull_state.current_attack != 8 or ally_state.current_attack != 5:
+	if venom_state.current_attack != 6 or offspring_state.current_attack != 7:
 		_cleanup_rule_probe(manager)
 		return _fail("Liberated Knull did not replace its aura with +4 attack")
+	if knull_state.current_attack != 4 or human_state.current_attack != 1 or xenophage_state.current_attack != 3:
+		_cleanup_rule_probe(manager)
+		return _fail("Liberated Knull aura affected an excluded unit")
 
 	var tissue := card_database.get_card("symbiote_tissue")
 	var resolved_spell := HandSpellModifierResolver.new().resolve_hand_spell(
@@ -645,6 +700,20 @@ func _test_knull_runtime_rules(card_database: CardDatabase) -> bool:
 	if not attach_effect.can_attach_target(enemy_state, player.id, [], true):
 		_cleanup_rule_probe(manager)
 		return _fail("Liberated Knull could not attach Tissue to an enemy non-hero minion")
+
+	var genetic_host := _make_state(card_database.get_card("genetic_warrior"), player.id, 14)
+	manager.board_states.append(genetic_host)
+	manager.next_offspring_card_id = "symbiote_riot"
+	var attachment_effect_data := resolved_effect.duplicate(true)
+	EffectData.mark_effect_owner(attachment_effect_data, player.id)
+	EffectData.mark_selected_target(attachment_effect_data, genetic_host)
+	attach_effect.execute(null, attachment_effect_data, manager)
+	if genetic_host.card_id != "symbiote_riot":
+		_cleanup_rule_probe(manager)
+		return _fail("Symbiote Tissue did not evolve the genetic warrior")
+	if genetic_host.current_attack != 10 or genetic_host.max_health != 14:
+		_cleanup_rule_probe(manager)
+		return _fail("A newly attached Symbiote did not combine host stats with Knull's live aura")
 
 	_cleanup_rule_probe(manager)
 	return true

@@ -32,9 +32,11 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	if offspring_data == null or not offspring_data.is_minion():
 		return
 
+	var previous_owner_id := target_state.owner_id
 	var inherited_stats := get_inherited_host_base_stats(target_state, effect_data)
 	apply_permanent_evolution(target_state, offspring_data, owner_id)
 	apply_inherited_host_base_stats(target_state, inherited_stats)
+	refresh_owner_passives(previous_owner_id, owner_id, game_manager)
 	if game_manager.has_method("refresh_action_available_hints"):
 		game_manager.refresh_action_available_hints()
 	if game_manager.has_method("refresh_debug_panel"):
@@ -146,3 +148,25 @@ func apply_permanent_evolution(
 	target_state.owner_id = owner_id
 	target_state.is_face_up = true
 	target_state.state_changed.emit(target_state)
+
+
+func refresh_owner_passives(
+	previous_owner_id: String,
+	next_owner_id: String,
+	game_manager: Node
+) -> void:
+	if game_manager == null:
+		return
+	if not game_manager.has_method("get_player_by_id"):
+		return
+	if not game_manager.has_method("refresh_hand_passives_for_player"):
+		return
+
+	var owner_ids: Array[String] = []
+	for owner_id in [previous_owner_id, next_owner_id]:
+		if owner_id != "" and not owner_ids.has(owner_id):
+			owner_ids.append(owner_id)
+	for owner_id in owner_ids:
+		var player := game_manager.get_player_by_id(owner_id) as PlayerState
+		if player != null:
+			game_manager.refresh_hand_passives_for_player(player, false)

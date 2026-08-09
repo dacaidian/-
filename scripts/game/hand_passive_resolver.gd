@@ -183,9 +183,11 @@ func get_unit_attack_bonus_for_state(
 
 		var card_ids := EffectData.get_card_ids(effect_data)
 		var target_faction_id := str(effect_data.get(EffectData.KEY_TARGET_FACTION_ID, ""))
+		var target_unit_traits := EffectData.get_target_unit_traits(effect_data)
 		var matches_card := not card_ids.is_empty() and state_represents_any_card_id(state, card_ids)
 		var matches_faction := target_faction_id != "" and state.data.faction_id == target_faction_id
-		if matches_card or matches_faction:
+		var matches_unit_trait := state_has_any_unit_trait(state, target_unit_traits)
+		if matches_card or matches_faction or matches_unit_trait:
 			bonus += EffectData.get_amount(effect_data)
 
 	return bonus
@@ -196,6 +198,15 @@ func state_represents_any_card_id(state: CardState, card_ids: Array[String]) -> 
 		return false
 	for card_id in card_ids:
 		if state.represents_card_id(card_id):
+			return true
+	return false
+
+
+func state_has_any_unit_trait(state: CardState, unit_traits: Array[String]) -> bool:
+	if state == null or state.data == null or unit_traits.is_empty():
+		return false
+	for unit_trait in unit_traits:
+		if state.data.has_unit_trait(unit_trait):
 			return true
 	return false
 

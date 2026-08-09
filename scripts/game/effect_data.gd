@@ -73,6 +73,7 @@ const KEY_AMOUNT_SOURCE := "amount_source"
 const KEY_CARD_ID := "card_id"
 const KEY_TARGET_CARD_ID := "target_card_id"
 const KEY_TARGET_FACTION_ID := "target_faction_id"
+const KEY_TARGET_UNIT_TRAITS := "target_unit_traits"
 const KEY_ALLOW_ANY_NON_HERO_MINION := "allow_any_non_hero_minion"
 const KEY_FEAR_SOURCE_SLOT := "fear_source_slot"
 const KEY_TRANSFORM_MODE := "transform_mode"
@@ -386,6 +387,18 @@ static func get_card_ids(effect_data: Dictionary) -> Array[String]:
 				card_ids.append(normalized_card_id)
 
 	return card_ids
+
+
+static func get_target_unit_traits(effect_data: Dictionary) -> Array[String]:
+	var unit_traits: Array[String] = []
+	var raw_unit_traits: Variant = effect_data.get(KEY_TARGET_UNIT_TRAITS, [])
+	if raw_unit_traits is Array:
+		for unit_trait in raw_unit_traits:
+			var normalized_unit_trait := str(unit_trait)
+			if normalized_unit_trait != "" and not unit_traits.has(normalized_unit_trait):
+				unit_traits.append(normalized_unit_trait)
+
+	return unit_traits
 
 
 static func get_source_card_ids(effect_data: Dictionary) -> Array[String]:

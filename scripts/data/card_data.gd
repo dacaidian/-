@@ -11,6 +11,7 @@ const UPGRADE_TYPE_MINION_LIBRARY := "minion_library"
 const EQUIPMENT_TYPE_WEAPON := "weapon"
 const EQUIPMENT_TYPE_SUIT := "suit"
 const ROLE_HERO := "hero"
+const UNIT_TRAIT_SYMBIOTE := "symbiote"
 const KEYWORD_CAVALRY := "cavalry"
 const KEYWORD_RANGED := "ranged"
 const KEYWORD_MAGIC_IMMUNE := "magic_immune"
@@ -56,6 +57,7 @@ var role := ""
 var count := 1
 var level := 1
 var keywords: Array[String] = []
+var unit_traits: Array[String] = []
 
 # 效果定义来自 JSON。这里保存原始 Dictionary，由 EffectSystem 解释执行。
 var effects: Array[Dictionary] = []
@@ -159,6 +161,10 @@ func has_keyword(keyword: String) -> bool:
 	return keywords.has(keyword)
 
 
+func has_unit_trait(unit_trait: String) -> bool:
+	return unit_traits.has(unit_trait)
+
+
 func get_siege_bonus() -> int:
 	return get_numeric_keyword_value(KEYWORD_SIEGE_PREFIX)
 
@@ -238,6 +244,13 @@ static func from_dictionary(card_dictionary: Dictionary, faction_dictionary: Dic
 	if raw_keywords is Array:
 		for keyword in raw_keywords:
 			data.keywords.append(str(keyword))
+
+	var raw_unit_traits: Variant = card_dictionary.get("unit_traits", [])
+	if raw_unit_traits is Array:
+		for unit_trait in raw_unit_traits:
+			var normalized_unit_trait := str(unit_trait)
+			if normalized_unit_trait != "" and not data.unit_traits.has(normalized_unit_trait):
+				data.unit_traits.append(normalized_unit_trait)
 
 	var raw_effects = card_dictionary.get("effects", [])
 	if raw_effects is Array:

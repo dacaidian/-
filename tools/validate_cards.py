@@ -131,6 +131,9 @@ class CardValidator:
         self.keywords = {
             value for name, value in self.card_data_constants.items() if name.startswith("KEYWORD_")
         }
+        self.unit_traits = {
+            value for name, value in self.card_data_constants.items() if name.startswith("UNIT_TRAIT_")
+        }
         self.target_rules = set(self.target_rule_constants.values())
         self.effect_ids = set(parse_string_constants("scripts/game/effect_data.gd", "EFFECT_").values())
         self.effect_ids.update(parse_effect_registry_ids())
@@ -488,6 +491,7 @@ class CardValidator:
             self.reporter.error(f"{path}.role", "hero cards must be minions")
 
         self.validate_keywords(card, path)
+        self.validate_unit_traits(card, path)
         self.validate_reborn(card, path, card_type)
 
         if card_type in {"minion", "building"}:
@@ -592,6 +596,23 @@ class CardValidator:
             keyword = str(keyword_raw)
             if not self.is_known_keyword(keyword):
                 self.reporter.warn(f"{path}.keywords[{index}]", f"unknown keyword '{keyword}'")
+
+    def validate_unit_traits(self, card: dict[str, Any], path: str) -> None:
+        raw_unit_traits = card.get("unit_traits", [])
+        if not isinstance(raw_unit_traits, list):
+            self.reporter.error(f"{path}.unit_traits", "must be an array")
+            return
+        normalized_traits = [str(unit_trait) for unit_trait in raw_unit_traits]
+        if len(normalized_traits) != len(set(normalized_traits)):
+            self.reporter.error(f"{path}.unit_traits", "must not contain duplicate traits")
+        for index, unit_trait in enumerate(normalized_traits):
+            if not unit_trait:
+                self.reporter.error(f"{path}.unit_traits[{index}]", "must not be empty")
+            elif unit_trait not in self.unit_traits:
+                self.reporter.warn(
+                    f"{path}.unit_traits[{index}]",
+                    f"unknown unit trait '{unit_trait}'",
+                )
 
     def validate_reborn(self, card: dict[str, Any], path: str, card_type: str) -> None:
         if "reborn_health_values" not in card:
@@ -759,6 +780,25 @@ class CardValidator:
             self.reporter.error(f"{path}.filter_owner", "must be one of self, any")
         if "target_faction_id" in effect and not isinstance(effect["target_faction_id"], str):
             self.reporter.error(f"{path}.target_faction_id", "must be a string")
+        if "target_unit_traits" in effect:
+            raw_target_traits = effect["target_unit_traits"]
+            if not isinstance(raw_target_traits, list):
+                self.reporter.error(f"{path}.target_unit_traits", "must be an array")
+            else:
+                normalized_target_traits = [str(unit_trait) for unit_trait in raw_target_traits]
+                if not normalized_target_traits:
+                    self.reporter.error(f"{path}.target_unit_traits", "must not be empty")
+                if len(normalized_target_traits) != len(set(normalized_target_traits)):
+                    self.reporter.error(
+                        f"{path}.target_unit_traits",
+                        "must not contain duplicate traits",
+                    )
+                for index, unit_trait in enumerate(normalized_target_traits):
+                    if unit_trait not in self.unit_traits:
+                        self.reporter.warn(
+                            f"{path}.target_unit_traits[{index}]",
+                            f"unknown unit trait '{unit_trait}'",
+                        )
         if "once_per_turn_group" in effect:
             self.require_string(effect, "once_per_turn_group", path)
             if str(effect.get("trigger", "")) != "after_spell_cast":

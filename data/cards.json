@@ -4989,6 +4989,9 @@
 				"count": 1,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 2,
 				"health": 20,
 				"effects": [],
@@ -5133,7 +5136,9 @@
 					{
 						"id": "modify_unit_attack",
 						"trigger": "while_on_board",
-						"target_faction_id": "symbiote",
+						"target_unit_traits": [
+							"symbiote"
+						],
 						"amount": 2
 					}
 				]
@@ -5252,7 +5257,9 @@
 					{
 						"id": "modify_unit_attack",
 						"trigger": "while_on_board",
-						"target_faction_id": "symbiote",
+						"target_unit_traits": [
+							"symbiote"
+						],
 						"amount": 4
 					},
 					{
@@ -5313,6 +5320,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 3,
 				"health": 7,
 				"effects": [
@@ -5347,6 +5357,9 @@
 				"level": 1,
 				"keywords": [
 					"ranged"
+				],
+				"unit_traits": [
+					"symbiote"
 				],
 				"attack": 2,
 				"health": 5,
@@ -5383,6 +5396,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 3,
 				"health": 6,
 				"effects": [
@@ -5418,6 +5434,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 4,
 				"health": 8,
 				"effects": [
@@ -5438,6 +5457,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 1,
 				"health": 3,
 				"effects": [
@@ -5470,6 +5492,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 10,
 				"health": 4,
 				"effects": []
@@ -5483,6 +5508,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 5,
 				"health": 8,
 				"effects": []
@@ -5499,6 +5527,9 @@
 					"ranged",
 					"silence_aura"
 				],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 2,
 				"health": 5,
 				"effects": []
@@ -5512,6 +5543,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 7,
 				"health": 15,
 				"effects": [],
@@ -5553,6 +5587,9 @@
 				"keywords": [
 					"mobile_assault"
 				],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 5,
 				"health": 14,
 				"effects": []
@@ -5567,6 +5604,9 @@
 				"level": 1,
 				"keywords": [
 					"mobile_assault"
+				],
+				"unit_traits": [
+					"symbiote"
 				],
 				"attack": 8,
 				"health": 8,
@@ -5589,6 +5629,9 @@
 				"keywords": [
 					"trigger"
 				],
+				"unit_traits": [
+					"symbiote"
+				],
 				"attack": 4,
 				"health": 10,
 				"effects": [
@@ -5610,6 +5653,9 @@
 				"level": 1,
 				"keywords": [
 					"mobile_assault"
+				],
+				"unit_traits": [
+					"symbiote"
 				],
 				"attack": 3,
 				"health": 9,
