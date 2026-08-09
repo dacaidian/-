@@ -278,13 +278,16 @@ func _draw_symbiote_shell(
 ) -> void:
 	var scale_value := _target_scale()
 	var breath := 0.96 + sin(progress * TAU * 2.4) * 0.04
+	var shell_radii := Vector2(scale_value * 0.19, scale_value * 0.075) * breath * bind
+	if shell_radii.x <= 0.5 or shell_radii.y <= 0.5:
+		return
 	for shell_index in range(4):
 		var angle := PI * (0.25 + float(shell_index) * 0.50)
 		var shell_center := center_point + Vector2.from_angle(angle) * scale_value * 0.34
 		Toolkit.draw_soft_ellipse(
 			self,
 			shell_center,
-			Vector2(scale_value * 0.19, scale_value * 0.075) * breath * bind,
+			shell_radii,
 			Toolkit.with_alpha(LIVING_RED, alpha * 0.28),
 			Toolkit.with_alpha(BLACK_FLESH, alpha * (0.72 + stabilize * 0.18)),
 			6,

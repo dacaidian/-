@@ -3,7 +3,7 @@ extends SceneTree
 const Toolkit := preload("res://scripts/ui/animation/vfx_canvas_toolkit.gd")
 
 
-class RibbonProbe:
+class GeometryProbe:
 	extends Control
 
 	var paths: Array[PackedVector2Array] = []
@@ -22,6 +22,23 @@ class RibbonProbe:
 				true,
 				float(path_index) * 0.37
 			)
+		var ellipse_cases: Array[Dictionary] = [
+			{"center": Vector2(300.0, 300.0), "radii": Vector2.ZERO, "rotation": 0.0},
+			{"center": Vector2(330.0, 300.0), "radii": Vector2(0.001, 0.001), "rotation": 0.0},
+			{"center": Vector2(370.0, 300.0), "radii": Vector2(0.11, 0.11), "rotation": 0.31},
+			{"center": Vector2(430.0, 300.0), "radii": Vector2(52.0, 0.11), "rotation": 0.78},
+			{"center": Vector2(520.0, 310.0), "radii": Vector2(58.0, 24.0), "rotation": 1.17},
+		]
+		for ellipse_case in ellipse_cases:
+			Toolkit.draw_soft_ellipse(
+				self,
+				Vector2(ellipse_case["center"]),
+				Vector2(ellipse_case["radii"]),
+				Color(0.48, 0.06, 0.12, 0.72),
+				Color(0.03, 0.01, 0.04, 0.64),
+				6,
+				float(ellipse_case["rotation"])
+			)
 
 
 func _initialize() -> void:
@@ -29,8 +46,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var probe := RibbonProbe.new()
-	probe.name = "RibbonGeometryProbe"
+	var probe := GeometryProbe.new()
+	probe.name = "CanvasGeometryProbe"
 	probe.size = Vector2(640.0, 420.0)
 	probe.paths = [
 		PackedVector2Array([Vector2(30.0, 30.0), Vector2(30.0, 30.0), Vector2(30.0, 30.0)]),
@@ -47,7 +64,7 @@ func _run() -> void:
 	probe.queue_free()
 	await process_frame
 	if root.get_child_count() != 0:
-		push_error("Ribbon geometry probe leaked nodes")
+		push_error("Canvas geometry probe leaked nodes")
 		quit(1)
 		return
 	print("VFX_CANVAS_TOOLKIT_TESTS_OK")

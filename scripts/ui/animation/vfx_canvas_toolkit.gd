@@ -7,6 +7,8 @@ class_name VfxCanvasToolkit
 const MIN_PATH_POINT_DISTANCE := 0.05
 const MIN_PATH_POINT_DISTANCE_SQUARED := MIN_PATH_POINT_DISTANCE * MIN_PATH_POINT_DISTANCE
 const MIN_TRIANGLE_DOUBLE_AREA := 0.01
+const MIN_ELLIPSE_RADIUS := 0.1
+const MIN_ELLIPSE_AREA := 0.01
 
 
 static func with_alpha(color: Color, alpha_scale: float) -> Color:
@@ -43,22 +45,60 @@ static func draw_soft_ellipse(
 	layers := 6,
 	rotation_radians := 0.0
 ) -> void:
-	if radii.x <= 0.1 or radii.y <= 0.1 or color.a <= 0.001:
+	if (
+		canvas == null
+		or not center.is_finite()
+		or not radii.is_finite()
+		or not is_finite(rotation_radians)
+		or radii.x <= MIN_ELLIPSE_RADIUS
+		or radii.y <= MIN_ELLIPSE_RADIUS
+		or radii.x * radii.y * PI < MIN_ELLIPSE_AREA
+		or color.a <= 0.001
+	):
 		return
 	var safe_layers := maxi(layers, 2)
 	for layer_index in range(safe_layers):
 		var ratio := float(layer_index) / float(safe_layers - 1)
 		var scale_value := lerpf(1.38, 0.38, ratio)
 		var layer_alpha := color.a * lerpf(0.035, 0.25, pow(ratio, 1.4))
-		canvas.draw_colored_polygon(
-			_ellipse_points(center, radii * scale_value, rotation_radians, 36),
+		_draw_transformed_disc(
+			canvas,
+			center,
+			radii * scale_value,
+			rotation_radians,
 			Color(color.r, color.g, color.b, layer_alpha)
 		)
 	if core_color.a > 0.001:
-		canvas.draw_colored_polygon(
-			_ellipse_points(center, radii * 0.32, rotation_radians, 28),
+		_draw_transformed_disc(
+			canvas,
+			center,
+			radii * 0.32,
+			rotation_radians,
 			with_alpha(core_color, 0.70)
 		)
+
+
+static func _draw_transformed_disc(
+	canvas: CanvasItem,
+	center: Vector2,
+	radii: Vector2,
+	rotation_radians: float,
+	color: Color
+) -> void:
+	if (
+		canvas == null
+		or not center.is_finite()
+		or not radii.is_finite()
+		or not is_finite(rotation_radians)
+		or radii.x <= MIN_ELLIPSE_RADIUS
+		or radii.y <= MIN_ELLIPSE_RADIUS
+		or radii.x * radii.y * PI < MIN_ELLIPSE_AREA
+		or color.a <= 0.001
+	):
+		return
+	canvas.draw_set_transform(center, rotation_radians, radii)
+	canvas.draw_circle(Vector2.ZERO, 1.0, color, true, -1.0, true)
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 static func draw_ribbon(
@@ -321,21 +361,6 @@ static func _ribbon_half_width(
 		envelope *= maxf(_smooth_unit(clampf((1.0 - ratio) / 0.20, 0.0, 1.0)), 0.08)
 	var organic_width := 0.94 + sin(ratio * TAU * 2.35 + organic_phase) * 0.055 + sin(ratio * TAU * 5.1 + organic_phase * 0.61) * 0.025
 	return maxf(width * 0.5 * envelope * organic_width, 0.08)
-
-
-static func _ellipse_points(
-	center: Vector2,
-	radii: Vector2,
-	rotation_radians: float,
-	segments: int
-) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	var safe_segments := maxi(segments, 12)
-	for point_index in range(safe_segments):
-		var angle := TAU * float(point_index) / float(safe_segments)
-		var point := Vector2(cos(angle) * radii.x, sin(angle) * radii.y).rotated(rotation_radians)
-		points.append(center + point)
-	return points
 
 
 static func _smooth_unit(value: float) -> float:
