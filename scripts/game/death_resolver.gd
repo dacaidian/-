@@ -259,6 +259,7 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 			continue
 
 		await game_manager.record_turn_death_event(death_event)
+		await resolve_kill_trigger(game_manager, death_event)
 
 		if is_interaction_related_to_state(game_manager, state):
 			should_cancel_interaction = true
@@ -295,6 +296,31 @@ func resolve_death_batch(game_manager: GameManager, death_events: Array[Dictiona
 
 	game_manager.refresh_action_available_hints()
 	game_manager.refresh_debug_panel()
+
+
+func resolve_kill_trigger(game_manager: GameManager, death_event: Dictionary) -> void:
+	if game_manager == null:
+		return
+	var source_state := death_event.get("source_state") as CardState
+	var defeated_state := death_event.get("state") as CardState
+	if source_state == null or defeated_state == null or source_state == defeated_state:
+		return
+	if source_state.is_empty() or not source_state.is_face_up:
+		return
+	var context: Dictionary = death_event.get("destroy_context", {})
+	if game_manager.trigger_resolver.is_resolving:
+		await game_manager.effect_registry.execute_trigger(
+			source_state,
+			EventContext.TRIGGER_ON_KILL,
+			game_manager,
+			context
+		)
+	else:
+		game_manager.trigger_resolver.queue_trigger(
+			source_state,
+			EventContext.TRIGGER_ON_KILL,
+			context
+		)
 
 
 func claim_death_slot(game_manager: GameManager, dead_state: CardState, claim: Dictionary) -> bool:

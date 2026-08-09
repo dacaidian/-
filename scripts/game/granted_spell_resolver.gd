@@ -20,6 +20,12 @@ func get_granted_spell_actions(user: CardState, game_manager: GameManager) -> Ar
 
 		append_granted_spell_actions_from_card(granted_spell_actions, user, card_data, owner)
 
+	for status in user.statuses:
+		if status == null:
+			continue
+		for spell_data in EffectData.get_spell_actions(status.payload):
+			granted_spell_actions.append(spell_data)
+
 	return granted_spell_actions
 
 

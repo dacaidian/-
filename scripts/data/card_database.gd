@@ -244,6 +244,23 @@ func get_faction_skill_configs(faction_id: String) -> Array[Dictionary]:
 	return skill_configs
 
 
+func get_faction_card_pool_configs(faction_id: String) -> Array[Dictionary]:
+	var pool_configs: Array[Dictionary] = []
+	var faction = factions_by_id.get(faction_id, {})
+	if not faction is Dictionary:
+		return pool_configs
+
+	var raw_pools: Variant = faction.get("faction_card_pools", [])
+	if not raw_pools is Array:
+		return pool_configs
+
+	for pool_config in raw_pools:
+		if pool_config is Dictionary:
+			pool_configs.append(pool_config.duplicate(true))
+
+	return pool_configs
+
+
 func get_faction_evolution_rules(faction_id: String) -> Array[Dictionary]:
 	var evolution_rules: Array[Dictionary] = []
 	var faction = factions_by_id.get(faction_id, {})

@@ -39,6 +39,10 @@ const FactionSkillResolverScript := preload("res://scripts/game/faction_skill_re
 const TurnEventLedgerScript := preload("res://scripts/game/turn_event_ledger.gd")
 const FactionRuntimeStateResolverScript := preload("res://scripts/game/faction_runtime_state_resolver.gd")
 const KagunePowerResolverScript := preload("res://scripts/game/kagune_power_resolver.gd")
+const SymbioteOffspringPoolResolverScript := preload(
+	"res://scripts/game/symbiote_offspring_pool_resolver.gd"
+)
+const UnitSilenceResolverScript := preload("res://scripts/game/unit_silence_resolver.gd")
 const GameHudCoordinatorScript := preload("res://scripts/game/game_hud_coordinator.gd")
 const MatchResultScreenControllerScript := preload(
 	"res://scripts/ui/match_result_screen_controller.gd"
@@ -184,6 +188,8 @@ var faction_skill_resolver := FactionSkillResolverScript.new()
 var turn_event_ledger := TurnEventLedgerScript.new()
 var faction_runtime_state_resolver := FactionRuntimeStateResolverScript.new()
 var kagune_power_resolver := KagunePowerResolverScript.new()
+var symbiote_offspring_pool_resolver := SymbioteOffspringPoolResolverScript.new()
+var unit_silence_resolver := UnitSilenceResolverScript.new()
 var game_hud_coordinator := GameHudCoordinatorScript.new()
 var match_result_screen_controller
 var match_exit_controller := MatchExitControllerScript.new()
@@ -341,6 +347,7 @@ func initialize_players() -> void:
 		player.mana = 0
 		player.state_changed.connect(_on_player_state_changed)
 		players.append(player)
+		symbiote_offspring_pool_resolver.initialize_player(player, card_database)
 
 	for index in range(players.size()):
 		add_starting_hand_cards_for_player(players[index], index)
@@ -1057,6 +1064,36 @@ func get_player_by_id(player_id: String) -> PlayerState:
 
 func get_card_data_by_id(card_id: String) -> CardData:
 	return card_database.get_card(card_id)
+
+
+func get_symbiote_offspring_pool_card_ids(owner_id: String) -> Array[String]:
+	return symbiote_offspring_pool_resolver.get_available_card_ids(
+		get_player_by_id(owner_id),
+		card_database
+	)
+
+
+func record_symbiote_severance(owner_id: String) -> Array[String]:
+	return symbiote_offspring_pool_resolver.record_severance(
+		get_player_by_id(owner_id),
+		card_database
+	)
+
+
+func record_symbiote_offspring_death(owner_id: String, card_id: String) -> Array[String]:
+	return symbiote_offspring_pool_resolver.record_offspring_death(
+		get_player_by_id(owner_id),
+		card_database,
+		card_id
+	)
+
+
+func is_unit_silenced(state: CardState) -> bool:
+	return unit_silence_resolver.is_unit_silenced(state, self)
+
+
+func is_hero_attached_spell_silenced(owner_id: String, hero_card_id: String) -> bool:
+	return unit_silence_resolver.is_hero_attached_spell_silenced(owner_id, hero_card_id, self)
 
 
 func get_hand_play_resolver() -> HandPlayResolver:

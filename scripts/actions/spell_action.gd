@@ -30,6 +30,8 @@ func setup(new_spell_data: Dictionary) -> SpellAction:
 func can_start(user: CardState, game_manager: GameManager) -> bool:
 	if not is_controlled_face_up_minion(user, game_manager):
 		return false
+	if game_manager.has_method("is_unit_silenced") and game_manager.is_unit_silenced(user):
+		return false
 
 	if effects.is_empty():
 		return false

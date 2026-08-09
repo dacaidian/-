@@ -38,6 +38,10 @@ var origin: Dictionary = {}
 # 例如卡扎克杀戮成长会写入这里；死亡清状态后重新入场仍保留，净化/驱散不会移除。
 var permanent_stat_overrides: Dictionary = {}
 
+# Per-instance rule counters that must follow snapshots but are not visible or
+# cleanseable statuses, such as Carnage's two-kill progress.
+var runtime_counters: Dictionary = {}
+
 # 当前是否允许玩家操作这张牌。
 var is_interactable := true
 
@@ -130,6 +134,7 @@ func set_card_data(value: CardData) -> void:
 		back_texture = null
 		origin.clear()
 		permanent_stat_overrides.clear()
+		runtime_counters.clear()
 		current_attack = 0
 		passive_attack_bonus = 0
 		passive_keywords.clear()
@@ -248,6 +253,7 @@ func set_card_data(value: CardData) -> void:
 		statuses.clear()
 		origin = create_origin_snapshot()
 		permanent_stat_overrides.clear()
+		runtime_counters.clear()
 
 	state_changed.emit(self)
 
@@ -519,6 +525,7 @@ func create_card_snapshot() -> Dictionary:
 		"data": data,
 		"origin": origin.duplicate(true),
 		"permanent_stat_overrides": permanent_stat_overrides.duplicate(true),
+		"runtime_counters": runtime_counters.duplicate(true),
 		"is_face_up": is_face_up,
 		"front_texture": front_texture,
 		"table_texture": table_texture,
@@ -576,6 +583,11 @@ func apply_card_snapshot(snapshot: Dictionary) -> void:
 		permanent_stat_overrides = snapshot_permanent_stat_overrides.duplicate(true)
 	else:
 		permanent_stat_overrides = {}
+	var snapshot_runtime_counters = snapshot.get("runtime_counters", {})
+	if snapshot_runtime_counters is Dictionary:
+		runtime_counters = snapshot_runtime_counters.duplicate(true)
+	else:
+		runtime_counters = {}
 	is_face_up = bool(snapshot.get("is_face_up", false))
 	front_texture = snapshot.get("front_texture") as Texture2D
 	table_texture = snapshot.get("table_texture") as Texture2D
@@ -672,7 +684,9 @@ func apply_permanent_stat_overrides_as_fresh_state(overrides: Dictionary) -> voi
 	max_movement = int(origin.get("movement", max_movement))
 	passive_max_movement = max_movement
 	current_movement = max_movement
-	passive_max_attack_speed = int(origin.get("attack_speed", max_attack_speed))
+	passive_max_attack_speed = int(
+		permanent_stat_overrides.get("attack_speed", origin.get("attack_speed", max_attack_speed))
+	)
 	status_attack_speed_bonus = 0
 	max_attack_speed = passive_max_attack_speed
 	current_attacks = max_attack_speed
@@ -829,6 +843,7 @@ func create_last_state_snapshot() -> Dictionary:
 		"current_movement": current_movement,
 		"max_attack_speed": max_attack_speed,
 		"current_attacks": current_attacks,
+		"runtime_counters": runtime_counters.duplicate(true),
 		"mounted_attack_max_uses": mounted_attack_max_uses.duplicate(true),
 		"mounted_attack_uses": mounted_attack_uses.duplicate(true),
 		"max_main_actions": max_main_actions,
@@ -910,7 +925,12 @@ func revive_from_reborn(health_value: int) -> void:
 	max_movement = int(origin.get("movement", 1 if data.is_minion() else 0))
 	passive_max_movement = max_movement
 	current_movement = max_movement
-	passive_max_attack_speed = int(origin.get("attack_speed", data.attack_speed if data.is_minion() else 0))
+	passive_max_attack_speed = int(
+		permanent_stat_overrides.get(
+			"attack_speed",
+			origin.get("attack_speed", data.attack_speed if data.is_minion() else 0)
+		)
+	)
 	status_attack_speed_bonus = 0
 	max_attack_speed = passive_max_attack_speed
 	current_attacks = max_attack_speed
@@ -1660,6 +1680,41 @@ func add_permanent_attack(amount: int) -> void:
 		current_attack = maxi(raw_attack, 0)
 		status_attack_floor_debt = mini(raw_attack - current_attack, 0)
 	state_changed.emit(self)
+
+
+func add_permanent_attack_speed(amount: int) -> void:
+	if data == null or amount == 0:
+		return
+	var origin_attack_speed := int(origin.get("attack_speed", data.attack_speed))
+	var previous_attack_speed := int(
+		permanent_stat_overrides.get("attack_speed", origin_attack_speed)
+	)
+	var next_attack_speed := maxi(previous_attack_speed + amount, 0)
+	if next_attack_speed == previous_attack_speed:
+		return
+	permanent_stat_overrides["attack_speed"] = next_attack_speed
+	set_max_attack_speed(next_attack_speed, true)
+
+
+func get_runtime_counter(key: String, default_value := 0) -> int:
+	if key == "":
+		return default_value
+	return int(runtime_counters.get(key, default_value))
+
+
+func set_runtime_counter(key: String, value: int) -> void:
+	if key == "":
+		return
+	if int(runtime_counters.get(key, 0)) == value:
+		return
+	runtime_counters[key] = value
+	state_changed.emit(self)
+
+
+func increment_runtime_counter(key: String, amount := 1) -> int:
+	var next_value := get_runtime_counter(key) + amount
+	set_runtime_counter(key, next_value)
+	return next_value
 
 
 func set_passive_attack_bonus(value: int) -> void:

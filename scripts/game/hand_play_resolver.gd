@@ -26,6 +26,14 @@ func can_play_hand_card(player: PlayerState, card_data: CardData, game_manager: 
 
 	if not is_required_hero_on_board(player, card_data, game_manager):
 		return false
+	if (
+		card_data.is_spell()
+		and card_data.is_hero_attached_card()
+		and game_manager != null
+		and game_manager.has_method("is_hero_attached_spell_silenced")
+		and game_manager.is_hero_attached_spell_silenced(player.id, card_data.owner_hero_card_id)
+	):
+		return false
 
 	if card_data.is_spell():
 		if requires_target(card_data, player) and get_valid_targets(card_data, game_manager, player).is_empty():

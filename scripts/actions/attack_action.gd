@@ -52,6 +52,36 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	if not user.spend_attack():
 		return
 
+	await perform_attack(
+		user,
+		target,
+		game_manager,
+		bool(attack_profile[PROFILE_CAN_OCCUPY])
+	)
+
+
+func perform_attack(
+	user: CardState,
+	target: CardState,
+	game_manager: GameManager,
+	can_occupy: bool
+) -> bool:
+	# Shared normal-attack resolution. Triggered attacks may call this without
+	# paying action resources, while still receiving armor, reflection, splash,
+	# lifesteal, death attribution and after-attack triggers.
+	if (
+		user == null
+		or target == null
+		or game_manager == null
+		or not BoardQuery.is_face_up_minion(user)
+		or user.is_pending_death
+	):
+		return false
+
+	var attack_profile := get_attack_profile(user, target, game_manager)
+	if not bool(attack_profile[PROFILE_CAN_ATTACK]):
+		return false
+
 	var attacker_owner_id := user.owner_id
 	var attacker_card_id := user.card_id
 	var is_melee_attack := bool(attack_profile[PROFILE_IS_MELEE])
@@ -76,7 +106,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 			secondary_damage_targets
 		)
 	if target.current_health <= 0:
-		await game_manager.resolve_attack_kill(user, target, attack_profile[PROFILE_CAN_OCCUPY])
+		await game_manager.resolve_attack_kill(user, target, can_occupy)
 	var resolved_attacker := user
 	if resolved_attacker.is_empty() or resolved_attacker.card_id != attacker_card_id:
 		resolved_attacker = game_manager.find_face_up_board_state(attacker_owner_id, attacker_card_id)
@@ -92,6 +122,7 @@ func execute(user: CardState, target: CardState, game_manager: GameManager) -> v
 	var trigger_source := resolved_attacker
 	if trigger_source != null:
 		await game_manager.resolve_after_attack_triggers(trigger_source, target)
+	return true
 
 
 func resolve_attack_reflection(

@@ -281,6 +281,7 @@ class CardValidator:
                 self.reporter.warn(path, "neutral pool should not define heroes")
 
             self.validate_heroes(faction, faction_id, path)
+            self.validate_faction_card_pools(faction, faction_id, path)
 
             for card_index, card in enumerate(faction.get("cards", []) or []):
                 if isinstance(card, dict):
@@ -289,6 +290,124 @@ class CardValidator:
             for token_index, card in enumerate(faction.get("tokens", []) or []):
                 if isinstance(card, dict):
                     self.validate_card(card, faction_id, f"{path}.tokens[{token_index}]", is_token=True)
+
+    def validate_faction_card_pools(
+        self,
+        faction: dict[str, Any],
+        faction_id: str,
+        path: str,
+    ) -> None:
+        raw_pools = faction.get("faction_card_pools", [])
+        if raw_pools is None:
+            return
+        if not isinstance(raw_pools, list):
+            self.reporter.error(f"{path}.faction_card_pools", "must be an array")
+            return
+
+        known_pool_ids: set[str] = set()
+        local_card_ids = set(self.faction_cards.get(faction_id, {}))
+        local_card_ids.update(self.faction_tokens.get(faction_id, {}))
+        for pool_index, pool in enumerate(raw_pools):
+            pool_path = f"{path}.faction_card_pools[{pool_index}]"
+            if not isinstance(pool, dict):
+                self.reporter.error(pool_path, "pool entry must be an object")
+                continue
+            pool_id = str(pool.get("id", ""))
+            if not pool_id:
+                self.reporter.error(pool_path, "missing pool id")
+            elif pool_id in known_pool_ids:
+                self.reporter.error(pool_path, f"duplicate pool id '{pool_id}'")
+            else:
+                known_pool_ids.add(pool_id)
+
+            self.validate_pool_card_ids(
+                pool.get("initial_card_ids", []),
+                local_card_ids,
+                f"{pool_path}.initial_card_ids",
+            )
+            self.validate_pool_unlock(
+                pool.get("severance_unlock", {}),
+                local_card_ids,
+                f"{pool_path}.severance_unlock",
+                require_threshold=True,
+            )
+            self.validate_pool_unlock(
+                pool.get("death_collection_unlock", {}),
+                local_card_ids,
+                f"{pool_path}.death_collection_unlock",
+                require_required_ids=True,
+            )
+            death_unlocks = pool.get("death_unlocks", [])
+            if not isinstance(death_unlocks, list):
+                self.reporter.error(f"{pool_path}.death_unlocks", "must be an array")
+                continue
+            for unlock_index, unlock in enumerate(death_unlocks):
+                self.validate_pool_unlock(
+                    unlock,
+                    local_card_ids,
+                    f"{pool_path}.death_unlocks[{unlock_index}]",
+                    require_source_ids=True,
+                )
+
+    def validate_pool_unlock(
+        self,
+        unlock: Any,
+        local_card_ids: set[str],
+        path: str,
+        *,
+        require_threshold: bool = False,
+        require_required_ids: bool = False,
+        require_source_ids: bool = False,
+    ) -> None:
+        if unlock in ({}, None):
+            return
+        if not isinstance(unlock, dict):
+            self.reporter.error(path, "unlock entry must be an object")
+            return
+        if not str(unlock.get("id", "")):
+            self.reporter.error(path, "missing unlock id")
+        self.validate_pool_card_ids(unlock.get("card_ids", []), local_card_ids, f"{path}.card_ids")
+        if require_threshold:
+            threshold = unlock.get("threshold")
+            if not isinstance(threshold, int) or threshold <= 0:
+                self.reporter.error(f"{path}.threshold", "must be a positive integer")
+        if require_required_ids:
+            self.validate_pool_card_ids(
+                unlock.get("required_card_ids", []),
+                local_card_ids,
+                f"{path}.required_card_ids",
+                require_non_empty=True,
+            )
+        if require_source_ids:
+            self.validate_pool_card_ids(
+                unlock.get("source_card_ids", []),
+                local_card_ids,
+                f"{path}.source_card_ids",
+                require_non_empty=True,
+            )
+
+    def validate_pool_card_ids(
+        self,
+        raw_card_ids: Any,
+        local_card_ids: set[str],
+        path: str,
+        *,
+        require_non_empty: bool = False,
+    ) -> None:
+        if not isinstance(raw_card_ids, list):
+            self.reporter.error(path, "must be an array")
+            return
+        if require_non_empty and not raw_card_ids:
+            self.reporter.error(path, "must not be empty")
+        normalized_ids = [str(card_id) for card_id in raw_card_ids]
+        if len(normalized_ids) != len(set(normalized_ids)):
+            self.reporter.error(path, "must not contain duplicate card ids")
+        for card_index, card_id in enumerate(normalized_ids):
+            if card_id not in local_card_ids:
+                self.reporter.error(
+                    f"{path}[{card_index}]",
+                    f"card '{card_id}' is not defined by this faction",
+                )
 
     def validate_heroes(self, faction: dict[str, Any], faction_id: str, path: str) -> None:
         heroes = faction.get("heroes", [])

@@ -21,6 +21,17 @@ const PlayAnimationEffectScript := preload("res://scripts/effects/play_animation
 const GainPermanentAttackEffectScript := preload(
 	"res://scripts/effects/gain_permanent_attack_effect.gd"
 )
+const UpdateSymbioteOffspringPoolEffectScript := preload(
+	"res://scripts/effects/update_symbiote_offspring_pool_effect.gd"
+)
+const RandomNormalAttacksEffectScript := preload(
+	"res://scripts/effects/random_normal_attacks_effect.gd"
+)
+const SymbioteWhipEffectScript := preload("res://scripts/effects/symbiote_whip_effect.gd")
+const SymbioteAbsorbEffectScript := preload("res://scripts/effects/symbiote_absorb_effect.gd")
+const CarnageKillProgressEffectScript := preload(
+	"res://scripts/effects/carnage_kill_progress_effect.gd"
+)
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -39,6 +50,20 @@ func _init() -> void:
 	register_effect(
 		EffectData.EFFECT_GAIN_PERMANENT_ATTACK,
 		GainPermanentAttackEffectScript.new()
+	)
+	register_effect(
+		EffectData.EFFECT_UPDATE_SYMBIOTE_OFFSPRING_POOL,
+		UpdateSymbioteOffspringPoolEffectScript.new()
+	)
+	register_effect(
+		EffectData.EFFECT_RANDOM_NORMAL_ATTACKS,
+		RandomNormalAttacksEffectScript.new()
+	)
+	register_effect(EffectData.EFFECT_SYMBIOTE_WHIP, SymbioteWhipEffectScript.new())
+	register_effect(EffectData.EFFECT_SYMBIOTE_ABSORB, SymbioteAbsorbEffectScript.new())
+	register_effect(
+		EffectData.EFFECT_CARNAGE_KILL_PROGRESS,
+		CarnageKillProgressEffectScript.new()
 	)
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())

@@ -4916,7 +4916,55 @@
 		"id": "symbiote",
 		"name": "symbiote",
 		"displayName": "共生体",
-		"description": "来自异星的共生体以宿主、组织剥离与子代进化构成独特生态。毒液可以剥离自身组织，组织未来将在子代池中进化并附着于人类随从；纳尔则是这一体系的终局力量。",
+		"description": "来自异星的共生体以宿主、组织剥离与子代进化构成独特生态。玩家拥有独立的共生体子代池；剥离与子代死亡会逐步解锁更危险的新个体。",
+		"faction_card_pools": [
+			{
+				"id": "symbiote_offspring",
+				"name": "共生体子代池",
+				"initial_card_ids": [
+					"symbiote_riot",
+					"symbiote_scream",
+					"symbiote_lasher",
+					"symbiote_extreme",
+					"symbiote_devour",
+					"anti_venom",
+					"symbiote_warrior"
+				],
+				"death_unlocks": [
+					{
+						"id": "scream_unlocks_silence",
+						"source_card_ids": [
+							"symbiote_scream"
+						],
+						"card_ids": [
+							"symbiote_silence"
+						]
+					}
+				],
+				"death_collection_unlock": {
+					"id": "foundation_deaths_unlock_hybrid",
+					"required_card_ids": [
+						"symbiote_riot",
+						"symbiote_devour",
+						"symbiote_lasher",
+						"symbiote_extreme",
+						"symbiote_scream"
+					],
+					"card_ids": [
+						"symbiote_hybrid"
+					]
+				},
+				"severance_unlock": {
+					"id": "five_severances_unlock_advanced_offspring",
+					"threshold": 5,
+					"card_ids": [
+						"toxin",
+						"carnage",
+						"sleeper"
+					]
+				}
+			}
+		],
 		"heroes": [
 			{
 				"card_id": "venom",
@@ -4927,7 +4975,7 @@
 			{
 				"id": "venom",
 				"name": "毒液",
-				"description": "共生体英雄。施法动作自我剥离：毒液攻击力永久+1，对自身造成2点伤害，获得一张共生体组织。撕咬、恐怖尖啸、法典和子代判定将在后续实现。",
+				"description": "共生体英雄。施法动作自我剥离：毒液攻击力永久+1，对自身造成2点伤害，获得一张共生体组织，并推进共生体子代池的剥离计数。撕咬、恐怖尖啸和法典将在后续实现。",
 				"url": "res://assets/img/共生体/毒液.png",
 				"type": "minion",
 				"role": "hero",
@@ -4953,6 +5001,10 @@
 								"id": "gain_permanent_attack",
 								"target": "self",
 								"amount": 1
+							},
+							{
+								"id": "update_symbiote_offspring_pool",
+								"operation": "record_severance"
 							},
 							{
 								"id": "damage",
@@ -5019,6 +5071,10 @@
 								"amount": 1
 							},
 							{
+								"id": "update_symbiote_offspring_pool",
+								"operation": "record_severance"
+							},
+							{
 								"id": "damage",
 								"target": "owner_card_by_id",
 								"target_card_id": "venom",
@@ -5074,6 +5130,319 @@
 				"level": 1,
 				"target_rule": "none",
 				"keywords": [],
+				"effects": []
+			},
+			{
+				"id": "symbiote_riot",
+				"name": "暴乱",
+				"description": "施法动作暴乱：随机选择攻击范围内至多三个合法单位并分别进行普通攻击，不触发占领。亡语会记录其死亡；五种基础子代都曾死亡后，子代池加入混种。",
+				"url": "res://assets/img/共生体/暴乱.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 3,
+				"health": 7,
+				"effects": [
+					{
+						"id": "update_symbiote_offspring_pool",
+						"trigger": "on_destroyed",
+						"operation": "record_death",
+						"pool_card_id": "symbiote_riot"
+					}
+				],
+				"spell_actions": [
+					{
+						"id": "riot",
+						"name": "暴乱",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "random_normal_attacks",
+								"max_targets": 3
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "symbiote_scream",
+				"name": "嚎叫",
+				"description": "远程。施法动作嚎叫：对战场上所有随从造成2点伤害。亡语：子代池加入沉默，并记录基础子代死亡进度。",
+				"url": "res://assets/img/共生体/嚎叫.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"ranged"
+				],
+				"attack": 2,
+				"health": 5,
+				"effects": [
+					{
+						"id": "update_symbiote_offspring_pool",
+						"trigger": "on_destroyed",
+						"operation": "record_death",
+						"pool_card_id": "symbiote_scream"
+					}
+				],
+				"spell_actions": [
+					{
+						"id": "scream",
+						"name": "嚎叫",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "damage",
+								"target": "all_minions",
+								"amount": 2,
+								"spell_power_scaling": false
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "symbiote_lasher",
+				"name": "皮鞭",
+				"description": "施法动作皮鞭：选择一个玩家所属的非英雄随从；若为敌方，对其造成3点伤害；若为友方，对其造成1点伤害并使其攻击力+3。亡语记录基础子代死亡进度。",
+				"url": "res://assets/img/共生体/皮鞭.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 3,
+				"health": 6,
+				"effects": [
+					{
+						"id": "update_symbiote_offspring_pool",
+						"trigger": "on_destroyed",
+						"operation": "record_death",
+						"pool_card_id": "symbiote_lasher"
+					}
+				],
+				"spell_actions": [
+					{
+						"id": "lash",
+						"name": "皮鞭",
+						"target_rule": "player_owned_non_hero_minions",
+						"effects": [
+							{
+								"id": "symbiote_whip",
+								"enemy_damage": 3,
+								"friendly_damage": 1,
+								"friendly_attack_bonus": 3
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "symbiote_extreme",
+				"name": "极端",
+				"description": "基础共生体子代。亡语记录基础子代死亡进度。",
+				"url": "res://assets/img/共生体/极端.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 4,
+				"health": 8,
+				"effects": [
+					{
+						"id": "update_symbiote_offspring_pool",
+						"trigger": "on_destroyed",
+						"operation": "record_death",
+						"pool_card_id": "symbiote_extreme"
+					}
+				]
+			},
+			{
+				"id": "symbiote_devour",
+				"name": "吞噬",
+				"description": "施法动作吞噬：吞噬一个敌方非英雄随从，获得其被吞噬时的攻击力、生命值上限及固有技能。亡语记录基础子代死亡进度。",
+				"url": "res://assets/img/共生体/吞噬.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 1,
+				"health": 3,
+				"effects": [
+					{
+						"id": "update_symbiote_offspring_pool",
+						"trigger": "on_destroyed",
+						"operation": "record_death",
+						"pool_card_id": "symbiote_devour"
+					}
+				],
+				"spell_actions": [
+					{
+						"id": "devour",
+						"name": "吞噬",
+						"target_rule": "enemy_non_hero_minions",
+						"effects": [
+							{
+								"id": "symbiote_absorb"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "anti_venom",
+				"name": "反毒液",
+				"description": "共生体子代池中的高攻击随从。",
+				"url": "res://assets/img/共生体/反毒液.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 10,
+				"health": 4,
+				"effects": []
+			},
+			{
+				"id": "symbiote_warrior",
+				"name": "共生体战士",
+				"description": "稳定而强韧的共生体战斗单位。",
+				"url": "res://assets/img/共生体/共生体战士.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 5,
+				"health": 8,
+				"effects": []
+			},
+			{
+				"id": "symbiote_silence",
+				"name": "沉默",
+				"description": "远程。光环：全部敌方单位被沉默，无法释放施法动作；敌方英雄被沉默时，属于该英雄的法术牌也无法释放。",
+				"url": "res://assets/img/共生体/沉默.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"ranged",
+					"silence_aura"
+				],
+				"attack": 2,
+				"health": 5,
+				"effects": []
+			},
+			{
+				"id": "symbiote_hybrid",
+				"name": "混种",
+				"description": "施法动作暴乱：随机普通攻击范围内至多三个合法单位，不触发占领。施法动作皮鞭：对敌方非英雄随从造成5点伤害，或使友方非英雄随从受到2点伤害并攻击力+5。",
+				"url": "res://assets/img/共生体/混种.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [],
+				"attack": 7,
+				"health": 15,
+				"effects": [],
+				"spell_actions": [
+					{
+						"id": "riot",
+						"name": "暴乱",
+						"target_rule": "none",
+						"effects": [
+							{
+								"id": "random_normal_attacks",
+								"max_targets": 3
+							}
+						]
+					},
+					{
+						"id": "lash",
+						"name": "皮鞭",
+						"target_rule": "player_owned_non_hero_minions",
+						"effects": [
+							{
+								"id": "symbiote_whip",
+								"enemy_damage": 5,
+								"friendly_damage": 2,
+								"friendly_attack_bonus": 5
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "toxin",
+				"name": "毒素",
+				"description": "进行五次剥离后加入子代池。移动攻击。",
+				"url": "res://assets/img/共生体/毒素.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 5,
+				"health": 14,
+				"effects": []
+			},
+			{
+				"id": "carnage",
+				"name": "屠杀",
+				"description": "进行五次剥离后加入子代池。移动攻击。连环杀人魔：每击杀两个敌方非英雄随从，攻速永久+1。",
+				"url": "res://assets/img/共生体/屠杀.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 8,
+				"health": 8,
+				"effects": [
+					{
+						"id": "carnage_kill_progress",
+						"trigger": "on_kill",
+						"threshold": 2
+					}
+				]
+			},
+			{
+				"id": "sleeper",
+				"name": "眠者",
+				"description": "进行五次剥离后加入子代池。触发：获得一张猫。",
+				"url": "res://assets/img/共生体/眠者.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"trigger"
+				],
+				"attack": 4,
+				"health": 10,
+				"effects": [
+					{
+						"id": "add_card_to_hand",
+						"trigger": "on_reveal",
+						"card_id": "symbiote_cat",
+						"amount": 1
+					}
+				]
+			},
+			{
+				"id": "symbiote_cat",
+				"name": "猫",
+				"description": "眠者生成的衍生随从。移动攻击，攻速2，移动力5。",
+				"url": "res://assets/img/共生体/猫.png",
+				"type": "minion",
+				"count": 0,
+				"level": 1,
+				"keywords": [
+					"mobile_assault"
+				],
+				"attack": 3,
+				"health": 9,
+				"attack_speed": 2,
+				"movement": 5,
 				"effects": []
 			}
 		]

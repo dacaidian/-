@@ -124,11 +124,23 @@ func get_target_states(source_state: CardState, effect_data: Dictionary, game_ma
 			targets = get_friendly_minions_by_faction(source_state, effect_data, game_manager)
 		EffectData.TARGET_ENEMY_UNITS:
 			targets = get_enemy_units(source_state, effect_data, game_manager)
+		EffectData.TARGET_ALL_MINIONS:
+			targets = get_all_minions(game_manager)
 		_:
 			push_warning("暂不支持的效果目标: %s" % target)
 			targets = []
 
 	return filter_spell_immune_targets(targets, effect_data)
+
+
+func get_all_minions(game_manager: Node) -> Array[CardState]:
+	var targets: Array[CardState] = []
+	if game_manager == null or not game_manager.has_method("get_all_board_states"):
+		return targets
+	for target_state in game_manager.get_all_board_states():
+		if BoardQuery.is_face_up_minion(target_state):
+			targets.append(target_state)
+	return targets
 
 
 func get_attack_target_unit(effect_data: Dictionary) -> Array[CardState]:

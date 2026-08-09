@@ -159,9 +159,21 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Self-severance would replay a generic cast animation")
 	if not bool(artificial_action.get(EffectData.KEY_EFFECT_HANDLES_ANIMATION, false)):
 		return _fail("Artificial severance would replay a generic cast animation")
-	if _effect_ids(self_action) != ["play_animation", "gain_permanent_attack", "damage", "add_card_to_hand"]:
+	if _effect_ids(self_action) != [
+		"play_animation",
+		"gain_permanent_attack",
+		"update_symbiote_offspring_pool",
+		"damage",
+		"add_card_to_hand",
+	]:
 		return _fail("Self-severance effect order changed")
-	if _effect_ids(artificial_action) != ["play_animation", "gain_permanent_attack", "damage", "add_card_to_hand"]:
+	if _effect_ids(artificial_action) != [
+		"play_animation",
+		"gain_permanent_attack",
+		"update_symbiote_offspring_pool",
+		"damage",
+		"add_card_to_hand",
+	]:
 		return _fail("Artificial severance effect order changed")
 	return true
 
@@ -213,6 +225,12 @@ func _test_lethal_self_severance(card_database: CardDatabase) -> bool:
 	var revived_venom := player.hand[0] as HandCardState
 	if revived_venom == null or int(revived_venom.permanent_stat_overrides.get("attack", 0)) != 3:
 		return _fail("Venom lost permanent severance attack growth on death")
+	var lethal_pool_state: Dictionary = player.get_effect_runtime_value(
+		"symbiote_offspring_pool",
+		{}
+	)
+	if int(lethal_pool_state.get("severance_count", 0)) != 1:
+		return _fail("Lethal self-severance did not advance the offspring pool")
 	if is_instance_valid(game_manager.audio_manager):
 		game_manager.audio_manager.free()
 	game_manager.free()
@@ -262,6 +280,9 @@ func _test_effect_chains(card_database: CardDatabase) -> bool:
 		return _fail("Artificial severance did not add one Symbiote Tissue")
 	if probe.calls != ["source_to_target:symbiote_artificial_severance", "resolve_dead"]:
 		return _fail("Artificial severance presentation or damage order changed")
+	var pool_state: Dictionary = player.get_effect_runtime_value("symbiote_offspring_pool", {})
+	if int(pool_state.get("severance_count", 0)) != 2:
+		return _fail("Both severance actions did not share one player-level counter")
 
 	probe.queue_free()
 	await process_frame
