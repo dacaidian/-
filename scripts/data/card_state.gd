@@ -1640,6 +1640,28 @@ func set_current_attack(value: int) -> void:
 	state_changed.emit(self)
 
 
+func add_permanent_attack(amount: int) -> void:
+	if data == null or amount == 0:
+		return
+
+	var origin_attack := int(origin.get("attack", data.attack))
+	var previous_attack := int(permanent_stat_overrides.get("attack", origin_attack))
+	var next_attack := maxi(previous_attack + amount, 0)
+	var applied_delta := next_attack - previous_attack
+	if applied_delta == 0:
+		return
+
+	permanent_stat_overrides["attack"] = next_attack
+	if status_attack_override >= 0:
+		attack_before_status_override_raw += applied_delta
+		current_attack = status_attack_override
+	else:
+		var raw_attack := current_attack + status_attack_floor_debt + applied_delta
+		current_attack = maxi(raw_attack, 0)
+		status_attack_floor_debt = mini(raw_attack - current_attack, 0)
+	state_changed.emit(self)
+
+
 func set_passive_attack_bonus(value: int) -> void:
 	var normalized_value := maxi(value, 0)
 	if passive_attack_bonus == normalized_value:

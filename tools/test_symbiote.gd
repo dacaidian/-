@@ -77,6 +77,15 @@ class LethalSpellGameManager:
 		for raw_state in states_to_check:
 			var state := raw_state as CardState
 			if state != null and state.current_health <= 0:
+				var owner := get_player_by_id(state.owner_id)
+				if owner != null and state.is_hero():
+					owner.add_to_hand_with_cooldown(
+						state.data,
+						3,
+						HandCardState.SOURCE_HERO_REVIVE,
+						["hero_revive"],
+						state.permanent_stat_overrides
+					)
 				state.clear_card()
 		return true
 
@@ -104,6 +113,8 @@ func _run() -> void:
 		_fail("Could not load card data")
 		return
 	if not _test_card_configuration(card_database):
+		return
+	if not _test_permanent_attack_math(card_database):
 		return
 	if not await _test_lethal_self_severance(card_database):
 		return
@@ -148,10 +159,35 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Self-severance would replay a generic cast animation")
 	if not bool(artificial_action.get(EffectData.KEY_EFFECT_HANDLES_ANIMATION, false)):
 		return _fail("Artificial severance would replay a generic cast animation")
-	if _effect_ids(self_action) != ["play_animation", "damage", "add_card_to_hand"]:
+	if _effect_ids(self_action) != ["play_animation", "gain_permanent_attack", "damage", "add_card_to_hand"]:
 		return _fail("Self-severance effect order changed")
-	if _effect_ids(artificial_action) != ["play_animation", "damage", "add_card_to_hand"]:
+	if _effect_ids(artificial_action) != ["play_animation", "gain_permanent_attack", "damage", "add_card_to_hand"]:
 		return _fail("Artificial severance effect order changed")
+	return true
+
+
+func _test_permanent_attack_math(card_database: CardDatabase) -> bool:
+	var venom_state := _make_state(card_database.get_card("venom"), "math_owner", 3)
+	venom_state.current_attack = 0
+	venom_state.status_attack_floor_debt = -2
+	venom_state.add_permanent_attack(1)
+	if venom_state.current_attack != 0 or venom_state.status_attack_floor_debt != -1:
+		return _fail("Permanent attack bypassed an active negative attack modifier")
+	if int(venom_state.permanent_stat_overrides.get("attack", 0)) != 3:
+		return _fail("Permanent attack override did not grow from the printed value")
+
+	venom_state.add_permanent_attack(2)
+	if venom_state.current_attack != 1 or venom_state.status_attack_floor_debt != 0:
+		return _fail("Permanent attack did not correctly overcome attack floor debt")
+	if int(venom_state.permanent_stat_overrides.get("attack", 0)) != 5:
+		return _fail("Repeated permanent attack growth did not stack")
+
+	venom_state.status_attack_override = 4
+	venom_state.attack_before_status_override_raw = 1
+	venom_state.current_attack = 4
+	venom_state.add_permanent_attack(1)
+	if venom_state.current_attack != 4 or venom_state.attack_before_status_override_raw != 2:
+		return _fail("Permanent attack broke an active fixed attack override")
 	return true
 
 
@@ -170,8 +206,13 @@ func _test_lethal_self_severance(card_database: CardDatabase) -> bool:
 	await action.execute(venom_state, null, game_manager)
 	if not venom_state.is_empty() or game_manager.death_calls != 1:
 		return _fail("Lethal self-severance did not clear Venom")
-	if player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "symbiote_tissue":
+	if player.hand.size() != 2:
+		return _fail("Lethal self-severance did not preserve both revival and tissue cards")
+	if _hand_card_id(player.hand[0]) != "venom" or _hand_card_id(player.hand[1]) != "symbiote_tissue":
 		return _fail("Lethal self-severance lost its effect owner before adding tissue")
+	var revived_venom := player.hand[0] as HandCardState
+	if revived_venom == null or int(revived_venom.permanent_stat_overrides.get("attack", 0)) != 3:
+		return _fail("Venom lost permanent severance attack growth on death")
 	if is_instance_valid(game_manager.audio_manager):
 		game_manager.audio_manager.free()
 	game_manager.free()
@@ -196,6 +237,8 @@ func _test_effect_chains(card_database: CardDatabase) -> bool:
 	await _execute_effect_chain(registry, venom_state, self_action, probe)
 	if venom_state.current_health != 18:
 		return _fail("Self-severance did not deal exactly 2 damage")
+	if venom_state.current_attack != 3 or int(venom_state.permanent_stat_overrides.get("attack", 0)) != 3:
+		return _fail("Self-severance did not grant permanent attack")
 	if player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "symbiote_tissue":
 		return _fail("Self-severance did not add one Symbiote Tissue")
 	if probe.calls != ["target:symbiote_self_severance", "resolve_dead"]:
@@ -213,6 +256,8 @@ func _test_effect_chains(card_database: CardDatabase) -> bool:
 	await _execute_effect_chain(registry, biologist_state, artificial_action, probe)
 	if venom_state.current_health != 16:
 		return _fail("Artificial severance did not deal exactly 2 damage to Venom")
+	if venom_state.current_attack != 4 or int(venom_state.permanent_stat_overrides.get("attack", 0)) != 4:
+		return _fail("Artificial severance did not stack permanent attack")
 	if player.hand.size() != 2 or _hand_card_id(player.hand[1]) != "symbiote_tissue":
 		return _fail("Artificial severance did not add one Symbiote Tissue")
 	if probe.calls != ["source_to_target:symbiote_artificial_severance", "resolve_dead"]:

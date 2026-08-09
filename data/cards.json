@@ -4927,7 +4927,7 @@
 			{
 				"id": "venom",
 				"name": "毒液",
-				"description": "共生体英雄。施法动作自我剥离：对毒液自身造成2点伤害，获得一张共生体组织。撕咬、恐怖尖啸、法典和子代判定将在后续实现。",
+				"description": "共生体英雄。施法动作自我剥离：毒液攻击力永久+1，对自身造成2点伤害，获得一张共生体组织。撕咬、恐怖尖啸、法典和子代判定将在后续实现。",
 				"url": "res://assets/img/共生体/毒液.png",
 				"type": "minion",
 				"role": "hero",
@@ -4948,6 +4948,11 @@
 								"id": "play_animation",
 								"target": "self",
 								"animation": "symbiote_self_severance"
+							},
+							{
+								"id": "gain_permanent_attack",
+								"target": "self",
+								"amount": 1
 							},
 							{
 								"id": "damage",
@@ -4982,7 +4987,7 @@
 			{
 				"id": "symbiote_biologist",
 				"name": "生物研究员",
-				"description": "研究共生体组织的远程单位。施法动作人工剥离：对己方毒液造成2点伤害，获得一张共生体组织；毒液不在场时无法释放。",
+				"description": "研究共生体组织的远程单位。施法动作人工剥离：使己方毒液攻击力永久+1并受到2点伤害，获得一张共生体组织；毒液不在场时无法释放。",
 				"url": "res://assets/img/共生体/生物研究员.png",
 				"type": "minion",
 				"count": 5,
@@ -5006,6 +5011,12 @@
 								"target_card_id": "venom",
 								"animation": "symbiote_artificial_severance",
 								"presentation_scope": "source_to_target"
+							},
+							{
+								"id": "gain_permanent_attack",
+								"target": "owner_card_by_id",
+								"target_card_id": "venom",
+								"amount": 1
 							},
 							{
 								"id": "damage",

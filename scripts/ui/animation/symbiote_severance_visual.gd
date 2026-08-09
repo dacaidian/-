@@ -84,6 +84,11 @@ func _draw_self_severance(alpha: float) -> void:
 
 	if release > 0.02:
 		_draw_organization_seed(clot_center, scale_value, release, alpha)
+	_draw_adaptive_growth(
+		clot_center,
+		_ease_out(_phase(0.58, 0.92)),
+		alpha
+	)
 
 
 func _draw_artificial_severance(alpha: float) -> void:
@@ -116,6 +121,11 @@ func _draw_artificial_severance(alpha: float) -> void:
 	_draw_tissue_clot(clot_center, scale_value * 0.15, extraction, alpha)
 	_draw_specimen_pod(pod_center, scale_value, seal, release, alpha)
 	_draw_rc_droplets(wound, clot_center, extraction, release, alpha * 0.72)
+	_draw_adaptive_growth(
+		wound,
+		_ease_out(_phase(0.60, 0.94)),
+		alpha
+	)
 
 
 func _draw_target_atmosphere(alpha: float) -> void:
@@ -391,6 +401,72 @@ func _draw_organization_seed(
 			Toolkit.with_alpha(WET_HIGHLIGHT, ring_alpha * 0.44),
 			scale_value * 0.08,
 			18
+		)
+
+
+func _draw_adaptive_growth(
+	flow_origin: Vector2,
+	growth: float,
+	alpha: float
+) -> void:
+	if growth <= 0.01:
+		return
+
+	var scale_value := _target_scale()
+	var attack_anchor := target_center + Vector2(
+		-target_card_size.x * 0.36,
+		target_card_size.y * 0.38
+	)
+	var flow_direction := attack_anchor - flow_origin
+	if flow_direction.length_squared() <= 0.01:
+		flow_direction = Vector2(-1.0, 0.6)
+	var flow_normal := flow_direction.normalized().orthogonal()
+	for strand_index in range(3):
+		var offset_ratio := float(strand_index) - 1.0
+		var path := _cubic_curve(
+			flow_origin + flow_normal * scale_value * offset_ratio * 0.025,
+			flow_origin.lerp(attack_anchor, 0.34)
+				+ flow_normal * scale_value * (0.15 + offset_ratio * 0.035),
+			flow_origin.lerp(attack_anchor, 0.72)
+				- flow_normal * scale_value * (0.08 - offset_ratio * 0.025),
+			attack_anchor + flow_normal * scale_value * offset_ratio * 0.018,
+			growth,
+			18
+		)
+		Toolkit.draw_ribbon(
+			self,
+			path,
+			scale_value * (0.034 if strand_index == 1 else 0.022),
+			Toolkit.with_alpha(DEEP_RED, alpha * 0.84),
+			Toolkit.with_alpha(VOID, alpha * 0.72),
+			Toolkit.with_alpha(HOT_TISSUE, alpha * 0.52),
+			scale_value * 0.12,
+			true,
+			true,
+			progress * 7.0 + float(strand_index)
+		)
+
+	var pulse := 0.90 + sin(progress * TAU * 3.4) * 0.10
+	Toolkit.draw_soft_disc(
+		self,
+		attack_anchor,
+		scale_value * 0.14 * pulse * growth,
+		Toolkit.with_alpha(LIVING_RED, alpha * 0.38),
+		Toolkit.with_alpha(HOT_TISSUE, alpha * 0.82),
+		7
+	)
+	for spur_index in range(5):
+		var angle := PI * (0.78 + float(spur_index) * 0.36)
+		var inner_point := attack_anchor + Vector2.from_angle(angle) * scale_value * 0.06
+		var outer_point := attack_anchor + Vector2.from_angle(angle) * scale_value * (0.15 + growth * 0.09)
+		Toolkit.draw_stroked_path(
+			self,
+			PackedVector2Array([inner_point, outer_point]),
+			scale_value * 0.018,
+			Toolkit.with_alpha(HOT_TISSUE, alpha * 0.72 * growth),
+			Toolkit.with_alpha(VOID, alpha * 0.76 * growth),
+			Toolkit.with_alpha(WET_HIGHLIGHT, alpha * 0.38 * growth),
+			scale_value * 0.07
 		)
 
 

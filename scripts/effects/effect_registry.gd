@@ -18,6 +18,9 @@ const PeriodicTriggerEffectScript := preload("res://scripts/effects/periodic_tri
 const ApplyKagunePowerEffectScript := preload("res://scripts/effects/apply_kagune_power_effect.gd")
 const ClaimDeathSlotEffectScript := preload("res://scripts/effects/claim_death_slot_effect.gd")
 const PlayAnimationEffectScript := preload("res://scripts/effects/play_animation_effect.gd")
+const GainPermanentAttackEffectScript := preload(
+	"res://scripts/effects/gain_permanent_attack_effect.gd"
+)
 
 var effects_by_id: Dictionary = {}
 var granted_unit_trigger_resolver := GrantedUnitTriggerResolverScript.new()
@@ -33,6 +36,10 @@ func _init() -> void:
 	register_effect("gain_resource_score", GainResourceScoreEffect.new())
 	register_effect("gain_mana", GainManaEffect.new())
 	register_effect(EffectData.EFFECT_GAIN_ATTACK, GainAttackEffect.new())
+	register_effect(
+		EffectData.EFFECT_GAIN_PERMANENT_ATTACK,
+		GainPermanentAttackEffectScript.new()
+	)
 	register_effect(EffectData.EFFECT_PLAY_SPELL_ACTION, PlaySpellActionEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_STATUS, ApplyStatusEffect.new())
 	register_effect(EffectData.EFFECT_APPLY_KAGUNE_POWER, ApplyKagunePowerEffectScript.new())
