@@ -26,6 +26,10 @@
 				"count": 1,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"attack": 4,
 				"health": 18,
 				"effects": []
@@ -86,6 +90,10 @@
 				"count": 5,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"attack": 2,
 				"health": 4,
 				"effects": []
@@ -124,6 +132,10 @@
 				"level": 2,
 				"keywords": [
 					"ranged"
+				],
+				"unit_traits": [
+					"humanoid",
+					"human"
 				],
 				"attack": 2,
 				"health": 7,
@@ -198,6 +210,11 @@
 				"keywords": [
 					"cavalry"
 				],
+				"unit_traits": [
+					"humanoid",
+					"human",
+					"beast"
+				],
 				"attack": 4,
 				"health": 8,
 				"effects": []
@@ -225,6 +242,10 @@
 			},
 			{
 				"id": "battle_priest",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "战斗牧师",
 				"description": "战斗牧师",
 				"url": "res://assets/img/白银之手/战斗牧师.png",
@@ -356,6 +377,10 @@
 				"keywords": [
 					"ranged"
 				],
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"attack": 1,
 				"health": 14,
 				"effects": []
@@ -371,6 +396,10 @@
 				"level": 1,
 				"keywords": [
 					"ranged"
+				],
+				"unit_traits": [
+					"humanoid",
+					"human"
 				],
 				"attack": 1,
 				"health": 14,
@@ -546,6 +575,10 @@
 				"level": 1,
 				"keywords": [
 					"ranged"
+				],
+				"unit_traits": [
+					"humanoid",
+					"human"
 				],
 				"attack": 1,
 				"health": 2,
@@ -748,6 +781,10 @@
 				"keywords": [
 					"ranged"
 				],
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"attack": 1,
 				"health": 4,
 				"effects": [],
@@ -776,6 +813,10 @@
 				"level": 2,
 				"keywords": [
 					"ranged"
+				],
+				"unit_traits": [
+					"humanoid",
+					"human"
 				],
 				"attack": 1,
 				"health": 4,
@@ -806,6 +847,10 @@
 				"keywords": [
 					"ranged"
 				],
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"attack": 1,
 				"health": 4,
 				"effects": [],
@@ -834,6 +879,10 @@
 				"level": 3,
 				"keywords": [
 					"magic_immune"
+				],
+				"unit_traits": [
+					"construct",
+					"mechanical"
 				],
 				"attack": 8,
 				"health": 8,
@@ -991,6 +1040,9 @@
 				"count": 0,
 				"level": 1,
 				"keywords": [],
+				"unit_traits": [
+					"elemental"
+				],
 				"attack": 2,
 				"health": 2,
 				"effects": []
@@ -1004,6 +1056,9 @@
 				"count": 0,
 				"level": 2,
 				"keywords": [],
+				"unit_traits": [
+					"elemental"
+				],
 				"attack": 8,
 				"health": 8,
 				"reborn_health_values": [
@@ -1037,6 +1092,10 @@
 		"cards": [
 			{
 				"id": "chen_duo",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "陈朵",
 				"description": "陈朵是苗疆族最年轻的蛊王，从小被蛊术浸染，体内容纳着万千蛊虫。她以蛊为兵，能布下子母蛊链接生死、召唤蛊王蛇撕裂敌阵，唯有真正的蛊术宗师才敢直面她的巫毒。",
 				"url": "res://assets/img/苗疆族/陈朵.png",
@@ -1078,6 +1137,10 @@
 			},
 			{
 				"id": "gu_child",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "蛊童",
 				"description": "苗疆族随从。可以施法生蛊毒蝎，将一张毒蝎置入手牌。",
 				"url": "res://assets/img/苗疆族/蛊童.png",
@@ -1259,6 +1322,11 @@
 			},
 			{
 				"id": "gu_poison_snake",
+				"unit_traits": [
+					"beast",
+					"reptile",
+					"gu"
+				],
 				"name": "蛊毒蛇",
 				"description": "苗疆族随从。",
 				"url": "res://assets/img/苗疆族/蛊毒蛇.png",
@@ -1272,6 +1340,10 @@
 			},
 			{
 				"id": "witch_doctor",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "巫医",
 				"description": "苗疆族远程随从。可以施法行医，将一张草药置入手牌。",
 				"url": "res://assets/img/苗疆族/巫医.png",
@@ -1376,6 +1448,11 @@
 			},
 			{
 				"id": "gu_giant_lizard",
+				"unit_traits": [
+					"beast",
+					"reptile",
+					"gu"
+				],
 				"name": "蛊巨蜥",
 				"description": "苗疆族随从。可以吞噬毒虫，获得其两倍攻击和生命，并继承最高级毒性攻击。",
 				"url": "res://assets/img/苗疆族/蛊巨蜥.png",
@@ -1416,6 +1493,11 @@
 		"tokens": [
 			{
 				"id": "poison_scorpion",
+				"unit_traits": [
+					"beast",
+					"insect",
+					"gu"
+				],
 				"name": "毒蝎",
 				"description": "衍生随从。攻击敌方单位后，对其施加1*3的毒。",
 				"url": "res://assets/img/苗疆族/毒蝎.png",
@@ -1451,6 +1533,11 @@
 			},
 			{
 				"id": "gu_king_snake",
+				"unit_traits": [
+					"beast",
+					"reptile",
+					"gu"
+				],
 				"name": "生蛊王蛇",
 				"description": "衍生随从。王毒：攻击敌方随从后，对其施加3×3的毒性伤害。",
 				"url": "res://assets/img/苗疆族/蛊王蛇.png",
@@ -1542,6 +1629,10 @@
 		"cards": [
 			{
 				"id": "tyrande",
+				"unit_traits": [
+					"humanoid",
+					"elf"
+				],
 				"name": "泰兰德",
 				"description": "泰兰德·语风是艾露恩的高阶女祭司，万年来守护着暗夜精灵一族。她的精准射击能洞穿最厚的甲胄，当流星陨落降临战场，整个敌军阵线都将被月神之怒吞没。",
 				"url": "res://assets/img/暗夜精灵哨兵/泰兰德.png",
@@ -1558,6 +1649,10 @@
 			},
 			{
 				"id": "sentinel_archer",
+				"unit_traits": [
+					"humanoid",
+					"elf"
+				],
 				"name": "弓箭手",
 				"description": "暗夜精灵哨兵的一阶远程随从。",
 				"url": "res://assets/img/暗夜精灵哨兵/弓箭手.png",
@@ -1573,6 +1668,9 @@
 			},
 			{
 				"id": "sentinel_ballista",
+				"unit_traits": [
+					"mechanical"
+				],
 				"name": "弩车",
 				"description": "暗夜精灵哨兵的二阶机械远程随从。攻城3，对建筑造成普通攻击伤害时额外造成3点伤害。",
 				"url": "res://assets/img/暗夜精灵哨兵/弩车.png",
@@ -1590,6 +1688,11 @@
 			},
 			{
 				"id": "sentinel_huntress",
+				"unit_traits": [
+					"humanoid",
+					"elf",
+					"beast"
+				],
 				"name": "女猎手",
 				"description": "暗夜精灵哨兵的二阶远程随从。移动攻击。可施放月刃，对一个单位造成等同于自身攻击力的伤害，并弹射到相邻单位一次。",
 				"url": "res://assets/img/暗夜精灵哨兵/女猎手.png",
@@ -1834,6 +1937,12 @@
 			},
 			{
 				"id": "hippogryph_rider",
+				"unit_traits": [
+					"humanoid",
+					"elf",
+					"beast",
+					"avian"
+				],
 				"name": "角鹰骑士",
 				"description": "暗夜精灵哨兵的三阶飞行骑兵随从。飞行单位可以进入战场外圈，并可与地面单位或建筑共处同一单元格。",
 				"url": "res://assets/img/暗夜精灵哨兵/角鹰骑士.png",
@@ -2010,6 +2119,11 @@
 		"cards": [
 			{
 				"id": "su_daji",
+				"unit_traits": [
+					"humanoid",
+					"yaoguai",
+					"fox"
+				],
 				"name": "苏妲己",
 				"description": "苏妲己是狐妖仙一族的九尾妖主，以献祭换取灵尾，以魅惑操弄人心。她的妖力随尾数增长，能驱使狐火与天狐之影吞没战场。基础攻击力等于当前尾数。",
 				"url": "res://assets/img/狐妖仙/苏妲己.png",
@@ -2030,6 +2144,11 @@
 			},
 			{
 				"id": "little_fox_spirit",
+				"unit_traits": [
+					"humanoid",
+					"yaoguai",
+					"fox"
+				],
 				"name": "小狐精",
 				"description": "狐妖仙一阶随从。",
 				"url": "res://assets/img/狐妖仙/小狐精.png",
@@ -2072,6 +2191,11 @@
 			},
 			{
 				"id": "tushan_guard",
+				"unit_traits": [
+					"humanoid",
+					"yaoguai",
+					"fox"
+				],
 				"name": "涂山氏禁卫",
 				"description": "狐妖仙二阶随从。",
 				"url": "res://assets/img/狐妖仙/涂山氏禁卫.png",
@@ -2112,6 +2236,11 @@
 			},
 			{
 				"id": "yousu_fox_spirit",
+				"unit_traits": [
+					"humanoid",
+					"yaoguai",
+					"fox"
+				],
 				"name": "有苏氏狐妖",
 				"description": "狐妖仙二阶随从。狐念之术可以短暂控制属性和为8及以下的非英雄随从。",
 				"url": "res://assets/img/狐妖仙/有苏氏狐妖.png",
@@ -2152,6 +2281,11 @@
 			},
 			{
 				"id": "qingqiu_fox_immortal",
+				"unit_traits": [
+					"humanoid",
+					"yaoguai",
+					"fox"
+				],
 				"name": "青丘氏狐仙",
 				"description": "狐妖仙三阶远程随从。狐火会灼烧一个2x2范围内的所有敌方随从。",
 				"url": "res://assets/img/狐妖仙/青丘氏狐仙.png",
@@ -2368,6 +2502,11 @@
 		"tokens": [
 			{
 				"id": "tianhu",
+				"unit_traits": [
+					"yaoguai",
+					"fox",
+					"beast"
+				],
 				"name": "天狐",
 				"description": "狐妖仙三阶衍生随从。巨兽，可施放狐火。",
 				"url": "res://assets/img/狐妖仙/天狐.png",
@@ -2403,6 +2542,11 @@
 			},
 			{
 				"id": "nine_tail_tail",
+				"unit_traits": [
+					"yaoguai",
+					"fox",
+					"spirit"
+				],
 				"name": "九尾之尾",
 				"description": "狐妖仙一阶飞行衍生随从。",
 				"url": "res://assets/img/狐妖仙/九尾之尾.png",
@@ -2439,6 +2583,12 @@
 		"cards": [
 			{
 				"id": "sun_wukong",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "齐天大圣孙悟空",
 				"description": "花果山美猴王，齐天大圣孙悟空。身负火眼金睛、筋斗云、身外身法与铜头铁臂之神通，既能亲临战阵，也能以法术穿插攻守，是猴妖仙一族的核心英雄。",
 				"url": "res://assets/img/猴妖仙/齐天大圣孙悟空.png",
@@ -2590,6 +2740,12 @@
 			},
 			{
 				"id": "little_monkey_spirit",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "小猴妖",
 				"description": "花果山的小猴妖，身手灵活，擅长在战场边缘穿插袭扰。",
 				"url": "res://assets/img/猴妖仙/小猴妖.png",
@@ -2603,6 +2759,12 @@
 			},
 			{
 				"id": "windward_macaque",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "通风猕猴",
 				"description": "猴妖仙二阶随从。善借风势西行，可反复向左侧合法格移动。",
 				"url": "res://assets/img/猴妖仙/通风猕猴.png",
@@ -2629,6 +2791,12 @@
 			},
 			{
 				"id": "windward_great_sage_macaque_king",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "通风大圣猕猴王",
 				"description": "猴妖仙三阶随从。通风大圣猕猴王借风疾行，可反复向左侧合法格移动，在边路持续牵扯战局。",
 				"url": "res://assets/img/猴妖仙/通风大圣猕猴王.png",
@@ -2655,6 +2823,12 @@
 			},
 			{
 				"id": "hair_clone",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "毫毛",
 				"description": "孙悟空的毫毛分身，入场时同步孙悟空的攻击力和生命上限。孙悟空普通攻击后，全场毫毛会尝试对同一目标同步攻击。",
 				"url": "res://assets/img/猴妖仙/毫毛.png",
@@ -2684,6 +2858,12 @@
 			},
 			{
 				"id": "drive_spirit_yurong",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "驱神禺狨",
 				"description": "猴妖仙二阶远程随从。通晓驱神之术，能驱散一个单位身上的状态。",
 				"url": "res://assets/img/猴妖仙/驱神禺狨.png",
@@ -2713,6 +2893,12 @@
 			},
 			{
 				"id": "drive_spirit_great_sage_yurong_king",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "驱神大圣禺狨王",
 				"description": "猴妖仙三阶远程随从。驱神大圣禺狨王能扫荡战场气机，驱散敌方单位的正面状态，并解除己方单位的负面状态。",
 				"url": "res://assets/img/猴妖仙/驱神大圣禺狨王.png",
@@ -2924,6 +3110,12 @@
 		"tokens": [
 			{
 				"id": "heavenly_avatar",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"yaoguai",
+					"monkey"
+				],
 				"name": "法象",
 				"description": "孙悟空法天象地所化巨大神相，拥有巨兽之力。",
 				"url": "res://assets/img/猴妖仙/法象.png",
@@ -3033,6 +3225,11 @@
 		"tokens": [
 			{
 				"id": "horned_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "角兽",
 				"description": "劣角兽在血战中幸存后的进化形态，角冠更坚硬，冲撞也更加凶猛。",
 				"url": "res://assets/img/野兽人/角兽.png",
@@ -3047,6 +3244,11 @@
 			},
 			{
 				"id": "great_horned_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "大角兽",
 				"description": "角兽继续吞噬同系血脉后的高阶巨兽形态，庞大身躯足以碾碎阵线。",
 				"url": "res://assets/img/野兽人/大角兽.png",
@@ -3063,6 +3265,10 @@
 			},
 			{
 				"id": "razor_beast_chariot",
+				"unit_traits": [
+					"beast",
+					"chaos"
+				],
 				"name": "剃刀兽战车",
 				"description": "剃刀兽进化后的冲锋形态，以尖刺与战车般的躯壳撕开阵线。",
 				"url": "res://assets/img/野兽人/剃刀兽战车.png",
@@ -3080,6 +3286,12 @@
 			},
 			{
 				"id": "axe_thrower_centaur_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"beast",
+					"chaos"
+				],
 				"name": "飞斧人马兽",
 				"description": "人马兽进化后的飞斧猎手，奔袭中投出浸染混沌的利斧。",
 				"url": "res://assets/img/野兽人/飞斧人马兽.png",
@@ -3099,6 +3311,12 @@
 			},
 			{
 				"id": "mad_speech_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"avian",
+					"chaos"
+				],
 				"name": "疯语兽",
 				"description": "鹰身女妖在混沌低语中进化而成的狂乱形态，仍能飞掠战场。",
 				"url": "res://assets/img/野兽人/疯语兽.png",
@@ -3116,6 +3334,11 @@
 			},
 			{
 				"id": "heavy_weapon_minotaur",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "重武牛头怪",
 				"description": "牛头怪进化后的巨型重武形态，挥击会撕裂目标周围的阵线。",
 				"url": "res://assets/img/野兽人/重武牛头怪.png",
@@ -3133,6 +3356,11 @@
 			},
 			{
 				"id": "gore_beast",
+				"unit_traits": [
+					"beast",
+					"chaos",
+					"aberration"
+				],
 				"name": "古尔兽",
 				"description": "万魔岩在废灭仪式中唤出的古老巨兽，庞大身躯承载着混沌杀戮的回响。",
 				"url": "res://assets/img/野兽人/古尔兽.png",
@@ -3150,6 +3378,11 @@
 		"cards": [
 			{
 				"id": "kazak_one_eye",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "卡扎克·独眼",
 				"description": "野兽人英雄。卡扎克·独眼是兽群中最凶悍的兽王。被动：通过普通攻击击败友方非英雄随从后，获得该随从卡牌原始攻击力和生命值上限，并使自身混沌腐蚀+1。",
 				"url": "res://assets/img/野兽人/卡扎克·独眼.png",
@@ -3264,6 +3497,11 @@
 			},
 			{
 				"id": "lesser_horned_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "劣角兽",
 				"description": "野兽人基础随从。低阶角兽血脉稀薄，却仍保留着野性冲撞的本能。",
 				"url": "res://assets/img/野兽人/劣角兽.png",
@@ -3278,6 +3516,10 @@
 			},
 			{
 				"id": "razor_beast",
+				"unit_traits": [
+					"beast",
+					"chaos"
+				],
 				"name": "剃刀兽",
 				"description": "野兽人高速突袭随从，锋利背刃适合在兽群间争夺进化资格。",
 				"url": "res://assets/img/野兽人/剃刀兽.png",
@@ -3293,6 +3535,12 @@
 			},
 			{
 				"id": "centaur_beast",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"beast",
+					"chaos"
+				],
 				"name": "人马兽",
 				"description": "野兽人二阶奔袭随从，机动迅猛，体内已经积累混沌腐蚀。",
 				"url": "res://assets/img/野兽人/人马兽.png",
@@ -3311,6 +3559,12 @@
 			},
 			{
 				"id": "harpy",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"avian",
+					"chaos"
+				],
 				"name": "鹰身女妖",
 				"description": "野兽人飞行随从，尖啸盘旋于战场边缘，混沌腐蚀在羽翼间滋长。",
 				"url": "res://assets/img/野兽人/鹰身女妖.png",
@@ -3328,6 +3582,11 @@
 			},
 			{
 				"id": "shrieking_shaman",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "嘶叫萨满",
 				"description": "野兽人萨满随从。它以刺耳嚎叫召集兽群，让低阶野兽从混沌荒野中奔赴战场。",
 				"url": "res://assets/img/野兽人/嘶叫萨满.png",
@@ -3390,6 +3649,11 @@
 			},
 			{
 				"id": "minotaur",
+				"unit_traits": [
+					"humanoid",
+					"beastfolk",
+					"chaos"
+				],
 				"name": "牛头怪",
 				"description": "野兽人高阶重型随从，强壮躯体承载着更深的混沌腐蚀。",
 				"url": "res://assets/img/野兽人/牛头怪.png",
@@ -3424,6 +3688,10 @@
 		"tokens": [
 			{
 				"id": "succubus",
+				"unit_traits": [
+					"humanoid",
+					"demon"
+				],
 				"name": "魅魔",
 				"description": "影月议会衍生恶魔随从。嘲讽。疯狂：本回合获得吸血，普通攻击造成的实际生命伤害会恢复等量生命值。",
 				"url": "res://assets/img/影月议会/魅魔.png",
@@ -3441,6 +3709,10 @@
 		"cards": [
 			{
 				"id": "guldan",
+				"unit_traits": [
+					"humanoid",
+					"orc"
+				],
 				"name": "古尔丹",
 				"description": "影月议会英雄。古尔丹以邪能低语统御兽人与恶魔，宁愿燃烧自己的生命也要换取更强的支配力。当前围绕邪能触发和疯狂增益展开，后续会继续接入恶魔召唤与黑暗之门体系。",
 				"url": "res://assets/img/影月议会/古尔丹.png",
@@ -3756,6 +4028,10 @@
 			},
 			{
 				"id": "chaos_orc",
+				"unit_traits": [
+					"humanoid",
+					"orc"
+				],
 				"name": "混乱兽人",
 				"description": "影月议会基础随从。疯狂：当你本回合触发邪能后，攻击力+1。",
 				"url": "res://assets/img/影月议会/混乱兽人.png",
@@ -3769,6 +4045,10 @@
 			},
 			{
 				"id": "hellhound",
+				"unit_traits": [
+					"beast",
+					"demon"
+				],
 				"name": "地狱犬",
 				"description": "影月议会恶魔随从。移动攻击。疯狂：本回合获得副动作：法力燃烧，对一个有施法动作的随从或英雄造成2点伤害。",
 				"url": "res://assets/img/影月议会/地狱犬.png",
@@ -3784,6 +4064,10 @@
 			},
 			{
 				"id": "warlock",
+				"unit_traits": [
+					"humanoid",
+					"orc"
+				],
 				"name": "术士",
 				"description": "影月议会施法随从。远程。施法：诅咒，使一个随从本回合伤害加深+2，攻击力-2。疯狂：诅咒还会在施加状态后额外造成1点伤害。",
 				"url": "res://assets/img/影月议会/术士.png",
@@ -3893,6 +4177,11 @@
 			},
 			{
 				"id": "chaos_wolf_rider",
+				"unit_traits": [
+					"humanoid",
+					"orc",
+					"beast"
+				],
 				"name": "混乱狼骑兵",
 				"description": "影月议会狼骑兵。移动攻击，移动力3。疯狂：座狼陷入邪能影响，本回合获得副动作：撕咬，对一个相邻随从造成2点伤害，并恢复自身4点生命。",
 				"url": "res://assets/img/影月议会/混乱狼骑兵.png",
@@ -3909,6 +4198,10 @@
 			},
 			{
 				"id": "doomguard",
+				"unit_traits": [
+					"humanoid",
+					"demon"
+				],
 				"name": "末日守卫",
 				"description": "影月议会恶魔随从。疯狂：陷入邪能疯狂后，本回合获得巨兽。",
 				"url": "res://assets/img/影月议会/末日守卫.png",
@@ -3922,6 +4215,11 @@
 			},
 			{
 				"id": "infernal",
+				"unit_traits": [
+					"demon",
+					"construct",
+					"elemental"
+				],
 				"name": "地狱火",
 				"description": "影月议会恶魔随从。施法：献祭，对相邻敌方非英雄随从施加火焰伤害，每回合结束受到3点伤害，持续2回合。",
 				"url": "res://assets/img/影月议会/地狱火.png",
@@ -4162,6 +4460,10 @@
 		"cards": [
 			{
 				"id": "kaneki_ken",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "金木研",
 				"description": "东京喰种英雄。曾在普通人与喰种之间痛苦徘徊的独眼喰种，拥有惊人的恢复力与不断进化的赫子潜能。尾赫令他在赫子解放时获得额外攻击次数。",
 				"url": "res://assets/img/东京喰种/金木研.png",
@@ -4289,6 +4591,10 @@
 			},
 			{
 				"id": "black_goat_agent",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "黑山羊特工",
 				"description": "黑山羊的基层战斗人员。拥有1点护甲与甲赫，在赫子解放时获得额外护甲，高RC浓度下还会反弹普通攻击。",
 				"url": "res://assets/img/东京喰种/黑山羊特工.png",
@@ -4305,6 +4611,10 @@
 			},
 			{
 				"id": "anteiku_wanderer",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "安定区流浪者",
 				"description": "栖身安定区的流浪喰种。拥有鳞赫，在赫子解放时获得移动攻击并提高攻击力，高RC浓度下还能通过普通攻击吸取生命。",
 				"url": "res://assets/img/东京喰种/安定区流浪者.png",
@@ -4320,6 +4630,10 @@
 			},
 			{
 				"id": "aogiri_tree_member",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "青铜树成员",
 				"description": "青铜树的空中袭击者。拥有远程、飞行与羽赫，在赫子解放时可以使用副动作羽针对随从造成伤害。",
 				"url": "res://assets/img/东京喰种/青铜树成员.png",
@@ -4337,6 +4651,10 @@
 			},
 			{
 				"id": "clown_temp_worker",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "小丑临时工",
 				"description": "受雇于小丑组织的危险喰种。拥有尾赫，在赫子解放时攻速+1。",
 				"url": "res://assets/img/东京喰种/小丑临时工.png",
@@ -4548,6 +4866,11 @@
 			},
 			{
 				"id": "kaneki_centipede_form",
+				"unit_traits": [
+					"humanoid",
+					"ghoul",
+					"aberration"
+				],
 				"name": "金木研蜈蚣形态",
 				"description": "金木研失控暴走的蜈蚣形态。拥有极高的行动频率与机动能力；被击败时结束覆盖变身并恢复金木研原形。",
 				"url": "res://assets/img/东京喰种/金木研蜈蚣形态.png",
@@ -4583,6 +4906,10 @@
 			},
 			{
 				"id": "kaneki_dragon_form",
+				"unit_traits": [
+					"ghoul",
+					"aberration"
+				],
 				"name": "金木研龙形态",
 				"description": "金木研赫子失控扩张形成的巨龙形态。巨大的躯体会让普通攻击波及目标方向两侧的单位；被击败时结束覆盖变身并恢复金木研原形。",
 				"url": "res://assets/img/东京喰种/金木研龙形态.png",
@@ -4616,6 +4943,11 @@
 			},
 			{
 				"id": "kaneki_saint_sword_form",
+				"unit_traits": [
+					"humanoid",
+					"ghoul",
+					"aberration"
+				],
 				"name": "金木研圣剑形态",
 				"description": "金木研将赫子凝聚为远程巨刃的战斗形态。拥有远程与溅射4，普通攻击会波及主要目标周围八格中的敌方和中立单位，并同时覆盖地面与飞行层。",
 				"url": "res://assets/img/东京喰种/金木研圣剑形态.png",
@@ -4650,6 +4982,10 @@
 			},
 			{
 				"id": "non_killing_owl",
+				"unit_traits": [
+					"ghoul",
+					"aberration"
+				],
 				"name": "不杀之枭",
 				"description": "芳村功善释放赫者力量后的覆盖形态。拥有巨兽与攻城4；被击败时结束覆盖变身并恢复芳村功善。",
 				"url": "res://assets/img/东京喰种/不杀之枭.png",
@@ -4683,6 +5019,10 @@
 			},
 			{
 				"id": "one_eyed_owl",
+				"unit_traits": [
+					"ghoul",
+					"aberration"
+				],
 				"name": "独眼之枭",
 				"description": "高槻泉释放赫者力量后的覆盖形态。拥有巨兽；被击败时结束覆盖变身并恢复高槻泉。",
 				"url": "res://assets/img/东京喰种/独眼之枭.png",
@@ -4715,6 +5055,10 @@
 			},
 			{
 				"id": "yamori",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "壁虎",
 				"description": "S阶喰种。拥有鳞赫，在赫子解放时获得移动攻击并提高攻击力，高RC浓度下还会获得吸血。",
 				"url": "res://assets/img/东京喰种/壁虎.png",
@@ -4730,6 +5074,10 @@
 			},
 			{
 				"id": "bin_brothers",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "瓶兄弟",
 				"description": "配合默契的S阶喰种。拥有尾赫与2点攻速，在赫子解放时攻速额外+1。",
 				"url": "res://assets/img/东京喰种/瓶兄弟.png",
@@ -4746,6 +5094,10 @@
 			},
 			{
 				"id": "touka_kirishima",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "雾岛董香",
 				"description": "以高速羽赫发动远程攻势的S阶喰种，赫子解放时可以使用副动作羽针。",
 				"url": "res://assets/img/东京喰种/雾岛董香.png",
@@ -4762,6 +5114,10 @@
 			},
 			{
 				"id": "shu_tsukiyama",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "月山习",
 				"description": "拥有坚固甲赫的S阶喰种，自带2点护甲与嘲讽，赫子解放时进一步强化防御。",
 				"url": "res://assets/img/东京喰种/月山习.png",
@@ -4779,6 +5135,10 @@
 			},
 			{
 				"id": "kuzen_yoshimura",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "芳村功善",
 				"description": "安定区的店长。主动作免单会恢复所有友方喰种的全部生命，并将RC细胞浓度提升至高；副动作赫者化每个单位实例仅可使用一次，覆盖变身为不杀之枭。",
 				"url": "res://assets/img/东京喰种/芳村功善.png",
@@ -4837,6 +5197,10 @@
 			},
 			{
 				"id": "eto_yoshimura",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "高槻泉",
 				"description": "独眼喰种。拥有瞬移与移动攻击；副动作赫者化每个单位实例仅可使用一次，覆盖变身为独眼之枭。",
 				"url": "res://assets/img/东京喰种/高槻泉.png",
@@ -4877,6 +5241,10 @@
 			},
 			{
 				"id": "nimura_furuta",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "旧多二福",
 				"description": "正面攻击会同时命中面前五格。魔法免疫，远程攻击免疫。",
 				"url": "res://assets/img/东京喰种/旧多二福.png",
@@ -4894,6 +5262,10 @@
 			},
 			{
 				"id": "shikorae",
+				"unit_traits": [
+					"humanoid",
+					"ghoul"
+				],
 				"name": "死堪",
 				"description": "同时拥有尾赫、鳞赫、甲赫与羽赫。赫子解放时，四种赫子之力同时生效。",
 				"url": "res://assets/img/东京喰种/死堪.png",
@@ -4990,6 +5362,8 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
 					"symbiote"
 				],
 				"attack": 2,
@@ -5123,6 +5497,11 @@
 			},
 			{
 				"id": "knull_imprisoned",
+				"unit_traits": [
+					"humanoid",
+					"alien",
+					"cosmic"
+				],
 				"name": "纳尔·囚禁",
 				"description": "光环：所有友方共生体随从攻击力+2。",
 				"url": "res://assets/img/共生体/纳尔囚禁.png",
@@ -5145,6 +5524,10 @@
 			},
 			{
 				"id": "symbiote_shield_agent",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "共生神盾局探员",
 				"description": "与共生体建立稳定联系的神盾局探员。远程。",
 				"url": "res://assets/img/共生体/共生神盾局探员.png",
@@ -5160,6 +5543,10 @@
 			},
 			{
 				"id": "symbiote_biologist",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "生物研究员",
 				"description": "研究共生体组织的远程单位。施法动作人工剥离：使己方毒液攻击力永久+1并受到2点伤害，获得一张共生体组织；毒液不在场时无法释放。",
 				"url": "res://assets/img/共生体/生物研究员.png",
@@ -5214,6 +5601,11 @@
 			},
 			{
 				"id": "xenophage",
+				"unit_traits": [
+					"alien",
+					"beast",
+					"aberration"
+				],
 				"name": "异噬体",
 				"description": "以共生体为猎物的强大异星生物。巨兽。",
 				"url": "res://assets/img/共生体/异噬体.png",
@@ -5229,6 +5621,10 @@
 			},
 			{
 				"id": "genetic_warrior",
+				"unit_traits": [
+					"humanoid",
+					"human"
+				],
 				"name": "基因战士",
 				"description": "经过基因强化的战斗单位。被共生体组织附身时，新共生体额外获得基因战士的基础攻击力和基础生命值上限。",
 				"url": "res://assets/img/共生体/基因战士.png",
@@ -5251,6 +5647,11 @@
 				"count": 0,
 				"level": 3,
 				"keywords": [],
+				"unit_traits": [
+					"humanoid",
+					"alien",
+					"cosmic"
+				],
 				"attack": 4,
 				"health": 16,
 				"effects": [
@@ -5321,6 +5722,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 3,
@@ -5359,6 +5763,9 @@
 					"ranged"
 				],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 2,
@@ -5397,6 +5804,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 3,
@@ -5435,6 +5845,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 4,
@@ -5458,6 +5871,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 1,
@@ -5493,6 +5909,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 10,
@@ -5509,6 +5928,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 5,
@@ -5528,6 +5950,9 @@
 					"silence_aura"
 				],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 2,
@@ -5544,6 +5969,9 @@
 				"level": 1,
 				"keywords": [],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 7,
@@ -5588,6 +6016,9 @@
 					"mobile_assault"
 				],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 5,
@@ -5606,6 +6037,9 @@
 					"mobile_assault"
 				],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 8,
@@ -5630,6 +6064,9 @@
 					"trigger"
 				],
 				"unit_traits": [
+					"humanoid",
+					"alien",
+					"aberration",
 					"symbiote"
 				],
 				"attack": 4,
@@ -5655,6 +6092,8 @@
 					"mobile_assault"
 				],
 				"unit_traits": [
+					"alien",
+					"beast",
 					"symbiote"
 				],
 				"attack": 3,

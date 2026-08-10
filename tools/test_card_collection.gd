@@ -89,6 +89,17 @@ func test_search_and_filters(catalog: CardCollectionCatalogScript) -> void:
 	for entry in flying_results:
 		assert(entry.search_text.contains("飞行"))
 
+	var demon_results = catalog.query({"search": "恶魔"})
+	assert(_find_entry(demon_results, "hellhound") != null)
+	assert(_find_entry(demon_results, "doomguard") != null)
+	assert(_find_entry(demon_results, "infernal") != null)
+	assert(_find_entry(demon_results, "succubus") != null)
+
+	var uther = _find_entry(catalog.entries, "uther")
+	assert(uther != null)
+	assert(uther.get_unit_trait_labels().has("类人生物"))
+	assert(uther.get_unit_trait_labels().has("人类"))
+
 	var jaina_cards = catalog.query({
 		"faction_id": "dalaran_council",
 		"search": "吉安娜",

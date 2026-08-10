@@ -35,6 +35,7 @@
 - 同一种族新增可选英雄时，同时维护 `heroes[]` 和英雄卡牌定义；共享升级牌通过效果目标 `card_ids` 显式声明适用英雄，避免英雄选择之间串牌或漏掉共享增益。
 - 棋盘展示图和种族选择英雄预览使用同目录同名 `-table.png` 自动覆盖，例如 `牧师.png` -> `牧师-table.png`；没有 table 图时回退原 `url` 卡图。手牌、悬浮预览和装备预览仍使用原图。战场翻开的随从和建筑左上角会自动读取卡图同目录 `logo.png` 作为种族标识。
 - `CardData` 的正面、战场和卡背纹理使用惰性属性。数据库加载阶段只保存路径，禁止在 `from_dictionary()` 中批量 `load()` 全部卡图，否则随着 `-table.png` 增长会造成启动内存峰值。
+- 所有英雄、普通随从和衍生/形态随从必须声明非空 `unit_traits`；其他卡牌类型不得声明。分类只描述静态身份，战斗能力继续写 `keywords`。词表由 `CardData.UNIT_TRAIT_*` 控制，不存在 `human -> humanoid` 等隐式继承；复合骑乘牌可以同时拥有骑手与坐骑分类，变身读取当前形态的分类。效果 `target_unit_traits` 当前按任意标签匹配。修改后运行 `python tools/validate_cards.py` 和 `tools/test_unit_traits.gd`，若用于被动范围还要运行对应种族规则测试。
 - 指定拥有者英雄/卡牌时，优先使用 `target: "owner_card_by_id"` 加 `target_card_id` 或 `card_ids`。
 - 修改后运行 `python tools/validate_cards.py`。
 

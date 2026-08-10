@@ -60,7 +60,7 @@
 
 ## 核心数据模型
 
-`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、关键词、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则记录为 `table_texture_path`，用于棋盘正面展示和种族选择界面的英雄预览。`CardDatabase` 初始化只解析纹理路径；`front_texture`、`table_texture` 和 `back_texture` 是带缓存的惰性属性，首次被具体 UI 使用时才通过 `ResourceLoader` 加载，禁止在 `from_dictionary()` 中重新全量解码卡图。图鉴分页可以通过 `release_front_texture_cache()` 放弃自己的缓存引用，但不能修改卡牌路径或规则数据。
+`CardData` 是不可变的卡牌定义，来自 `cards.json`。它包含 id、类型、角色、等级、数量、战斗关键字、随从静态分类 `unit_traits`、基础属性、基础移动力、混沌腐蚀、效果、施法动作、配置行动、骑乘攻击、装备类型和英雄附属信息。卡牌正面图来自 `url`；如果同目录存在同名 `-table.png`，例如 `牧师.png` 对应 `牧师-table.png`，则记录为 `table_texture_path`，用于棋盘正面展示和种族选择界面的英雄预览。`CardDatabase` 初始化只解析纹理路径；`front_texture`、`table_texture` 和 `back_texture` 是带缓存的惰性属性，首次被具体 UI 使用时才通过 `ResourceLoader` 加载，禁止在 `from_dictionary()` 中重新全量解码卡图。图鉴分页可以通过 `release_front_texture_cache()` 放弃自己的缓存引用，但不能修改卡牌路径或规则数据。
 
 `CardState` 是棋盘上的卡牌实例，保存拥有者、位置、层级、翻开状态、当前攻击、当前生命、生命上限、护盾、护甲、状态、行动次数、原始快照和棋盘展示图。
 
@@ -82,6 +82,23 @@
 - 种族运行时配置，如默认入手升级、种族资源、种族技能等。
 
 当前卡牌类型包括：随从、法术、建筑、升级、装备。
+
+### 随从静态分类
+
+`unit_traits` 描述“这张随从牌是什么”，`keywords` 描述“它在规则中能做什么”。例如弩车同时拥有静态分类 `mechanical` 和战斗关键字 `mechanical`，前者供机械族范围效果与图鉴检索使用，后者保留已有玩法语义；二者名称偶尔相同，但不能合并字段。
+
+分类允许跨维度叠加，当前受控词表分为：
+
+- 形态：`humanoid`、`beast`、`avian`、`reptile`、`insect`。
+- 族裔：`human`、`elf`、`orc`、`dwarf`、`beastfolk`、`ghoul`、`demon`、`undead`。
+- 构成：`elemental`、`mechanical`、`construct`、`spirit`。
+- 来源与细分血统：`yaoguai`、`alien`、`aberration`、`cosmic`、`gu`、`fox`、`monkey`、`chaos`、`symbiote`。
+
+所有英雄、普通随从和 `tokens[]` 中的衍生/形态随从都必须显式声明至少一个分类；法术、建筑、升级、装备和时间牌不得声明 `unit_traits`。分类之间没有隐式继承：`human` 不会自动补出 `humanoid`，`fox` 不会自动补出 `beast` 或 `yaoguai`。需要某种规则身份时必须在卡牌上明确写出，避免过滤器依赖隐藏知识。
+
+复合卡牌可以同时标记多个构成，例如角鹰骑士是 `humanoid + elf + beast + avian`，奥术傀儡是 `construct + mechanical`。形态牌按当前形态独立分类：覆盖/进化变身后读取新 `CardData.unit_traits`，恢复原始快照后自然回到原卡牌分类；永久属性、状态、技能复制和装备不会改变静态分类。共生体组织把宿主替换为子代卡牌后，新卡牌才获得 `symbiote`，因此纳尔光环不会命中尚未附着的人类、异噬体或纳尔自身。
+
+效果配置的 `target_unit_traits` 当前采用“命中任意一个分类”的并集语义，适合 `symbiote`、`demon` 等阵营范围。新增分类必须先在 `CardData.UNIT_TRAIT_*` 登记，再写入 JSON 和中文图鉴映射；未知分类、重复分类、随从缺失分类或非随从携带分类都会被 `tools/validate_cards.py` 判为错误。修改分类后运行 `tools/test_unit_traits.gd`；涉及被动范围时同时运行对应种族规则测试。
 
 卡牌等级决定补牌顺序：先用 1 阶牌池，耗尽后进入 2 阶，再进入 3 阶。
 

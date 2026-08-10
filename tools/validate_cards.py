@@ -491,7 +491,7 @@ class CardValidator:
             self.reporter.error(f"{path}.role", "hero cards must be minions")
 
         self.validate_keywords(card, path)
-        self.validate_unit_traits(card, path)
+        self.validate_unit_traits(card, path, card_type)
         self.validate_reborn(card, path, card_type)
 
         if card_type in {"minion", "building"}:
@@ -597,19 +597,29 @@ class CardValidator:
             if not self.is_known_keyword(keyword):
                 self.reporter.warn(f"{path}.keywords[{index}]", f"unknown keyword '{keyword}'")
 
-    def validate_unit_traits(self, card: dict[str, Any], path: str) -> None:
+    def validate_unit_traits(self, card: dict[str, Any], path: str, card_type: str) -> None:
         raw_unit_traits = card.get("unit_traits", [])
         if not isinstance(raw_unit_traits, list):
             self.reporter.error(f"{path}.unit_traits", "must be an array")
             return
         normalized_traits = [str(unit_trait) for unit_trait in raw_unit_traits]
+        if card_type == "minion" and not normalized_traits:
+            self.reporter.error(
+                f"{path}.unit_traits",
+                "all minions and heroes must declare at least one unit trait",
+            )
+        elif card_type != "minion" and normalized_traits:
+            self.reporter.error(
+                f"{path}.unit_traits",
+                "unit traits are currently valid only for minion cards",
+            )
         if len(normalized_traits) != len(set(normalized_traits)):
             self.reporter.error(f"{path}.unit_traits", "must not contain duplicate traits")
         for index, unit_trait in enumerate(normalized_traits):
             if not unit_trait:
                 self.reporter.error(f"{path}.unit_traits[{index}]", "must not be empty")
             elif unit_trait not in self.unit_traits:
-                self.reporter.warn(
+                self.reporter.error(
                     f"{path}.unit_traits[{index}]",
                     f"unknown unit trait '{unit_trait}'",
                 )
@@ -795,7 +805,7 @@ class CardValidator:
                     )
                 for index, unit_trait in enumerate(normalized_target_traits):
                     if unit_trait not in self.unit_traits:
-                        self.reporter.warn(
+                        self.reporter.error(
                             f"{path}.target_unit_traits[{index}]",
                             f"unknown unit trait '{unit_trait}'",
                         )

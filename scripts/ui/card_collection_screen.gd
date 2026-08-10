@@ -377,6 +377,9 @@ func _refresh_keyword_labels(entry: CardCatalogEntryScript) -> void:
 	var labels: Array[String] = []
 	if entry != null:
 		labels = entry.get_keyword_labels()
+		for unit_trait_label in entry.get_unit_trait_labels():
+			if not labels.has(unit_trait_label):
+				labels.append(unit_trait_label)
 	keyword_title_label.visible = not labels.is_empty()
 	keyword_flow.visible = not labels.is_empty()
 

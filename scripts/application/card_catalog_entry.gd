@@ -35,6 +35,35 @@ const KEYWORD_LABELS := {
 	CardData.KEYWORD_REBORN: "复生",
 }
 
+const UNIT_TRAIT_LABELS := {
+	CardData.UNIT_TRAIT_HUMANOID: "类人生物",
+	CardData.UNIT_TRAIT_HUMAN: "人类",
+	CardData.UNIT_TRAIT_ELF: "精灵",
+	CardData.UNIT_TRAIT_ORC: "兽人",
+	CardData.UNIT_TRAIT_DWARF: "矮人",
+	CardData.UNIT_TRAIT_BEASTFOLK: "兽裔",
+	CardData.UNIT_TRAIT_GHOUL: "喰种",
+	CardData.UNIT_TRAIT_DEMON: "恶魔",
+	CardData.UNIT_TRAIT_UNDEAD: "亡灵",
+	CardData.UNIT_TRAIT_BEAST: "野兽",
+	CardData.UNIT_TRAIT_AVIAN: "鸟类",
+	CardData.UNIT_TRAIT_REPTILE: "爬行生物",
+	CardData.UNIT_TRAIT_INSECT: "虫类",
+	CardData.UNIT_TRAIT_ELEMENTAL: "元素",
+	CardData.UNIT_TRAIT_MECHANICAL: "机械",
+	CardData.UNIT_TRAIT_CONSTRUCT: "构装体",
+	CardData.UNIT_TRAIT_SPIRIT: "灵体",
+	CardData.UNIT_TRAIT_YAOGUAI: "妖族",
+	CardData.UNIT_TRAIT_ALIEN: "异星生物",
+	CardData.UNIT_TRAIT_ABERRATION: "异化体",
+	CardData.UNIT_TRAIT_COSMIC: "宇宙实体",
+	CardData.UNIT_TRAIT_GU: "蛊物",
+	CardData.UNIT_TRAIT_FOX: "狐族",
+	CardData.UNIT_TRAIT_MONKEY: "猴族",
+	CardData.UNIT_TRAIT_CHAOS: "混沌生物",
+	CardData.UNIT_TRAIT_SYMBIOTE: "共生体",
+}
+
 var card_data: CardData
 var faction_id := ""
 var faction_display_name := ""
@@ -138,6 +167,19 @@ func get_keyword_labels() -> Array[String]:
 	return labels
 
 
+func get_unit_trait_labels() -> Array[String]:
+	var labels: Array[String] = []
+	if card_data == null:
+		return labels
+
+	for unit_trait in card_data.unit_traits:
+		var label := str(UNIT_TRAIT_LABELS.get(unit_trait, unit_trait))
+		if label != "" and not labels.has(label):
+			labels.append(label)
+
+	return labels
+
+
 func get_stats_text() -> String:
 	if card_data == null or not card_data.is_unit():
 		return ""
@@ -184,6 +226,8 @@ func _build_search_text() -> String:
 	]
 	terms.append_array(card_data.keywords)
 	terms.append_array(get_keyword_labels())
+	terms.append_array(card_data.unit_traits)
+	terms.append_array(get_unit_trait_labels())
 	if owner_hero_display_name != "":
 		terms.append("英雄专属")
 	return " ".join(terms).to_lower()

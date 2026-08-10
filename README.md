@@ -62,6 +62,7 @@ war-card/
 ## 架构原则
 
 - **数据优先**：卡牌能力优先通过 `data/cards.json` 配置，规则代码提供通用能力。
+- **随从分类受控**：英雄、普通随从和衍生形态都通过 `unit_traits` 显式声明可叠加的形态、族裔、构成与来源；分类用于规则过滤和图鉴检索，战斗能力仍由 `keywords` 表达。
 - **应用外壳常驻**：`GameShell` 是唯一顶层场景宿主；主菜单、种族选择、功能页和对局只发出导航意图，不互相实例化或释放。
 - **图鉴查询与 UI 分离**：`CardCollectionCatalog` 只构建只读目录并执行筛选排序，`CardCollectionScreen` 只维护页面交互；普通牌与衍生牌来源由 `CardDatabase` 的独立索引判定，不通过 `count` 猜测。
 - **结算契约统一**：资源胜利和投降都生成 `MatchResult`，由同一结算页面展示；未来牌局历史只消费结果快照，不读取已销毁的 `GameManager`。
@@ -96,6 +97,7 @@ war-card/
 python tools/validate_cards.py
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ImportAssets -TimeoutSeconds 180
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_unit_traits.gd -SuccessMarker UNIT_TRAITS_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_ui_skin.gd -SuccessMarker UI_SKIN_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_application_flow.gd -SuccessMarker APPLICATION_FLOW_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_card_collection.gd -SuccessMarker CARD_COLLECTION_TESTS_OK
@@ -125,7 +127,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改共享 Canvas 材质原语或 Ribbon 路径算法后运行 `tools/test_vfx_canvas_toolkit.gd`，修改复杂 VFX 重绘生命周期时同时运行 `tools/test_vfx_redraw_scheduling.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改影月议会邪能顺序、疯狂响应、恶魔仪式或持续状态表现后运行影月专项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；修改随从 `unit_traits`、新增随从或新增分类时还要运行 `tools/test_unit_traits.gd`；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改共享 Canvas 材质原语或 Ribbon 路径算法后运行 `tools/test_vfx_canvas_toolkit.gd`，修改复杂 VFX 重绘生命周期时同时运行 `tools/test_vfx_redraw_scheduling.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改影月议会邪能顺序、疯狂响应、恶魔仪式或持续状态表现后运行影月专项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 `tools/build_ui_skin_assets.py` 依赖 Pillow，仅在使用新的美术母版重建皮肤资源时需要运行；日常启动游戏不依赖 Python 图像库。
 
