@@ -28,6 +28,7 @@ class RuleProbe:
 
 	var occupy_flags: Array[bool] = []
 	var after_attack_count := 0
+	var board_animation_keys: Array[String] = []
 
 	func play_card_attack_animation(
 		_attacker_state: CardState,
@@ -71,6 +72,9 @@ class RuleProbe:
 
 	func refresh_debug_panel() -> void:
 		pass
+
+	func play_board_effect_animation(animation_key: String) -> void:
+		board_animation_keys.append(animation_key)
 
 
 func _initialize() -> void:
@@ -189,6 +193,9 @@ func test_configured_death_unlock(card_database: CardDatabase) -> bool:
 	if not manager.get_symbiote_offspring_pool_card_ids(player.id).has("symbiote_silence"):
 		cleanup_manager(manager)
 		return _fail("Configured Howl deathrattle did not update the player pool")
+	if manager.board_animation_keys != ["symbiote_pool_unlock_silence"]:
+		cleanup_manager(manager)
+		return _fail("Howl deathrattle did not publish its pool-unlock animation")
 	cleanup_manager(manager)
 	return true
 

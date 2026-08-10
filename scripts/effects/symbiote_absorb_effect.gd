@@ -1,7 +1,7 @@
 extends CardEffect
 class_name SymbioteAbsorbEffect
 
-const STATUS_ID := "symbiote_absorption"
+const STATUS_ID := CardStatus.STATUS_SYMBIOTE_ABSORPTION
 
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
@@ -17,6 +17,15 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 			source_state,
 			true,
 			get_effect_owner_id(source_state, effect_data)
+		)
+	if (
+		BoardQuery.is_face_up_minion(source_state)
+		and game_manager != null
+		and game_manager.has_method("play_status_apply_animation")
+	):
+		await game_manager.play_status_apply_animation(
+			source_state,
+			"symbiote_absorption_gain"
 		)
 
 

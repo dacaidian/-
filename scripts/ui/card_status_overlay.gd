@@ -136,6 +136,12 @@ var symbiote_fear_eye_color := Color(0.94, 0.30, 0.48, 0.86)
 var knull_aura_color := Color(0.045, 0.008, 0.055, 0.18)
 var knull_aura_edge_color := Color(0.74, 0.08, 0.22, 0.72)
 var knull_aura_core_color := Color(0.96, 0.72, 0.80, 0.88)
+var symbiote_absorption_color := Color(0.09, 0.008, 0.035, 0.18)
+var symbiote_absorption_edge_color := Color(0.76, 0.025, 0.12, 0.74)
+var symbiote_absorption_core_color := Color(1.0, 0.54, 0.60, 0.84)
+var symbiote_silence_color := Color(0.025, 0.055, 0.09, 0.18)
+var symbiote_silence_edge_color := Color(0.28, 0.68, 0.78, 0.70)
+var symbiote_silence_core_color := Color(0.76, 0.94, 0.94, 0.84)
 var animation_time := 0.0
 var redraw_accumulator := 0.0
 var divine_shield_break_progress := -1.0
@@ -242,6 +248,8 @@ func has_persistent_breath_visual() -> bool:
 		or should_show_venom_bite_ready()
 		or should_show_fear()
 		or should_show_knull_aura()
+		or should_show_symbiote_absorption()
+		or should_show_symbiote_silence_aura()
 	)
 
 
@@ -269,7 +277,7 @@ func _sync_persistent_breath() -> void:
 
 
 func has_visible_status() -> bool:
-	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify() or should_show_kiljaeden_whisper() or should_show_infernal_fire() or should_show_venom_bite_ready() or should_show_fear() or should_show_knull_aura()
+	return should_show_beast_path() or should_show_savage_roar() or should_show_taunt() or should_show_kagune_release() or should_show_tokyo_ghoul_form() or should_show_divine_shield() or should_show_power_word_shield() or should_show_bronze_head_iron_arms() or should_show_immortal_peach() or should_show_rooted() or should_show_stealth() or should_show_fiery_eyes_vision() or should_show_somersault_cloud() or should_show_arcane_aura() or should_show_meteor_aura() or should_show_freeze() or should_show_encourage_gu() or should_show_snake_venom() or should_show_life_link_larva() or should_show_life_link() or should_show_death_immunity() or should_show_devour() or should_show_precision_shot() or should_show_soul_hook() or should_show_charm() or should_show_reborn() or should_show_wanmo_charge() or should_show_chaos_corruption() or should_show_fel_infusion() or should_show_fel_overload() or should_show_fel_madness() or should_show_damage_amplify() or should_show_kiljaeden_whisper() or should_show_infernal_fire() or should_show_venom_bite_ready() or should_show_fear() or should_show_knull_aura() or should_show_symbiote_absorption() or should_show_symbiote_silence_aura()
 
 
 func should_show_beast_path() -> bool:
@@ -560,6 +568,26 @@ func should_show_knull_aura() -> bool:
 	)
 
 
+func should_show_symbiote_absorption() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.is_minion()
+		and state.has_status(CardStatus.STATUS_SYMBIOTE_ABSORPTION)
+	)
+
+
+func should_show_symbiote_silence_aura() -> bool:
+	return (
+		state != null
+		and state.data != null
+		and state.is_face_up
+		and state.is_minion()
+		and state.has_keyword(CardData.KEYWORD_SILENCE_AURA)
+	)
+
+
 func _draw() -> void:
 	if should_show_beast_path():
 		draw_beast_path_overlay()
@@ -601,6 +629,10 @@ func _draw() -> void:
 		draw_infernal_fire_overlay()
 	if should_show_knull_aura():
 		draw_knull_aura_overlay()
+	if should_show_symbiote_absorption():
+		draw_symbiote_absorption_overlay()
+	if should_show_symbiote_silence_aura():
+		draw_symbiote_silence_aura_overlay()
 	if should_show_venom_bite_ready():
 		draw_venom_bite_ready_overlay()
 	if should_show_fear():
@@ -3044,6 +3076,164 @@ func draw_knull_aura_overlay() -> void:
 	var label_position := Vector2(center.x - text_width * 0.5, aura_rect.position.y + aura_rect.size.y * 0.25)
 	draw_string(font, label_position + Vector2(1.0, 1.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.02, 0.0, 0.03, 0.96))
 	draw_string(font, label_position, label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, knull_aura_core_color)
+
+
+func draw_symbiote_absorption_overlay() -> void:
+	var status := state.get_status(CardStatus.STATUS_SYMBIOTE_ABSORPTION) if state != null else null
+	if status == null:
+		return
+	var overlay_rect := Rect2(Vector2.ZERO, size).grow(-minf(size.x, size.y) * 0.052)
+	var center := overlay_rect.get_center()
+	var scale_value := minf(overlay_rect.size.x, overlay_rect.size.y)
+	var stack_count := maxi(status.stacks, 1)
+	var plate_count := mini(stack_count + 3, 8)
+
+	# Stable chitin seams communicate permanent assimilated mass. Breathing is
+	# supplied by self_modulate, so this geometry is not rebuilt every frame.
+	draw_rect(
+		overlay_rect,
+		symbiote_absorption_color,
+		false,
+		maxf(size.x * 0.040, 3.2),
+		true
+	)
+	for plate_index in range(plate_count):
+		var angle := TAU * float(plate_index) / float(plate_count) + 0.18
+		var radial := Vector2.from_angle(angle)
+		var tangent := radial.orthogonal()
+		var anchor := center + radial * scale_value * 0.43
+		var plate := PackedVector2Array([
+			anchor - tangent * scale_value * 0.075,
+			anchor + radial * scale_value * 0.11,
+			anchor + tangent * scale_value * 0.075,
+			anchor - radial * scale_value * 0.035,
+		])
+		draw_colored_polygon(plate, Color(0.055, 0.008, 0.030, 0.66))
+		var outline := plate.duplicate()
+		outline.append(plate[0])
+		draw_polyline(
+			outline,
+			Color(
+				symbiote_absorption_edge_color.r,
+				symbiote_absorption_edge_color.g,
+				symbiote_absorption_edge_color.b,
+				0.36
+			),
+			maxf(size.x * 0.009, 1.0),
+			true
+		)
+
+	for vein_index in range(5):
+		var angle := TAU * float(vein_index) / 5.0 + 0.42
+		var direction := Vector2.from_angle(angle)
+		var start_point := center + direction * scale_value * 0.12
+		var mid_point := center + direction * scale_value * 0.25 + direction.orthogonal() * scale_value * 0.035
+		var end_point := center + direction * scale_value * 0.38
+		draw_polyline(
+			PackedVector2Array([start_point, mid_point, end_point]),
+			Color(
+				symbiote_absorption_edge_color.r,
+				symbiote_absorption_edge_color.g,
+				symbiote_absorption_edge_color.b,
+				0.42
+			),
+			maxf(size.x * 0.010, 1.0),
+			true
+		)
+
+	var badge_center := Vector2(overlay_rect.end.x - size.x * 0.08, overlay_rect.position.y + size.y * 0.10)
+	draw_circle(badge_center, maxf(size.x * 0.054, 5.0), Color(0.025, 0.002, 0.014, 0.88))
+	draw_arc(
+		badge_center,
+		maxf(size.x * 0.054, 5.0),
+		0.0,
+		TAU,
+		30,
+		symbiote_absorption_edge_color,
+		maxf(size.x * 0.010, 1.0),
+		true
+	)
+	var font := ThemeDB.fallback_font
+	var font_size := maxi(int(size.x * 0.085), 10)
+	var label := str(stack_count)
+	var label_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	draw_string(
+		font,
+		badge_center - label_size * 0.5 + Vector2(0.0, label_size.y * 0.76),
+		label,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1.0,
+		font_size,
+		symbiote_absorption_core_color
+	)
+
+
+func draw_symbiote_silence_aura_overlay() -> void:
+	var overlay_rect := Rect2(Vector2.ZERO, size).grow(-minf(size.x, size.y) * 0.050)
+	var center := overlay_rect.get_center()
+	var scale_value := minf(overlay_rect.size.x, overlay_rect.size.y)
+	draw_rect(
+		overlay_rect,
+		symbiote_silence_color,
+		false,
+		maxf(size.x * 0.038, 3.0),
+		true
+	)
+
+	# A compressed throat membrane and inward acoustic folds make the aura read
+	# as active suppression instead of another generic ring buff.
+	Toolkit.draw_soft_ellipse(
+		self,
+		center,
+		Vector2(scale_value * 0.25, scale_value * 0.105),
+		Color(symbiote_silence_color.r, symbiote_silence_color.g, symbiote_silence_color.b, 0.32),
+		Color(symbiote_silence_core_color.r, symbiote_silence_core_color.g, symbiote_silence_core_color.b, 0.38),
+		5
+	)
+	for fold_index in range(4):
+		var fold_radius := scale_value * (0.20 + float(fold_index) * 0.065)
+		var fold_color := Color(
+			symbiote_silence_edge_color.r,
+			symbiote_silence_edge_color.g,
+			symbiote_silence_edge_color.b,
+			0.56 - float(fold_index) * 0.09
+		)
+		draw_arc(
+			center,
+			fold_radius,
+			float(fold_index) * 0.58,
+			float(fold_index) * 0.58 + PI * 1.30,
+			32,
+			fold_color,
+			maxf(size.x * (0.014 - fold_index * 0.0015), 1.0),
+			true
+		)
+	var mouth_width := scale_value * 0.24
+	draw_line(
+		center - Vector2(mouth_width, 0.0),
+		center + Vector2(mouth_width, 0.0),
+		Color(0.01, 0.015, 0.025, 0.92),
+		maxf(size.x * 0.034, 2.8),
+		true
+	)
+	for corner_index in range(4):
+		var corner := Vector2(
+			overlay_rect.position.x if corner_index % 2 == 0 else overlay_rect.end.x,
+			overlay_rect.position.y if corner_index < 2 else overlay_rect.end.y
+		)
+		var toward_center := (center - corner).normalized()
+		draw_line(
+			corner,
+			corner + toward_center * scale_value * 0.14,
+			Color(
+				symbiote_silence_edge_color.r,
+				symbiote_silence_edge_color.g,
+				symbiote_silence_edge_color.b,
+				0.40
+			),
+			maxf(size.x * 0.010, 1.0),
+			true
+		)
 
 
 func draw_fang(top_center: Vector2, fang_width: float, fang_height: float) -> void:

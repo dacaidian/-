@@ -33,6 +33,11 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		target_state.set_current_attack(
 			target_state.current_attack + maxi(int(effect_data.get(KEY_FRIENDLY_ATTACK_BONUS, 0)), 0)
 		)
+		if game_manager != null and game_manager.has_method("play_status_apply_animation"):
+			await game_manager.play_status_apply_animation(
+				target_state,
+				"symbiote_lash_empower"
+			)
 
 
 func can_execute(source_state: CardState, effect_data: Dictionary, _game_manager: Node) -> bool:

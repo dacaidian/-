@@ -9,6 +9,12 @@ const SymbioteSeveranceVisualScript := preload(
 const SymbiotePowerVisualScript := preload(
 	"res://scripts/ui/animation/symbiote_power_visual.gd"
 )
+const SymbioteCombatVisualScript := preload(
+	"res://scripts/ui/animation/symbiote_combat_visual.gd"
+)
+const SymbioteEventVisualScript := preload(
+	"res://scripts/ui/animation/symbiote_event_visual.gd"
+)
 const SpellAnimationRouterScript := preload(
 	"res://scripts/ui/animation/spell_animation_router.gd"
 )
@@ -147,6 +153,9 @@ class SymbioteRuleProbe:
 		animation_keys.append(animation_key)
 		return true
 
+	func play_board_effect_animation(animation_key: String) -> void:
+		animation_keys.append(animation_key)
+
 	func resolve_dead_states(
 		states_to_check: Array,
 		_reason: String = "damage",
@@ -245,6 +254,8 @@ func _run() -> void:
 		return
 	if not await _test_codex_zones(card_database):
 		return
+	if not await _test_persistent_overlays(card_database):
+		return
 	if not await _test_visual_frames():
 		return
 	if not await _test_provider_routes():
@@ -332,20 +343,30 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		var excluded_data := card_database.get_card(excluded_card_id)
 		if excluded_data == null or excluded_data.has_unit_trait(CardData.UNIT_TRAIT_SYMBIOTE):
 			return _fail("Knull aura exclusion has an invalid unit trait: %s" % excluded_card_id)
+	var imprisoned_aura := _find_card_effect(
+		imprisoned_knull,
+		EffectData.EFFECT_MODIFY_UNIT_ATTACK
+	)
 	if (
-		imprisoned_knull.effects.is_empty()
-		or EffectData.get_id(imprisoned_knull.effects[0]) != EffectData.EFFECT_MODIFY_UNIT_ATTACK
-		or EffectData.get_amount(imprisoned_knull.effects[0]) != 2
-		or EffectData.get_target_unit_traits(imprisoned_knull.effects[0]) != [CardData.UNIT_TRAIT_SYMBIOTE]
+		imprisoned_aura.is_empty()
+		or EffectData.get_amount(imprisoned_aura) != 2
+		or EffectData.get_target_unit_traits(imprisoned_aura) != [CardData.UNIT_TRAIT_SYMBIOTE]
 	):
 		return _fail("Imprisoned Knull aura is incomplete")
-	if liberated_knull.effects.size() != 2:
+	var liberated_aura := _find_card_effect(
+		liberated_knull,
+		EffectData.EFFECT_MODIFY_UNIT_ATTACK
+	)
+	var liberated_tissue_modifier := _find_card_effect(
+		liberated_knull,
+		EffectData.EFFECT_MODIFY_HAND_SPELL_EFFECTS
+	)
+	if liberated_aura.is_empty() or liberated_tissue_modifier.is_empty():
 		return _fail("Liberated Knull board effects are incomplete")
-	var liberated_tissue_modifier := liberated_knull.effects[1]
 	var replacement_effects := EffectData.get_replace_effects(liberated_tissue_modifier)
 	if (
-		EffectData.get_amount(liberated_knull.effects[0]) != 4
-		or EffectData.get_target_unit_traits(liberated_knull.effects[0]) != [CardData.UNIT_TRAIT_SYMBIOTE]
+		EffectData.get_amount(liberated_aura) != 4
+		or EffectData.get_target_unit_traits(liberated_aura) != [CardData.UNIT_TRAIT_SYMBIOTE]
 		or EffectData.get_target_rule(liberated_tissue_modifier) != SpellTargetResolver.TARGET_RULE_NON_HERO_MINIONS
 		or replacement_effects.size() != 1
 		or not bool(replacement_effects[0].get(EffectData.KEY_ALLOW_ANY_NON_HERO_MINION, false))
@@ -376,6 +397,26 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		"add_card_to_hand",
 	]:
 		return _fail("Artificial severance effect order changed")
+
+	var expected_action_animations := {
+		"symbiote_riot": ["riot", "symbiote_riot"],
+		"symbiote_scream": ["scream", "symbiote_offspring_scream"],
+		"symbiote_lasher": ["lash", "symbiote_lash"],
+		"symbiote_devour": ["devour", "symbiote_devour"],
+	}
+	for card_id in expected_action_animations:
+		var action_expectation: Array = expected_action_animations[card_id]
+		var action_data := _find_action(
+			card_database.get_card(card_id),
+			str(action_expectation[0])
+		)
+		if str(action_data.get(EffectData.KEY_ANIMATION, "")) != str(action_expectation[1]):
+			return _fail("Symbiote action animation is missing: %s" % card_id)
+	var hybrid := card_database.get_card("symbiote_hybrid")
+	if str(_find_action(hybrid, "riot").get(EffectData.KEY_ANIMATION, "")) != "symbiote_riot":
+		return _fail("Hybrid Riot animation is missing")
+	if str(_find_action(hybrid, "lash").get(EffectData.KEY_ANIMATION, "")) != "symbiote_lash":
+		return _fail("Hybrid Lash animation is missing")
 	return true
 
 
@@ -781,6 +822,44 @@ func _test_codex_zones(card_database: CardDatabase) -> bool:
 	return true
 
 
+func _test_persistent_overlays(card_database: CardDatabase) -> bool:
+	var overlay := CardStatusOverlay.new()
+	overlay.size = Vector2(120.0, 168.0)
+	root.add_child(overlay)
+
+	var devour_state := _make_state(card_database.get_card("symbiote_devour"), "overlay_owner", 8)
+	var absorption := CardStatus.new()
+	absorption.status_id = CardStatus.STATUS_SYMBIOTE_ABSORPTION
+	absorption.stacks = 2
+	absorption.payload = {
+		EffectData.KEY_ATTACK_BONUS: 4,
+		EffectData.KEY_MAX_HEALTH_BONUS: 7,
+	}
+	devour_state.statuses.append(absorption)
+	overlay.set_state(devour_state)
+	await process_frame
+	if not overlay.visible or not overlay.should_show_symbiote_absorption():
+		overlay.queue_free()
+		return _fail("Symbiote absorption overlay is missing")
+	if overlay.is_processing():
+		overlay.queue_free()
+		return _fail("Static Symbiote absorption overlay performs continuous redraws")
+
+	var silence_state := _make_state(card_database.get_card("symbiote_silence"), "overlay_owner", 9)
+	overlay.set_state(silence_state)
+	await process_frame
+	if not overlay.visible or not overlay.should_show_symbiote_silence_aura():
+		overlay.queue_free()
+		return _fail("Symbiote Silence aura overlay is missing")
+	if overlay.is_processing():
+		overlay.queue_free()
+		return _fail("Static Symbiote Silence overlay performs continuous redraws")
+
+	overlay.queue_free()
+	await process_frame
+	return true
+
+
 func _test_visual_frames() -> bool:
 	var effect_root := Control.new()
 	effect_root.name = "SymbioteVisualTestRoot"
@@ -841,6 +920,66 @@ func _test_visual_frames() -> bool:
 			if effect_root.get_child_count() != 0:
 				return _fail("Symbiote power visual leaked nodes at %s:%s" % [animation_key, progress_sample])
 
+	for animation_key in [
+		"symbiote_living_weapon_attack",
+		"symbiote_carnage_attack",
+		"symbiote_anti_venom_attack",
+		"symbiote_hybrid_attack",
+		"symbiote_riot",
+		"symbiote_offspring_scream",
+		"symbiote_lash",
+		"symbiote_lash_empower",
+		"symbiote_devour",
+		"symbiote_absorption_gain",
+	]:
+		for progress_sample in PROGRESS_SAMPLES:
+			var visual := SymbioteCombatVisualScript.new()
+			visual.size = effect_root.size
+			effect_root.add_child(visual)
+			visual.configure(
+				animation_key,
+				Vector2(280.0, 500.0),
+				Vector2(850.0, 260.0),
+				Vector2(120.0, 168.0),
+				Vector2(120.0, 168.0)
+			)
+			visual.progress = progress_sample
+			visual.queue_redraw()
+			await process_frame
+			visual.queue_free()
+			await process_frame
+			if effect_root.get_child_count() != 0:
+				return _fail("Symbiote combat visual leaked nodes at %s:%s" % [animation_key, progress_sample])
+
+	for animation_key in [
+		"symbiote_pool_unlock_silence",
+		"symbiote_pool_unlock_hybrid",
+		"symbiote_pool_unlock_advanced",
+		"symbiote_offspring_emergence",
+		"symbiote_carnage_escalation",
+		"symbiote_silence_manifest",
+		"symbiote_sleeper_spawn",
+		"symbiote_knull_aura_awaken",
+		"symbiote_knull_aura_receive",
+	]:
+		for progress_sample in PROGRESS_SAMPLES:
+			var visual := SymbioteEventVisualScript.new()
+			visual.size = effect_root.size
+			effect_root.add_child(visual)
+			visual.configure(
+				animation_key,
+				Vector2(640.0, 360.0),
+				Vector2(120.0, 168.0),
+				animation_key.begins_with("symbiote_pool_unlock_")
+			)
+			visual.progress = progress_sample
+			visual.queue_redraw()
+			await process_frame
+			visual.queue_free()
+			await process_frame
+			if effect_root.get_child_count() != 0:
+				return _fail("Symbiote event visual leaked nodes at %s:%s" % [animation_key, progress_sample])
+
 	effect_root.queue_free()
 	await process_frame
 	return true
@@ -868,6 +1007,16 @@ func _test_provider_routes() -> bool:
 		return _fail("Knull Codex rect route is missing")
 	if not router.has_multi_rect_route("symbiote_fear_apply"):
 		return _fail("Fear multi-target route is missing")
+	if not router.has_source_rect_route("symbiote_living_weapon_attack"):
+		return _fail("Symbiote attack route is missing")
+	if not router.has_targeted_route("symbiote_lash"):
+		return _fail("Symbiote Lash route is missing")
+	if not router.has_targeted_route("symbiote_devour"):
+		return _fail("Symbiote Devour route is missing")
+	if not router.has_board_route("symbiote_pool_unlock_advanced"):
+		return _fail("Symbiote pool event route is missing")
+	if not router.has_multi_rect_route("symbiote_knull_aura_receive"):
+		return _fail("Knull aura receiver route is missing")
 
 	var source_rect := Rect2(Vector2(250.0, 450.0), Vector2(120.0, 168.0))
 	var target_rect := Rect2(Vector2(820.0, 210.0), Vector2(120.0, 168.0))
@@ -915,6 +1064,30 @@ func _test_provider_routes() -> bool:
 	if effect_root.get_child_count() != 0:
 		return _fail("Symbiote attachment provider leaked its visual")
 
+	var attack_target := Card.new()
+	attack_target.position = target_rect.position
+	attack_target.size = target_rect.size
+	await provider.play_from_rect(
+		effect_root,
+		effect_root,
+		source_rect,
+		attack_target,
+		"symbiote_living_weapon_attack"
+	)
+	attack_target.free()
+	await process_frame
+	if effect_root.get_child_count() != 0:
+		return _fail("Symbiote attack provider leaked its visual")
+
+	await provider.play_board(
+		effect_root,
+		effect_root,
+		"symbiote_pool_unlock_advanced"
+	)
+	await process_frame
+	if effect_root.get_child_count() != 0:
+		return _fail("Symbiote pool event provider leaked its visual")
+
 	effect_root.queue_free()
 	await process_frame
 	return true
@@ -939,6 +1112,16 @@ func _find_action(card_data: CardData, action_id: String) -> Dictionary:
 		var action_data := raw_action as Dictionary
 		if str(action_data.get("id", "")) == action_id:
 			return action_data
+	return {}
+
+
+func _find_card_effect(card_data: CardData, effect_id: String) -> Dictionary:
+	if card_data == null:
+		return {}
+	for raw_effect in card_data.effects:
+		var effect_data := raw_effect as Dictionary
+		if EffectData.get_id(effect_data) == effect_id:
+			return effect_data
 	return {}
 
 

@@ -26,7 +26,7 @@ War Card 是一个基于 Godot 4.6 的桌面卡牌战棋游戏。项目以“种
 - **野兽人**：同类斩杀进化、混沌腐蚀、兽径地形、兽王杀戮成长、鹰身女妖咆哮增益、萨满野性呼唤和万魔岩仪式；表现层使用骨角生长、干涸血痕、泥土裂隙、蹄印、战吼风压、兽群足迹和混沌脉络构成粗粝而清晰的原始战争语言，杀戮成长、进化、咆哮受益、荒野召唤、腐蚀爆发、兽径挖掘、万魔充能与废灭仪式均有独立动态反馈。
 - **东京喰种**：初始为高 RC 浓度；每次击杀敌方非英雄随从立即提升一级，无杀戮回合结束时降低一级，低浓度无杀戮会随机分食友方非英雄喰种。施法回合在该种族中表现为“赫子解放”，四类赫子通过持续至下个己方回合开始的能力快照，提供攻速、移动攻击与攻击/吸血、护甲/反伤或羽针副动作；尾赫在普通与高浓度下均为攻速 +1。金木研拥有尾赫法术和三种可主动恢复原形的覆盖形态；13区咖啡店可以提供治疗咖啡并缩短其复活冷却。芳村功善与高槻泉的枭形态同样可以主动结束。SSS 阶喰种情报可提供芳村功善、高槻泉、旧多二福与死堪，包含赫者化、全体恢复、RC 提升、正面五格攻击、双重免疫以及四赫子同时解放等能力。S 阶与 SSS 阶喰种情报作为两套独立的有限随从库持续提供稀有单位。表现层以冷色雨夜、都市反光、体内 RC 脉冲和有机血肉兵器为统一语言；普通攻击会按四类赫子、复合赫子及覆盖形态自动替换为专属轨迹，RC 升降、低浓度分食、随从库补充、咖啡、全体恢复、赫者化、复原、吸血与反伤也拥有独立动态反馈。
 - **影月议会**：古尔丹、灵魂虹吸、邪能灌注、邪能狂乱、混乱兽人、地狱犬、术士、基尔加丹的低语、混乱狼骑兵、末日守卫、地狱火、黑暗之门、魅魔与古尔丹之杖；每回合第一次成功释放邪能法术会让整个阵营进入本回合狂乱，后续邪能施法不会重复叠加，装备可升级施法动作并引发邪能过载，术士诅咒引入可复用的伤害加深状态，地狱火引入火焰伤害持续状态，黑暗之门使用通用周期触发持续提供恶魔兵源。表现层以黑紫空间膜、黏稠酸绿压力核心、灵魂紫流体、暗红诅咒和低矮疯狂压力前沿区分不同邪能语义。
-- **共生体**：毒液和生物研究员可通过组织剥离使毒液攻击力永久 +1、受到2点伤害并获得“共生体组织”，每次剥离还会推进玩家级子代池。组织可以附着于共生神盾局探员、生物研究员或基因战士，将宿主永久进化为随机可用子代；基因战士还会把卡牌基础攻击与生命上限永久叠加给新子代。共生体战士放回池中，其余子代不放回。嚎叫死亡会解锁沉默，五种基础子代均死亡会解锁混种，累计五次剥离会解锁毒素、屠杀和眠者。毒液的“撕咬”提供可配置的下一击加伤与固定恢复，“恐怖尖啸”对相邻敌军造成伤害并施加恐惧；恐惧单位在回合开始时尝试背离源头移动，随后整回合无法行动。纳尔·囚禁只为带有共生体生物特征的友方单位提供攻击光环，不影响宿主人类、异噬体或纳尔自身；“法典”会在牌库、隐藏格、战场、手牌或坟场中唯一地找到并解放纳尔。解放形态提高光环数值，并把“共生体组织”的目标扩展为任意非英雄随从。
+- **共生体**：毒液和生物研究员可通过组织剥离使毒液攻击力永久 +1、受到2点伤害并获得“共生体组织”，每次剥离还会推进玩家级子代池。组织可以附着于共生神盾局探员、生物研究员或基因战士，将宿主永久进化为随机可用子代；基因战士还会把卡牌基础攻击与生命上限永久叠加给新子代。共生体战士放回池中，其余子代不放回。嚎叫死亡会解锁沉默，五种基础子代均死亡会解锁混种，累计五次剥离会解锁毒素、屠杀和眠者。毒液的“撕咬”提供可配置的下一击加伤与固定恢复，“恐怖尖啸”对相邻敌军造成伤害并施加恐惧；恐惧单位在回合开始时尝试背离源头移动，随后整回合无法行动。纳尔·囚禁只为带有共生体生物特征的友方单位提供攻击光环，不影响宿主人类、异噬体或纳尔自身；“法典”会在牌库、隐藏格、战场、手牌或坟场中唯一地找到并解放纳尔。解放形态提高光环数值，并把“共生体组织”的目标扩展为任意非英雄随从。表现层以湿润甲壳、半透明组织膜、肌理脉络和有方向的生物兵器为统一语言；剥离与附着、毒液英雄能力、普通攻击、暴乱、嚎叫、皮鞭、吞噬、子代出壳、子代池解锁、屠杀成长、沉默显现、眠者产猫以及纳尔光环均有独立动态反馈。
 
 ## 项目结构
 
@@ -122,12 +122,14 @@ powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptP
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_vfx_canvas_toolkit.gd -SuccessMarker VFX_CANVAS_TOOLKIT_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_vfx_redraw_scheduling.gd -SuccessMarker VFX_REDRAW_SCHEDULING_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_shadowmoon_animation_provider.gd -SuccessMarker SHADOWMOON_ANIMATION_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_symbiote.gd -SuccessMarker SYMBIOTE_TESTS_OK
+powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_symbiote_offspring_pool.gd -SuccessMarker SYMBIOTE_OFFSPRING_POOL_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_board_view_modes.gd -SuccessMarker BOARD_VIEW_MODE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_vfx_modules.gd -SuccessMarker NIGHT_ELF_VFX_MODULE_TESTS_OK
 powershell -ExecutionPolicy Bypass -File tools/run_godot_validation.ps1 -ScriptPath res://tools/test_night_elf_animation_provider.gd -SuccessMarker NIGHT_ELF_ANIMATION_TESTS_OK
 ```
 
-修改 `data/cards.json` 后至少运行卡牌校验；修改随从 `unit_traits`、新增随从或新增分类时还要运行 `tools/test_unit_traits.gd`；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改共享 Canvas 材质原语或 Ribbon 路径算法后运行 `tools/test_vfx_canvas_toolkit.gd`，修改复杂 VFX 重绘生命周期时同时运行 `tools/test_vfx_redraw_scheduling.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改影月议会邪能顺序、疯狂响应、恶魔仪式或持续状态表现后运行影月专项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
+修改 `data/cards.json` 后至少运行卡牌校验；修改随从 `unit_traits`、新增随从或新增分类时还要运行 `tools/test_unit_traits.gd`；新增或重建 `assets/img/ui_skin/` 的 PNG 后先使用 `-ImportAssets` 生成 Godot 导入元数据，再运行 UI 皮肤测试；修改动画路由/provider 后额外运行 `tools/test_animation_routing.gd`；修改共享 Canvas 材质原语或 Ribbon 路径算法后运行 `tools/test_vfx_canvas_toolkit.gd`，修改复杂 VFX 重绘生命周期时同时运行 `tools/test_vfx_redraw_scheduling.gd`；修改普通攻击的正面宽度、巨兽或固定溅射表现时运行 `tools/test_combat_impact_animation.gd`；修改东京喰种自绘特效或赫子状态快照后运行东京喰种规则与动画两项测试；修改野兽人杀戮、进化、仪式、兽径或持续资源表现后运行野兽人动画测试；修改狐妖仙目标、区域、仪式特效、魅惑状态或尾数仪表后运行狐妖仙动画测试与右侧 HUD 测试；修改影月议会邪能顺序、疯狂响应、恶魔仪式或持续状态表现后运行影月专项测试；修改共生体剥离、附着、子代能力、池解锁、成长事件或持续覆盖后运行共生体规则与动画两项测试；修改暗夜精灵语义模块或 VFX Runtime 后运行模块测试和完整 Provider 测试；修改脚本、场景、表现层或玩法流程后运行 Godot 检查。
 
 `tools/build_ui_skin_assets.py` 依赖 Pillow，仅在使用新的美术母版重建皮肤资源时需要运行；日常启动游戏不依赖 Python 图像库。
 

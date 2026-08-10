@@ -10,6 +10,38 @@ const SeveranceVisualScript := preload(
 const PowerVisualScript := preload(
 	"res://scripts/ui/animation/symbiote_power_visual.gd"
 )
+const CombatVisualScript := preload(
+	"res://scripts/ui/animation/symbiote_combat_visual.gd"
+)
+const EventVisualScript := preload(
+	"res://scripts/ui/animation/symbiote_event_visual.gd"
+)
+
+const COMBAT_KEYS: Array[String] = [
+	"symbiote_living_weapon_attack",
+	"symbiote_carnage_attack",
+	"symbiote_anti_venom_attack",
+	"symbiote_hybrid_attack",
+	"symbiote_riot",
+	"symbiote_offspring_scream",
+	"symbiote_lash",
+	"symbiote_lash_empower",
+	"symbiote_devour",
+	"symbiote_absorption_gain",
+]
+const EVENT_KEYS: Array[String] = [
+	"symbiote_offspring_emergence",
+	"symbiote_carnage_escalation",
+	"symbiote_silence_manifest",
+	"symbiote_sleeper_spawn",
+	"symbiote_knull_aura_awaken",
+	"symbiote_knull_aura_receive",
+]
+const BOARD_EVENT_KEYS: Array[String] = [
+	"symbiote_pool_unlock_silence",
+	"symbiote_pool_unlock_hybrid",
+	"symbiote_pool_unlock_advanced",
+]
 
 const TARGETED_KEYS: Array[String] = [
 	"symbiote_self_severance",
@@ -18,6 +50,18 @@ const TARGETED_KEYS: Array[String] = [
 	"symbiote_bite_ready",
 	"symbiote_bite_strike",
 	"symbiote_terrifying_scream",
+	"symbiote_riot",
+	"symbiote_offspring_scream",
+	"symbiote_lash",
+	"symbiote_lash_empower",
+	"symbiote_devour",
+	"symbiote_absorption_gain",
+	"symbiote_offspring_emergence",
+	"symbiote_carnage_escalation",
+	"symbiote_silence_manifest",
+	"symbiote_sleeper_spawn",
+	"symbiote_knull_aura_awaken",
+	"symbiote_knull_aura_receive",
 ]
 const RECT_KEYS: Array[String] = [
 	"symbiote_self_severance",
@@ -27,14 +71,31 @@ const RECT_KEYS: Array[String] = [
 	"symbiote_fear_flee",
 	"symbiote_codex",
 	"symbiote_knull_liberation",
+	"symbiote_riot",
+	"symbiote_offspring_scream",
+	"symbiote_lash_empower",
+	"symbiote_absorption_gain",
+	"symbiote_offspring_emergence",
+	"symbiote_carnage_escalation",
+	"symbiote_silence_manifest",
+	"symbiote_sleeper_spawn",
+	"symbiote_knull_aura_awaken",
+	"symbiote_knull_aura_receive",
 ]
 const SOURCE_RECT_KEYS: Array[String] = [
 	"symbiote_artificial_severance",
 	"symbiote_bite_ready",
 	"symbiote_terrifying_scream",
+	"symbiote_living_weapon_attack",
+	"symbiote_carnage_attack",
+	"symbiote_anti_venom_attack",
+	"symbiote_hybrid_attack",
+	"symbiote_lash",
+	"symbiote_devour",
 ]
 const MULTI_RECT_KEYS: Array[String] = [
 	"symbiote_fear_apply",
+	"symbiote_knull_aura_receive",
 ]
 
 var spell_animation_duration := 0.32
@@ -51,6 +112,7 @@ func register_routes(router: SpellAnimationRouter) -> void:
 	router.register_at_rect(RECT_KEYS, play_at_rect)
 	router.register_from_rect(SOURCE_RECT_KEYS, play_from_rect)
 	router.register_multi_rect(MULTI_RECT_KEYS, play_multi_rect)
+	router.register_board(BOARD_EVENT_KEYS, play_board)
 
 
 func play_targeted(
@@ -112,19 +174,51 @@ func play_multi_rect(
 	if local_centers.is_empty():
 		return
 
-	var visual := PowerVisualScript.new()
-	visual.name = "SymbiotePower_%s" % animation_key
+	var is_event_visual := animation_key in EVENT_KEYS
+	var visual: Control = EventVisualScript.new() if is_event_visual else PowerVisualScript.new()
+	visual.name = "SymbioteMulti_%s" % animation_key
 	visual.position = Vector2.ZERO
 	visual.size = _get_canvas_size(effect_root)
 	visual.z_index = 2470
 	effect_root.add_child(visual)
+	if is_event_visual:
+		visual.configure(
+			animation_key,
+			local_centers[0],
+			target_rects[0].size,
+			false,
+			local_centers
+		)
+	else:
+		visual.configure(
+			animation_key,
+			local_centers[0],
+			local_centers[0],
+			target_rects[0].size,
+			target_rects[0].size,
+			local_centers
+		)
+	await _tween_and_free(owner_node, visual, animation_key)
+
+
+func play_board(
+	owner_node: Node,
+	effect_root: Control,
+	animation_key: String
+) -> void:
+	if owner_node == null or effect_root == null:
+		return
+	var visual := EventVisualScript.new()
+	visual.name = "SymbioteEvent_%s" % animation_key
+	visual.position = Vector2.ZERO
+	visual.size = _get_canvas_size(effect_root)
+	visual.z_index = 2460
+	effect_root.add_child(visual)
 	visual.configure(
 		animation_key,
-		local_centers[0],
-		local_centers[0],
-		target_rects[0].size,
-		target_rects[0].size,
-		local_centers
+		visual.size * 0.5,
+		Vector2(120.0, 168.0),
+		true
 	)
 	await _tween_and_free(owner_node, visual, animation_key)
 
@@ -139,27 +233,34 @@ func _play(
 	var inverse_transform := effect_root.get_global_transform().affine_inverse()
 	var local_source := inverse_transform * source_rect.get_center()
 	var local_target := inverse_transform * target_rect.get_center()
-	var visual = (
-		SeveranceVisualScript.new()
-		if animation_key in [
-			"symbiote_self_severance",
-			"symbiote_artificial_severance",
-			"symbiote_attachment",
-		]
-		else PowerVisualScript.new()
-	)
-	visual.name = "SymbioteSeverance_%s" % animation_key
+	var visual: Control
+	if animation_key in [
+		"symbiote_self_severance",
+		"symbiote_artificial_severance",
+		"symbiote_attachment",
+	]:
+		visual = SeveranceVisualScript.new()
+	elif animation_key in COMBAT_KEYS:
+		visual = CombatVisualScript.new()
+	elif animation_key in EVENT_KEYS:
+		visual = EventVisualScript.new()
+	else:
+		visual = PowerVisualScript.new()
+	visual.name = "SymbioteVisual_%s" % animation_key
 	visual.position = Vector2.ZERO
 	visual.size = _get_canvas_size(effect_root)
 	visual.z_index = 2470
 	effect_root.add_child(visual)
-	visual.configure(
-		animation_key,
-		local_source,
-		local_target,
-		source_rect.size,
-		target_rect.size
-	)
+	if animation_key in EVENT_KEYS:
+		visual.configure(animation_key, local_target, target_rect.size, false)
+	else:
+		visual.configure(
+			animation_key,
+			local_source,
+			local_target,
+			source_rect.size,
+			target_rect.size
+		)
 	await _tween_and_free(owner_node, visual, animation_key)
 
 
@@ -188,6 +289,19 @@ func get_duration_scale(animation_key: String) -> float:
 			return 3.0
 		"symbiote_codex":
 			return 2.75
+		"symbiote_pool_unlock_silence", "symbiote_pool_unlock_hybrid", \
+		"symbiote_pool_unlock_advanced":
+			return 3.30
+		"symbiote_offspring_scream", "symbiote_devour":
+			return 2.70
+		"symbiote_riot", "symbiote_lash", "symbiote_offspring_emergence":
+			return 2.35
+		"symbiote_carnage_escalation", "symbiote_silence_manifest", \
+		"symbiote_sleeper_spawn", "symbiote_knull_aura_awaken":
+			return 2.45
+		"symbiote_living_weapon_attack", "symbiote_carnage_attack", \
+		"symbiote_anti_venom_attack", "symbiote_hybrid_attack":
+			return 1.55
 		"symbiote_bite_strike", "symbiote_fear_apply":
 			return 2.15
 		_:

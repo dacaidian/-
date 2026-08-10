@@ -37,6 +37,16 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 	apply_permanent_evolution(target_state, offspring_data, owner_id)
 	apply_inherited_host_base_stats(target_state, inherited_stats)
 	refresh_owner_passives(previous_owner_id, owner_id, game_manager)
+	if game_manager.has_method("play_status_apply_animation"):
+		await game_manager.play_status_apply_animation(
+			target_state,
+			"symbiote_offspring_emergence"
+		)
+		if has_active_knull_aura(owner_id, game_manager):
+			await game_manager.play_status_apply_animation(
+				target_state,
+				"symbiote_knull_aura_receive"
+			)
 	if game_manager.has_method("refresh_action_available_hints"):
 		game_manager.refresh_action_available_hints()
 	if game_manager.has_method("refresh_debug_panel"):
@@ -170,3 +180,17 @@ func refresh_owner_passives(
 		var player := game_manager.get_player_by_id(owner_id) as PlayerState
 		if player != null:
 			game_manager.refresh_hand_passives_for_player(player, false)
+
+
+func has_active_knull_aura(owner_id: String, game_manager: Node) -> bool:
+	if owner_id == "" or game_manager == null or not game_manager.has_method("get_all_board_states"):
+		return false
+	for raw_state in game_manager.get_all_board_states():
+		var board_state := raw_state as CardState
+		if (
+			BoardQuery.is_face_up_minion(board_state)
+			and board_state.owner_id == owner_id
+			and board_state.card_id in ["knull_imprisoned", "knull_liberated"]
+		):
+			return true
+	return false

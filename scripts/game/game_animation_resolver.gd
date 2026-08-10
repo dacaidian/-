@@ -72,6 +72,19 @@ func resolve_attack_animation_key(attacker_state: CardState) -> String:
 		and attacker_state.card_id == "hair_clone"
 	):
 		return "monkey_hair_clone_assist"
+	if (
+		attacker_state.data.faction_id == "symbiote"
+		and attacker_state.data.has_unit_trait("symbiote")
+	):
+		match attacker_state.card_id:
+			"carnage":
+				return "symbiote_carnage_attack"
+			"anti_venom":
+				return "symbiote_anti_venom_attack"
+			"symbiote_hybrid":
+				return "symbiote_hybrid_attack"
+			_:
+				return "symbiote_living_weapon_attack"
 	if attacker_state.data.faction_id != "tokyo_ghoul":
 		return ""
 
