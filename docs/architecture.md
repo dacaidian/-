@@ -159,7 +159,7 @@
 
 规则应优先使用通用效果。只有无法通过数据组合表达的机制，才考虑新增较专用的效果。
 
-`on_enter_board` 是单位进入棋盘的统一触发点，适用于翻开进入棋盘和从手牌放置进入棋盘。不要同时写一套 `on_reveal` 和一套放置逻辑。
+`on_enter_board` 是新的永久卡牌身份在棋盘生效的统一触发点，适用于翻开进入棋盘、从手牌放置、死亡格召唤和不可逆永久进化。`GameManager.resolve_board_entry_triggers()` 统一写入 `EventContext.BOARD_ENTRY_REASON` 并保证嵌套触发完成；真正翻牌时还会兼容执行 `on_reveal`，因此只依赖翻牌本身的周期重置等效果可以继续使用后者。带“触发”关键字的单位效果应使用 `on_enter_board`，不要同时复制翻牌和手牌放置逻辑。保存原形快照的覆盖变身、限时进化变身以及恢复原形都不是新单位入场，不执行该触发，避免可逆形态反复获取入场收益。
 
 `after_friendly_attack` 会在友方单位完成普通攻击后广播给其他友方单位。效果可以用 `source_card_ids` 过滤原始攻击者。当前例子是猴妖仙“毫毛”在孙悟空攻击后尝试协同攻击同一目标。
 
@@ -298,6 +298,7 @@
 - “撕咬”通过 `next_attack_modifier` 状态声明下一次普通攻击额外伤害、固定恢复、建筑排除规则和命中/恢复表现。多个同类状态可以共同结算并在同一次攻击后统一消费；建筑攻击会消费撕咬，但其加伤和恢复均不生效。“恐怖尖啸”由 `TerrifyingScreamEffect` 以毒液为源，遍历相邻格的地面与飞行层敌方随从，先处理魔法免疫，再统一造成伤害、解析死亡并给幸存者施加 `fear`；范围效果不依赖逐个目标选择。
 - “法典”使用 `LiberateCardEffect` 处理唯一卡牌的跨区域迁移，优先级固定为正面战场、手牌、坟场、隐藏棋盘、共享牌库。正面战场在原格永久进化为纳尔·解放；其余区域先移除纳尔·囚禁，再只向施法者手牌加入一张解放形态；隐藏棋盘被移除后正常补牌。每次施法命中第一个区域后立即结束，避免异常重复状态生成多张纳尔。
 - 子代能力保持通用边界：暴乱的 `random_normal_attacks` 从标准攻击合法目标中随机取至多三个，并调用 `AttackAction.perform_attack(..., false)` 复用动画、伤害、反伤、吸血、次级伤害、死亡归因和攻击后触发；它不消耗动作/攻击次数，也不触发占领。皮鞭通过 `symbiote_whip` 在同一个目标规则内按敌友分支。吞噬通过 `symbiote_absorb` 摧毁敌方非英雄随从，并把其当前攻击、生命上限、固有关键字、动作、施法动作和触发效果写入可累计状态；不要复制运行时状态或玩家归属。沉默由 `UnitSilenceResolver` 汇总存活正面敌方 `silence_aura`：只禁用单位施法动作，以及被沉默英雄所属的手牌法术，不禁用普通动作、被动或亡语。屠杀使用标准 `on_kill` 事件和实例级 `runtime_counters` 每两次敌方非英雄随从击杀增加1点攻速；攻速成长写入 `permanent_stat_overrides.attack_speed`，不是可驱散状态。新增类似子代能力时，应优先扩展效果、目标规则或事件上下文，不在 `GameManager` 中按卡牌 id 分支。
+- 眠者的“触发：获得猫”和沉默的显现表现使用通用 `on_enter_board`。共生体组织完成不可逆子代替换、基因宿主属性继承和持续被动刷新后，通过 `resolve_board_entry_triggers(..., BOARD_ENTRY_PERMANENT_TRANSFORM)` 激活新身份；因此眠者无须加入牌库、翻开或经过手牌，也能在附着成为新子代时准确触发一次。该入口属于永久身份替换，不得加入 `TransformUnitEffect` 或恢复原形流程。
 
 共生体表现采用“规则完成结算 -> 稳定语义键 -> `SymbioteAnimationProvider` -> 专用 Visual”边界。Provider 只注册 card、rect、source-to-target、multi 和 board 路由，换算局部坐标、统一时长并回收临时节点；它不读取子代池、不判断解锁、不选择随机目标，也不修改卡牌。四类 Visual 各自拥有清晰职责：`SymbioteSeveranceVisual` 负责自我剥离、人工剥离和组织附着外壳；`SymbiotePowerVisual` 负责撕咬蓄势/命中/恢复、恐怖尖啸、恐惧附着/逃离、法典和纳尔解放；`SymbioteCombatVisual` 负责共生体普通攻击以及暴乱、嚎叫、皮鞭、吞噬与结算后的生物成长反馈；`SymbioteEventVisual` 负责子代池解锁、子代出壳、屠杀攻速成长、沉默显现、眠者产猫和纳尔光环唤醒/受益。普通共生体攻击由 `GameAnimationResolver.resolve_attack_animation_key()` 根据 `unit_traits: ["symbiote"]` 和少量形态标识选择轮廓；近战仍先播放通用卡牌撞击，专属 key 只叠加局部甲壳、爪痕或组织命中，避免误读为远程法术。人类宿主、异噬体和纳尔不声明共生体 trait，因此不会错误套用该攻击表现。
 

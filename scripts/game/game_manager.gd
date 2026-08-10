@@ -1153,6 +1153,41 @@ func queue_card_trigger(source_state: CardState, trigger: String, context: Dicti
 	trigger_resolver.queue_trigger(source_state, trigger, context)
 
 
+func resolve_board_entry_triggers(
+	source_state: CardState,
+	entry_reason: String,
+	include_reveal_trigger := false
+) -> void:
+	if source_state == null or source_state.is_empty() or not source_state.is_face_up:
+		return
+
+	var context := {
+		EventContext.BOARD_ENTRY_REASON: entry_reason,
+	}
+	if trigger_resolver.is_resolving:
+		await effect_registry.execute_trigger(
+			source_state,
+			EventContext.TRIGGER_ON_ENTER_BOARD,
+			self,
+			context
+		)
+		if include_reveal_trigger and not source_state.is_empty():
+			await effect_registry.execute_trigger(
+				source_state,
+				EventContext.TRIGGER_ON_REVEAL,
+				self,
+				context
+			)
+		return
+
+	trigger_resolver.queue_board_entry(
+		source_state,
+		entry_reason,
+		include_reveal_trigger
+	)
+	await trigger_resolver.resolve_queued(self)
+
+
 func resolve_queued_triggers() -> void:
 	await trigger_resolver.resolve_queued(self)
 

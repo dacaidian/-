@@ -351,8 +351,10 @@ func execute_hand_minion_placement(
 			await game_manager.play_slot_effect_animation(aerial_state, card_data.animation)
 		await game_manager.resolve_slot_unit_entered(aerial_state)
 		if not aerial_state.is_empty():
-			game_manager.queue_card_trigger(aerial_state, EventContext.TRIGGER_ON_ENTER_BOARD)
-			await game_manager.resolve_queued_triggers()
+			await game_manager.resolve_board_entry_triggers(
+				aerial_state,
+				EventContext.BOARD_ENTRY_HAND_PLAY
+			)
 			await game_manager.check_and_destroy_if_dead(aerial_state, EffectData.DEATH_REASON_EFFECT)
 		game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 		game_manager.refresh_action_available_hints()
@@ -374,8 +376,10 @@ func execute_hand_minion_placement(
 		await game_manager.play_slot_effect_animation(target_state, card_data.animation)
 	await game_manager.resolve_slot_unit_entered(target_state)
 	if not target_state.is_empty():
-		game_manager.queue_card_trigger(target_state, EventContext.TRIGGER_ON_ENTER_BOARD)
-		await game_manager.resolve_queued_triggers()
+		await game_manager.resolve_board_entry_triggers(
+			target_state,
+			EventContext.BOARD_ENTRY_HAND_PLAY
+		)
 		await game_manager.check_and_destroy_if_dead(target_state, EffectData.DEATH_REASON_EFFECT)
 	game_manager.refresh_hand_passives_for_player(player, player == game_manager.get_current_player())
 	game_manager.refresh_action_available_hints()

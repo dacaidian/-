@@ -91,6 +91,16 @@ func liberate_board_state(
 			"symbiote_knull_liberation"
 		)
 	board_state.transform_to_card_data(liberated_data)
+	if game_manager.has_method("resolve_board_entry_triggers"):
+		await game_manager.resolve_board_entry_triggers(
+			board_state,
+			EventContext.BOARD_ENTRY_PERMANENT_TRANSFORM
+		)
+	if not board_state.is_empty() and game_manager.has_method("check_and_destroy_if_dead"):
+		await game_manager.check_and_destroy_if_dead(
+			board_state,
+			EffectData.DEATH_REASON_EFFECT
+		)
 	refresh_views(player, game_manager)
 
 

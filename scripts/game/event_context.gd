@@ -13,6 +13,12 @@ const TRIGGER_BEFORE_TURN_START := "before_turn_start"
 const TRIGGER_AFTER_TURN_END := "after_turn_end"
 const TRIGGER_ON_EFFECTIVE_HEAL := "on_effective_heal"
 
+const BOARD_ENTRY_REASON := "_board_entry_reason"
+const BOARD_ENTRY_REVEAL := "reveal"
+const BOARD_ENTRY_HAND_PLAY := "hand_play"
+const BOARD_ENTRY_SUMMON := "summon"
+const BOARD_ENTRY_PERMANENT_TRANSFORM := "permanent_transform"
+
 const DEAD_STATE := "_dead_state"
 const DEATH := "_death"
 const DESTROYER_PLAYER_ID := "_destroyer_player_id"

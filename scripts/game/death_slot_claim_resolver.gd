@@ -154,8 +154,10 @@ func place_claim(
 
 	await game_manager.resolve_slot_unit_entered(target_state)
 	if not target_state.is_empty():
-		game_manager.queue_card_trigger(target_state, EventContext.TRIGGER_ON_ENTER_BOARD)
-		await game_manager.resolve_queued_triggers()
+		await game_manager.resolve_board_entry_triggers(
+			target_state,
+			EventContext.BOARD_ENTRY_SUMMON
+		)
 		await game_manager.check_and_destroy_if_dead(target_state, EffectData.DEATH_REASON_EFFECT)
 
 	var owner := game_manager.get_player_by_id(target_state.owner_id)

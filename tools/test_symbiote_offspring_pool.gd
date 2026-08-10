@@ -209,7 +209,7 @@ func test_card_definitions(card_database: CardDatabase) -> bool:
 		"symbiote_devour": [1, 3],
 		"anti_venom": [10, 4],
 		"symbiote_warrior": [5, 8],
-		"symbiote_silence": [2, 5],
+		"symbiote_silence": [6, 10],
 		"symbiote_hybrid": [7, 15],
 		"toxin": [5, 14],
 		"carnage": [8, 8],
@@ -231,8 +231,8 @@ func test_card_definitions(card_database: CardDatabase) -> bool:
 	if cat.attack_speed != 2 or cat.movement != 5 or not cat.has_keyword(CardData.KEYWORD_MOBILE_ASSAULT):
 		return _fail("Cat action economy is invalid")
 	var sleeper := card_database.get_card("sleeper")
-	if sleeper.effects.is_empty() or EffectData.get_trigger(sleeper.effects[0]) != EventContext.TRIGGER_ON_REVEAL:
-		return _fail("Sleeper does not generate Cat on reveal")
+	if sleeper.effects.is_empty() or EffectData.get_trigger(sleeper.effects[0]) != EventContext.TRIGGER_ON_ENTER_BOARD:
+		return _fail("Sleeper does not generate Cat through the unified board-entry trigger")
 	return true
 
 

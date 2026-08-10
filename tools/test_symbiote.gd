@@ -250,7 +250,11 @@ func _run() -> void:
 		return
 	if not await _test_terrifying_scream_runtime(card_database):
 		return
-	if not _test_knull_runtime_rules(card_database):
+	if not await _test_knull_runtime_rules(card_database):
+		return
+	if not await _test_permanent_transform_entry_trigger(card_database):
+		return
+	if not await _test_entry_trigger_boundaries(card_database):
 		return
 	if not await _test_codex_zones(card_database):
 		return
@@ -277,7 +281,8 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 	var codex := card_database.get_card("knull_codex")
 	var imprisoned_knull := card_database.get_card("knull_imprisoned")
 	var liberated_knull := card_database.get_card("knull_liberated")
-	if venom == null or agent == null or biologist == null or xenophage == null or warrior == null or tissue == null or bite == null or scream == null or codex == null or imprisoned_knull == null or liberated_knull == null:
+	var sleeper := card_database.get_card("sleeper")
+	if venom == null or agent == null or biologist == null or xenophage == null or warrior == null or tissue == null or bite == null or scream == null or codex == null or imprisoned_knull == null or liberated_knull == null or sleeper == null:
 		return _fail("Symbiote card framework is incomplete")
 	if venom.attack != 2 or venom.health != 20 or venom.role != CardData.ROLE_HERO:
 		return _fail("Venom stats or hero role changed")
@@ -313,6 +318,15 @@ func _test_card_configuration(card_database: CardDatabase) -> bool:
 		return _fail("Imprisoned Knull configuration is invalid")
 	if liberated_knull.attack != 4 or liberated_knull.health != 16 or liberated_knull.count != 0:
 		return _fail("Liberated Knull configuration is invalid")
+	var sleeper_entry_effect_count := 0
+	for raw_effect in sleeper.effects:
+		var sleeper_effect := raw_effect as Dictionary
+		if EffectData.get_trigger(sleeper_effect) == EventContext.TRIGGER_ON_ENTER_BOARD:
+			sleeper_entry_effect_count += 1
+		if EffectData.get_trigger(sleeper_effect) == EventContext.TRIGGER_ON_REVEAL:
+			return _fail("Sleeper still depends on the reveal-only trigger")
+	if sleeper_entry_effect_count != 2:
+		return _fail("Sleeper entry trigger configuration is incomplete")
 	for symbiote_card_id in [
 		"venom",
 		"symbiote_riot",
@@ -748,13 +762,111 @@ func _test_knull_runtime_rules(card_database: CardDatabase) -> bool:
 	var attachment_effect_data := resolved_effect.duplicate(true)
 	EffectData.mark_effect_owner(attachment_effect_data, player.id)
 	EffectData.mark_selected_target(attachment_effect_data, genetic_host)
-	attach_effect.execute(null, attachment_effect_data, manager)
+	await attach_effect.execute(null, attachment_effect_data, manager)
 	if genetic_host.card_id != "symbiote_riot":
 		_cleanup_rule_probe(manager)
 		return _fail("Symbiote Tissue did not evolve the genetic warrior")
 	if genetic_host.current_attack != 10 or genetic_host.max_health != 14:
 		_cleanup_rule_probe(manager)
 		return _fail("A newly attached Symbiote did not combine host stats with Knull's live aura")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_permanent_transform_entry_trigger(card_database: CardDatabase) -> bool:
+	var player := _make_player("sleeper_owner", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [player]
+	manager.card_database = card_database
+	manager.next_offspring_card_id = "sleeper"
+
+	var host_state := _make_state(
+		card_database.get_card("symbiote_shield_agent"),
+		player.id,
+		15
+	)
+	manager.board_states = [host_state]
+
+	var tissue := card_database.get_card("symbiote_tissue")
+	var attachment_effect_data := (tissue.effects[0] as Dictionary).duplicate(true)
+	EffectData.mark_effect_owner(attachment_effect_data, player.id)
+	EffectData.mark_selected_target(attachment_effect_data, host_state)
+	await AttachSymbioteOffspringEffectScript.new().execute(
+		null,
+		attachment_effect_data,
+		manager
+	)
+
+	if host_state.card_id != "sleeper":
+		_cleanup_rule_probe(manager)
+		return _fail("Permanent attachment did not create Sleeper")
+	if player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "symbiote_cat":
+		_cleanup_rule_probe(manager)
+		return _fail("Sleeper permanent transform did not trigger exactly one Cat")
+	if manager.animation_keys.count("symbiote_sleeper_spawn") != 1:
+		_cleanup_rule_probe(manager)
+		return _fail("Sleeper entry presentation did not run exactly once")
+	if manager.animation_keys.count("symbiote_offspring_emergence") != 1:
+		_cleanup_rule_probe(manager)
+		return _fail("Generic offspring emergence presentation changed")
+
+	_cleanup_rule_probe(manager)
+	return true
+
+
+func _test_entry_trigger_boundaries(card_database: CardDatabase) -> bool:
+	var player := _make_player("entry_owner", "symbiote")
+	var manager := SymbioteRuleProbe.new()
+	manager.players = [player]
+	manager.card_database = card_database
+
+	var permanent_host := _make_state(
+		card_database.get_card("symbiote_shield_agent"),
+		player.id,
+		16
+	)
+	manager.board_states = [permanent_host]
+	var evolution_effect_data := {
+		EffectData.KEY_ID: EffectData.EFFECT_EVOLVE_UNITS,
+		EffectData.KEY_TARGET_CARD_ID: "sleeper",
+	}
+	EffectData.mark_effect_owner(evolution_effect_data, player.id)
+	EffectData.mark_selected_target(evolution_effect_data, permanent_host)
+	await EvolveUnitsEffect.new().execute(
+		null,
+		evolution_effect_data,
+		manager
+	)
+	if permanent_host.card_id != "sleeper":
+		_cleanup_rule_probe(manager)
+		return _fail("Generic permanent evolution did not replace the card identity")
+	if player.hand.size() != 1 or _hand_card_id(player.hand[0]) != "symbiote_cat":
+		_cleanup_rule_probe(manager)
+		return _fail("Generic permanent evolution did not publish on_enter_board")
+
+	player.hand.clear()
+	manager.animation_keys.clear()
+	var reversible_host := _make_state(
+		card_database.get_card("symbiote_shield_agent"),
+		player.id,
+		17
+	)
+	manager.board_states = [reversible_host]
+	var reversible_effect_data := {
+		EffectData.KEY_ID: EffectData.EFFECT_TRANSFORM_UNIT,
+		EffectData.KEY_CARD_ID: "sleeper",
+		EffectData.KEY_TRANSFORM_MODE: "cover",
+	}
+	EffectData.mark_effect_owner(reversible_effect_data, player.id)
+	EffectData.mark_selected_target(reversible_effect_data, reversible_host)
+	TransformUnitEffect.new().execute(null, reversible_effect_data, manager)
+	if reversible_host.card_id != "sleeper" or reversible_host.get_transform_status() == null:
+		_cleanup_rule_probe(manager)
+		return _fail("Reversible transform setup failed")
+	if not player.hand.is_empty() or manager.animation_keys.has("symbiote_sleeper_spawn"):
+		_cleanup_rule_probe(manager)
+		return _fail("Reversible transform incorrectly triggered board entry effects")
 
 	_cleanup_rule_probe(manager)
 	return true

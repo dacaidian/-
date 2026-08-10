@@ -5991,12 +5991,12 @@
 					"aberration",
 					"symbiote"
 				],
-				"attack": 2,
-				"health": 5,
+				"attack": 6,
+				"health": 10,
 				"effects": [
 					{
 						"id": "play_animation",
-						"trigger": "on_reveal",
+						"trigger": "on_enter_board",
 						"target": "self",
 						"animation": "symbiote_silence_manifest"
 					}
@@ -6119,13 +6119,13 @@
 				"effects": [
 					{
 						"id": "play_animation",
-						"trigger": "on_reveal",
+						"trigger": "on_enter_board",
 						"target": "self",
 						"animation": "symbiote_sleeper_spawn"
 					},
 					{
 						"id": "add_card_to_hand",
-						"trigger": "on_reveal",
+						"trigger": "on_enter_board",
 						"card_id": "symbiote_cat",
 						"amount": 1
 					}

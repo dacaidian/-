@@ -27,6 +27,15 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 		await gm.play_multi_target_effect_animation(states, animation_key)
 	for state in states:
 		evolve_state(state, target_data)
+		await gm.resolve_board_entry_triggers(
+			state,
+			EventContext.BOARD_ENTRY_PERMANENT_TRANSFORM
+		)
+		if not state.is_empty():
+			await gm.check_and_destroy_if_dead(
+				state,
+				EffectData.DEATH_REASON_EFFECT
+			)
 
 	if not states.is_empty():
 		gm.refresh_action_available_hints()
@@ -54,7 +63,10 @@ func can_execute(source_state: CardState, effect_data: Dictionary, game_manager:
 func get_evolution_targets(source_state: CardState, effect_data: Dictionary, gm: GameManager) -> Array[CardState]:
 	var selected_state := EffectData.get_selected_target_state(effect_data)
 	if selected_state != null:
-		return [selected_state] if can_evolve_state(selected_state, effect_data, "") else []
+		var selected_targets: Array[CardState] = []
+		if can_evolve_state(selected_state, effect_data, ""):
+			selected_targets.append(selected_state)
+		return selected_targets
 
 	var owner_id := get_effect_owner_id(source_state, effect_data)
 	var targets: Array[CardState] = []

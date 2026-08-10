@@ -5,6 +5,7 @@ class_name TransformUnitEffect
 # 变身形态本身是全新状态，不继承原状态；恢复原形时恢复原形快照中的状态。
 # 进化变身：死亡时正常死亡；持续结束后恢复原形。
 # 覆盖变身：死亡时先解除变身并恢复原形。
+# 两类变身都保留原形快照，属于可逆形态切换，不触发 on_enter_board。
 
 func execute(source_state: CardState, effect_data: Dictionary, game_manager: Node) -> void:
 	var target_data := get_transform_target_data(effect_data, game_manager)

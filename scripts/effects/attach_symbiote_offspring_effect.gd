@@ -47,6 +47,16 @@ func execute(source_state: CardState, effect_data: Dictionary, game_manager: Nod
 				target_state,
 				"symbiote_knull_aura_receive"
 			)
+	if game_manager.has_method("resolve_board_entry_triggers"):
+		await game_manager.resolve_board_entry_triggers(
+			target_state,
+			EventContext.BOARD_ENTRY_PERMANENT_TRANSFORM
+		)
+	if not target_state.is_empty() and game_manager.has_method("check_and_destroy_if_dead"):
+		await game_manager.check_and_destroy_if_dead(
+			target_state,
+			EffectData.DEATH_REASON_EFFECT
+		)
 	if game_manager.has_method("refresh_action_available_hints"):
 		game_manager.refresh_action_available_hints()
 	if game_manager.has_method("refresh_debug_panel"):

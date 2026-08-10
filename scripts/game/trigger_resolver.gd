@@ -2,7 +2,7 @@ extends RefCounted
 class_name TriggerResolver
 
 # TriggerResolver 统一管理触发队列。
-# 当前先服务 on_reveal / on_destroyed，后续 on_damage、on_summon 等触发也应走这里。
+# on_enter_board 是单位新身份在战场生效的统一入口；on_reveal 仅保留给真正翻牌专用效果。
 
 var trigger_queue: Array[Dictionary] = []
 var is_resolving := false
@@ -17,6 +17,22 @@ func queue_trigger(source_state: CardState, trigger: String, context: Dictionary
 		"trigger": trigger,
 		"context": context.duplicate(true)
 	})
+
+
+func queue_board_entry(
+	source_state: CardState,
+	entry_reason: String,
+	include_reveal_trigger := false
+) -> void:
+	if source_state == null:
+		return
+
+	var context := {
+		EventContext.BOARD_ENTRY_REASON: entry_reason,
+	}
+	queue_trigger(source_state, EventContext.TRIGGER_ON_ENTER_BOARD, context)
+	if include_reveal_trigger:
+		queue_trigger(source_state, EventContext.TRIGGER_ON_REVEAL, context)
 
 
 func resolve_queued(game_manager: GameManager) -> void:

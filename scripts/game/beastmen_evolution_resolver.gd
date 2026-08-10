@@ -60,6 +60,15 @@ func resolve_death_event(game_manager: GameManager, death_event: Dictionary) -> 
 		if animation_key != "" and game_manager.has_method("play_status_apply_animation"):
 			await game_manager.play_status_apply_animation(killer, animation_key)
 		await add_wanmo_charge_for_owner(game_manager, killer)
+		await game_manager.resolve_board_entry_triggers(
+			killer,
+			EventContext.BOARD_ENTRY_PERMANENT_TRANSFORM
+		)
+		if not killer.is_empty():
+			await game_manager.check_and_destroy_if_dead(
+				killer,
+				EffectData.DEATH_REASON_EFFECT
+			)
 		game_manager.refresh_action_available_hints()
 		game_manager.refresh_debug_panel()
 		return
